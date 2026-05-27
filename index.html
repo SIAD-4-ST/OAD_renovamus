@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OAD Arrachage — Comité Champagne</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --or:#C9A84C; --or-dim:rgba(201,168,76,.15); --or-line:rgba(201,168,76,.25);
+  --navy:#111827; --navy2:#1C2840; --navy3:#243257;
+  --slate:rgba(255,255,255,.06); --slate2:rgba(255,255,255,.03);
+  --txt:#EDE8E0; --muted:rgba(237,232,224,.45); --dim:rgba(237,232,224,.22);
+  --rouge:#D63031; --orange:#E17055; --jaune:#F9CA24; --vert:#00B894;
+  --sb:300px; --panel:400px; --hh:50px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--navy);color:var(--txt);display:flex;flex-direction:column;}
+button{font-family:inherit;cursor:pointer;}
+input,select{font-family:inherit;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-thumb{background:var(--or-line);border-radius:2px;}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+#hd{height:var(--hh);background:var(--navy2);border-bottom:1px solid var(--or-line);
+  display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;z-index:1000;gap:12px;}
+.hd-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.hd-logo{width:28px;height:28px;background:var(--or);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.hd-title{font-family:'Playfair Display',serif;font-size:14px;font-weight:600;color:var(--or);}
+.hd-title em{font-style:italic;font-weight:400;color:var(--muted);}
+
+/* Commune selector dans le header */
+.commune-wrap{display:flex;align-items:center;gap:8px;}
+.commune-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;}
+.commune-select{background:var(--slate);border:1px solid var(--or-line);border-radius:6px;
+  color:var(--txt);font-size:12px;font-weight:600;padding:5px 26px 5px 10px;outline:none;
+  appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23C9A84C'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;transition:border-color .2s;}
+.commune-select:focus{border-color:var(--or);}
+.commune-select option{background:#1C2840;}
+
+/* Badge FD commune */
+.fd-commune-badge{display:flex;align-items:center;gap:6px;padding:4px 10px;
+  border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.05em;white-space:nowrap;
+  border:1px solid;transition:all .3s;}
+.fd-commune-badge.fd-non{background:rgba(0,184,148,.1);border-color:rgba(0,184,148,.3);color:var(--vert);}
+.fd-commune-badge.fd-oui{background:rgba(214,48,49,.12);border-color:rgba(214,48,49,.4);color:var(--rouge);animation:pulse-fd 2s ease-in-out infinite;}
+@keyframes pulse-fd{0%,100%{box-shadow:0 0 0 0 rgba(214,48,49,.3);}50%{box-shadow:0 0 0 4px rgba(214,48,49,.0);}}
+
+.mode-toggle{display:flex;background:var(--slate2);border:1px solid var(--or-line);border-radius:6px;overflow:hidden;flex-shrink:0;}
+.mode-btn{padding:5px 14px;background:transparent;border:none;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;transition:all .2s;}
+.mode-btn.active{background:var(--or);color:var(--navy);}
+
+/* ── LAYOUT ─────────────────────────────────────────────── */
+#app{display:flex;flex:1;overflow:hidden;}
+
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+#sb{width:var(--sb);min-width:var(--sb);background:var(--navy2);border-right:1px solid var(--or-line);
+  display:flex;flex-direction:column;overflow:hidden;z-index:500;}
+.sb-sec{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.045);flex-shrink:0;}
+.sb-t{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--or);margin-bottom:9px;}
+
+/* KPIs */
+.kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.kpi{background:var(--or-dim);border:1px solid var(--or-line);border-radius:8px;padding:9px 11px;}
+.kpi-l{font-size:8.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:4px;}
+.kpi-v{font-family:'Playfair Display',serif;font-size:18px;color:var(--or);line-height:1;}
+.kpi-u{font-size:8px;color:var(--dim);margin-top:1px;}
+
+/* FD commune dans sidebar */
+.fd-commune-block{background:rgba(214,48,49,.08);border:1px solid rgba(214,48,49,.25);
+  border-radius:8px;padding:10px 12px;margin-bottom:0;}
+.fd-commune-block .fd-title{font-size:10px;font-weight:600;color:var(--rouge);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.fd-commune-block .fd-desc{font-size:10px;color:var(--muted);line-height:1.5;}
+.fd-commune-block.fd-none{background:rgba(0,184,148,.06);border-color:rgba(0,184,148,.2);}
+.fd-commune-block.fd-none .fd-title{color:var(--vert);}
+
+/* Pondérations */
+.pond-rows{display:flex;flex-direction:column;gap:7px;}
+.pond-row{display:flex;align-items:center;gap:7px;}
+.pond-lbl{font-size:10.5px;color:var(--muted);flex:1;min-width:0;line-height:1.2;}
+.pond-num{width:42px;text-align:center;background:var(--slate);border:1px solid var(--or-line);
+  border-radius:5px;color:var(--or);font-family:'DM Mono',monospace;font-size:12px;font-weight:500;
+  padding:4px;outline:none;transition:border-color .2s;flex-shrink:0;}
+.pond-num:focus{border-color:var(--or);}
+.pond-bar-bg{flex:1;height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;}
+.pond-bar{height:100%;background:var(--or);border-radius:2px;transition:width .3s;}
+.pond-foot{display:flex;justify-content:space-between;margin-top:7px;font-size:9px;color:var(--dim);}
+.pond-foot span{color:var(--or);font-weight:600;}
+
+/* Légende */
+.leg-items{display:flex;flex-direction:column;gap:5px;}
+.leg-item{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--muted);}
+.leg-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+.leg-dash{width:22px;height:3px;border-radius:1px;flex-shrink:0;}
+
+/* Liste parcelles */
+#list-hd{padding:9px 14px 7px;border-bottom:1px solid rgba(255,255,255,.045);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+#list-hd .lt{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--or);}
+#list-hd .lc{font-size:9px;color:var(--dim);font-family:'DM Mono',monospace;}
+#pl{flex:1;overflow-y:auto;padding:6px;}
+.pl-item{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:7px;cursor:pointer;
+  transition:background .15s;margin-bottom:3px;border:1px solid transparent;}
+.pl-item:hover{background:var(--or-dim);border-color:var(--or-line);}
+.pl-item.active{background:rgba(201,168,76,.14);border-color:rgba(201,168,76,.35);}
+.pl-badge{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-weight:500;font-size:12px;flex-shrink:0;}
+.pl-info{flex:1;min-width:0;}
+.pl-idu{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pl-meta{font-size:9.5px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pl-sim{background:none;border:1px solid var(--or-line);color:var(--or);border-radius:5px;
+  padding:3px 7px;font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;transition:all .2s;flex-shrink:0;}
+.pl-sim:hover{background:var(--or);color:var(--navy);}
+.empty-st{text-align:center;padding:24px 14px;color:var(--dim);font-size:11px;line-height:1.7;}
+.empty-st .ei{font-size:24px;margin-bottom:6px;}
+
+/* ── CARTE ─────────────────────────────────────────────── */
+#map-wrap{flex:1;position:relative;overflow:hidden;}
+#map{width:100%;height:100%;}
+.leaflet-container{background:#d4c9a8 !important;}
+.map-info{position:absolute;bottom:10px;left:10px;background:rgba(255,255,255,.93);
+  border:1px solid rgba(201,168,76,.4);border-radius:7px;padding:5px 11px;
+  font-size:10px;color:#333;z-index:400;backdrop-filter:blur(6px);pointer-events:none;
+  box-shadow:0 2px 6px rgba(0,0,0,.15);}
+.map-info b{color:var(--or);font-family:'DM Mono',monospace;}
+
+/* ── PANEL DROIT — toujours visible, vues liste ↔ détail ─── */
+#panel{width:var(--panel);min-width:var(--panel);background:var(--navy2);
+  border-left:1px solid var(--or-line);display:flex;flex-direction:column;
+  z-index:600;overflow:hidden;}
+#ph{padding:11px 14px 10px;border-bottom:1px solid rgba(255,255,255,.045);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:8px;}
+#ph h2{font-family:'Playfair Display',serif;font-size:15px;color:var(--or);line-height:1.2;}
+#ph .ps{font-size:10px;color:var(--dim);margin-top:2px;}
+.ph-back{background:none;border:1px solid var(--or-line);color:var(--muted);border-radius:5px;
+  padding:4px 10px;font-size:10px;font-weight:600;letter-spacing:.04em;cursor:pointer;
+  white-space:nowrap;transition:all .2s;flex-shrink:0;}
+.ph-back:hover{border-color:var(--or);color:var(--or);}
+/* Vue liste */
+#panel-list{display:flex;flex-direction:column;flex:1;overflow:hidden;}
+/* Vue détail */
+#panel-detail{display:none;flex-direction:column;flex:1;overflow:hidden;}
+#pb{flex:1;overflow-y:auto;min-height:0;}
+.ps-sec{padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.04);}
+.ps-t{font-size:8.5px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--or);margin-bottom:10px;}
+
+/* Score */
+.sc-wrap{display:flex;align-items:center;gap:14px;margin-bottom:11px;}
+.sc-ring{width:64px;height:64px;border-radius:50%;border:3px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
+.sc-ring .rn{font-family:'Playfair Display',serif;font-size:20px;line-height:1;}
+.sc-ring .rd{font-size:8px;opacity:.5;}
+.sc-lbl{font-size:13px;font-weight:600;}
+.sc-hint{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.4;}
+.cb-rows{display:flex;flex-direction:column;gap:5px;}
+.cb-row{display:flex;align-items:center;gap:7px;}
+.cb-lbl{font-size:9.5px;color:var(--muted);width:110px;flex-shrink:0;}
+.cb-bg{flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;}
+.cb-fill{height:100%;border-radius:3px;transition:width .4s;}
+.cb-val{font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);width:24px;text-align:right;}
+
+/* Data grid */
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;}
+.dg-l{font-size:8.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-bottom:3px;}
+.dg-v{font-size:12.5px;font-weight:500;}
+.warn{color:var(--orange);} .danger{color:var(--rouge);} .ok{color:var(--vert);}
+
+/* Saisie */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.fi label{display:block;font-size:9px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em;}
+.fi-full{grid-column:1/-1;}
+.fi-input{width:100%;background:var(--slate);border:1px solid var(--or-line);border-radius:6px;
+  color:var(--txt);font-size:12px;padding:6px 9px;outline:none;transition:border-color .2s;}
+.fi-input:focus{border-color:var(--or);}
+.fi-input option{background:#1C2840;}
+.save-btn{width:100%;padding:8px;background:transparent;border:1px solid var(--or-line);
+  border-radius:7px;color:var(--or);font-size:11px;font-weight:600;letter-spacing:.04em;
+  text-transform:uppercase;transition:all .2s;margin-top:10px;}
+.save-btn:hover{background:var(--or-dim);border-color:var(--or);}
+
+/* Bloc FD dans panel */
+.fd-panel-block{background:rgba(214,48,49,.08);border:1px solid rgba(214,48,49,.3);
+  border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+.fd-panel-title{font-size:10px;font-weight:600;color:var(--rouge);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.fd-dist-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.fd-dist-row label{font-size:10px;color:var(--muted);white-space:nowrap;}
+.fd-dist-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(214,48,49,.35);
+  border-radius:6px;color:var(--txt);font-size:12px;padding:6px 9px;outline:none;transition:border-color .2s;}
+.fd-dist-input:focus{border-color:var(--rouge);}
+.fd-dist-unit{font-size:10px;color:var(--muted);}
+
+/* Simulation */
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.si label{display:block;font-size:9px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em;}
+.run-btn{width:100%;padding:9px;background:var(--or);border:none;border-radius:7px;color:var(--navy);
+  font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;transition:all .2s;margin-bottom:12px;}
+.run-btn:hover{background:#d9b85a;}
+.sim-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;}
+.sim-kpi{background:var(--slate2);border:1px solid var(--or-line);border-radius:7px;padding:8px 6px;text-align:center;}
+.sk-l{font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin-bottom:4px;}
+.sk-v{font-family:'Playfair Display',serif;font-size:15px;color:var(--or);line-height:1;}
+.sk-u{font-size:7.5px;color:var(--dim);margin-top:2px;}
+.chart-wrap{position:relative;width:100%;height:150px;}
+canvas.sim-cvs{width:100% !important;}
+.sim-tw{overflow-x:auto;margin-top:10px;}
+.sim-t{width:100%;border-collapse:collapse;font-size:9.5px;font-family:'DM Mono',monospace;}
+.sim-t th{color:var(--or);font-size:8px;text-transform:uppercase;letter-spacing:.06em;padding:4px 6px;
+  text-align:right;border-bottom:1px solid var(--or-line);}
+.sim-t th:first-child{text-align:left;}
+.sim-t td{padding:4px 6px;text-align:right;color:var(--muted);border-bottom:1px solid rgba(255,255,255,.03);}
+.sim-t td:first-child{text-align:left;color:var(--dim);}
+.ri-low{color:var(--rouge);} .ri-med{color:var(--orange);} .ri-ok{color:var(--vert);}
+
+/* Toast */
+#toast{position:fixed;bottom:16px;right:16px;background:var(--vert);color:#fff;
+  padding:9px 15px;border-radius:8px;font-size:12px;font-weight:600;
+  opacity:0;pointer-events:none;transform:translateY(6px);transition:all .25s;z-index:9999;}
+#toast.show{opacity:1;transform:translateY(0);}
+
+body.tech-mode .vign-only{display:none !important;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="hd">
+  <div class="hd-brand">
+    <div class="hd-logo">🍇</div>
+    <div class="hd-title">OAD <em>Arrachage</em></div>
+  </div>
+
+  <div class="commune-wrap">
+    <span class="commune-label">Commune</span>
+    <select class="commune-select" id="sel-commune" onchange="selectCommune(this.value)">
+      <option value="">— Choisir —</option>
+      <option value="Cuis">Cuis (51)</option>
+      <option value="Trelou">Trélou-sur-Marne (02)</option>
+      <option value="Arrentieres">Arrentières (10)</option>
+    </select>
+  </div>
+
+  <div id="fd-commune-badge" class="fd-commune-badge fd-non" style="display:none">
+    ✓ Pas de FD
+  </div>
+
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btn-vign" onclick="setMode('vign')">Vigneron</button>
+    <button class="mode-btn" id="btn-tech" onclick="setMode('tech')">Technicien</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <div id="sb">
+
+    <!-- Info commune -->
+    <div class="sb-sec" id="commune-info" style="display:none">
+      <div class="sb-t" id="commune-name-label">Commune</div>
+      <div class="kpi-row" style="margin-bottom:8px">
+        <div class="kpi">
+          <div class="kpi-l">Parcelles</div>
+          <div class="kpi-v" id="kpi-nb">—</div>
+          <div class="kpi-u">sur la commune</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-l">Surface</div>
+          <div class="kpi-v" id="kpi-surf-c">—</div>
+          <div class="kpi-u">ha total</div>
+        </div>
+      </div>
+      <!-- Bloc FD commune -->
+      <div id="fd-commune-block" class="fd-commune-block fd-none">
+        <div class="fd-title" id="fd-block-title">✓ Aucun foyer FD déclaré</div>
+        <div class="fd-desc" id="fd-block-desc">Pas de mesure de distance requise pour les parcelles.</div>
+      </div>
+    </div>
+
+    <!-- Filtre exploitation (Vigneron) -->
+    <div class="sb-sec vign-only">
+      <div class="sb-t">Exploitation</div>
+      <select class="fi-input" id="sel-civc" onchange="filterCIVC(this.value)" style="width:100%">
+        <option value="">— Toutes —</option>
+      </select>
+    </div>
+    <div class="sb-sec vign-only" id="kpi-ex" style="display:none">
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-l">Surface</div><div class="kpi-v" id="kpi-surf">—</div><div class="kpi-u">ha</div></div>
+        <div class="kpi"><div class="kpi-l">Réserve RI</div><div class="kpi-v" id="kpi-ri">—</div><div class="kpi-u">kg/ha</div></div>
+      </div>
+    </div>
+
+    <!-- Pondérations -->
+    <div class="sb-sec">
+      <div class="sb-t">Pondération de l'indicateur [I]</div>
+      <div class="pond-rows">
+        <div class="pond-row"><span class="pond-lbl">Proportion parcelle</span><input type="number" class="pond-num" id="pp" value="1" min="0" max="10"><div class="pond-bar-bg"><div class="pond-bar" id="pb-pp"></div></div></div>
+        <div class="pond-row"><span class="pond-lbl">Taux manquants</span><input type="number" class="pond-num" id="pm" value="2" min="0" max="10"><div class="pond-bar-bg"><div class="pond-bar" id="pb-pm"></div></div></div>
+        <div class="pond-row"><span class="pond-lbl">Viroses</span><input type="number" class="pond-num" id="pv" value="3" min="0" max="10"><div class="pond-bar-bg"><div class="pond-bar" id="pb-pv"></div></div></div>
+        <div class="pond-row"><span class="pond-lbl">Productivité</span><input type="number" class="pond-num" id="ppr" value="2" min="0" max="10"><div class="pond-bar-bg"><div class="pond-bar" id="pb-ppr"></div></div></div>
+        <div class="pond-row"><span class="pond-lbl">Déficit réserve</span><input type="number" class="pond-num" id="pd" value="2" min="0" max="10"><div class="pond-bar-bg"><div class="pond-bar" id="pb-pd"></div></div></div>
+      </div>
+      <div class="pond-foot">Référentiel : 1/2/3/2/2 <span>Σ = <span id="ptotal">10</span></span></div>
+    </div>
+
+    <!-- Légende -->
+    <div class="sb-sec">
+      <div class="sb-t">Légende</div>
+      <div class="leg-items">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--rouge)"></div>Indice ≥ 70 — Prioritaire</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--orange)"></div>Indice 50–69 — Élevé</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--jaune)"></div>Indice 30–49 — Modéré</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--vert)"></div>Indice &lt; 30 — Faible</div>
+        <div class="leg-item"><div class="leg-dash" style="background:var(--or)"></div>Contour doré = distance FD renseignée</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CARTE -->
+  <div id="map-wrap">
+    <div id="map"></div>
+    <div class="map-info">
+      <b id="map-n">0</b> parcelles · <span id="map-commune">—</span>
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div id="panel">
+    <div id="ph">
+      <div style="min-width:0">
+        <h2 id="ph-title">—</h2>
+        <div class="ps" id="ph-sub">Sélectionnez une commune</div>
+      </div>
+      <button class="ph-back" id="ph-back" onclick="closePanel()" style="display:none">← Retour</button>
+    </div>
+
+    <!-- Vue liste (défaut) -->
+    <div id="panel-list">
+      <div id="list-hd">
+        <span class="lt">Parcelles</span>
+        <span class="lc" id="list-count">—</span>
+      </div>
+      <div id="pl"></div>
+    </div>
+
+    <!-- Vue détail (s'affiche à la sélection d'une parcelle) -->
+    <div id="panel-detail">
+      <div id="pb"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DONNÉES — COMMUNES (configuration applicative)
+// ═══════════════════════════════════════════════════════════
+var COMMUNES = {
+  Cuis: {
+    nom: "Cuis", dept: "51", appellation: "Côte des Blancs",
+    fd: false,   // FD commune : false = pas de foyer, true = foyer déclaré
+    center: [49.0188, 3.9800], zoom: 15,
+  },
+  Trelou: {
+    nom: "Trélou-sur-Marne", dept: "02", appellation: "Grande Vallée de la Marne",
+    fd: true,
+    center: [49.0682, 3.5271], zoom: 15,
+  },
+  Arrentieres: {
+    nom: "Arrentières", dept: "10", appellation: "Côte des Bar",
+    fd: false,
+    center: [48.1420, 4.5380], zoom: 15,
+  },
+};
+
+// ═══════════════════════════════════════════════════════════
+// DONNÉES — EXPLOITATION  →  à terme : exploitation.js
+// Champs liés à l'exploitation : nom, surface_totale, niveau_reserve
+// Clé de jointure : num_civc
+// ═══════════════════════════════════════════════════════════
+var EXPLOITATIONS = [
+  { num_civc:"CIVC-001", nom:"Lecomte-Jourdain",  commune:"Cuis",         niveau_reserve:7500, surface_totale:3.63 },
+  { num_civc:"CIVC-002", nom:"Renard & Fils",      commune:"Cuis",         niveau_reserve:3800, surface_totale:2.57 },
+  { num_civc:"CIVC-003", nom:"Petit-Vasseur",      commune:"Cuis",         niveau_reserve:9200, surface_totale:3.73 },
+  { num_civc:"CIVC-004", nom:"Moreau-Diard",       commune:"Cuis",         niveau_reserve:2900, surface_totale:2.64 },
+  { num_civc:"CIVC-005", nom:"Gaston Aubry",        commune:"Cuis",         niveau_reserve:8600, surface_totale:2.85 },
+  { num_civc:"CIVC-006", nom:"Vigneron Martin",    commune:"Trelou",       niveau_reserve:5200, surface_totale:1.82 },
+  { num_civc:"CIVC-007", nom:"Dupont Champagne",   commune:"Trelou",       niveau_reserve:2100, surface_totale:2.40 },
+  { num_civc:"CIVC-008", nom:"Caveau des Barois",  commune:"Arrentieres",  niveau_reserve:8800, surface_totale:3.10 },
+  { num_civc:"CIVC-009", nom:"Domaine Aube",       commune:"Arrentieres",  niveau_reserve:6400, surface_totale:2.20 },
+];
+
+// ═══════════════════════════════════════════════════════════
+// DONNÉES — PARCELLES  →  à terme : parcelles.geojson
+// Champs liés à la parcelle (pas à l'exploitation)
+// Clé de jointure vers EXPLOITATIONS : num_civc
+// ═══════════════════════════════════════════════════════════
+function makePoly(lon0,lat0,lon1,lat1){
+  return [[[lon0,lat0],[lon1,lat0],[lon1,lat1],[lon0,lat1],[lon0,lat0]]];
+}
+var PARCELLES_GEOJSON = (function(){
+  var raw = [
+    // ── CUIS ─────────────────────────────────────────────────────────────────────
+    {idu:"ZA0142_CIVC-001",commune:"Cuis",num_civc:"CIVC-001",mode_explo:"Faire-valoir direct",cepage:"Chardonnay",  anneeplant:1988,surface_ss_parcelle:1.20,productivite_moyenne:7400, taux_manquant:18,enroulement:2,court_noue:2,distance_foyer_fd_m:null,lieu_dit:"Les Hauts de Cuis",coords:makePoly(3.975722,49.019851,3.976556,49.021653)},
+    {idu:"ZA0143_CIVC-001",commune:"Cuis",num_civc:"CIVC-001",mode_explo:"Faire-valoir direct",cepage:"Chardonnay",  anneeplant:2008,surface_ss_parcelle:1.07,productivite_moyenne:13200,taux_manquant:4, enroulement:0,court_noue:0,distance_foyer_fd_m:null,lieu_dit:"Les Hauts de Cuis",coords:makePoly(3.976694,49.019896,3.977458,49.021653)},
+    {idu:"ZA0144_CIVC-001",commune:"Cuis",num_civc:"CIVC-001",mode_explo:"Fermage",            cepage:"Chardonnay",  anneeplant:1979,surface_ss_parcelle:1.36,productivite_moyenne:6100, taux_manquant:26,enroulement:3,court_noue:2,distance_foyer_fd_m:null,lieu_dit:"Les Hauts de Cuis",coords:makePoly(3.977556,49.019806,3.978458,49.021698)},
+    {idu:"ZB0051_CIVC-002",commune:"Cuis",num_civc:"CIVC-002",mode_explo:"Faire-valoir direct",cepage:"Chardonnay",  anneeplant:1972,surface_ss_parcelle:1.23,productivite_moyenne:5800, taux_manquant:34,enroulement:3,court_noue:3,distance_foyer_fd_m:null,lieu_dit:"Les Mesnils",      coords:makePoly(3.978569,49.019851,3.979403,49.021698)},
+    {idu:"ZB0052_CIVC-002",commune:"Cuis",num_civc:"CIVC-002",mode_explo:"Fermage",            cepage:"Pinot Meunier",anneeplant:2014,surface_ss_parcelle:1.34,productivite_moyenne:12800,taux_manquant:5, enroulement:0,court_noue:1,distance_foyer_fd_m:null,lieu_dit:"Les Mesnils",      coords:makePoly(3.979500,49.019761,3.980472,49.021698)},
+    {idu:"ZC0089_CIVC-003",commune:"Cuis",num_civc:"CIVC-003",mode_explo:"Faire-valoir direct",cepage:"Chardonnay",  anneeplant:2017,surface_ss_parcelle:1.16,productivite_moyenne:14900,taux_manquant:2, enroulement:0,court_noue:0,distance_foyer_fd_m:null,lieu_dit:"La Côte Froide",   coords:makePoly(3.975722,49.017959,3.976528,49.019761)},
+    {idu:"ZC0090_CIVC-003",commune:"Cuis",num_civc:"CIVC-003",mode_explo:"Faire-valoir direct",cepage:"Chardonnay",  anneeplant:1999,surface_ss_parcelle:1.07,productivite_moyenne:10500,taux_manquant:9, enroulement:1,court_noue:1,distance_foyer_fd_m:null,lieu_dit:"La Côte Froide",   coords:makePoly(3.976653,49.017914,3.977417,49.019671)},
+    {idu:"ZC0091_CIVC-003",commune:"Cuis",num_civc:"CIVC-003",mode_explo:"Fermage",            cepage:"Chardonnay",  anneeplant:1995,surface_ss_parcelle:1.36,productivite_moyenne:9200, taux_manquant:13,enroulement:1,court_noue:0,distance_foyer_fd_m:null,lieu_dit:"La Côte Froide",   coords:makePoly(3.977528,49.017869,3.978431,49.019761)},
+    {idu:"ZD0012_CIVC-004",commune:"Cuis",num_civc:"CIVC-004",mode_explo:"Fermage",            cepage:"Chardonnay",  anneeplant:1969,surface_ss_parcelle:1.20,productivite_moyenne:4900, taux_manquant:42,enroulement:3,court_noue:3,distance_foyer_fd_m:null,lieu_dit:"Sous le Moulin",  coords:makePoly(3.978542,49.017959,3.979375,49.019761)},
+    {idu:"ZD0013_CIVC-004",commune:"Cuis",num_civc:"CIVC-004",mode_explo:"Faire-valoir direct",cepage:"Pinot Noir",  anneeplant:2011,surface_ss_parcelle:1.44,productivite_moyenne:12100,taux_manquant:6, enroulement:0,court_noue:0,distance_foyer_fd_m:null,lieu_dit:"Les Plantes",      coords:makePoly(3.982389,49.019221,3.983639,49.020662)},
+    {idu:"ZE0033_CIVC-005",commune:"Cuis",num_civc:"CIVC-005",mode_explo:"Faire-valoir direct",cepage:"Chardonnay",  anneeplant:2004,surface_ss_parcelle:1.45,productivite_moyenne:11400,taux_manquant:8, enroulement:1,court_noue:0,distance_foyer_fd_m:null,lieu_dit:"Les Plantes",      coords:makePoly(3.983778,49.019131,3.984958,49.020662)},
+    {idu:"ZE0034_CIVC-005",commune:"Cuis",num_civc:"CIVC-005",mode_explo:"Fermage",            cepage:"Chardonnay",  anneeplant:1992,surface_ss_parcelle:1.41,productivite_moyenne:8700, taux_manquant:16,enroulement:2,court_noue:1,distance_foyer_fd_m:null,lieu_dit:"Les Plantes",      coords:makePoly(3.982389,49.017689,3.983611,49.019131)},
+    // ── TRÉLOU-SUR-MARNE (FD=true) ───────────────────────────────────────────────
+    {idu:"TM0001_CIVC-006",commune:"Trelou",num_civc:"CIVC-006",mode_explo:"Faire-valoir direct",cepage:"Pinot Meunier",anneeplant:1985,surface_ss_parcelle:0.82,productivite_moyenne:6200, taux_manquant:28,enroulement:2,court_noue:1,distance_foyer_fd_m:120, lieu_dit:"Les Coteaux",    coords:makePoly(3.522,49.066,3.523,49.068)},
+    {idu:"TM0002_CIVC-006",commune:"Trelou",num_civc:"CIVC-006",mode_explo:"Fermage",            cepage:"Pinot Meunier",anneeplant:2010,surface_ss_parcelle:0.98,productivite_moyenne:12400,taux_manquant:5, enroulement:0,court_noue:0,distance_foyer_fd_m:null,lieu_dit:"Les Coteaux",    coords:makePoly(3.523,49.066,3.5242,49.068)},
+    {idu:"TM0003_CIVC-006",commune:"Trelou",num_civc:"CIVC-006",mode_explo:"Faire-valoir direct",cepage:"Chardonnay",  anneeplant:1998,surface_ss_parcelle:0.88,productivite_moyenne:9800, taux_manquant:14,enroulement:1,court_noue:2,distance_foyer_fd_m:350, lieu_dit:"Les Gravières",   coords:makePoly(3.524,49.0685,3.5253,49.0705)},
+    {idu:"TM0004_CIVC-007",commune:"Trelou",num_civc:"CIVC-007",mode_explo:"Faire-valoir direct",cepage:"Pinot Meunier",anneeplant:1975,surface_ss_parcelle:0.74,productivite_moyenne:4600, taux_manquant:38,enroulement:3,court_noue:3,distance_foyer_fd_m:45,  lieu_dit:"Les Gravières",   coords:makePoly(3.525,49.0685,3.5263,49.0705)},
+    {idu:"TM0005_CIVC-007",commune:"Trelou",num_civc:"CIVC-007",mode_explo:"Fermage",            cepage:"Pinot Meunier",anneeplant:2003,surface_ss_parcelle:0.91,productivite_moyenne:10900,taux_manquant:8, enroulement:0,court_noue:0,distance_foyer_fd_m:null,lieu_dit:"Les Gravières",   coords:makePoly(3.526,49.0685,3.5273,49.0705)},
+    {idu:"TM0006_CIVC-007",commune:"Trelou",num_civc:"CIVC-007",mode_explo:"Faire-valoir direct",cepage:"Chardonnay",  anneeplant:2015,surface_ss_parcelle:0.78,productivite_moyenne:14200,taux_manquant:3, enroulement:0,court_noue:0,distance_foyer_fd_m:null,lieu_dit:"Mont Fromenteau",coords:makePoly(3.527,49.069,3.5283,49.071)},
+    {idu:"TM0007_CIVC-007",commune:"Trelou",num_civc:"CIVC-007",mode_explo:"Fermage",            cepage:"Pinot Meunier",anneeplant:1992,surface_ss_parcelle:0.85,productivite_moyenne:8100, taux_manquant:20,enroulement:2,court_noue:1,distance_foyer_fd_m:780, lieu_dit:"Mont Fromenteau",coords:makePoly(3.528,49.069,3.5293,49.071)},
+    // ── ARRENTIÈRES (Côte des Bar) ────────────────────────────────────────────────
+    {idu:"AB0001_CIVC-008",commune:"Arrentieres",num_civc:"CIVC-008",mode_explo:"Faire-valoir direct",cepage:"Pinot Noir",anneeplant:2006,surface_ss_parcelle:1.10,productivite_moyenne:13500,taux_manquant:5, enroulement:0,court_noue:0,distance_foyer_fd_m:null,lieu_dit:"Les Riceys",  coords:makePoly(4.534,48.140,4.5355,48.142)},
+    {idu:"AB0002_CIVC-008",commune:"Arrentieres",num_civc:"CIVC-008",mode_explo:"Fermage",            cepage:"Pinot Noir",anneeplant:1990,surface_ss_parcelle:1.25,productivite_moyenne:8400, taux_manquant:17,enroulement:2,court_noue:1,distance_foyer_fd_m:null,lieu_dit:"Les Riceys",  coords:makePoly(4.5355,48.140,4.537,48.142)},
+    {idu:"AB0003_CIVC-008",commune:"Arrentieres",num_civc:"CIVC-008",mode_explo:"Faire-valoir direct",cepage:"Pinot Noir",anneeplant:2018,surface_ss_parcelle:1.40,productivite_moyenne:15200,taux_manquant:2, enroulement:0,court_noue:0,distance_foyer_fd_m:null,lieu_dit:"Val des Bois", coords:makePoly(4.537,48.140,4.5385,48.142)},
+    {idu:"AB0004_CIVC-008",commune:"Arrentieres",num_civc:"CIVC-008",mode_explo:"Fermage",            cepage:"Chardonnay",anneeplant:1982,surface_ss_parcelle:1.18,productivite_moyenne:7100, taux_manquant:22,enroulement:2,court_noue:2,distance_foyer_fd_m:null,lieu_dit:"Val des Bois", coords:makePoly(3.534,48.1425,4.5355,48.1445)},
+    {idu:"AB0005_CIVC-009",commune:"Arrentieres",num_civc:"CIVC-009",mode_explo:"Faire-valoir direct",cepage:"Pinot Noir",anneeplant:2001,surface_ss_parcelle:1.05,productivite_moyenne:11200,taux_manquant:9, enroulement:1,court_noue:0,distance_foyer_fd_m:null,lieu_dit:"Côte Brisée", coords:makePoly(4.5385,48.1425,4.540,48.1445)},
+  ];
+  return {
+    type:"FeatureCollection",
+    features: raw.map(function(p){
+      var props = Object.assign({},p); delete props.coords;
+      return { type:"Feature", geometry:{type:"Polygon",coordinates:p.coords}, properties:props };
+    })
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════
+// APP
+// ═══════════════════════════════════════════════════════════
+var ANNEE = new Date().getFullYear();
+var LS_KEY = 'oad_v3';
+
+var S = {
+  mode:'vign', commune:'', civc:'', selIdu:null,
+  pond:{pp:1,pm:2,pv:3,ppr:2,pd:2},
+  ov:{},
+};
+
+function lsLoad(){ try{var d=localStorage.getItem(LS_KEY);if(d)S.ov=JSON.parse(d);}catch(e){} }
+function lsSave(){ try{localStorage.setItem(LS_KEY,JSON.stringify(S.ov));}catch(e){} }
+function ovGet(id,k){ return S.ov[id+'|'+k]; }
+function ovSet(id,k,v){ S.ov[id+'|'+k]=v; lsSave(); }
+
+function getEx(civc){ return EXPLOITATIONS.find(function(e){return e.num_civc===civc;}); }
+function getRI(civc){ var ov=ovGet(civc,'ri'); return ov!==undefined?+ov:(getEx(civc)||{niveau_reserve:8000}).niveau_reserve; }
+function getSurf(civc){ return (getEx(civc)||{surface_totale:1}).surface_totale; }
+function pv(p,k){ var ov=ovGet(p.idu,k); return ov!==undefined?+ov:+p[k]; }
+function getFdDist(p){ var ov=ovGet(p.idu,'fd_dist'); return ov!==undefined?+ov:(p.distance_foyer_fd_m!==null?p.distance_foyer_fd_m:null); }
+function communeFD(){ return S.commune && COMMUNES[S.commune] && COMMUNES[S.commune].fd; }
+
+// ── Calcul indice ────────────────────────────────────────────
+function calcI(feat){
+  var p=feat.properties;
+  var pp=S.pond.pp, pm=S.pond.pm, pvi=S.pond.pv, ppr=S.pond.ppr, pd=S.pond.pd;
+  var tot=pp+pm+pvi+ppr+pd;
+  if(!tot) return {I:0,sc:{prop:0,manq:0,viro:0,prod:0,defr:0,fd:0}};
+
+  var surf=pv(p,'surface_ss_parcelle'), prod=pv(p,'productivite_moyenne');
+  var manq=pv(p,'taux_manquant'), enr=pv(p,'enroulement'), cn=pv(p,'court_noue');
+  var ri=getRI(p.num_civc), stot=getSurf(p.num_civc);
+
+  var sc_prop=Math.min(100,surf/stot*100);
+  var sc_manq=Math.min(100,manq);
+  var sc_viro=Math.min(100,(enr+cn)/6*100);
+  var sc_prod=Math.min(100,prod/12000*100);
+  var sc_defr=ri>0?Math.min(100,Math.max(0,(10000-ri)/ri*100)):100;
+
+  // Score FD : si commune FD et distance renseignée → plus la parcelle est proche, plus le score est élevé
+  var sc_fd=0;
+  if(communeFD()){
+    var dist=getFdDist(p);
+    if(dist!==null && dist>=0) sc_fd=Math.min(100,Math.max(0,(1000-dist)/1000*100));
+    // distance non renseignée = 0 (neutre)
+  }
+
+  // Si FD commune actif, on remplace viroses dans la pondération par FD (ou on additionne)
+  // Choix design : FD s'ajoute dans le score viroses si commune FD
+  var viroses_eff = communeFD() ? Math.min(100,(sc_viro+sc_fd)/2) : sc_viro;
+
+  var I=(pp*sc_prop+pm*sc_manq+pvi*viroses_eff+ppr*sc_prod+pd*sc_defr)/tot;
+  return {I:+I.toFixed(1), sc:{prop:sc_prop,manq:sc_manq,viro:sc_viro,prod:sc_prod,defr:sc_defr,fd:sc_fd}};
+}
+
+function iColor(I){
+  if(I>=70)return'#D63031';
+  if(I>=50)return'#E17055';
+  if(I>=30)return'#F9CA24';
+  return'#00B894';
+}
+function iLabel(I){
+  if(I>=70)return'Prioritaire';
+  if(I>=50)return'Élevé';
+  if(I>=30)return'Modéré';
+  return'Faible';
+}
+
+// ── CARTE ────────────────────────────────────────────────────
+var map=L.map('map',{center:[47.5,3.5],zoom:7,zoomControl:true});
+
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
+  attribution:'© Esri, Maxar',maxZoom:19
+}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',{
+  attribution:'© CARTO',subdomains:'abcd',maxZoom:20,opacity:0.9
+}).addTo(map);
+
+var geoLayer=null;
+
+function featStyle(feat){
+  var r=calcI(feat), I=r.I;
+  var dist=getFdDist(feat.properties);
+  var hasDist=communeFD()&&dist!==null&&dist>=0;
+  var sel=feat.properties.idu===S.selIdu;
+  return {
+    fillColor:iColor(I), fillOpacity:sel?0.90:0.75,
+    color:hasDist?'#C9A84C':(sel?'#ffffff':'#222'),
+    weight:hasDist?3:(sel?3:1.5),
+    dashArray:hasDist?'5 3':null,
+  };
+}
+
+function buildMap(){
+  var feats=PARCELLES_GEOJSON.features.filter(function(f){
+    return f.properties.commune===S.commune &&
+           (!S.civc||f.properties.num_civc===S.civc);
+  });
+  if(geoLayer) map.removeLayer(geoLayer);
+
+  if(!S.commune){
+    document.getElementById('map-n').textContent='0';
+    document.getElementById('ph-title').textContent='—';
+    document.getElementById('ph-sub').textContent='Sélectionnez une commune';
+    buildList([]);
+    return;
+  }
+
+  geoLayer=L.geoJSON({type:'FeatureCollection',features:feats},{
+    style:featStyle,
+    onEachFeature:function(feat,layer){
+      layer.bindTooltip(makeTip(feat),{sticky:true,opacity:.97});
+      layer.on('click',function(){selectFeat(feat);});
+    }
+  }).addTo(map);
+
+  if(feats.length){ try{map.fitBounds(geoLayer.getBounds().pad(0.15));}catch(e){} }
+
+  document.getElementById('map-n').textContent=feats.length;
+  document.getElementById('map-commune').textContent=COMMUNES[S.commune]?COMMUNES[S.commune].nom+' ('+COMMUNES[S.commune].dept+')':'—';
+  if(!S.selIdu){
+    var com=COMMUNES[S.commune];
+    document.getElementById('ph-title').textContent=com?com.nom:'—';
+    document.getElementById('ph-sub').textContent=com?com.appellation:'—';
+  }
+  buildList(feats);
+}
+
+function makeTip(feat){
+  var p=feat.properties, r=calcI(feat), I=r.I;
+  var dist=getFdDist(p);
+  var distTxt='';
+  if(communeFD()){
+    distTxt=dist!==null?'<br>📍 Dist. foyer FD : <b>'+dist+' m</b>':'<br><span style="color:#E17055">⚠ Distance FD non renseignée</span>';
+  }
+  return '<div style="font:12px \'DM Sans\',sans-serif;line-height:1.5;background:rgba(255,255,255,.97);color:#1a1a2e;padding:7px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.5);box-shadow:0 2px 8px rgba(0,0,0,.2)">'+
+    '<b style="color:#C9A84C">'+p.idu+'</b><br>'+
+    p.lieu_dit+' · '+p.cepage+' · '+(ANNEE-p.anneeplant)+' ans<br>'+
+    'Indice : <b style="color:'+iColor(I)+'">'+I+'</b> — '+iLabel(I)+
+    distTxt+'</div>';
+}
+
+function refreshStyles(){
+  if(!geoLayer)return;
+  geoLayer.eachLayer(function(l){l.setStyle(featStyle(l.feature));});
+  var feats=PARCELLES_GEOJSON.features.filter(function(f){
+    return f.properties.commune===S.commune&&(!S.civc||f.properties.num_civc===S.civc);
+  });
+  buildList(feats);
+}
+
+// ── Liste parcelles ──────────────────────────────────────────
+function buildList(feats){
+  var sorted=feats.slice().sort(function(a,b){return calcI(b).I-calcI(a).I;});
+  document.getElementById('list-count').textContent=sorted.length+(sorted.length>1?' parcelles':' parcelle');
+  var el=document.getElementById('pl');
+  if(!sorted.length){
+    el.innerHTML='<div class="empty-st"><div class="ei">🗺️</div>'+
+      (S.commune?'Aucune parcelle.':'Sélectionnez<br>une commune.')+'</div>'; return;
+  }
+  el.innerHTML=sorted.map(function(f){
+    var p=f.properties, r=calcI(f), I=r.I, col=iColor(I);
+    var dist=getFdDist(p);
+    var fdTag=communeFD()?(dist!==null?' 📍':' ⚠️'):'';
+    return '<div class="pl-item'+(p.idu===S.selIdu?' active':'')+'" onclick="selectById(\''+p.idu+'\')">'+
+      '<div class="pl-badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'55">'+I.toFixed(0)+'</div>'+
+      '<div class="pl-info">'+
+        '<div class="pl-idu">'+p.idu+fdTag+'</div>'+
+        '<div class="pl-meta">'+p.cepage+' · '+(ANNEE-p.anneeplant)+' ans · '+pv(p,'surface_ss_parcelle')+' ha · '+p.lieu_dit+'</div>'+
+      '</div>'+
+      (S.mode==='vign'?'<button class="pl-sim" onclick="event.stopPropagation();selectById(\''+p.idu+'\');goSim()">SIM</button>':'')+
+    '</div>';
+  }).join('');
+}
+
+// ── Sélection ────────────────────────────────────────────────
+function selectById(idu){
+  var f=PARCELLES_GEOJSON.features.find(function(f){return f.properties.idu===idu;});
+  if(f)selectFeat(f);
+}
+function selectFeat(feat){
+  S.selIdu=feat.properties.idu;
+  refreshStyles();
+  openPanel(feat);
+  try{map.fitBounds(L.geoJSON(feat).getBounds().pad(0.4));}catch(e){}
+}
+function goSim(){ setTimeout(function(){var el=document.getElementById('sim-sec');if(el)el.scrollIntoView({behavior:'smooth'});},200); }
+
+// ── Panel ────────────────────────────────────────────────────
+function openPanel(feat){
+  var p=feat.properties, r=calcI(feat), I=r.I, sc=r.sc;
+  var col=iColor(I), age=ANNEE-p.anneeplant;
+  var ri=getRI(p.num_civc), isTech=S.mode==='tech';
+  var hasFD=communeFD();
+  var dist=getFdDist(p);
+
+  document.getElementById('ph-title').textContent=p.idu;
+  document.getElementById('ph-sub').textContent=p.cepage+' — '+p.lieu_dit+' — '+p.num_civc;
+
+  // Bloc FD (visible seulement si commune FD)
+  var fdBlock=hasFD && !isTech ? (
+    '<div class="fd-panel-block">'+
+      '<div class="fd-panel-title">⚠ Commune en zone FD — Distance au foyer</div>'+
+      '<div style="font-size:10px;color:rgba(237,232,224,.5);margin-bottom:6px">'+
+        'La commune '+COMMUNES[S.commune].nom+' présente un foyer FD déclaré. '+
+        'Renseignez la distance entre cette parcelle et la parcelle contaminée la plus proche.'+
+      '</div>'+
+      '<div class="fd-dist-row">'+
+        '<label>Distance foyer FD :</label>'+
+        '<input type="number" class="fd-dist-input" id="fd-dist-inp" min="0" step="10" '+
+          'placeholder="Ex: 250" value="'+(dist!==null?dist:'')+'"'+
+          ' onchange="saveFdDist(\''+p.idu+'\',this.value)">'+
+        '<span class="fd-dist-unit">mètres</span>'+
+      '</div>'+
+      (dist!==null?'<div style="font-size:9px;margin-top:6px;color:rgba(237,232,224,.4)">Score FD : '+sc.fd.toFixed(0)+'/100 (impact sur l\'indice viroses)</div>':'')+
+    '</div>'
+  ) : (hasFD && isTech && dist!==null ?
+    '<div style="font-size:10px;color:rgba(214,48,49,.8);background:rgba(214,48,49,.08);border:1px solid rgba(214,48,49,.2);border-radius:6px;padding:8px 10px;margin-bottom:8px">⚠ Dist. foyer FD : <b>'+dist+' m</b></div>' : '');
+
+  // Saisie terrain
+  var saisie = isTech ? '' :
+    '<div class="ps-sec vign-only">'+
+      '<div class="ps-t">Saisie terrain</div>'+
+      fdBlock+
+      '<div class="fg">'+
+        '<div class="fi"><label>Taux manquants (%)</label><input type="number" class="fi-input" min="0" max="100" value="'+pv(p,'taux_manquant')+'" onchange="terr(\''+p.idu+'\',\'taux_manquant\',this.value)"></div>'+
+        '<div class="fi"><label>Productivité (kg/ha)</label><input type="number" class="fi-input" min="0" max="25000" step="100" value="'+pv(p,'productivite_moyenne')+'" onchange="terr(\''+p.idu+'\',\'productivite_moyenne\',this.value)"></div>'+
+        '<div class="fi"><label>Enroulement (0–3)</label><select class="fi-input" onchange="terr(\''+p.idu+'\',\'enroulement\',this.value)">'+'0,1,2,3'.split(',').map(function(v){return '<option value="'+v+'"'+(pv(p,'enroulement')==v?' selected':'')+'>'+v+'</option>';}).join('')+'</select></div>'+
+        '<div class="fi"><label>Court-noué (0–3)</label><select class="fi-input" onchange="terr(\''+p.idu+'\',\'court_noue\',this.value)">'+'0,1,2,3'.split(',').map(function(v){return '<option value="'+v+'"'+(pv(p,'court_noue')==v?' selected':'')+'>'+v+'</option>';}).join('')+'</select></div>'+
+        '<div class="fi"><label>Réserve exploit. (kg/ha)</label><input type="number" class="fi-input" min="0" max="10000" step="100" value="'+ri+'" onchange="terrRI(\''+p.num_civc+'\',this.value)"></div>'+
+      '</div>'+
+      '<button class="save-btn" onclick="toast(\'✓ Données enregistrées\')">💾 Sauvegarder</button>'+
+    '</div>';
+
+  var sim = isTech ? '' :
+    '<div class="ps-sec vign-only" id="sim-sec">'+
+      '<div class="ps-t">Simulation — Réserve Individuelle</div>'+
+      '<div class="sim-grid">'+
+        '<div class="si"><label>Type arrachage</label><select class="fi-input" id="s-type"><option value="Classique">Classique (1 an repos)</option><option value="Sanitaire">Sanitaire FD (3 ans)</option></select></div>'+
+        '<div class="si"><label>Replantation</label><select class="fi-input" id="s-mode"><option value="Classique">Classique</option><option value="Anticipée">Anticipée</option></select></div>'+
+        '<div class="si"><label>VolCo (kg/ha)</label><input type="number" class="fi-input" id="s-volco" value="9000" step="500" min="0"></div>'+
+        '<div class="si"><label>Rendement agro (kg/ha)</label><input type="number" class="fi-input" id="s-rend" value="15500" step="500" min="0"></div>'+
+      '</div>'+
+      '<button class="run-btn" onclick="runSim(\''+p.idu+'\')">▶ Lancer la simulation</button>'+
+      '<div id="sim-out" style="display:none">'+
+        '<div class="sim-kpis" id="sim-kpis"></div>'+
+        '<div class="chart-wrap"><canvas class="sim-cvs" id="sim-cvs" height="150"></canvas></div>'+
+        '<div class="sim-tw"><table class="sim-t" id="sim-t"></table></div>'+
+      '</div>'+
+    '</div>';
+
+  var virosesLbl = hasFD ? 'Viroses + FD' : 'Viroses';
+
+  document.getElementById('pb').innerHTML=
+    '<div class="ps-sec">'+
+      '<div class="ps-t">Indice d\'arrachage [I]</div>'+
+      '<div class="sc-wrap">'+
+        '<div class="sc-ring" style="border-color:'+col+';color:'+col+'"><span class="rn">'+I.toFixed(0)+'</span><span class="rd">/100</span></div>'+
+        '<div><div class="sc-lbl" style="color:'+col+'">'+iLabel(I)+'</div>'+
+        '<div class="sc-hint">Pondération active · Σ='+Object.values(S.pond).reduce(function(a,b){return a+b;},0)+(hasFD?'<br>⚠ FD prise en compte dans viroses':'')+'</div></div>'+
+      '</div>'+
+      '<div class="cb-rows">'+
+        cb('Proportion surf.',sc.prop,'#4A90D9',S.pond.pp)+
+        cb('Taux manquants',sc.manq,'#E17055',S.pond.pm)+
+        cb(virosesLbl,hasFD?Math.min(100,(sc.viro+sc.fd)/2):sc.viro,'#D63031',S.pond.pv)+
+        cb('Productivité',sc.prod,'#A29BFE',S.pond.ppr)+
+        cb('Déficit réserve',sc.defr,'#00CEC9',S.pond.pd)+
+      '</div>'+
+    '</div>'+
+    '<div class="ps-sec">'+
+      '<div class="ps-t">Données parcellaires</div>'+
+      '<div class="dg">'+
+        dgi('Lieu-dit',p.lieu_dit)+
+        dgi('Cépage',p.cepage)+
+        dgi('Âge',age+' ans ('+p.anneeplant+')',age>=35?'danger':age>=25?'warn':'')+
+        dgi('Surface',pv(p,'surface_ss_parcelle')+' ha')+
+        dgi('Mode',p.mode_explo,'','11px')+
+        dgi('Productivité',pv(p,'productivite_moyenne').toLocaleString('fr')+' kg/ha',pv(p,'productivite_moyenne')<8000?'danger':pv(p,'productivite_moyenne')<11000?'warn':'')+
+        dgi('Manquants',pv(p,'taux_manquant')+' %',pv(p,'taux_manquant')>20?'danger':pv(p,'taux_manquant')>10?'warn':'')+
+        dgi('Enroulement',pv(p,'enroulement')+' / 3',pv(p,'enroulement')>=2?'danger':pv(p,'enroulement')>=1?'warn':'')+
+        dgi('Court-noué',pv(p,'court_noue')+' / 3',pv(p,'court_noue')>=2?'danger':pv(p,'court_noue')>=1?'warn':'')+
+        (hasFD && dist!==null ? dgi('Dist. foyer FD',dist+' m',dist<200?'danger':dist<600?'warn':'') : '')+
+      '</div>'+
+    '</div>'+
+    '<div class="ps-sec">'+
+      '<div class="ps-t">Exploitation</div>'+
+      '<div class="dg">'+
+        dgi('N° CIVC',p.num_civc)+
+        dgi('Réserve RI',ri.toLocaleString('fr')+' kg/ha',ri<5000?'danger':ri<7500?'warn':'ok')+
+        dgi('Surface totale',getSurf(p.num_civc)+' ha')+
+        dgi('Taux remplissage',Math.round(ri/100)+' %')+
+      '</div>'+
+    '</div>'+
+    saisie+sim;
+
+  document.getElementById('panel-list').style.display='none';
+  var det=document.getElementById('panel-detail');
+  det.style.display='flex';
+  det.style.flexDirection='column';
+  document.getElementById('ph-back').style.display='';
+}
+
+
+function cb(lbl,val,col,pond){
+  var w=Math.min(100,Math.max(0,val)).toFixed(0);
+  return '<div class="cb-row"><div class="cb-lbl">'+lbl+' <small style="opacity:.4">×'+pond+'</small></div>'+
+    '<div class="cb-bg"><div class="cb-fill" style="width:'+w+'%;background:'+col+'"></div></div>'+
+    '<div class="cb-val">'+w+'</div></div>';
+}
+function dgi(lbl,val,cls,fs){
+  return '<div><div class="dg-l">'+lbl+'</div><div class="dg-v '+(cls||'')+'" style="'+(fs?'font-size:'+fs:'')+'">'+val+'</div></div>';
+}
+
+function closePanel(){
+  document.getElementById('panel-detail').style.display='none';
+  document.getElementById('panel-list').style.display='';
+  document.getElementById('ph-back').style.display='none';
+  var com=S.commune&&COMMUNES[S.commune];
+  document.getElementById('ph-title').textContent=com?com.nom:'—';
+  document.getElementById('ph-sub').textContent=com?com.appellation:'Sélectionnez une commune';
+  S.selIdu=null; refreshStyles();
+}
+
+// ── FD distance ──────────────────────────────────────────────
+function saveFdDist(idu, val){
+  ovSet(idu,'fd_dist',val===''?null:+val);
+  refreshStyles();
+  updateScoreDisplay();
+}
+
+// ── Saisies terrain ──────────────────────────────────────────
+function terr(idu,k,v){ ovSet(idu,k,v); refreshStyles(); updateScoreDisplay(); }
+function terrRI(civc,v){ ovSet(civc,'ri',v); refreshStyles(); updateScoreDisplay(); }
+
+function updateScoreDisplay(){
+  if(!S.selIdu)return;
+  var feat=PARCELLES_GEOJSON.features.find(function(f){return f.properties.idu===S.selIdu;});
+  if(!feat)return;
+  var r=calcI(feat), I=r.I, sc=r.sc, col=iColor(I);
+  var ring=document.querySelector('.sc-ring');
+  if(ring){ring.style.borderColor=col;ring.style.color=col;ring.querySelector('.rn').textContent=I.toFixed(0);}
+  var lbl=document.querySelector('.sc-lbl');
+  if(lbl){lbl.textContent=iLabel(I);lbl.style.color=col;}
+  var fills=document.querySelectorAll('.cb-fill');
+  var hasFD=communeFD();
+  var vals=[sc.prop,sc.manq,hasFD?Math.min(100,(sc.viro+sc.fd)/2):sc.viro,sc.prod,sc.defr];
+  fills.forEach(function(f,i){if(vals[i]!==undefined)f.style.width=Math.min(100,vals[i]).toFixed(0)+'%';});
+}
+
+// ── Sélection commune ────────────────────────────────────────
+function selectCommune(key){
+  S.commune=key; S.civc=''; S.selIdu=null;
+  closePanel();
+  document.getElementById('sel-civc').value='';
+  document.getElementById('kpi-ex').style.display='none';
+
+  // Mettre à jour le select exploitation
+  var sel=document.getElementById('sel-civc');
+  sel.innerHTML='<option value="">— Toutes —</option>';
+  EXPLOITATIONS.filter(function(e){return e.commune===key;}).forEach(function(e){
+    var o=document.createElement('option');
+    o.value=e.num_civc; o.textContent=e.num_civc+' — '+e.nom;
+    sel.appendChild(o);
+  });
+
+  // Badge FD header
+  var badge=document.getElementById('fd-commune-badge');
+  if(key){
+    badge.style.display='flex';
+    var com=COMMUNES[key];
+    if(com.fd){
+      badge.className='fd-commune-badge fd-oui';
+      badge.textContent='⚠ Foyer FD déclaré';
+    } else {
+      badge.className='fd-commune-badge fd-non';
+      badge.textContent='✓ Pas de FD';
+    }
+  } else {
+    badge.style.display='none';
+  }
+
+  // Bloc info commune dans sidebar
+  var info=document.getElementById('commune-info');
+  if(key){
+    info.style.display='';
+    document.getElementById('commune-name-label').textContent=(COMMUNES[key]?COMMUNES[key].nom+' ('+COMMUNES[key].dept+')':'—');
+    // Compter parcelles
+    var feats=PARCELLES_GEOJSON.features.filter(function(f){return f.properties.commune===key;});
+    document.getElementById('kpi-nb').textContent=feats.length;
+    var surfTot=feats.reduce(function(s,f){return s+pv(f.properties,'surface_ss_parcelle');},0);
+    document.getElementById('kpi-surf-c').textContent=surfTot.toFixed(2);
+    // Bloc FD
+    var fdBlock=document.getElementById('fd-commune-block');
+    var fdTitle=document.getElementById('fd-block-title');
+    var fdDesc=document.getElementById('fd-block-desc');
+    if(COMMUNES[key].fd){
+      fdBlock.className='fd-commune-block';
+      fdTitle.textContent='⚠ Foyer FD déclaré sur la commune';
+      fdDesc.textContent='La distance au foyer le plus proche peut être renseignée pour chaque parcelle (en saisie terrain).';
+    } else {
+      fdBlock.className='fd-commune-block fd-none';
+      fdTitle.textContent='✓ Aucun foyer FD déclaré';
+      fdDesc.textContent='Pas de mesure de distance requise pour les parcelles de cette commune.';
+    }
+    // Centrer carte
+    var com=COMMUNES[key];
+    map.setView(com.center,com.zoom);
+  } else {
+    info.style.display='none';
+    map.setView([47.5,3.5],7);
+  }
+
+  buildMap();
+}
+
+function filterCIVC(civc){
+  S.civc=civc; S.selIdu=null; closePanel();
+  var ex=getEx(civc), ks=document.getElementById('kpi-ex');
+  if(ex){ ks.style.display=''; document.getElementById('kpi-surf').textContent=ex.surface_totale; document.getElementById('kpi-ri').textContent=getRI(civc).toLocaleString('fr'); }
+  else ks.style.display='none';
+  buildMap();
+}
+
+// ── Mode ─────────────────────────────────────────────────────
+function setMode(mode){
+  S.mode=mode;
+  document.body.classList.toggle('tech-mode',mode==='tech');
+  document.getElementById('btn-vign').classList.toggle('active',mode==='vign');
+  document.getElementById('btn-tech').classList.toggle('active',mode==='tech');
+  buildMap();
+}
+
+// ── Pondérations ─────────────────────────────────────────────
+var PMAP=[{id:'pp',sk:'pp',bid:'pb-pp'},{id:'pm',sk:'pm',bid:'pb-pm'},{id:'pv',sk:'pv',bid:'pb-pv'},{id:'ppr',sk:'ppr',bid:'pb-ppr'},{id:'pd',sk:'pd',bid:'pb-pd'}];
+function initPond(){
+  PMAP.forEach(function(m){
+    document.getElementById(m.id).addEventListener('change',function(){
+      S.pond[m.sk]=Math.max(0,parseInt(this.value)||0);
+      updateBars(); refreshStyles(); updateScoreDisplay();
+    });
+  });
+  updateBars();
+}
+function updateBars(){
+  var vals=Object.values(S.pond), tot=vals.reduce(function(a,b){return a+b;},0), mx=Math.max.apply(null,vals.concat([1]));
+  document.getElementById('ptotal').textContent=tot;
+  PMAP.forEach(function(m){ var b=document.getElementById(m.bid); if(b)b.style.width=((S.pond[m.sk]/mx)*100)+'%'; });
+}
+
+// ── Simulation ───────────────────────────────────────────────
+function runSim(idu){
+  var feat=PARCELLES_GEOJSON.features.find(function(f){return f.properties.idu===idu;});
+  if(!feat)return;
+  var p=feat.properties, ex=getEx(p.num_civc)||{surface_totale:1};
+  var typeArr=document.getElementById('s-type').value;
+  var modeRep=document.getElementById('s-mode').value;
+  var volco=+document.getElementById('s-volco').value||9000;
+  var rend=+document.getElementById('s-rend').value||15500;
+  var surfTot=ex.surface_totale, surfArr=pv(p,'surface_ss_parcelle');
+  var riInit=getRI(p.num_civc), plaf=10000, volAn=9000;
+  var repos=typeArr==='Sanitaire'?3:1, sortie=typeArr==='Sanitaire'?5:3;
+  var antic=modeRep==='Anticipée';
+  function sp(t){ if(antic)return surfTot; if(t<=repos)return surfTot-surfArr; if(t===repos+1)return surfTot-surfArr*.7; if(t===repos+2)return surfTot-surfArr*.3; return surfTot; }
+  function ph(t){ if(antic||t===0)return t===0?'Initial':'Production'; if(t<=repos)return'Repos'; if(t===repos+1)return'1ère feuille'; if(t===repos+2)return'2ème feuille'; return'Production'; }
+  var rows=[],stk=riInit*surfTot;
+  for(var t=0;t<=10;t++){
+    var s=sp(t),rec=s*rend,vc=s*volco,deb=stk;
+    var exc=rec-vc,mise=exc>0?Math.min(exc,plaf*surfTot-deb):0;
+    var def=exc<0?-exc:0,sins=Math.min(def,deb+mise),aft=deb+mise-sins;
+    var sarr=(!antic&&t>=1&&t<=sortie)?Math.min(volAn*surfArr,aft):0;
+    stk=Math.max(0,aft-sarr);
+    var sha=surfTot>0?stk/surfTot:0;
+    rows.push({t:t,ph:ph(t),rec:Math.round(rec),vc:Math.round(vc),mise:Math.round(mise),sins:Math.round(sins),sarr:Math.round(sarr),fin:Math.round(stk),sha:Math.round(sha),tx:+(sha/plaf).toFixed(3)});
+  }
+  var minHA=Math.min.apply(null,rows.map(function(r){return r.sha;}));
+  var annMin=rows.find(function(r){return r.sha===minHA;}).t;
+  var cov=typeArr==='Sanitaire'?.98:.84;
+  document.getElementById('sim-out').style.display='';
+  document.getElementById('sim-kpis').innerHTML=
+    '<div class="sim-kpi"><div class="sk-l">Stock min.</div><div class="sk-v">'+minHA.toLocaleString('fr')+'</div><div class="sk-u">kg/ha · an '+annMin+'</div></div>'+
+    '<div class="sim-kpi"><div class="sk-l">Couverture frais</div><div class="sk-v" style="color:'+(cov>=.95?'var(--vert)':'var(--orange)')+'">'+Math.round(cov*100)+'%</div><div class="sk-u">par sorties RI</div></div>'+
+    '<div class="sim-kpi"><div class="sk-l">Stock an 10</div><div class="sk-v">'+rows[rows.length-1].sha.toLocaleString('fr')+'</div><div class="sk-u">kg/ha</div></div>';
+  drawChart(rows);
+  var rc=function(ha){return ha<4000?'ri-low':ha<7500?'ri-med':'ri-ok';};
+  document.getElementById('sim-t').innerHTML='<thead><tr><th>An</th><th>Phase</th><th>Récolte</th><th>Mise RI</th><th>S.Arr.</th><th>Stock kg/ha</th><th>Tx RI</th></tr></thead><tbody>'+
+    rows.map(function(r){return '<tr><td>'+r.t+'</td><td style="font-size:8px">'+r.ph+'</td><td>'+r.rec.toLocaleString('fr')+'</td><td style="color:var(--vert)">'+( r.mise>0?'+'+r.mise.toLocaleString('fr'):'-')+'</td><td style="color:var(--rouge)">'+(r.sarr>0?'-'+r.sarr.toLocaleString('fr'):'-')+'</td><td class="'+rc(r.sha)+'">'+r.sha.toLocaleString('fr')+'</td><td class="'+rc(r.sha)+'">'+(r.tx*100).toFixed(0)+'%</td></tr>';}).join('')+'</tbody>';
+}
+
+function drawChart(rows){
+  var cvs=document.getElementById('sim-cvs');
+  if(!cvs)return;
+  var DPR=window.devicePixelRatio||1,W=cvs.parentElement.clientWidth||340,H=150;
+  cvs.width=W*DPR;cvs.height=H*DPR;cvs.style.width=W+'px';cvs.style.height=H+'px';
+  var ctx=cvs.getContext('2d');ctx.scale(DPR,DPR);
+  var P={t:10,r:10,b:28,l:44},cw=W-P.l-P.r,ch=H-P.t-P.b,n=rows.length,MX=12000;
+  var xp=function(i){return P.l+(i/(n-1))*cw;};
+  var yp=function(v){return P.t+ch-Math.min(1,Math.max(0,v/MX))*ch;};
+  ctx.clearRect(0,0,W,H);
+  [0,2500,5000,7500,10000].forEach(function(v){
+    var y=yp(v);ctx.strokeStyle='rgba(255,255,255,.05)';ctx.lineWidth=1;ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(P.l+cw,y);ctx.stroke();
+    ctx.fillStyle='rgba(237,232,224,.25)';ctx.font="9px 'DM Mono',monospace";ctx.textAlign='right';
+    ctx.fillText((v/1000)+'k',P.l-4,y+3);
+  });
+  ctx.setLineDash([4,3]);ctx.strokeStyle='rgba(0,184,148,.5)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(P.l,yp(10000));ctx.lineTo(P.l+cw,yp(10000));ctx.stroke();ctx.setLineDash([]);
+  ctx.beginPath();
+  rows.forEach(function(r,i){i===0?ctx.moveTo(xp(i),yp(r.sha)):ctx.lineTo(xp(i),yp(r.sha));});
+  ctx.lineTo(xp(n-1),yp(0));ctx.lineTo(xp(0),yp(0));ctx.closePath();
+  var g=ctx.createLinearGradient(0,P.t,0,P.t+ch);g.addColorStop(0,'rgba(201,168,76,.3)');g.addColorStop(1,'rgba(201,168,76,.02)');
+  ctx.fillStyle=g;ctx.fill();
+  rows.forEach(function(r,i){if(r.sarr>0){var bw=Math.max(4,cw/(n-1)*.5);ctx.fillStyle='rgba(214,48,49,.4)';ctx.fillRect(xp(i)-bw/2,yp(r.sarr),bw,(r.sarr/MX)*ch);}});
+  ctx.beginPath();ctx.strokeStyle='#C9A84C';ctx.lineWidth=2;
+  rows.forEach(function(r,i){i===0?ctx.moveTo(xp(i),yp(r.sha)):ctx.lineTo(xp(i),yp(r.sha));});ctx.stroke();
+  rows.forEach(function(r,i){ctx.beginPath();ctx.arc(xp(i),yp(r.sha),3,0,Math.PI*2);ctx.fillStyle='#C9A84C';ctx.fill();});
+  ctx.fillStyle='rgba(237,232,224,.25)';ctx.font="9px 'DM Mono',monospace";ctx.textAlign='center';
+  rows.forEach(function(r,i){if(i%2===0)ctx.fillText('a'+r.t,xp(i),H-P.b+14);});
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},2800);}
+
+// ── Init ─────────────────────────────────────────────────────
+(function(){
+  lsLoad();
+  initPond();
+  buildMap();
+  console.log('OAD Arrachage v3 chargé —', PARCELLES_GEOJSON.features.length, 'parcelles');
+})();
+</script>
+</body>
+</html>
