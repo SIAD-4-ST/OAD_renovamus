@@ -1,9 +1,9 @@
 # OAD Arrachage — Simulateur de Priorités Parcellaires (Prototype)
 
 ## Présentation du projet
-Ce dépôt héberge le Proof of Concept (POC) d'un Outil d'Aide à la Décision (OAD) cartographique destiné à simuler et hiérarchiser les priorités d'arrachage de parcelles viticoles.
+Ce dépôt héberge le POC d'un Outil d'Aide à la Décision (OAD) cartographique destiné à simuler et hiérarchiser les priorités d'arrachage de parcelles viticoles.
 
-Développé en approche **Vibe Coding**, l'objectif de ce prototype est de valider l'ergonomie des interfaces, la cinématique d'ajustement des critères métier et la pertinence visuelle des indicateurs géographiques avant industrialisation.
+Développé en approche **Vibe Coding** (Microsoft 365 Copilot pour les règles métier; Claude Code pour le développement du POC), l'objectif de ce prototype est de valider l'ergonomie des interfaces, les critères métier et la pertinence technique et visuelle des indicateurs et des simulations avant industrialisation.
 
 ## Architecture Technique
 
