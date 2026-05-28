@@ -30,11 +30,11 @@ function calcI(feat) {
   var manq = pv(p, 'taux_manquant'), enr = pv(p, 'enroulement'), cn = pv(p, 'court_noue');
   var ri = getRI(p.num_civc), stot = getSurf(p.num_civc);
 
-  var sc_prop = Math.min(100, surf / stot * 100);
+  var sc_prop = Math.min(100, (surf / stot) * 100);
   var sc_manq = Math.min(100, manq);
-  var sc_viro = Math.min(100, (enr + cn) / 6 * 100);
-  var sc_prod = Math.min(100, prod / 12000 * 100);
-  var sc_defr = ri > 0 ? Math.min(100, Math.max(0, (10000 - ri) / ri * 100)) : 100;
+  var sc_viro = Math.min(100, ((enr + cn) / 6) * 100);
+  var sc_prod = Math.min(100, Math.max(0, ((12000 - prod) / 12000) * 100));
+  var sc_defr = Math.min(100, Math.max(0, ((10000 - ri) / 10000) * 100));
 
   var sc_fd = 0;
   if (communeFD()) {

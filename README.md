@@ -20,7 +20,7 @@ Le prototype est conçu sans dépendances lourdes ni framework (approche Vanilla
 | `js/state.js` | État global de l'application (`S`), pondérations, saisies terrain (localStorage) |
 | `js/calcul.js` | Fonctions de calcul des indices de priorité (`calcI`, sous-scores) |
 | `js/carte.js` | Rendu cartographique Leaflet, coloration des polygones |
-| `js/panel.js` | Affichage de la liste et du détail parcellaire |
+| `js/panel.js` | Affichage de la liste et du détail parcellaire (cépage, âge, surface, proportion surf., productivité, état sanitaire, réserve individuelle) |
 | `js/simulation.js` | Moteur de simulation arrachage/replantation |
 | `js/app.js` | Initialisation, sélection commune/exploitation, orchestration |
 
@@ -49,10 +49,8 @@ Les poids $w_k$ sont modifiables en temps réel dans l'interface. Valeurs par d�
 | `sc_prop` | `surface_parcelle / surface_totale_exploitation × 100` | Plus la parcelle est grande relativement à l'exploitation, plus elle pèse |
 | `sc_manq` | `taux_manquant` (direct, déjà en %) | Pourcentage de pieds manquants |
 | `sc_viro` | `(enroulement + court_noue) / 6 × 100` | Les deux virus sont côtés de 0 à 3 chacun → max combiné = 6 |
-| `sc_prod` | `productivite_moyenne / 12 000 × 100` | Score croissant avec la productivité — voir note ci-dessous |
-| `sc_defr` | `(10 000 − réserve) / réserve × 100` | Plus la réserve est faible, plus le score est élevé |
-
-> **Note sur `sc_prod` :** le score augmente avec la productivité, ce qui hausse I pour les parcelles à fort rendement. Ce comportement est à valider avec le métier : si l'intention est de pénaliser les parcelles peu productives, la formule est correcte ; si l'on souhaite au contraire prioriser le renouvellement des parcelles dégradées, il faudrait inverser : `(12 000 − prod) / 12 000 × 100`.
+| `sc_prod` | `(12 000 − productivite_moyenne) / 12 000 × 100` | Score décroissant avec la productivité — priorise le renouvellement des parcelles les moins productives |
+| `sc_defr` | `(10 000 − réserve) / 10 000 × 100` | Plus la réserve est faible, plus le score est élevé — normalisé sur le plafond réglementaire (10 000 kg/ha) |
 
 ### Cas spécial : Flavescence Dorée
 

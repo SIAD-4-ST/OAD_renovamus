@@ -130,11 +130,10 @@ function openPanel(feat) {
     '<div class="ps-sec">' +
       '<div class="ps-t">Données parcellaires</div>' +
       '<div class="dg">' +
-        dgi('Lieu-dit', p.lieu_dit) +
         dgi('Cépage', p.cepage) +
         dgi('Âge', age + ' ans (' + p.anneeplant + ')', age >= 35 ? 'danger' : age >= 25 ? 'warn' : '') +
         dgi('Surface', pv(p, 'surface_ss_parcelle') + ' ha') +
-        dgi('Mode', p.mode_explo, '', '11px') +
+        dgi('Proportion surf.', ((pv(p, 'surface_ss_parcelle') / getSurf(p.num_civc)) * 100).toFixed(1) + ' %') +
         dgi('Productivité', pv(p, 'productivite_moyenne').toLocaleString('fr') + ' kg/ha', pv(p, 'productivite_moyenne') < 8000 ? 'danger' : pv(p, 'productivite_moyenne') < 11000 ? 'warn' : '') +
         dgi('Manquants', pv(p, 'taux_manquant') + ' %', pv(p, 'taux_manquant') > 20 ? 'danger' : pv(p, 'taux_manquant') > 10 ? 'warn' : '') +
         dgi('Enroulement', pv(p, 'enroulement') + ' / 3', pv(p, 'enroulement') >= 2 ? 'danger' : pv(p, 'enroulement') >= 1 ? 'warn' : '') +
