@@ -167,15 +167,11 @@
     valeurs: { surface: 0.5, productivite: 6000, manquants: 30,
                enroulement: 1, courtNoue: 0.5 },
     pond: { pp: 1, pm: 2, pv: 1, ppr: 1, pd: 1 },
-    riExploitation: 5000, surfExploitation: 2,
-    communeEnFD: false, fdDist: null
+    riExploitation: 5000, surfExploitation: 2
   };
 
   var JEUX_CI = [
     BASE_CI,
-    Object.assign({}, BASE_CI, { communeEnFD: true, fdDist: 300  }),
-    Object.assign({}, BASE_CI, { communeEnFD: true, fdDist: 0    }),
-    Object.assign({}, BASE_CI, { communeEnFD: true, fdDist: 1500 }),  // hors foyer
     Object.assign({}, BASE_CI, {
       valeurs: Object.assign({}, BASE_CI.valeurs,
         { manquants: 0, enroulement: 0, courtNoue: 0 })
@@ -223,6 +219,24 @@
       prev = I;
     }
     assert(mono, 'CI monotonie : manquants croissants (pm>0) → I non décroissant');
+  }());
+
+  /* monotonie décroissante en part : augmenter la part de la parcelle ne fait jamais monter I */
+  (function () {
+    var parts = [0, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0];
+    var surf  = 2;                      // surfExploitation fixe
+    var prev  = Infinity;
+    var mono  = true;
+    for (var i = 0; i < parts.length; i++) {
+      var p = Object.assign({}, BASE_CI, {
+        valeurs: Object.assign({}, BASE_CI.valeurs, { surface: parts[i] * surf }),
+        surfExploitation: surf
+      });
+      var I = calcIndice(p).I;
+      if (I > prev + 0.05) { mono = false; break; }
+      prev = I;
+    }
+    assert(mono, 'CI monotonie : part croissante (pp>0) → I non croissant');
   }());
 
   /* ── calculerBilanRenouvellement ──────────────────────────── */

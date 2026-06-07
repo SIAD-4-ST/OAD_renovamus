@@ -44,30 +44,23 @@ function projeterReserve(params) {
 }
 
 // params: { valeurs:{surface,productivite,manquants,enroulement,courtNoue},
-//           pond:{pp,pm,pv,ppr,pd}, riExploitation, surfExploitation,
-//           communeEnFD, fdDist }
+//           pond:{pp,pm,pv,ppr,pd}, riExploitation, surfExploitation }
 function calcIndice(params) {
   var v   = params.valeurs;
   var pp  = params.pond.pp, pm = params.pond.pm, pvi = params.pond.pv,
       ppr = params.pond.ppr, pd = params.pond.pd;
   var tot = pp + pm + pvi + ppr + pd;
-  if (!tot) return { I: 0, sc: { prop: 0, manq: 0, viro: 0, prod: 0, defr: 0, fd: 0 } };
+  if (!tot) return { I: 0, sc: { prop: 0, manq: 0, viro: 0, prod: 0, defr: 0 } };
 
-  var sc_prop = Math.min(100, (v.surface / params.surfExploitation) * 100);
+  var part    = Math.min(1, v.surface / params.surfExploitation);
+  var sc_prop = Math.max(0, 100 - part * 100);
   var sc_manq = Math.min(100, v.manquants);
   var sc_viro = Math.min(100, ((v.enroulement + v.courtNoue) / 6) * 100);
   var sc_prod = Math.min(100, Math.max(0, ((12000 - v.productivite) / 12000) * 100));
   var sc_defr = Math.min(100, Math.max(0, ((10000 - params.riExploitation) / 10000) * 100));
 
-  var sc_fd = 0;
-  if (params.communeEnFD) {
-    var dist = params.fdDist;
-    if (dist !== null && dist >= 0) sc_fd = Math.min(100, Math.max(0, (1000 - dist) / 1000 * 100));
-  }
-
-  var viroses_eff = params.communeEnFD ? Math.min(100, (sc_viro + sc_fd) / 2) : sc_viro;
-  var I = (pp * sc_prop + pm * sc_manq + pvi * viroses_eff + ppr * sc_prod + pd * sc_defr) / tot;
-  return { I: +I.toFixed(1), sc: { prop: sc_prop, manq: sc_manq, viro: sc_viro, prod: sc_prod, defr: sc_defr, fd: sc_fd } };
+  var I = (pp * sc_prop + pm * sc_manq + pvi * sc_viro + ppr * sc_prod + pd * sc_defr) / tot;
+  return { I: +I.toFixed(1), sc: { prop: sc_prop, manq: sc_manq, viro: sc_viro, prod: sc_prod, defr: sc_defr } };
 }
 
 function dimensionnerPlantation(params) {

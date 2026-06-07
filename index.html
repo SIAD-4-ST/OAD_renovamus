@@ -35,7 +35,6 @@
         </select>
       </div>
     </div>
-    <div id="fd-commune-badge" class="fd-badge fd-non" style="display:none">Pas de foyer FD</div>
   </div>
 
   <div class="hd-right">
@@ -74,10 +73,6 @@
           <div class="kpi-l">âge moyen</div>
         </div>
       </div>
-      <div id="fd-commune-block" class="fd-block fd-none">
-        <div class="fd-title" id="fd-block-title">Aucun foyer FD déclaré</div>
-        <div class="fd-desc" id="fd-block-desc">Pas de mesure de distance requise sur cette commune.</div>
-      </div>
     </section>
 
     <!-- Exploitation -->
@@ -104,7 +99,7 @@
     <section class="sb-sec">
       <div class="sb-t">Pondération de l'indice <span class="ix">I</span></div>
       <div class="pond-rows">
-        <div class="pond-row"><span class="pond-lbl">Proportion parcelle</span><input type="number" class="pond-num" id="pp" value="1" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-pp"></div></div></div>
+        <div class="pond-row"><span class="pond-lbl">Faible emprise</span><input type="number" class="pond-num" id="pp" value="1" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-pp"></div></div></div>
         <div class="pond-row"><span class="pond-lbl">Taux de manquants</span><input type="number" class="pond-num" id="pm" value="2" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-pm"></div></div></div>
         <div class="pond-row"><span class="pond-lbl">Viroses</span><input type="number" class="pond-num" id="pv" value="3" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-pv"></div></div></div>
         <div class="pond-row"><span class="pond-lbl">Productivité</span><input type="number" class="pond-num" id="ppr" value="2" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-ppr"></div></div></div>
@@ -121,7 +116,6 @@
         <div class="leg-item"><span class="leg-dot" style="background:var(--orange)"></span><b>50–69</b> Élevé</div>
         <div class="leg-item"><span class="leg-dot" style="background:var(--ochre)"></span><b>30–49</b> Modéré</div>
         <div class="leg-item"><span class="leg-dot" style="background:var(--vert)"></span><b>&lt; 30</b> Faible</div>
-        <div class="leg-item leg-fd"><span class="leg-ring"></span>Contour doré — distance FD renseignée</div>
       </div>
     </section>
 

@@ -26,16 +26,13 @@ var IS_SAT = false;
 
 function featStyle(feat) {
   var r = calcI(feat), I = r.I;
-  var dist = getFdDist(feat.properties);
-  var hasDist = communeFD() && dist !== null && dist >= 0;
   var sel = feat.properties.idu === S.selIdu;
   var stroke = map.hasLayer(baseSat) ? '#ffffff' : '#3B382F';
   return {
     fillColor: iColor(I), fillOpacity: sel ? 0.88 : 0.66,
-    color: hasDist ? '#9A7B3D' : (sel ? '#1A1916' : stroke),
-    weight: hasDist ? 3 : (sel ? 2.5 : 1),
+    color: sel ? '#1A1916' : stroke,
+    weight: sel ? 2.5 : 1,
     opacity: map.hasLayer(baseSat) ? 0.9 : 0.55,
-    dashArray: hasDist ? '5 3' : null,
   };
 }
 
@@ -77,20 +74,13 @@ function buildMap() {
 
 function makeTip(feat) {
   var p = feat.properties, r = calcI(feat), I = r.I;
-  var dist = getFdDist(p);
-  var distTxt = '';
-  if (communeFD()) {
-    distTxt = dist !== null
-      ? '<div style="margin-top:6px;padding-top:6px;border-top:1px solid #E4DECF;color:#9A7B3D;font-size:10.5px">Dist. foyer FD : <b style="font-family:\'IBM Plex Mono\',monospace">' + dist + ' m</b></div>'
-      : '<div style="margin-top:6px;padding-top:6px;border-top:1px solid #E4DECF;color:#BD6A2C;font-size:10.5px">Distance FD non renseignée</div>';
-  }
   return '<div style="font-family:Archivo,sans-serif;font-size:12px;line-height:1.55;padding:9px 12px;min-width:160px">' +
     '<div style="font-family:\'IBM Plex Mono\',monospace;font-weight:600;font-size:12px;color:#1A1916;letter-spacing:-.01em">' + p.idu + '</div>' +
     '<div style="color:#746F62;font-size:10.5px;margin:3px 0 7px">' + p.lieu_dit + ' · ' + p.cepage + ' · ' + (ANNEE - p.anneeplant) + ' ans</div>' +
     '<div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;border-radius:3px;background:' + iColor(I) + '"></span>' +
     '<b style="font-family:\'IBM Plex Mono\',monospace;color:' + iColor(I) + ';font-size:13px">' + I + '</b>' +
     '<span style="color:#3B382F;font-weight:600">' + iLabel(I) + '</span></div>' +
-    distTxt + '</div>';
+    '</div>';
 }
 
 function refreshStyles() {

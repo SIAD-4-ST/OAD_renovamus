@@ -12,14 +12,6 @@ function pv(p, k) {
   var ov = ovGet(p.idu, k);
   return ov !== undefined ? +ov : +p[k];
 }
-function getFdDist(p) {
-  var ov = ovGet(p.idu, 'fd_dist');
-  return ov !== undefined ? +ov : (p.distance_foyer_fd_m !== null ? p.distance_foyer_fd_m : null);
-}
-function communeFD() {
-  return S.commune && COMMUNES[S.commune] && COMMUNES[S.commune].fd;
-}
-
 function calcI(feat) {
   var p = feat.properties;
   return calcIndice({
@@ -32,9 +24,7 @@ function calcI(feat) {
     },
     pond:             { pp: S.pond.pp, pm: S.pond.pm, pv: S.pond.pv, ppr: S.pond.ppr, pd: S.pond.pd },
     riExploitation:   getRI(p.num_civc),
-    surfExploitation: getSurf(p.num_civc),
-    communeEnFD:      !!communeFD(),
-    fdDist:           getFdDist(p)
+    surfExploitation: getSurf(p.num_civc)
   });
 }
 

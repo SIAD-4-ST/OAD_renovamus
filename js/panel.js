@@ -18,14 +18,10 @@ function buildList(feats) {
   }
   el.innerHTML = sorted.map(function(f) {
     var p = f.properties, r = calcI(f), I = r.I, col = iColor(I);
-    var dist = getFdDist(p);
-    var tag = communeFD() ? (dist !== null
-        ? '<span class="pl-tag t-dist">' + dist + ' m</span>'
-        : '<span class="pl-tag t-fd">FD ?</span>') : '';
     return '<div class="pl-item' + (p.idu === S.selIdu ? ' active' : '') + '" onclick="selectById(\'' + p.idu + '\')">' +
       '<div class="pl-badge" style="background:' + col + '14;color:' + col + ';border-color:' + col + '44">' + I.toFixed(0) + '<span class="bl">' + iLabel(I).slice(0,4) + '</span></div>' +
       '<div class="pl-info">' +
-        '<div class="pl-idu"><span class="mono">' + p.idu + '</span>' + tag + '</div>' +
+        '<div class="pl-idu"><span class="mono">' + p.idu + '</span></div>' +
         '<div class="pl-meta">' + p.cepage + ' · ' + (ANNEE - p.anneeplant) + ' ans · ' + pv(p, 'surface_ss_parcelle') + ' ha · ' + p.lieu_dit + '</div>' +
       '</div>' +
       (S.mode === 'vign' ? '<button class="pl-sim" onclick="event.stopPropagation();selectById(\'' + p.idu + '\');openSimModal(\'' + p.idu + '\')">SIM</button>' : '') +
@@ -101,35 +97,13 @@ function openPanel(feat) {
   var p = feat.properties, r = calcI(feat), I = r.I, sc = r.sc;
   var col = iColor(I), age = ANNEE - p.anneeplant;
   var ri = getRI(p.num_civc), isTech = S.mode === 'tech';
-  var hasFD = communeFD();
-  var dist = getFdDist(p);
 
   document.getElementById('ph-title').textContent = p.idu;
   document.getElementById('ph-sub').textContent = p.cepage + ' — ' + p.lieu_dit + ' — ' + p.num_civc;
 
-  var fdBlock = hasFD && !isTech ? (
-    '<div class="fd-panel-block">' +
-      '<div class="fd-panel-title">Commune en zone FD — distance au foyer</div>' +
-      '<div class="fd-panel-desc">' +
-        'La commune ' + COMMUNES[S.commune].nom + ' présente un foyer FD déclaré. ' +
-        'Renseignez la distance entre cette parcelle et la parcelle contaminée la plus proche.' +
-      '</div>' +
-      '<div class="fd-dist-row">' +
-        '<label>Distance au foyer</label>' +
-        '<input type="number" class="fd-dist-input" id="fd-dist-inp" min="0" step="10" ' +
-          'placeholder="ex. 250" value="' + (dist !== null ? dist : '') + '"' +
-          ' onchange="saveFdDist(\'' + p.idu + '\',this.value)">' +
-        '<span class="fd-dist-unit">mètres</span>' +
-      '</div>' +
-      (dist !== null ? '<div class="fd-score-note">Score FD : <b class="mono">' + sc.fd.toFixed(0) + '/100</b> — intégré à l\'indice viroses</div>' : '') +
-    '</div>'
-  ) : (hasFD && isTech && dist !== null ?
-    '<div class="fd-tech-note">Distance au foyer FD : <b>' + dist + ' m</b></div>' : '');
-
   var saisie = isTech ? '' :
     '<div class="ps-sec vign-only">' +
       '<div class="ps-t">Saisie terrain</div>' +
-      fdBlock +
       '<div class="fg">' +
         '<div class="fi"><label>Taux manquants (%)</label><input type="number" class="fi-input" min="0" max="100" value="' + pv(p, 'taux_manquant') + '" onchange="terr(\'' + p.idu + '\',\'taux_manquant\',this.value)"></div>' +
         '<div class="fi"><label>Productivité (kg/ha)</label><input type="number" class="fi-input" min="0" max="25000" step="100" value="' + pv(p, 'productivite_moyenne') + '" onchange="terr(\'' + p.idu + '\',\'productivite_moyenne\',this.value)"></div>' +
@@ -156,7 +130,6 @@ function openPanel(feat) {
       '</div>' +
     '</div>';
 
-  var virosesLbl = hasFD ? 'Viroses + FD' : 'Viroses';
   var sumPond = Object.values(S.pond).reduce(function(a, b) { return a + b; }, 0);
 
   document.getElementById('pb').innerHTML =
@@ -166,15 +139,15 @@ function openPanel(feat) {
         '<div class="idx-num" style="color:' + col + '">' + I.toFixed(0) + '<small>/100</small></div>' +
         '<div class="idx-meta">' +
           '<div class="idx-lbl" style="color:' + col + '">' + iLabel(I) + '</div>' +
-          '<div class="idx-hint">Pondération active · Σ=' + sumPond + (hasFD ? ' · <span class="fd-flag">FD intégrée aux viroses</span>' : '') + '</div>' +
+          '<div class="idx-hint">Pondération active · Σ=' + sumPond + '</div>' +
         '</div>' +
       '</div>' +
       '<div class="idx-gauge"><div class="idx-marker" style="left:calc(' + Math.min(100, Math.max(0, I)) + '% - 1.5px)"></div></div>' +
       '<div class="idx-scale"><span>0</span><span>30</span><span>50</span><span>70</span><span>100</span></div>' +
       '<div class="cb-rows">' +
-        cb('Proportion surf.', sc.prop, '#1C2C49', S.pond.pp) +
+        cb('Faible emprise', sc.prop, '#1C2C49', S.pond.pp) +
         cb('Taux manquants', sc.manq, '#BD6A2C', S.pond.pm) +
-        cb(virosesLbl, hasFD ? Math.min(100, (sc.viro + sc.fd) / 2) : sc.viro, '#A6322B', S.pond.pv) +
+        cb('Viroses', sc.viro, '#A6322B', S.pond.pv) +
         cb('Productivité', sc.prod, '#9A7B3D', S.pond.ppr) +
         cb('Déficit réserve', sc.defr, '#5E7A41', S.pond.pd) +
       '</div>' +
@@ -191,7 +164,6 @@ function openPanel(feat) {
         dgi('Manquants', pv(p, 'taux_manquant') + ' %', pv(p, 'taux_manquant') > 20 ? 'danger' : pv(p, 'taux_manquant') > 10 ? 'warn' : '') +
         dgi('Enroulement', pv(p, 'enroulement') + ' / 3', pv(p, 'enroulement') >= 2 ? 'danger' : pv(p, 'enroulement') >= 1 ? 'warn' : '') +
         dgi('Court-noué', pv(p, 'court_noue') + ' / 3', pv(p, 'court_noue') >= 2 ? 'danger' : pv(p, 'court_noue') >= 1 ? 'warn' : '') +
-        (hasFD && dist !== null ? dgi('Dist. foyer FD', dist + ' m', dist < 200 ? 'danger' : dist < 600 ? 'warn' : '') : '') +
       '</div>' +
     '</div>' +
     '<div class="ps-sec">' +
@@ -223,12 +195,6 @@ function closePanel() {
   refreshStyles();
 }
 
-function saveFdDist(idu, val) {
-  ovSet(idu, 'fd_dist', val === '' ? null : +val);
-  refreshStyles();
-  updateScoreDisplay();
-}
-
 function updateScoreDisplay() {
   if (!S.selIdu) return;
   var feat = PARCELLES_GEOJSON.features.find(function(f) { return f.properties.idu === S.selIdu; });
@@ -241,7 +207,6 @@ function updateScoreDisplay() {
   var mk = document.querySelector('.idx-marker');
   if (mk) { mk.style.left = 'calc(' + Math.min(100, Math.max(0, I)) + '% - 1.5px)'; }
   var fills = document.querySelectorAll('.cb-fill');
-  var hasFD = communeFD();
-  var vals = [sc.prop, sc.manq, hasFD ? Math.min(100, (sc.viro + sc.fd) / 2) : sc.viro, sc.prod, sc.defr];
+  var vals = [sc.prop, sc.manq, sc.viro, sc.prod, sc.defr];
   fills.forEach(function(f, i) { if (vals[i] !== undefined) f.style.width = Math.min(100, vals[i]).toFixed(0) + '%'; });
 }
