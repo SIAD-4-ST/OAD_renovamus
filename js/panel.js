@@ -65,6 +65,7 @@ function simControlsHTML(idu) {
       '<div class="chart-wrap"><canvas class="sim-cvs" id="sim-cvs" height="180"></canvas></div>' +
     '</div>' +
     '<div class="sim-tw"><table class="sim-t" id="sim-t"></table></div>' +
+    '<div class="chart-card" id="eco-out" style="display:none"></div>' +
   '</div>';
 }
 

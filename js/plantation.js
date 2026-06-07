@@ -131,61 +131,52 @@ function updateSchema(rang, pied) {
 }
 
 function recalcPlant() {
-  var surf = PLANT_CTX.surf;
-  var rang = parseFloat(_pv('pl-rang')) || 1.5;
-  var pied = parseFloat(_pv('pl-pied')) || 0.95;
-  var haut = parseFloat(_pv('pl-hauteur')) || 1.2;
-  var tour = parseFloat(_pv('pl-tourniere')) || 6;
-  var duree = parseInt(_pv('pl-duree')) || 2;
+  var surf  = PLANT_CTX.surf;
+  var rang  = parseFloat(_pv('pl-rang'))      || 1.5;
+  var pied  = parseFloat(_pv('pl-pied'))      || 0.95;
+  var haut  = parseFloat(_pv('pl-hauteur'))   || 1.2;
+  var tour  = parseFloat(_pv('pl-tourniere')) || 6;
+  var duree = parseInt(_pv('pl-duree'))       || 2;
 
-  _set('rang-val', rang.toFixed(2).replace('.', ',') + ' m');
-  _set('pied-val', pied.toFixed(2).replace('.', ',') + ' m');
-  _set('haut-val', haut.toFixed(2).replace('.', ',') + ' m');
-  _set('tour-val', tour.toFixed(1).replace('.', ',') + ' m');
+  _set('rang-val',  rang.toFixed(2).replace('.', ',') + ' m');
+  _set('pied-val',  pied.toFixed(2).replace('.', ',') + ' m');
+  _set('haut-val',  haut.toFixed(2).replace('.', ',') + ' m');
+  _set('tour-val',  tour.toFixed(1).replace('.', ',') + ' m');
   _set('duree-val', duree + ' an' + (duree > 1 ? 's' : ''));
 
-  var m2 = surf * 10000;
-  var dens = Math.round(10000 / (rang * pied));
-  var pieds = Math.round(dens * surf);
-  var cmd = Math.ceil(pieds * 1.05);
-  var ml = Math.round(m2 / rang);
-  var cote = Math.sqrt(m2);
-  var nbRangs = Math.max(1, Math.round(cote / rang));
-  var paires = _pv('pl-fils').indexOf('2') > -1 ? 2 : 1;
-  var piquets = Math.round(ml / 5) + nbRangs;
-  var fil = Math.round(ml * (2 * paires + 1));
-
-  var pt = _pv('pl-planttype');
-  var prixPlant = pt.indexOf('pot') > -1 ? 2.6 : 1.8;
-  var budVeg = cmd * prixPlant;
-
-  var piq = _pv('pl-piquet');
-  var basePal = piq.indexOf('Métal') > -1 ? 3.0 : piq.indexOf('Composite') > -1 ? 3.6 : 2.4;
-  var pal = _pv('pl-palissage');
-  var palFactor = pal.indexOf('Lyre') > -1 ? 1.4 : pal.indexOf('Double') > -1 ? 1.2 : 1.0;
-  var budPal = ml * (basePal + (paires === 2 ? 0.5 : 0)) * palFactor;
-
+  var pt   = _pv('pl-planttype');
+  var piq  = _pv('pl-piquet');
+  var pal  = _pv('pl-palissage');
   var couv = _pv('pl-couvert');
-  var cPrice = couv.indexOf('légum') > -1 ? 260 : couv.indexOf('Gramin') > -1 ? 190 :
-               couv.indexOf('Crucif') > -1 ? 210 : couv.indexOf('Mélange') > -1 ? 300 : 40;
-  var budCouv = surf * cPrice * duree;
-  var budPrep = surf * 3800;
-  var total = budVeg + budPal + budCouv + budPrep;
 
-  _set('sy-dens', dens.toLocaleString('fr') + ' pieds/ha');
-  _set('sy-pieds', pieds.toLocaleString('fr') + ' pieds');
-  _set('sy-cmd', cmd.toLocaleString('fr') + ' plants');
-  _set('sy-ml', ml.toLocaleString('fr') + ' ml');
-  _set('sy-rangs', '≈ ' + nbRangs);
-  _set('sy-piquets', piquets.toLocaleString('fr'));
-  _set('sy-fil', fil.toLocaleString('fr') + ' m');
+  var paires        = _pv('pl-fils').indexOf('2') > -1 ? 2 : 1;
+  var prixPlant     = pt.indexOf('pot')      > -1 ? 2.6 : 1.8;
+  var basePal       = piq.indexOf('Métal')   > -1 ? 3.0 : piq.indexOf('Composite') > -1 ? 3.6 : 2.4;
+  var palFactor     = pal.indexOf('Lyre')    > -1 ? 1.4 : pal.indexOf('Double')    > -1 ? 1.2 : 1.0;
+  var cPriceCouvert = couv.indexOf('légum')  > -1 ? 260 : couv.indexOf('Gramin')   > -1 ? 190 :
+                      couv.indexOf('Crucif') > -1 ? 210 : couv.indexOf('Mélange')  > -1 ? 300 : 40;
+
+  var r = dimensionnerPlantation({
+    surf: surf, rang: rang, pied: pied, paires: paires,
+    prixPlant: prixPlant, basePal: basePal, palFactor: palFactor,
+    cPriceCouvert: cPriceCouvert, dureeCouvert: duree,
+    prixPrepHa: 3800, margePlants: 1.05
+  });
+
+  _set('sy-dens',    r.metrics.densite.toLocaleString('fr')          + ' pieds/ha');
+  _set('sy-pieds',   r.metrics.pieds.toLocaleString('fr')            + ' pieds');
+  _set('sy-cmd',     r.metrics.plantsACommander.toLocaleString('fr') + ' plants');
+  _set('sy-ml',      r.metrics.ml.toLocaleString('fr')               + ' ml');
+  _set('sy-rangs',   '≈ ' + r.metrics.nbRangs);
+  _set('sy-piquets', r.metrics.piquets.toLocaleString('fr'));
+  _set('sy-fil',     r.metrics.filReleveur.toLocaleString('fr')      + ' m');
   _set('sy-couvert', couv.split(' ')[0] + ' · ' + duree + ' an' + (duree > 1 ? 's' : ''));
 
-  _set('sy-bud-veg', _eur(budVeg));
-  _set('sy-bud-pal', _eur(budPal));
-  _set('sy-bud-couv', _eur(budCouv));
-  _set('sy-bud-prep', _eur(budPrep));
-  _set('sy-bud-total', _eurRange(total));
+  _set('sy-bud-veg',   _eur(r.budget.vegetal));
+  _set('sy-bud-pal',   _eur(r.budget.palissage));
+  _set('sy-bud-couv',  _eur(r.budget.couvert));
+  _set('sy-bud-prep',  _eur(r.budget.preparation));
+  _set('sy-bud-total', _eurRange(r.budget.total));
 
   updateSchema(rang, pied);
 }

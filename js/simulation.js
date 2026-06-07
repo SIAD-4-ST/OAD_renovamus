@@ -7,44 +7,52 @@ function runSim(idu) {
   var volco = +document.getElementById('s-volco').value || 9000;
   var rend = +document.getElementById('s-rend').value || 15500;
   var surfTot = ex.surface_totale, surfArr = pv(p, 'surface_ss_parcelle');
-  var riInit = getRI(p.num_civc), plaf = 10000, volAn = 9000;
-  var repos = typeArr === 'Sanitaire' ? 3 : 1, sortie = typeArr === 'Sanitaire' ? 5 : 3;
-  var antic = modeRep === 'Anticipée';
+  var riInit = getRI(p.num_civc);
+  var dureeRepos = typeArr === 'Sanitaire' ? 3 : 1;
+  var anticipe = modeRep === 'Anticipée';
 
-  function sp(t) {
-    if (antic) return surfTot;
-    if (t <= repos) return surfTot - surfArr;
-    if (t === repos + 1) return surfTot - surfArr * .7;
-    if (t === repos + 2) return surfTot - surfArr * .3;
-    return surfTot;
-  }
-  function ph(t) {
-    if (antic || t === 0) return t === 0 ? 'Initial' : 'Production';
-    if (t <= repos) return 'Repos';
-    if (t === repos + 1) return '1ère feuille';
-    if (t === repos + 2) return '2ème feuille';
-    return 'Production';
-  }
+  var simParams = {
+    surfTot:             surfTot,
+    surfArr:             surfArr,
+    riInit:              riInit,
+    volco:               volco,
+    rend:                rend,
+    plafondRI:           10000,
+    sortieAnnuelleParHa: 9000,
+    dureeRepos:          dureeRepos,
+    finSortie:           typeArr === 'Sanitaire' ? 5 : 3,
+    anticipe:            anticipe,
+    horizon:             10
+  };
 
-  var rows = [], stk = riInit * surfTot;
-  for (var t = 0; t <= 10; t++) {
-    var s = sp(t), rec = s * rend, vc = s * volco, deb = stk;
-    var exc = rec - vc, mise = exc > 0 ? Math.min(exc, plaf * surfTot - deb) : 0;
-    var def = exc < 0 ? -exc : 0, sins = Math.min(def, deb + mise), aft = deb + mise - sins;
-    var sarr = (!antic && t >= 1 && t <= sortie) ? Math.min(volAn * surfArr, aft) : 0;
-    stk = Math.max(0, aft - sarr);
-    var sha = surfTot > 0 ? stk / surfTot : 0;
-    rows.push({ t: t, ph: ph(t), rec: Math.round(rec), vc: Math.round(vc), mise: Math.round(mise), sins: Math.round(sins), sarr: Math.round(sarr), fin: Math.round(stk), sha: Math.round(sha), tx: +(sha / plaf).toFixed(3) });
-  }
+  var proj = projeterReserve(simParams);
+  var rows = proj.rows, minHA = proj.stockMin, annMin = proj.anneeStockMin;
 
-  var minHA = Math.min.apply(null, rows.map(function(r) { return r.sha; }));
-  var annMin = rows.find(function(r) { return r.sha === minHA; }).t;
-  var cov = typeArr === 'Sanitaire' ? .98 : .84;
+  var plantationParams = {
+    surf: surfArr,
+    rang: 1.5, pied: 0.95, paires: 2,
+    prixPlant: 1.8,
+    basePal: 3.0,
+    palFactor: 1.0,
+    cPriceCouvert: 260,
+    dureeCouvert: dureeRepos,
+    prixPrepHa: 3800, margePlants: 1.05
+  };
+  var bilan = calculerBilanRenouvellement({
+    simulation: simParams,
+    plantation: plantationParams,
+    eco: REFERENTIEL_ECO,
+    timing: { anneePlantation: anticipe ? 0 : dureeRepos }
+  });
+
+  var couv = bilan.indicateurs.couvertureRI;
+  var couvPct = Math.round(couv * 100);
+  var couvStyle = couv >= 0.9 ? 'color:var(--vert)' : couv >= 0.5 ? 'color:var(--orange)' : '';
 
   document.getElementById('sim-out').style.display = '';
   document.getElementById('sim-kpis').innerHTML =
     '<div class="sim-kpi"><div class="sk-l">Stock min.</div><div class="sk-v">' + minHA.toLocaleString('fr') + '</div><div class="sk-u">kg/ha · an ' + annMin + '</div></div>' +
-    '<div class="sim-kpi"><div class="sk-l">Couverture frais</div><div class="sk-v" style="color:' + (cov >= .95 ? 'var(--vert)' : 'var(--orange)') + '">' + Math.round(cov * 100) + '%</div><div class="sk-u">par sorties RI</div></div>' +
+    '<div class="sim-kpi"><div class="sk-l">Couverture frais</div><div class="sk-v" style="' + couvStyle + '">' + couvPct + ' %</div><div class="sk-u">par sorties RI</div></div>' +
     '<div class="sim-kpi"><div class="sk-l">Stock an 10</div><div class="sk-v">' + rows[rows.length - 1].sha.toLocaleString('fr') + '</div><div class="sk-u">kg/ha</div></div>';
 
   drawChart(rows);
@@ -55,6 +63,41 @@ function runSim(idu) {
     rows.map(function(r) {
       return '<tr><td>' + r.t + '</td><td style="font-size:8px">' + r.ph + '</td><td>' + r.rec.toLocaleString('fr') + '</td><td style="color:var(--vert)">' + (r.mise > 0 ? '+' + r.mise.toLocaleString('fr') : '-') + '</td><td style="color:var(--rouge)">' + (r.sarr > 0 ? '-' + r.sarr.toLocaleString('fr') : '-') + '</td><td class="' + rc(r.sha) + '">' + r.sha.toLocaleString('fr') + '</td><td class="' + rc(r.sha) + '">' + (r.tx * 100).toFixed(0) + '%</td></tr>';
     }).join('') + '</tbody>';
+
+  var ecoOut = document.getElementById('eco-out');
+  if (!ecoOut) return;
+  var eur = function(v) { return Math.round(v).toLocaleString('fr') + ' €'; };
+  var negStyle = function(v) { return v < 0 ? ' style="color:var(--rouge)"' : ''; };
+
+  var fluxRows = bilan.flux.map(function(r) {
+    var couts = r.coutArrachage + r.coutCouvert + r.coutPlantation;
+    return '<tr>' +
+      '<td>' + r.t + '</td>' +
+      '<td>' + eur(r.sortieRI_euros) + '</td>' +
+      '<td>' + eur(r.aides) + '</td>' +
+      '<td>' + eur(couts) + '</td>' +
+      '<td>' + eur(r.manqueAGagner) + '</td>' +
+      '<td' + negStyle(r.net) + '>' + eur(r.net) + '</td>' +
+      '<td' + negStyle(r.cumul) + '>' + eur(r.cumul) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  ecoOut.style.display = '';
+  ecoOut.innerHTML =
+    '<div class="chart-cap" style="margin-bottom:.75rem"><b>Bilan économique du renouvellement — vue mono-parcelle</b></div>' +
+    '<div class="sim-kpis">' +
+      '<div class="sim-kpi"><div class="sk-l">Besoin de trésorerie</div><div class="sk-v">' + eur(bilan.indicateurs.besoinTresorerieMax) + '</div><div class="sk-u">an ' + bilan.indicateurs.anneeBesoinMax + '</div></div>' +
+      '<div class="sim-kpi"><div class="sk-l">Couverture aides</div><div class="sk-v">' + Math.round(bilan.indicateurs.couvertureAides * 100) + ' %</div></div>' +
+      '<div class="sim-kpi"><div class="sk-l">Reste à charge 10 ans</div><div class="sk-v">' + eur(bilan.indicateurs.resteACharge10ans) + '</div><div class="sk-u">investissement non encore amorti</div></div>' +
+    '</div>' +
+    '<div class="sim-tw"><table class="sim-t">' +
+      '<thead><tr><th>An</th><th>Sorties RI</th><th>Aides</th><th>Coûts</th><th>Manque à gagner</th><th>Net</th><th>Cumul</th></tr></thead>' +
+      '<tbody>' + fluxRows + '</tbody>' +
+    '</table></div>' +
+    '<p style="font-size:10px;opacity:.55;margin-top:.6rem;line-height:1.5">' +
+      'Coût de plantation estimé sur configuration standard — affiner via le module Plantation. ' +
+      'Coût d’arrachage et indemnité de perte de recettes : valeurs indicatives à confirmer (Comité Champagne / FranceAgriMer).' +
+    '</p>';
 }
 
 function drawChart(rows) {
