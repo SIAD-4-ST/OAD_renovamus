@@ -6,149 +6,215 @@
 <title>OAD Arrachage — Comité Champagne</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
-<!-- HEADER -->
-<div id="hd">
-  <div class="hd-brand">
-    <div class="hd-logo">🍇</div>
-    <div class="hd-title">OAD <em>Arrachage</em></div>
+<!-- ───────────────────────── HEADER ───────────────────────── -->
+<header id="hd">
+  <div class="brand">
+    <div class="brand-mark"><img src="assets/logo-mark.png" alt="Comité Champagne"></div>
+    <div class="brand-txt">
+      <div class="brand-name">Comité Champagne</div>
+      <div class="brand-sub">OAD · Aide à la décision d'arrachage</div>
+    </div>
   </div>
 
-  <div class="commune-wrap">
-    <span class="commune-label">Commune</span>
-    <select class="commune-select" id="sel-commune" onchange="selectCommune(this.value)">
-      <option value="">— Choisir —</option>
-      <option value="Cuis">Cuis (51)</option>
-      <option value="Trelou">Trélou-sur-Marne (02)</option>
-      <option value="Arrentieres">Arrentières (10)</option>
-    </select>
+  <div class="hd-mid">
+    <div class="commune-wrap">
+      <span class="commune-label">Commune</span>
+      <div class="select-shell">
+        <select class="commune-select" id="sel-commune" onchange="selectCommune(this.value)">
+          <option value="">— Choisir une commune —</option>
+          <option value="Cuis">Cuis (51)</option>
+          <option value="Trelou">Trélou-sur-Marne (02)</option>
+          <option value="Arrentieres">Arrentières (10)</option>
+        </select>
+      </div>
+    </div>
+    <div id="fd-commune-badge" class="fd-badge fd-non" style="display:none">Pas de foyer FD</div>
   </div>
 
-  <div id="fd-commune-badge" class="fd-commune-badge fd-non" style="display:none">
-    ✓ Pas de FD
+  <div class="hd-right">
+    <span class="mode-cap">Profil</span>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btn-vign" onclick="setMode('vign')">Vigneron</button>
+      <button class="mode-btn" id="btn-tech" onclick="setMode('tech')">Technicien</button>
+    </div>
   </div>
+</header>
 
-  <div class="mode-toggle">
-    <button class="mode-btn active" id="btn-vign" onclick="setMode('vign')">Vigneron</button>
-    <button class="mode-btn" id="btn-tech" onclick="setMode('tech')">Technicien</button>
-  </div>
-</div>
-
-<!-- APP -->
+<!-- ───────────────────────── APP ───────────────────────── -->
 <div id="app">
 
-  <!-- SIDEBAR -->
-  <div id="sb">
+  <!-- ░░ CONTROL COLUMN ░░ -->
+  <aside id="sb">
 
-    <!-- Info commune -->
-    <div class="sb-sec" id="commune-info" style="display:none">
-      <div class="sb-t" id="commune-name-label">Commune</div>
-      <div class="kpi-row" style="margin-bottom:8px">
+    <!-- Contexte commune -->
+    <section class="sb-sec" id="commune-info" style="display:none">
+      <div class="sb-t">Contexte commune</div>
+      <div class="commune-head">
+        <div class="commune-name" id="commune-name-label">Commune</div>
+        <div class="commune-appel" id="commune-appel">—</div>
+      </div>
+      <div class="kpi-row kpi-row-3">
         <div class="kpi">
-          <div class="kpi-l">Parcelles</div>
           <div class="kpi-v" id="kpi-nb">—</div>
-          <div class="kpi-u">sur la commune</div>
+          <div class="kpi-l">parcelles</div>
         </div>
         <div class="kpi">
-          <div class="kpi-l">Surface</div>
           <div class="kpi-v" id="kpi-surf-c">—</div>
-          <div class="kpi-u">ha total</div>
+          <div class="kpi-l">ha au total</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-v" id="kpi-age">—</div>
+          <div class="kpi-l">âge moyen</div>
         </div>
       </div>
-      <!-- Bloc FD commune -->
-      <div id="fd-commune-block" class="fd-commune-block fd-none">
-        <div class="fd-title" id="fd-block-title">✓ Aucun foyer FD déclaré</div>
-        <div class="fd-desc" id="fd-block-desc">Pas de mesure de distance requise pour les parcelles.</div>
+      <div id="fd-commune-block" class="fd-block fd-none">
+        <div class="fd-title" id="fd-block-title">Aucun foyer FD déclaré</div>
+        <div class="fd-desc" id="fd-block-desc">Pas de mesure de distance requise sur cette commune.</div>
       </div>
-    </div>
+    </section>
 
-    <!-- Filtre exploitation (Vigneron) -->
-    <div class="sb-sec vign-only">
+    <!-- Exploitation -->
+    <section class="sb-sec vign-only">
       <div class="sb-t">Exploitation</div>
-      <select class="fi-input" id="sel-civc" onchange="filterCIVC(this.value)" style="width:100%">
-        <option value="">— Toutes —</option>
-      </select>
-    </div>
-    <div class="sb-sec vign-only" id="kpi-ex" style="display:none">
-      <div class="kpi-row">
-        <div class="kpi"><div class="kpi-l">Surface</div><div class="kpi-v" id="kpi-surf">—</div><div class="kpi-u">ha</div></div>
-        <div class="kpi"><div class="kpi-l">Réserve RI</div><div class="kpi-v" id="kpi-ri">—</div><div class="kpi-u">kg/ha</div></div>
+      <div class="select-shell block">
+        <select class="fi-input" id="sel-civc" onchange="filterCIVC(this.value)">
+          <option value="">— Toutes les exploitations —</option>
+        </select>
       </div>
-    </div>
+      <div class="kpi-row" id="kpi-ex" style="display:none;margin-top:10px">
+        <div class="kpi">
+          <div class="kpi-v" id="kpi-surf">—</div>
+          <div class="kpi-l">ha exploitation</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-v" id="kpi-ri">—</div>
+          <div class="kpi-l">kg/ha réserve</div>
+        </div>
+      </div>
+    </section>
 
-    <!-- Pondérations -->
-    <div class="sb-sec">
-      <div class="sb-t">Pondération de l'indicateur [I]</div>
+    <!-- Pondération -->
+    <section class="sb-sec">
+      <div class="sb-t">Pondération de l'indice <span class="ix">I</span></div>
       <div class="pond-rows">
-        <div class="pond-row"><span class="pond-lbl">Proportion parcelle</span><input type="number" class="pond-num" id="pp" value="1" min="0" max="10"><div class="pond-bar-bg"><div class="pond-bar" id="pb-pp"></div></div></div>
-        <div class="pond-row"><span class="pond-lbl">Taux manquants</span><input type="number" class="pond-num" id="pm" value="1" min="0" max="10"><div class="pond-bar-bg"><div class="pond-bar" id="pb-pm"></div></div></div>
-        <div class="pond-row"><span class="pond-lbl">Viroses</span><input type="number" class="pond-num" id="pv" value="1" min="0" max="10"><div class="pond-bar-bg"><div class="pond-bar" id="pb-pv"></div></div></div>
-        <div class="pond-row"><span class="pond-lbl">Productivité</span><input type="number" class="pond-num" id="ppr" value="1" min="0" max="10"><div class="pond-bar-bg"><div class="pond-bar" id="pb-ppr"></div></div></div>
-        <div class="pond-row"><span class="pond-lbl">Déficit réserve</span><input type="number" class="pond-num" id="pd" value="1" min="0" max="10"><div class="pond-bar-bg"><div class="pond-bar" id="pb-pd"></div></div></div>
+        <div class="pond-row"><span class="pond-lbl">Proportion parcelle</span><input type="number" class="pond-num" id="pp" value="1" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-pp"></div></div></div>
+        <div class="pond-row"><span class="pond-lbl">Taux de manquants</span><input type="number" class="pond-num" id="pm" value="2" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-pm"></div></div></div>
+        <div class="pond-row"><span class="pond-lbl">Viroses</span><input type="number" class="pond-num" id="pv" value="3" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-pv"></div></div></div>
+        <div class="pond-row"><span class="pond-lbl">Productivité</span><input type="number" class="pond-num" id="ppr" value="2" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-ppr"></div></div></div>
+        <div class="pond-row"><span class="pond-lbl">Déficit de réserve</span><input type="number" class="pond-num" id="pd" value="2" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-pd"></div></div></div>
       </div>
-    </div>
+      <div class="pond-foot">Somme des poids <span id="ptotal">10</span></div>
+    </section>
 
     <!-- Légende -->
-    <div class="sb-sec">
-      <div class="sb-t">Légende</div>
+    <section class="sb-sec">
+      <div class="sb-t">Légende — indice d'arrachage</div>
       <div class="leg-items">
-        <div class="leg-item"><div class="leg-dot" style="background:var(--rouge)"></div>Indice ≥ 70 — Prioritaire</div>
-        <div class="leg-item"><div class="leg-dot" style="background:var(--orange)"></div>Indice 50–69 — Élevé</div>
-        <div class="leg-item"><div class="leg-dot" style="background:var(--jaune)"></div>Indice 30–49 — Modéré</div>
-        <div class="leg-item"><div class="leg-dot" style="background:var(--vert)"></div>Indice &lt; 30 — Faible</div>
-        <div class="leg-item"><div class="leg-dash" style="background:var(--or)"></div>Contour doré = distance FD renseignée</div>
+        <div class="leg-item"><span class="leg-dot" style="background:var(--rouge)"></span><b>≥ 70</b> Prioritaire</div>
+        <div class="leg-item"><span class="leg-dot" style="background:var(--orange)"></span><b>50–69</b> Élevé</div>
+        <div class="leg-item"><span class="leg-dot" style="background:var(--ochre)"></span><b>30–49</b> Modéré</div>
+        <div class="leg-item"><span class="leg-dot" style="background:var(--vert)"></span><b>&lt; 30</b> Faible</div>
+        <div class="leg-item leg-fd"><span class="leg-ring"></span>Contour doré — distance FD renseignée</div>
       </div>
-    </div>
+    </section>
 
-  </div>
+  </aside>
 
-  <!-- CARTE -->
-  <div id="map-wrap">
+  <!-- ░░ MAP ░░ -->
+  <main id="map-wrap">
     <div id="map"></div>
-    <div class="map-info">
-      <b id="map-n">0</b> parcelles · <span id="map-commune">—</span>
+    <div class="map-layers">
+      <button class="ml-btn active" id="ml-plan" onclick="setBase('plan')">Plan</button>
+      <button class="ml-btn" id="ml-sat" onclick="setBase('sat')">Satellite</button>
     </div>
-  </div>
+    <div class="map-info">
+      <span class="mi-n" id="map-n">0</span> parcelles<span class="mi-sep">·</span><span id="map-commune">—</span>
+    </div>
+  </main>
 
-  <!-- PANEL -->
-  <div id="panel">
+  <!-- ░░ PANEL ░░ -->
+  <section id="panel">
     <div id="ph">
-      <div style="min-width:0">
+      <div class="ph-l">
         <h2 id="ph-title">—</h2>
         <div class="ps" id="ph-sub">Sélectionnez une commune</div>
       </div>
-      <button class="ph-back" id="ph-back" onclick="closePanel()" style="display:none">← Retour</button>
+      <button class="ph-back" id="ph-back" onclick="closePanel()" style="display:none">← Liste</button>
     </div>
 
-    <!-- Vue liste (défaut) -->
+    <!-- Liste classée -->
     <div id="panel-list">
       <div id="list-hd">
-        <span class="lt">Parcelles</span>
         <span class="lc" id="list-count">—</span>
+        <div class="sort-wrap">
+          <span class="sort-cap">Trier</span>
+          <div class="select-shell sm">
+            <select id="sort-sel" onchange="setSort(this.value)">
+              <option value="I">Indice ↓</option>
+              <option value="surf">Surface ↓</option>
+              <option value="age">Âge ↓</option>
+              <option value="manq">Manquants ↓</option>
+            </select>
+          </div>
+        </div>
       </div>
       <div id="pl"></div>
     </div>
 
-    <!-- Vue détail (s'affiche à la sélection d'une parcelle) -->
+    <!-- Détail parcelle -->
     <div id="panel-detail">
       <div id="pb"></div>
     </div>
-  </div>
+  </section>
 </div>
 
 <div id="toast"></div>
 
-<script src="data/data.js"></script>
-<script src="js/config.js"></script>
-<script src="js/state.js"></script>
-<script src="js/calcul.js"></script>
-<script src="js/carte.js"></script>
-<script src="js/panel.js"></script>
-<script src="js/simulation.js"></script>
-<script src="js/app.js"></script>
+<!-- ───────────── MODALE SIMULATION ───────────── -->
+<div id="sim-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeSimModal()">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="sim-modal-title">
+    <div class="modal-head">
+      <div class="modal-head-l">
+        <div class="modal-eyebrow">Projection sur 10 ans</div>
+        <div class="modal-title" id="sim-modal-title">Simulation — Réserve Individuelle</div>
+        <div class="modal-sub" id="sim-modal-sub">—</div>
+      </div>
+      <button class="modal-close" onclick="closeSimModal()" aria-label="Fermer">✕</button>
+    </div>
+    <div class="modal-body" id="sim-modal-body"></div>
+  </div>
+</div>
+
+<!-- ───────────── MODALE PRÉPARATION PLANTATION ───────────── -->
+<div id="plant-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closePlantModal()">
+  <div class="modal-card modal-wide" role="dialog" aria-modal="true" aria-labelledby="plant-modal-title">
+    <div class="modal-head">
+      <div class="modal-head-l">
+        <div class="modal-eyebrow">Conception · future plantation</div>
+        <div class="modal-title" id="plant-modal-title">Préparer la plantation</div>
+        <div class="modal-sub" id="plant-modal-sub">—</div>
+      </div>
+      <button class="modal-close" onclick="closePlantModal()" aria-label="Fermer">✕</button>
+    </div>
+    <div class="modal-body" id="plant-modal-body"></div>
+  </div>
+</div>
+
+<script src="data/data.js?v=3"></script>
+<script src="js/config.js?v=3"></script>
+<script src="js/state.js?v=3"></script>
+<script src="js/calcul.js?v=3"></script>
+<script src="js/carte.js?v=3"></script>
+<script src="js/panel.js?v=3"></script>
+<script src="js/simulation.js?v=3"></script>
+<script src="js/plantation.js?v=3"></script>
+<script src="js/app.js?v=3"></script>
 </body>
 </html>

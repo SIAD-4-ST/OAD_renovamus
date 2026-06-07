@@ -1,23 +1,34 @@
+var SORT_FNS = {
+  I:    function(a, b) { return calcI(b).I - calcI(a).I; },
+  surf: function(a, b) { return pv(b.properties, 'surface_ss_parcelle') - pv(a.properties, 'surface_ss_parcelle'); },
+  age:  function(a, b) { return a.properties.anneeplant - b.properties.anneeplant; },
+  manq: function(a, b) { return pv(b.properties, 'taux_manquant') - pv(a.properties, 'taux_manquant'); }
+};
+
+function setSort(v) { S.sort = v; refreshStyles(); }
+
 function buildList(feats) {
-  var sorted = feats.slice().sort(function(a, b) { return calcI(b).I - calcI(a).I; });
+  var sorted = feats.slice().sort(SORT_FNS[S.sort] || SORT_FNS.I);
   document.getElementById('list-count').textContent = sorted.length + (sorted.length > 1 ? ' parcelles' : ' parcelle');
   var el = document.getElementById('pl');
   if (!sorted.length) {
-    el.innerHTML = '<div class="empty-st"><div class="ei">🗺️</div>' +
-      (S.commune ? 'Aucune parcelle.' : 'Sélectionnez<br>une commune.') + '</div>';
+    el.innerHTML = '<div class="empty-st"><div class="ei">◈</div>' +
+      (S.commune ? 'Aucune parcelle\ndans cette sélection.' : 'Sélectionnez une commune\npour afficher les parcelles.').replace(/\n/g, '<br>') + '</div>';
     return;
   }
   el.innerHTML = sorted.map(function(f) {
     var p = f.properties, r = calcI(f), I = r.I, col = iColor(I);
     var dist = getFdDist(p);
-    var fdTag = communeFD() ? (dist !== null ? ' 📍' : ' ⚠️') : '';
+    var tag = communeFD() ? (dist !== null
+        ? '<span class="pl-tag t-dist">' + dist + ' m</span>'
+        : '<span class="pl-tag t-fd">FD ?</span>') : '';
     return '<div class="pl-item' + (p.idu === S.selIdu ? ' active' : '') + '" onclick="selectById(\'' + p.idu + '\')">' +
-      '<div class="pl-badge" style="background:' + col + '22;color:' + col + ';border:1px solid ' + col + '55">' + I.toFixed(0) + '</div>' +
+      '<div class="pl-badge" style="background:' + col + '14;color:' + col + ';border-color:' + col + '44">' + I.toFixed(0) + '<span class="bl">' + iLabel(I).slice(0,4) + '</span></div>' +
       '<div class="pl-info">' +
-        '<div class="pl-idu">' + p.idu + fdTag + '</div>' +
+        '<div class="pl-idu"><span class="mono">' + p.idu + '</span>' + tag + '</div>' +
         '<div class="pl-meta">' + p.cepage + ' · ' + (ANNEE - p.anneeplant) + ' ans · ' + pv(p, 'surface_ss_parcelle') + ' ha · ' + p.lieu_dit + '</div>' +
       '</div>' +
-      (S.mode === 'vign' ? '<button class="pl-sim" onclick="event.stopPropagation();selectById(\'' + p.idu + '\');goSim()">SIM</button>' : '') +
+      (S.mode === 'vign' ? '<button class="pl-sim" onclick="event.stopPropagation();selectById(\'' + p.idu + '\');openSimModal(\'' + p.idu + '\')">SIM</button>' : '') +
     '</div>';
   }).join('');
 }
@@ -32,12 +43,48 @@ function selectFeat(feat) {
   openPanel(feat);
   try { map.fitBounds(L.geoJSON(feat).getBounds().pad(0.4)); } catch(e) {}
 }
-function goSim() {
-  setTimeout(function() {
-    var el = document.getElementById('sim-sec');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  }, 200);
+function goSim() {}
+
+// ───────────── Simulation en modale ─────────────
+function simControlsHTML(idu) {
+  return '<div class="sim-grid sim-modal-grid">' +
+    '<div class="si"><label>Type d\'arrachage</label><select class="fi-input" id="s-type"><option value="Classique">Classique (1 an repos)</option><option value="Sanitaire">Sanitaire FD (3 ans)</option></select></div>' +
+    '<div class="si"><label>Replantation</label><select class="fi-input" id="s-mode"><option value="Classique">Classique</option><option value="Anticip\u00e9e">Anticip\u00e9e</option></select></div>' +
+    '<div class="si"><label>VolCo (kg/ha)</label><input type="number" class="fi-input" id="s-volco" value="9000" step="500" min="0"></div>' +
+    '<div class="si"><label>Rendement agro (kg/ha)</label><input type="number" class="fi-input" id="s-rend" value="15500" step="500" min="0"></div>' +
+  '</div>' +
+  '<button class="run-btn" onclick="runSim(\'' + idu + '\')">Recalculer la simulation</button>' +
+  '<div id="sim-out" style="display:none">' +
+    '<div class="sim-kpis" id="sim-kpis"></div>' +
+    '<div class="chart-card">' +
+      '<div class="chart-cap">' +
+        '<span><i class="cc-line"></i>Stock RI (kg/ha)</span>' +
+        '<span><i class="cc-plaf"></i>Plafond 10 000</span>' +
+        '<span><i class="cc-bar"></i>Sortie r\u00e9serve</span>' +
+      '</div>' +
+      '<div class="chart-wrap"><canvas class="sim-cvs" id="sim-cvs" height="180"></canvas></div>' +
+    '</div>' +
+    '<div class="sim-tw"><table class="sim-t" id="sim-t"></table></div>' +
+  '</div>';
 }
+
+function openSimModal(idu) {
+  var f = PARCELLES_GEOJSON.features.find(function(f) { return f.properties.idu === idu; });
+  if (!f) return;
+  var p = f.properties;
+  document.getElementById('sim-modal-sub').textContent = p.idu + ' \u00b7 ' + p.cepage + ' \u00b7 ' + p.lieu_dit + ' \u00b7 ' + p.num_civc;
+  document.getElementById('sim-modal-body').innerHTML = simControlsHTML(idu);
+  document.getElementById('sim-modal').style.display = 'flex';
+  document.body.classList.add('modal-open');
+  runSim(idu); // r\u00e9sultats imm\u00e9diats avec param\u00e8tres par d\u00e9faut
+}
+function closeSimModal() {
+  document.getElementById('sim-modal').style.display = 'none';
+  document.body.classList.remove('modal-open');
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeSimModal();
+});
 
 function cb(lbl, val, col, pond) {
   var w = Math.min(100, Math.max(0, val)).toFixed(0);
@@ -61,22 +108,22 @@ function openPanel(feat) {
 
   var fdBlock = hasFD && !isTech ? (
     '<div class="fd-panel-block">' +
-      '<div class="fd-panel-title">⚠ Commune en zone FD — Distance au foyer</div>' +
-      '<div style="font-size:10px;color:rgba(237,232,224,.5);margin-bottom:6px">' +
+      '<div class="fd-panel-title">Commune en zone FD — distance au foyer</div>' +
+      '<div class="fd-panel-desc">' +
         'La commune ' + COMMUNES[S.commune].nom + ' présente un foyer FD déclaré. ' +
         'Renseignez la distance entre cette parcelle et la parcelle contaminée la plus proche.' +
       '</div>' +
       '<div class="fd-dist-row">' +
-        '<label>Distance foyer FD :</label>' +
+        '<label>Distance au foyer</label>' +
         '<input type="number" class="fd-dist-input" id="fd-dist-inp" min="0" step="10" ' +
-          'placeholder="Ex: 250" value="' + (dist !== null ? dist : '') + '"' +
+          'placeholder="ex. 250" value="' + (dist !== null ? dist : '') + '"' +
           ' onchange="saveFdDist(\'' + p.idu + '\',this.value)">' +
         '<span class="fd-dist-unit">mètres</span>' +
       '</div>' +
-      (dist !== null ? '<div style="font-size:9px;margin-top:6px;color:rgba(237,232,224,.4)">Score FD : ' + sc.fd.toFixed(0) + '/100 (impact sur l\'indice viroses)</div>' : '') +
+      (dist !== null ? '<div class="fd-score-note">Score FD : <b class="mono">' + sc.fd.toFixed(0) + '/100</b> — intégré à l\'indice viroses</div>' : '') +
     '</div>'
   ) : (hasFD && isTech && dist !== null ?
-    '<div style="font-size:10px;color:rgba(214,48,49,.8);background:rgba(214,48,49,.08);border:1px solid rgba(214,48,49,.2);border-radius:6px;padding:8px 10px;margin-bottom:8px">⚠ Dist. foyer FD : <b>' + dist + ' m</b></div>' : '');
+    '<div class="fd-tech-note">Distance au foyer FD : <b>' + dist + ' m</b></div>' : '');
 
   var saisie = isTech ? '' :
     '<div class="ps-sec vign-only">' +
@@ -89,44 +136,49 @@ function openPanel(feat) {
         '<div class="fi"><label>Court-noué (0–3)</label><select class="fi-input" onchange="terr(\'' + p.idu + '\',\'court_noue\',this.value)">' + '0,1,2,3'.split(',').map(function(v) { return '<option value="' + v + '"' + (pv(p, 'court_noue') == v ? ' selected' : '') + '>' + v + '</option>'; }).join('') + '</select></div>' +
         '<div class="fi"><label>Réserve exploit. (kg/ha)</label><input type="number" class="fi-input" min="0" max="10000" step="100" value="' + ri + '" onchange="terrRI(\'' + p.num_civc + '\',this.value)"></div>' +
       '</div>' +
-      '<button class="save-btn" onclick="toast(\'✓ Données enregistrées\')">💾 Sauvegarder</button>' +
+      '<button class="save-btn" onclick="toast(\'Données terrain enregistrées\')">Enregistrer la saisie</button>' +
     '</div>';
 
-  var sim = isTech ? '' :
-    '<div class="ps-sec vign-only" id="sim-sec">' +
-      '<div class="ps-t">Simulation — Réserve Individuelle</div>' +
-      '<div class="sim-grid">' +
-        '<div class="si"><label>Type arrachage</label><select class="fi-input" id="s-type"><option value="Classique">Classique (1 an repos)</option><option value="Sanitaire">Sanitaire FD (3 ans)</option></select></div>' +
-        '<div class="si"><label>Replantation</label><select class="fi-input" id="s-mode"><option value="Classique">Classique</option><option value="Anticipée">Anticipée</option></select></div>' +
-        '<div class="si"><label>VolCo (kg/ha)</label><input type="number" class="fi-input" id="s-volco" value="9000" step="500" min="0"></div>' +
-        '<div class="si"><label>Rendement agro (kg/ha)</label><input type="number" class="fi-input" id="s-rend" value="15500" step="500" min="0"></div>' +
-      '</div>' +
-      '<button class="run-btn" onclick="runSim(\'' + p.idu + '\')">▶ Lancer la simulation</button>' +
-      '<div id="sim-out" style="display:none">' +
-        '<div class="sim-kpis" id="sim-kpis"></div>' +
-        '<div class="chart-wrap"><canvas class="sim-cvs" id="sim-cvs" height="150"></canvas></div>' +
-        '<div class="sim-tw"><table class="sim-t" id="sim-t"></table></div>' +
+  var simCta = isTech ? '' :
+    '<div class="ps-sec vign-only">' +
+      '<div class="detail-actions">' +
+        '<button class="sim-cta" onclick="openSimModal(\'' + p.idu + '\')">' +
+          '<span class="sim-cta-bars"><i></i><i></i><i></i><i></i></span>' +
+          '<span class="sim-cta-tx"><b>Simuler la réserve individuelle</b><small>Projection du stock RI sur 10 ans — arrachage &amp; replantation</small></span>' +
+          '<span class="sim-cta-go">Ouvrir →</span>' +
+        '</button>' +
+        '<button class="plant-cta" onclick="openPlantModal(\'' + p.idu + '\')">' +
+          '<span class="plant-cta-rows"><i></i><i></i><i></i></span>' +
+          '<span class="sim-cta-tx"><b>Préparer la plantation</b><small>Matériel végétal, palissage, aménagements &amp; couvert au repos</small></span>' +
+          '<span class="plant-cta-go">Concevoir →</span>' +
+        '</button>' +
       '</div>' +
     '</div>';
 
   var virosesLbl = hasFD ? 'Viroses + FD' : 'Viroses';
+  var sumPond = Object.values(S.pond).reduce(function(a, b) { return a + b; }, 0);
 
   document.getElementById('pb').innerHTML =
     '<div class="ps-sec">' +
-      '<div class="ps-t">Indice d\'arrachage [I]</div>' +
-      '<div class="sc-wrap">' +
-        '<div class="sc-ring" style="border-color:' + col + ';color:' + col + '"><span class="rn">' + I.toFixed(0) + '</span><span class="rd">/100</span></div>' +
-        '<div><div class="sc-lbl" style="color:' + col + '">' + iLabel(I) + '</div>' +
-        '<div class="sc-hint">Pondération active · Σ=' + Object.values(S.pond).reduce(function(a, b) { return a + b; }, 0) + (hasFD ? '<br>⚠ FD prise en compte dans viroses' : '') + '</div></div>' +
+      '<div class="ps-t">Indice d\'arrachage</div>' +
+      '<div class="idx-head">' +
+        '<div class="idx-num" style="color:' + col + '">' + I.toFixed(0) + '<small>/100</small></div>' +
+        '<div class="idx-meta">' +
+          '<div class="idx-lbl" style="color:' + col + '">' + iLabel(I) + '</div>' +
+          '<div class="idx-hint">Pondération active · Σ=' + sumPond + (hasFD ? ' · <span class="fd-flag">FD intégrée aux viroses</span>' : '') + '</div>' +
+        '</div>' +
       '</div>' +
+      '<div class="idx-gauge"><div class="idx-marker" style="left:calc(' + Math.min(100, Math.max(0, I)) + '% - 1.5px)"></div></div>' +
+      '<div class="idx-scale"><span>0</span><span>30</span><span>50</span><span>70</span><span>100</span></div>' +
       '<div class="cb-rows">' +
-        cb('Proportion surf.', sc.prop, '#4A90D9', S.pond.pp) +
-        cb('Taux manquants', sc.manq, '#E17055', S.pond.pm) +
-        cb(virosesLbl, hasFD ? Math.min(100, (sc.viro + sc.fd) / 2) : sc.viro, '#D63031', S.pond.pv) +
-        cb('Productivité', sc.prod, '#A29BFE', S.pond.ppr) +
-        cb('Déficit réserve', sc.defr, '#00CEC9', S.pond.pd) +
+        cb('Proportion surf.', sc.prop, '#1C2C49', S.pond.pp) +
+        cb('Taux manquants', sc.manq, '#BD6A2C', S.pond.pm) +
+        cb(virosesLbl, hasFD ? Math.min(100, (sc.viro + sc.fd) / 2) : sc.viro, '#A6322B', S.pond.pv) +
+        cb('Productivité', sc.prod, '#9A7B3D', S.pond.ppr) +
+        cb('Déficit réserve', sc.defr, '#5E7A41', S.pond.pd) +
       '</div>' +
     '</div>' +
+    simCta +
     '<div class="ps-sec">' +
       '<div class="ps-t">Données parcellaires</div>' +
       '<div class="dg">' +
@@ -150,7 +202,7 @@ function openPanel(feat) {
         dgi('Taux remplissage', Math.round(ri / 100) + ' %') +
       '</div>' +
     '</div>' +
-    saisie + sim;
+    saisie;
 
   document.getElementById('panel-list').style.display = 'none';
   var det = document.getElementById('panel-detail');
@@ -181,10 +233,12 @@ function updateScoreDisplay() {
   var feat = PARCELLES_GEOJSON.features.find(function(f) { return f.properties.idu === S.selIdu; });
   if (!feat) return;
   var r = calcI(feat), I = r.I, sc = r.sc, col = iColor(I);
-  var ring = document.querySelector('.sc-ring');
-  if (ring) { ring.style.borderColor = col; ring.style.color = col; ring.querySelector('.rn').textContent = I.toFixed(0); }
-  var lbl = document.querySelector('.sc-lbl');
+  var num = document.querySelector('.idx-num');
+  if (num) { num.style.color = col; num.innerHTML = I.toFixed(0) + '<small>/100</small>'; }
+  var lbl = document.querySelector('.idx-lbl');
   if (lbl) { lbl.textContent = iLabel(I); lbl.style.color = col; }
+  var mk = document.querySelector('.idx-marker');
+  if (mk) { mk.style.left = 'calc(' + Math.min(100, Math.max(0, I)) + '% - 1.5px)'; }
   var fills = document.querySelectorAll('.cb-fill');
   var hasFD = communeFD();
   var vals = [sc.prop, sc.manq, hasFD ? Math.min(100, (sc.viro + sc.fd) / 2) : sc.viro, sc.prod, sc.defr];

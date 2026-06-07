@@ -17,11 +17,11 @@ function selectCommune(key) {
     badge.style.display = 'flex';
     var com = COMMUNES[key];
     if (com.fd) {
-      badge.className = 'fd-commune-badge fd-oui';
-      badge.textContent = '⚠ Foyer FD déclaré';
+      badge.className = 'fd-badge fd-oui';
+      badge.textContent = 'Foyer FD déclaré';
     } else {
-      badge.className = 'fd-commune-badge fd-non';
-      badge.textContent = '✓ Pas de FD';
+      badge.className = 'fd-badge fd-non';
+      badge.textContent = 'Pas de foyer FD';
     }
   } else {
     badge.style.display = 'none';
@@ -30,21 +30,24 @@ function selectCommune(key) {
   var info = document.getElementById('commune-info');
   if (key) {
     info.style.display = '';
-    document.getElementById('commune-name-label').textContent = (COMMUNES[key] ? COMMUNES[key].nom + ' (' + COMMUNES[key].dept + ')' : '—');
+    document.getElementById('commune-name-label').textContent = (COMMUNES[key] ? COMMUNES[key].nom : '—');
+    document.getElementById('commune-appel').textContent = (COMMUNES[key] ? COMMUNES[key].appellation + ' · Dept. ' + COMMUNES[key].dept : '—');
     var feats = PARCELLES_GEOJSON.features.filter(function(f) { return f.properties.commune === key; });
     document.getElementById('kpi-nb').textContent = feats.length;
     var surfTot = feats.reduce(function(s, f) { return s + pv(f.properties, 'surface_ss_parcelle'); }, 0);
     document.getElementById('kpi-surf-c').textContent = surfTot.toFixed(2);
+    var ageMoy = feats.length ? feats.reduce(function(s, f) { return s + (ANNEE - f.properties.anneeplant); }, 0) / feats.length : 0;
+    document.getElementById('kpi-age').textContent = feats.length ? Math.round(ageMoy) + ' ans' : '—';
     var fdBlock = document.getElementById('fd-commune-block');
     var fdTitle = document.getElementById('fd-block-title');
     var fdDesc = document.getElementById('fd-block-desc');
     if (COMMUNES[key].fd) {
-      fdBlock.className = 'fd-commune-block';
-      fdTitle.textContent = '⚠ Foyer FD déclaré sur la commune';
-      fdDesc.textContent = 'La distance au foyer le plus proche peut être renseignée pour chaque parcelle (en saisie terrain).';
+      fdBlock.className = 'fd-block fd-on';
+      fdTitle.textContent = 'Foyer FD déclaré sur la commune';
+      fdDesc.textContent = 'La distance au foyer le plus proche peut être renseignée pour chaque parcelle (saisie terrain).';
     } else {
-      fdBlock.className = 'fd-commune-block fd-none';
-      fdTitle.textContent = '✓ Aucun foyer FD déclaré';
+      fdBlock.className = 'fd-block fd-none';
+      fdTitle.textContent = 'Aucun foyer FD déclaré';
       fdDesc.textContent = 'Pas de mesure de distance requise pour les parcelles de cette commune.';
     }
     var com = COMMUNES[key];

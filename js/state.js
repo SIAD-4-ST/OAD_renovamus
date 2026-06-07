@@ -2,7 +2,7 @@ var PARCELLES_GEOJSON = null;
 var EXPLOITATIONS = [];
 
 var S = {
-  mode: 'vign', commune: '', civc: '', selIdu: null,
+  mode: 'vign', commune: '', civc: '', selIdu: null, sort: 'I',
   pond: { pp: 1, pm: 2, pv: 3, ppr: 2, pd: 2 },
   ov: {},
 };

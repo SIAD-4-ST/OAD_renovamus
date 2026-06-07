@@ -60,44 +60,54 @@ function runSim(idu) {
 function drawChart(rows) {
   var cvs = document.getElementById('sim-cvs');
   if (!cvs) return;
-  var DPR = window.devicePixelRatio || 1, W = cvs.parentElement.clientWidth || 340, H = 150;
+  var DPR = window.devicePixelRatio || 1, W = cvs.parentElement.clientWidth || 340, H = 158;
   cvs.width = W * DPR; cvs.height = H * DPR; cvs.style.width = W + 'px'; cvs.style.height = H + 'px';
   var ctx = cvs.getContext('2d'); ctx.scale(DPR, DPR);
-  var P = { t: 10, r: 10, b: 28, l: 44 }, cw = W - P.l - P.r, ch = H - P.t - P.b, n = rows.length, MX = 12000;
+  var P = { t: 10, r: 10, b: 26, l: 42 }, cw = W - P.l - P.r, ch = H - P.t - P.b, n = rows.length, MX = 12000;
   var xp = function(i) { return P.l + (i / (n - 1)) * cw; };
   var yp = function(v) { return P.t + ch - Math.min(1, Math.max(0, v / MX)) * ch; };
   ctx.clearRect(0, 0, W, H);
 
+  // Grille horizontale
   [0, 2500, 5000, 7500, 10000].forEach(function(v) {
-    var y = yp(v); ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1; ctx.setLineDash([]);
+    var y = yp(v); ctx.strokeStyle = 'rgba(26,25,22,.07)'; ctx.lineWidth = 1; ctx.setLineDash([]);
     ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(P.l + cw, y); ctx.stroke();
-    ctx.fillStyle = 'rgba(237,232,224,.25)'; ctx.font = "9px 'DM Mono',monospace"; ctx.textAlign = 'right';
-    ctx.fillText((v / 1000) + 'k', P.l - 4, y + 3);
+    ctx.fillStyle = 'rgba(116,111,98,.85)'; ctx.font = "10px 'IBM Plex Mono',monospace"; ctx.textAlign = 'right';
+    ctx.fillText((v / 1000) + 'k', P.l - 6, y + 3);
   });
 
-  ctx.setLineDash([4, 3]); ctx.strokeStyle = 'rgba(0,184,148,.5)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(P.l, yp(10000)); ctx.lineTo(P.l + cw, yp(10000)); ctx.stroke(); ctx.setLineDash([]);
-
-  ctx.beginPath();
-  rows.forEach(function(r, i) { i === 0 ? ctx.moveTo(xp(i), yp(r.sha)) : ctx.lineTo(xp(i), yp(r.sha)); });
-  ctx.lineTo(xp(n - 1), yp(0)); ctx.lineTo(xp(0), yp(0)); ctx.closePath();
-  var g = ctx.createLinearGradient(0, P.t, 0, P.t + ch);
-  g.addColorStop(0, 'rgba(201,168,76,.3)'); g.addColorStop(1, 'rgba(201,168,76,.02)');
-  ctx.fillStyle = g; ctx.fill();
-
+  // Barres sortie réserve
   rows.forEach(function(r, i) {
     if (r.sarr > 0) {
-      var bw = Math.max(4, cw / (n - 1) * .5);
-      ctx.fillStyle = 'rgba(214,48,49,.4)';
+      var bw = Math.max(5, cw / (n - 1) * .46);
+      ctx.fillStyle = 'rgba(166,50,43,.30)';
       ctx.fillRect(xp(i) - bw / 2, yp(r.sarr), bw, (r.sarr / MX) * ch);
     }
   });
 
-  ctx.beginPath(); ctx.strokeStyle = '#C9A84C'; ctx.lineWidth = 2;
+  // Aire sous la courbe (or)
+  ctx.beginPath();
+  rows.forEach(function(r, i) { i === 0 ? ctx.moveTo(xp(i), yp(r.sha)) : ctx.lineTo(xp(i), yp(r.sha)); });
+  ctx.lineTo(xp(n - 1), yp(0)); ctx.lineTo(xp(0), yp(0)); ctx.closePath();
+  var g = ctx.createLinearGradient(0, P.t, 0, P.t + ch);
+  g.addColorStop(0, 'rgba(200,175,130,.30)'); g.addColorStop(1, 'rgba(200,175,130,.03)');
+  ctx.fillStyle = g; ctx.fill();
+
+  // Plafond réglementaire
+  ctx.setLineDash([5, 4]); ctx.strokeStyle = 'rgba(154,123,61,.65)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(P.l, yp(10000)); ctx.lineTo(P.l + cw, yp(10000)); ctx.stroke(); ctx.setLineDash([]);
+
+  // Courbe stock RI (marine)
+  ctx.beginPath(); ctx.strokeStyle = '#1C2C49'; ctx.lineWidth = 2.2; ctx.lineJoin = 'round';
   rows.forEach(function(r, i) { i === 0 ? ctx.moveTo(xp(i), yp(r.sha)) : ctx.lineTo(xp(i), yp(r.sha)); });
   ctx.stroke();
-  rows.forEach(function(r, i) { ctx.beginPath(); ctx.arc(xp(i), yp(r.sha), 3, 0, Math.PI * 2); ctx.fillStyle = '#C9A84C'; ctx.fill(); });
+  rows.forEach(function(r, i) {
+    ctx.beginPath(); ctx.arc(xp(i), yp(r.sha), 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.lineWidth = 1.6; ctx.strokeStyle = '#1C2C49'; ctx.stroke();
+  });
 
-  ctx.fillStyle = 'rgba(237,232,224,.25)'; ctx.font = "9px 'DM Mono',monospace"; ctx.textAlign = 'center';
-  rows.forEach(function(r, i) { if (i % 2 === 0) ctx.fillText('a' + r.t, xp(i), H - P.b + 14); });
+  // Axe X
+  ctx.fillStyle = 'rgba(116,111,98,.85)'; ctx.font = "10px 'IBM Plex Mono',monospace"; ctx.textAlign = 'center';
+  rows.forEach(function(r, i) { if (i % 2 === 0) ctx.fillText('a' + r.t, xp(i), H - P.b + 15); });
 }

@@ -49,10 +49,10 @@ function calcI(feat) {
 }
 
 function iColor(I) {
-  if (I >= 70) return '#D63031';
-  if (I >= 50) return '#E17055';
-  if (I >= 30) return '#F9CA24';
-  return '#00B894';
+  if (I >= 70) return '#A6322B';
+  if (I >= 50) return '#BD6A2C';
+  if (I >= 30) return '#B08A22';
+  return '#5E7A41';
 }
 function iLabel(I) {
   if (I >= 70) return 'Prioritaire';

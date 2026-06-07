@@ -13,16 +13,18 @@ Le prototype est conçu sans dépendances lourdes ni framework (approche Vanilla
 
 | Fichier | Rôle |
 |---|---|
-| `index.html` | Structure de l'interface (dashboard 3 colonnes : Filtres/Carte/Panel) |
-| `style.css` | Styles de l'interface |
+| `index.html` | Structure de l'interface (dashboard 3 colonnes : Filtres/Carte/Panel) + modales Simulation et Plantation |
+| `style.css` | Charte graphique Comité Champagne : thème clair (fond crème, encre marine), polices Archivo + IBM Plex Mono |
+| `assets/logo-mark.png` | Logo institutionnel affiché dans l'en-tête |
 | `data/data.js` | Données fictives inlinées : 9 exploitations, 23 parcelles sur 3 communes |
 | `js/config.js` | Constantes et référentiel des communes (COMMUNES, LS_KEY) |
-| `js/state.js` | État global de l'application (`S`), pondérations, saisies terrain (localStorage) |
-| `js/calcul.js` | Fonctions de calcul des indices de priorité (`calcI`, sous-scores) |
-| `js/carte.js` | Rendu cartographique Leaflet, coloration des polygones |
-| `js/panel.js` | Affichage de la liste et du détail parcellaire (cépage, âge, surface, proportion surf., productivité, état sanitaire, réserve individuelle) |
-| `js/simulation.js` | Moteur de simulation arrachage/replantation |
-| `js/app.js` | Initialisation, sélection commune/exploitation, orchestration |
+| `js/state.js` | État global de l'application (`S`), pondérations, tri de la liste, saisies terrain (localStorage) |
+| `js/calcul.js` | Fonctions de calcul des indices de priorité (`calcI`, sous-scores) + palette de couleurs `iColor()` |
+| `js/carte.js` | Rendu cartographique Leaflet, double fond Plan/Satellite commutable, coloration des polygones |
+| `js/panel.js` | Liste triable (Indice, Surface, Âge, Manquants) et détail parcellaire (cépage, âge, surface, proportion surf., productivité, état sanitaire, réserve individuelle) ; gestion des modales Simulation et Plantation |
+| `js/simulation.js` | Moteur de simulation arrachage/replantation ; rendu graphique Canvas (stock RI sur 10 ans) |
+| `js/plantation.js` | Configurateur de plantation : matériel végétal, densité, palissage, aménagements, couvert au repos, budget indicatif |
+| `js/app.js` | Initialisation, sélection commune/exploitation, KPIs communes (nb parcelles, surface, âge moyen), orchestration |
 
 ### Communes couvertes (données de démonstration)
 
@@ -77,9 +79,50 @@ $$viroses\_eff = \frac{sc\_viro + sc\_fd}{2}$$
 
 Tous les attributs entrant dans le calcul peuvent être **surchargés par la saisie terrain** : une valeur modifiée dans l'interface (distance FD, réserve, etc.) est stockée dans `localStorage` et écrase la donnée source pour le calcul, sans modifier les données d'origine.
 
+## Interface utilisateur
+
+### Double fond cartographique (`js/carte.js`)
+
+Deux fonds sont disponibles et commutables via les boutons **Plan / Satellite** superposés à la carte :
+
+- **Plan** (défaut) : CartoCDN Voyager — fond clair avec toponymie, adapté à la lecture des contours parcellaires.
+- **Satellite** : Esri World Imagery + étiquettes CartoCDN — fond imagerie pour le repérage terrain.
+
+Le style des polygones s'adapte automatiquement au fond actif (opacité et couleur de contour).
+
+### Liste et tri de la liste (`js/panel.js`)
+
+Les parcelles de la commune/exploitation sélectionnée peuvent être triées selon quatre critères via le sélecteur **Trier** :
+
+| Critère | Ordre |
+|---|---|
+| Indice | Décroissant (défaut) |
+| Surface | Décroissante |
+| Âge | Croissant (les plus vieilles d'abord) |
+| Manquants | Décroissant |
+
+Le tri courant est persisté dans l'état global (`S.sort`).
+
+### KPIs commune (`js/app.js`)
+
+Le bloc "Contexte commune" affiche trois indicateurs calculés à la sélection :
+
+- Nombre de parcelles
+- Surface totale (ha)
+- **Âge moyen** des parcelles de la commune (calculé dynamiquement)
+
+### Détail parcellaire et actions (`js/panel.js`)
+
+Depuis le détail d'une parcelle, deux boutons CTA ouvrent les modules spécialisés en **modale overlay** (accessible depuis n'importe quel état du panel) :
+
+- **Simuler la réserve individuelle** — projection RI sur 10 ans
+- **Préparer la plantation** — configurateur de plantation
+
+L'indice d'arrachage est représenté par une **jauge horizontale** avec un marqueur positionné sur l'échelle 0–100 (remplace l'ancien ring circulaire).
+
 ## Simulation réserve individuelle (`js/simulation.js`)
 
-La simulation projette l'évolution du stock de réserve individuelle (RI) sur **10 ans** à partir du scénario d'arrachage sélectionné. Elle est déclenchée par `runSim()` depuis le panel parcellaire.
+La simulation projette l'évolution du stock de réserve individuelle (RI) sur **10 ans** à partir du scénario d'arrachage sélectionné. Elle est accessible via la modale **"Simuler la réserve individuelle"** ouverte depuis le détail d'une parcelle (bouton CTA), ou directement depuis le bouton **SIM** dans la liste.
 
 ### Paramètres d'entrée
 
@@ -142,6 +185,42 @@ Le stock est ramené en **kg/ha** (`sha = stock / surf_totale`) pour être compa
 | Stock an 10 | `sha` à $t = 10$ |
 
 Le taux de RI (`tx`) est exprimé en % du plafond réglementaire (10 000 kg/ha). Les seuils de coloration du tableau sont : < 4 000 kg/ha (rouge), 4 000–7 500 (orange), ≥ 7 500 (vert).
+
+## Configurateur de plantation (`js/plantation.js`)
+
+Accessible depuis le bouton **"Préparer la plantation"** dans le détail d'une parcelle. Il permet au vigneron de concevoir sa future plantation et d'obtenir une synthèse métrée et un budget indicatif recalculés en temps réel.
+
+### Paramètres de configuration
+
+| Groupe | Paramètres |
+|---|---|
+| Matériel végétal | Cépage, porte-greffe, type de plant (greffé-soudé / pot), origine clonale |
+| Densité & écartement | Écartement inter-rang (1,00–1,50 m), écartement entre pieds (0,90–1,30 m) — contrainte AOC : rang + pied ≤ 2,50 m |
+| Palissage | Type (simple / double / lyre), piquets (acacia / métal / composite), fils releveurs (1 ou 2 paires), hauteur (1,00–1,40 m) |
+| Aménagements | Orientation des rangs, gestion de l'inter-rang, largeur de tournière (4–8 m) |
+| Couverture au repos | Type de couvert (légumineuses, graminées, crucifères, mélange, jachère nue), durée de repos avant plantation (1–5 ans) |
+
+### Synthèse calculée en direct
+
+| Indicateur | Calcul |
+|---|---|
+| Densité (pieds/ha) | `10 000 / (rang × pied)` |
+| Pieds à planter | `densité × surface_parcelle` |
+| Plants à commander | `pieds × 1,05` (marge de 5 %) |
+| Longueur de rang (ml) | `surface_m² / écartement_rang` |
+| Piquets | `ml / 5 + nb_rangs` |
+| Fil releveur (m) | `ml × (2 × paires + 1)` |
+
+### Budget indicatif
+
+Quatre postes sont estimés (hors aides et main-d'œuvre interne), restitués sous forme de fourchette (±12 %) :
+
+- **Matériel végétal** : 1,80 €/plant (racines nues) ou 2,60 €/plant (pot)
+- **Palissage** : coût au ml selon type de piquet (2,40–3,60 €/ml de base) × facteur palissage (×1 simple, ×1,2 double, ×1,4 lyre)
+- **Couvert au repos** : coût à l'ha selon espèce × durée (40–300 €/ha/an)
+- **Préparation & plantation** : forfait 3 800 €/ha
+
+Un schéma de plantation (grille CSS paramétrique) illustre l'écartement saisi en temps réel.
 
 ## Spécifications pour l'Industrialisation (Notes DSI)
 
