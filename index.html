@@ -3,214 +3,213 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OAD Arrachage — Comité Champagne</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<title>OAD Renouvellement — maquette v1.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --craie:#FAF9F5;--encre:#20291F;--lie:#5C6157;--or:#A97F26;--or-pale:#F1E6CC;
+  --vigne:#4C7A57;--vigne-pale:#E3EDE5;--ardoise:#9A9E97;--alerte:#A5433A;--alerte-pale:#F3E0DD;
+  --ligne:#DDD9CE;--carte:#FFFFFF;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--craie);color:var(--encre);font:16px/1.55 'Archivo',sans-serif;padding-bottom:6rem}
+.mono{font-family:'JetBrains Mono',monospace}
+header{border-bottom:3px solid var(--encre);padding:2.2rem 1.5rem 1.6rem;max-width:1100px;margin:0 auto}
+header h1{font-family:'Fraunces',serif;font-weight:650;font-size:clamp(1.6rem,4vw,2.4rem);line-height:1.1}
+header p{color:var(--lie);margin-top:.5rem;max-width:62ch}
+header .statut{display:inline-block;margin-top:.8rem;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--or);color:var(--or);padding:.2rem .6rem;border-radius:2px}
+main{max-width:1100px;margin:0 auto;padding:0 1.5rem}
+section{border-left:3px solid var(--ligne);margin:2.4rem 0;padding:0 0 0 1.4rem}
+section.resultats{border-left-color:var(--or)}
+.etape{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--or);letter-spacing:.08em}
+h2{font-family:'Fraunces',serif;font-weight:650;font-size:1.35rem;margin:.15rem 0 .9rem}
+h3{font-family:'Fraunces',serif;font-size:1.05rem}
+.grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.9rem 1.2rem}
+.champ{display:flex;flex-direction:column;gap:.25rem}
+.champ label{font-size:.83rem;font-weight:600}
+.champ .src{font-size:.72rem;color:var(--lie)}
+.src.verif{color:var(--alerte)}
+.champ input,.champ select{font:inherit;padding:.45rem .55rem;border:1px solid var(--ligne);border-radius:3px;background:var(--carte)}
+.champ input:focus,.champ select:focus{outline:2px solid var(--or);outline-offset:1px}
+.champ .unite{font-size:.75rem;color:var(--lie)}
+.note{background:var(--vigne-pale);border-radius:4px;padding:.8rem 1rem;font-size:.86rem;margin:.9rem 0;max-width:72ch}
+.note.or{background:var(--or-pale)}
+.note.alerte{background:var(--alerte-pale)}
+/* plantation : géométrie + synthèse */
+.geo{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;align-items:start}
+.geo-synth{background:var(--carte);border:1px solid var(--ligne);border-radius:6px;padding:1rem}
+.geo-synth .row{display:flex;justify-content:space-between;font-size:.86rem;padding:.28rem 0;border-bottom:1px dotted var(--ligne)}
+.geo-synth .row b{font-family:'JetBrains Mono',monospace}
+.aoc{font-size:.8rem;margin-top:.6rem;padding:.5rem .7rem;border-radius:4px}
+.aoc.ok{background:var(--vigne-pale)}.aoc.ko{background:var(--alerte-pale);color:var(--alerte)}
+.badge{display:inline-block;font-size:.72rem;padding:.12rem .5rem;border-radius:10px;background:var(--or-pale);color:var(--encre);margin:.15rem .2rem 0 0}
+/* résultats */
+.synthese{background:var(--encre);color:var(--craie);border-radius:8px;padding:1.2rem 1.4rem;margin:1rem 0 1.4rem;font-size:1.02rem;line-height:1.6}
+.synthese b{color:var(--or-pale)}
+.barre{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin:.6rem 0 1rem}
+.toggle{display:inline-flex;border:1px solid var(--ligne);border-radius:4px;overflow:hidden}
+.toggle button{font:inherit;font-size:.83rem;padding:.4rem .85rem;border:0;background:var(--carte);cursor:pointer;border-right:1px solid var(--ligne)}
+.toggle button:last-child{border-right:0}
+.toggle button.actif{background:var(--encre);color:var(--craie)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem;margin:1rem 0 1.4rem}
+.kpi{background:var(--carte);border:1px solid var(--ligne);border-left:4px solid var(--k,var(--ardoise));border-radius:6px;padding:.9rem 1rem}
+.kpi .lib{font-size:.76rem;text-transform:uppercase;letter-spacing:.05em;color:var(--lie)}
+.kpi .val{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:650;margin:.15rem 0;line-height:1.1}
+.kpi .det{font-size:.79rem;color:var(--lie)}
+figure{background:var(--carte);border:1px solid var(--ligne);border-radius:8px;padding:1.1rem 1.2rem;margin:1.4rem 0}
+figcaption{font-family:'Fraunces',serif;font-weight:600;font-size:1.02rem;margin-bottom:.1rem}
+figure .sous{font-size:.82rem;color:var(--lie);margin-bottom:.7rem;max-width:74ch}
+svg{width:100%;height:auto;display:block}
+.legende{display:flex;gap:1.3rem;flex-wrap:wrap;font-size:.8rem;margin-top:.6rem;align-items:center}
+.legende span.k::before{content:'';display:inline-block;width:16px;height:3px;background:var(--kc);margin-right:.4rem;vertical-align:middle}
+.legende label{font-size:.8rem;color:var(--lie);display:inline-flex;gap:.3rem;align-items:center;margin-left:auto}
+.lecture{font-size:.82rem;color:var(--lie);margin-top:.6rem;border-top:1px dotted var(--ligne);padding-top:.5rem}
+table{border-collapse:collapse;width:100%;font-size:.82rem;margin-top:.5rem}
+th,td{border-bottom:1px solid var(--ligne);padding:.4rem .5rem;text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--lie)}
+details{margin-top:1rem}summary{cursor:pointer;font-weight:600;font-size:.9rem}
+.footnote{font-size:.78rem;color:var(--lie);max-width:78ch;margin-top:2rem;border-top:1px solid var(--ligne);padding-top:1rem}
+@media (max-width:720px){.geo{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-
-<!-- ───────────────────────── HEADER ───────────────────────── -->
-<header id="hd">
-  <div class="brand">
-    <div class="brand-mark"><img src="assets/logo-mark.png" alt="Comité Champagne"></div>
-    <div class="brand-txt">
-      <div class="brand-name">Comité Champagne</div>
-      <div class="brand-sub">OAD · Aide à la décision d'arrachage</div>
-    </div>
-  </div>
-
-  <div class="hd-mid">
-    <div class="commune-wrap">
-      <span class="commune-label">Commune</span>
-      <div class="select-shell">
-        <select class="commune-select" id="sel-commune" onchange="selectCommune(this.value)">
-          <option value="">— Choisir une commune —</option>
-          <option value="Cuis">Cuis (51)</option>
-          <option value="Trelou">Trélou-sur-Marne (02)</option>
-          <option value="Arrentieres">Arrentières (10)</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <div class="hd-right">
-    <span class="mode-cap">Profil</span>
-    <div class="mode-toggle">
-      <button class="mode-btn active" id="btn-vign" onclick="setMode('vign')">Vigneron</button>
-      <button class="mode-btn" id="btn-tech" onclick="setMode('tech')">Technicien</button>
-    </div>
-  </div>
+<header>
+  <div class="etape">Maquette v1.1 — moteur kg à parité classeur · couche € · 3 scénarios · 17 tests</div>
+  <h1>Renouvellement du vignoble<br>Simulateur arrachage · complantation · statu quo</h1>
+  <p>Vous désignez la parcelle et concevez votre replantation ; l'outil déroule les conséquences sur dix ans — réserve, trésorerie, coûts, aides — et les compare honnêtement.</p>
+  <span class="statut">Sensibilisation — hypothèses économiques et réglementaires à caler avant tout usage réel</span>
 </header>
+<main>
 
-<!-- ───────────────────────── APP ───────────────────────── -->
-<div id="app">
-
-  <!-- ░░ CONTROL COLUMN ░░ -->
-  <aside id="sb">
-
-    <!-- Contexte commune -->
-    <section class="sb-sec" id="commune-info" style="display:none">
-      <div class="sb-t">Contexte commune</div>
-      <div class="commune-head">
-        <div class="commune-name" id="commune-name-label">Commune</div>
-        <div class="commune-appel" id="commune-appel">—</div>
-      </div>
-      <div class="kpi-row kpi-row-3">
-        <div class="kpi">
-          <div class="kpi-v" id="kpi-nb">—</div>
-          <div class="kpi-l">parcelles</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-v" id="kpi-surf-c">—</div>
-          <div class="kpi-l">ha au total</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-v" id="kpi-age">—</div>
-          <div class="kpi-l">âge moyen</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Exploitation -->
-    <section class="sb-sec vign-only">
-      <div class="sb-t">Exploitation</div>
-      <div class="select-shell block">
-        <select class="fi-input" id="sel-civc" onchange="filterCIVC(this.value)">
-          <option value="">— Toutes les exploitations —</option>
-        </select>
-      </div>
-      <div class="kpi-row" id="kpi-ex" style="display:none;margin-top:10px">
-        <div class="kpi">
-          <div class="kpi-v" id="kpi-surf">—</div>
-          <div class="kpi-l">ha exploitation</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-v" id="kpi-ri">—</div>
-          <div class="kpi-l">kg/ha réserve</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Pondération -->
-    <section class="sb-sec">
-      <div class="sb-t">Pondération de l'indice <span class="ix">I</span></div>
-      <div class="pond-rows">
-        <div class="pond-row"><span class="pond-lbl">Faible emprise</span><input type="number" class="pond-num" id="pp" value="1" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-pp"></div></div></div>
-        <div class="pond-row"><span class="pond-lbl">Taux de manquants</span><input type="number" class="pond-num" id="pm" value="2" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-pm"></div></div></div>
-        <div class="pond-row"><span class="pond-lbl">Viroses</span><input type="number" class="pond-num" id="pv" value="3" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-pv"></div></div></div>
-        <div class="pond-row"><span class="pond-lbl">Productivité</span><input type="number" class="pond-num" id="ppr" value="2" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-ppr"></div></div></div>
-        <div class="pond-row"><span class="pond-lbl">Déficit de réserve</span><input type="number" class="pond-num" id="pd" value="2" min="0" max="10"><div class="pond-track"><div class="pond-bar" id="pb-pd"></div></div></div>
-      </div>
-      <div class="pond-foot">Somme des poids <span id="ptotal">10</span></div>
-    </section>
-
-    <!-- Légende -->
-    <section class="sb-sec">
-      <div class="sb-t">Légende — indice d'arrachage</div>
-      <div class="leg-items">
-        <div class="leg-item"><span class="leg-dot" style="background:var(--rouge)"></span><b>≥ 70</b> Prioritaire</div>
-        <div class="leg-item"><span class="leg-dot" style="background:var(--orange)"></span><b>50–69</b> Élevé</div>
-        <div class="leg-item"><span class="leg-dot" style="background:var(--ochre)"></span><b>30–49</b> Modéré</div>
-        <div class="leg-item"><span class="leg-dot" style="background:var(--vert)"></span><b>&lt; 30</b> Faible</div>
-      </div>
-    </section>
-
-  </aside>
-
-  <!-- ░░ MAP ░░ -->
-  <main id="map-wrap">
-    <div id="map"></div>
-    <div class="map-layers">
-      <button class="ml-btn active" id="ml-plan" onclick="setBase('plan')">Plan</button>
-      <button class="ml-btn" id="ml-sat" onclick="setBase('sat')">Satellite</button>
-    </div>
-    <div class="map-info">
-      <span class="mi-n" id="map-n">0</span> parcelles<span class="mi-sep">·</span><span id="map-commune">—</span>
-    </div>
-  </main>
-
-  <!-- ░░ PANEL ░░ -->
-  <section id="panel">
-    <div id="ph">
-      <div class="ph-l">
-        <h2 id="ph-title">—</h2>
-        <div class="ps" id="ph-sub">Sélectionnez une commune</div>
-      </div>
-      <button class="ph-back" id="ph-back" onclick="closePanel()" style="display:none">← Liste</button>
-    </div>
-
-    <!-- Liste classée -->
-    <div id="panel-list">
-      <div id="list-hd">
-        <span class="lc" id="list-count">—</span>
-        <div class="sort-wrap">
-          <span class="sort-cap">Trier</span>
-          <div class="select-shell sm">
-            <select id="sort-sel" onchange="setSort(this.value)">
-              <option value="I">Indice ↓</option>
-              <option value="surf">Surface ↓</option>
-              <option value="age">Âge ↓</option>
-              <option value="manq">Manquants ↓</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div id="pl"></div>
-    </div>
-
-    <!-- Détail parcelle -->
-    <div id="panel-detail">
-      <div id="pb"></div>
-    </div>
-  </section>
-</div>
-
-<div id="toast"></div>
-
-<!-- ───────────── MODALE SIMULATION ───────────── -->
-<div id="sim-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeSimModal()">
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="sim-modal-title">
-    <div class="modal-head">
-      <div class="modal-head-l">
-        <div class="modal-eyebrow">Projection sur 10 ans</div>
-        <div class="modal-title" id="sim-modal-title">Simulation — Réserve Individuelle</div>
-        <div class="modal-sub" id="sim-modal-sub">—</div>
-      </div>
-      <button class="modal-close" onclick="closeSimModal()" aria-label="Fermer">✕</button>
-    </div>
-    <div class="modal-body" id="sim-modal-body"></div>
+<section id="s0">
+  <div class="etape">Écran 0</div><h2>Votre exploitation</h2>
+  <div class="grille">
+    <div class="champ"><label for="surfTot">Surface totale</label><input id="surfTot" type="number" step="0.1" min="0.1" value="1"><span class="unite">ha</span></div>
+    <div class="champ"><label for="ageMoy">Âge moyen du vignoble</label><input id="ageMoy" type="number" step="1" min="0" value="38"><span class="unite">ans</span></div>
+    <div class="champ"><label for="riPct">Réserve individuelle actuelle</label><input id="riPct" type="range" min="0" max="100" value="75"><span class="unite"><b id="riPctLbl">75 %</b> du plafond ≈ <b id="riKgLbl" class="mono">7 500</b> kg/ha</span><span class="src">estimation par défaut — remplacez par votre relevé</span></div>
+    <div class="champ"><label for="prixKg">Prix du raisin</label><input id="prixKg" type="number" step="0.1" min="0" value="6.5"><span class="unite">€/kg</span><span class="src verif">à caler — prix unique v1</span></div>
   </div>
-</div>
+</section>
 
-<!-- ───────────── MODALE PRÉPARATION PLANTATION ───────────── -->
-<div id="plant-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closePlantModal()">
-  <div class="modal-card modal-wide" role="dialog" aria-modal="true" aria-labelledby="plant-modal-title">
-    <div class="modal-head">
-      <div class="modal-head-l">
-        <div class="modal-eyebrow">Conception · future plantation</div>
-        <div class="modal-title" id="plant-modal-title">Préparer la plantation</div>
-        <div class="modal-sub" id="plant-modal-sub">—</div>
-      </div>
-      <button class="modal-close" onclick="closePlantModal()" aria-label="Fermer">✕</button>
-    </div>
-    <div class="modal-body" id="plant-modal-body"></div>
+<section id="s1">
+  <div class="etape">Écran 1</div><h2>La parcelle que vous désignez</h2>
+  <div class="grille">
+    <div class="champ"><label for="ageParc">Âge de la parcelle</label><input id="ageParc" type="number" step="1" min="0" value="55"><span class="unite">ans</span></div>
+    <div class="champ"><label for="manquants">Pieds manquants</label><input id="manquants" type="number" step="1" min="0" max="60" value="15"><span class="unite">%</span></div>
+    <div class="champ"><label for="rendEstime">Rendement estimé de la parcelle</label><input id="rendEstime" type="number" step="100" min="0" value="10500"><span class="unite">kg/ha</span><span class="src verif">votre estimation — sert au statu quo et à la complantation</span></div>
+    <div class="champ"><label for="declinSQ">Déclin annuel en statu quo</label><input id="declinSQ" type="number" step="0.1" min="0" max="10" value="0"><span class="unite">%/an</span><span class="src">0 par défaut — à votre appréciation</span></div>
   </div>
-</div>
+  <h3 style="margin:1.4rem 0 .3rem">Faire-valoir de la parcelle</h3>
+  <div class="grille">
+    <div class="champ"><label for="regime">Régime</label><select id="regime"><option value="propriete" selected>Propriété (faire-valoir direct)</option><option value="fermage">Fermage (loyer fixe)</option><option value="metayage">Métayage (part de récolte)</option></select></div>
+    <div class="champ" id="wrapLoyer" hidden><label for="loyerHa">Loyer annuel</label><input id="loyerHa" type="number" step="100" value="3000"><span class="unite">€/ha/an</span><span class="src verif">bail rural viticole — souvent fixé en kg/bouteilles ; € ici en v1</span></div>
+    <div class="champ" id="wrapPartR" hidden><label for="partRecolte">Part de récolte au propriétaire</label><input id="partRecolte" type="number" step="1" min="0" max="100" value="33"><span class="unite">%</span><span class="src">appliquée aux recettes + réserve mobilisée (bailleur à métayage nature)</span></div>
+    <div class="champ" id="wrapPartC" hidden><label for="partCouts">Part des coûts au propriétaire</label><input id="partCouts" type="number" step="1" min="0" max="100" value="33"><span class="unite">%</span><span class="src verif">selon convention — plantation souvent partagée</span></div>
+  </div>
+</section>
 
-<script src="data/data.js?v=3"></script>
-<script src="js/config.js?v=3"></script>
-<script src="js/state.js?v=3"></script>
-<script src="js/calcul.js?v=3"></script>
-<script src="js/coeur.js?v=3"></script>
-<script src="js/econ.js?v=3"></script>
-<script src="js/carte.js?v=3"></script>
-<script src="js/panel.js?v=3"></script>
-<script src="js/simulation.js?v=3"></script>
-<script src="js/plantation.js?v=3"></script>
-<script src="js/app.js?v=3"></script>
+<section id="s2">
+  <div class="etape">Écran 2</div><h2>Votre projet de replantation</h2>
+  <div class="geo">
+    <div>
+      <h3 style="margin-bottom:.5rem">Géométrie de la parcelle</h3>
+      <div class="grille" style="grid-template-columns:1fr 1fr">
+        <div class="champ"><label for="geoL">Longueur</label><input id="geoL" type="number" step="1" value="200"><span class="unite">m</span></div>
+        <div class="champ"><label for="geoW">Largeur</label><input id="geoW" type="number" step="1" value="15"><span class="unite">m</span></div>
+        <div class="champ"><label for="ecartRang">Écartement entre rangs</label><input id="ecartRang" type="number" step="0.05" value="1.10"><span class="unite">m (≤ 2,00 · AOC)</span></div>
+        <div class="champ"><label for="ecartPied">Écartement entre pieds</label><input id="ecartPied" type="number" step="0.05" value="1.10"><span class="unite">m (0,70–1,50 · AOC)</span></div>
+      </div>
+      <div id="aocCheck" class="aoc ok"></div>
+      <h3 style="margin:1.2rem 0 .5rem">Matériel &amp; conduite</h3>
+      <div class="grille" style="grid-template-columns:1fr 1fr">
+        <div class="champ"><label for="materiel">Matériel végétal</label><select id="materiel"><option value="vinifera" selected>Vitis vinifera (cépages AOC)</option><option value="voltis">Voltis (variété résistante, VIFA)</option></select></div>
+        <div class="champ"><label for="porteGreffe">Porte-greffe</label><select id="porteGreffe"><option>41 B</option><option>SO4</option><option>3309 C</option><option>161-49 C</option><option>Fercal</option><option>Riparia Gloire</option></select></div>
+        <div class="champ"><label for="irrigation">Ferti-irrigation du plantier</label><select id="irrigation"><option value="0" selected>Non</option><option value="1">Oui</option></select></div>
+        <div class="champ"><label for="ramp">Montée en charge des jeunes vignes</label><select id="ramp"><option value="0.3,0.6,1" selected>30 · 60 · 100 %</option><option value="0.5,0.8,1">50 · 80 · 100 %</option><option value="1">Immédiate (hypothèse classeur)</option></select></div>
+      </div>
+    </div>
+    <div class="geo-synth">
+      <h3 style="margin-bottom:.5rem">Synthèse plantation</h3>
+      <div class="row"><span>Densité</span><b id="syDens">—</b></div>
+      <div class="row"><span>Nombre de rangs</span><b id="syRangs">—</b></div>
+      <div class="row"><span>Longueur d'un rang</span><b id="syLong">—</b></div>
+      <div class="row"><span>Pieds à planter</span><b id="syPieds">—</b></div>
+      <div class="row"><span>Surface parcelle</span><b id="sySurf">—</b></div>
+      <div class="row"><span>Mode de conduite</span><b id="syMode">—</b></div>
+      <div id="conseq" style="margin-top:.7rem"></div>
+    </div>
+  </div>
+  <h3 style="margin:1.4rem 0 .3rem">Coûts &amp; aide <span style="font-size:.75rem;font-weight:400;color:var(--alerte)">(tous à caler — référentiel à sourcer)</span></h3>
+  <div class="grille">
+    <div class="champ"><label for="motif">Motif d'arrachage</label><select id="motif"><option value="classique" selected>Classique (repos 1 an · sortie 3 ans)</option><option value="sanitaire">Sanitaire — flavescence dorée (repos 3 ans · sortie 5 ans)</option></select><span class="src">le motif commute automatiquement repos et durée de sortie de réserve</span></div>
+    <div class="champ"><label for="coutArrachageHa">Coût d'arrachage</label><input id="coutArrachageHa" type="number" step="100" value="4500"><span class="unite">€/ha</span></div>
+    <div class="champ"><label for="coutPrepaHa">Préparation du sol</label><input id="coutPrepaHa" type="number" step="100" value="3500"><span class="unite">€/ha</span></div>
+    <div class="champ"><label for="coutPlant">Plant (matériel végétal)</label><input id="coutPlant" type="number" step="0.1" value="1.4"><span class="unite">€/pied</span></div>
+    <div class="champ"><label for="coutPalissageHa">Palissage</label><input id="coutPalissageHa" type="number" step="500" value="12000"><span class="unite">€/ha</span></div>
+    <div class="champ"><label for="coutIrrigHa">Ferti-irrigation (si oui)</label><input id="coutIrrigHa" type="number" step="500" value="5000"><span class="unite">€/ha</span></div>
+    <div class="champ"><label for="aideRestructHa">Aide restructuration</label><input id="aideRestructHa" type="number" step="100" value="6000"><span class="unite">€/ha</span><span class="src verif">FranceAgriMer — par campagne, à vérifier</span></div>
+    <div class="champ"><label for="penaliteVSL">Pénalité rendement VSL</label><input id="penaliteVSL" type="number" step="1" min="0" max="40" value="10"><span class="unite">%</span><span class="src verif">hypothèse — appliquée si conduite semi-large</span></div>
+    <div class="champ"><label for="survie">Survie entreplants (complantation)</label><input id="survie" type="number" step="5" min="10" max="100" value="50"><span class="unite">%</span></div>
+    <div class="champ"><label for="entreeProd">Entrée en production entreplants</label><input id="entreeProd" type="number" step="1" min="3" max="12" value="7"><span class="unite">années</span></div>
+    <div class="champ"><label for="coutEntreplant">Coût par entreplant</label><input id="coutEntreplant" type="number" step="0.5" value="4.5"><span class="unite">€/pied</span></div>
+  </div>
+</section>
+
+<section id="s3">
+  <div class="etape">Écran 3</div><h2>Aléa climatique</h2>
+  <div class="grille">
+    <div class="champ"><label for="sequence">Séquence de rendement</label><select id="sequence"><option value="aucune" selected>Moyenne régionale chaque année</option><option value="creux34">Deux récoltes courtes, années 3–4</option><option value="creux1">Récolte courte précoce, année 1</option></select><span class="src">appliqué à l'identique aux trois scénarios · écart-type régional 3 440 kg/ha</span></div>
+  </div>
+</section>
+
+<section id="s4" class="resultats">
+  <div class="etape">Écran 4</div><h2>Résultats sur 10 ans</h2>
+  <div id="synthese" class="synthese"></div>
+  <div class="barre">
+    <span style="font-size:.83rem;color:var(--lie)">Trésorerie affichée :</span>
+    <div class="toggle" id="vueFV">
+      <button data-fv="1" class="actif">Ensemble</button>
+      <button data-fv="exp">Part exploitant</button>
+      <button data-fv="prop">Part propriétaire</button>
+    </div>
+    <span id="fvHint" style="font-size:.79rem;color:var(--lie)"></span>
+  </div>
+  <div class="kpis" id="kpis"></div>
+
+  <figure>
+    <figcaption>Trésorerie cumulée — les trois voies comparées</figcaption>
+    <div class="sous">Flux de trésorerie cumulés, actualisation nulle. Le stock de réserve n'y figure pas (actif contraint, graphique suivant). Le point le plus bas de l'arrachage est repéré.</div>
+    <div id="chartTreso"></div>
+    <div class="legende">
+      <span class="k" style="--kc:var(--or)">arrachage-replantation</span>
+      <span class="k" style="--kc:var(--vigne)">complantation</span>
+      <span class="k" style="--kc:var(--ardoise)">statu quo</span>
+      <label><input type="checkbox" id="toggleSansRI"> voir l'arrachage sans mobilisation de la réserve</label>
+    </div>
+    <div class="lecture" id="lectureTreso"></div>
+  </figure>
+
+  <figure>
+    <figcaption>Stock de réserve individuelle</figcaption>
+    <div class="sous">En kg/ha de surface productive. À lire à côté de la trésorerie : un cumul flatteur peut cacher une réserve asséchée. Plafond 10 000 kg/ha.</div>
+    <div id="chartStock"></div>
+    <div class="legende">
+      <span class="k" style="--kc:var(--or)">arrachage-replantation</span>
+      <span class="k" style="--kc:var(--vigne)">complantation</span>
+      <span class="k" style="--kc:var(--ardoise)">statu quo</span>
+    </div>
+    <div class="lecture" id="lectureStock"></div>
+  </figure>
+
+  <details><summary>Mode technique — détail annuel (scénario arrachage)</summary><div id="tableDetail"></div></details>
+  <details><summary>Manque à gagner (dérivé vs statu quo — jamais soustrait au calcul)</summary><div id="tableMaG"></div></details>
+</section>
+
+<p class="footnote"><b>Limites assumées de la v1.1</b> — mono-parcelle ; prix unique ; faire-valoir simplifié (fermage = loyer fixe ; métayage = parts éditables ; les contrats réels varient) ; rendement des leviers branché sur le VolCo mais paramétré par des hypothèses à caler (pénalité VSL, montée en charge, survie complantation) ; coût de stockage de la réserve négligé ; SDR simplifiée. Règles AOC (cahier des charges homologué le 31/07/2025) : écartement rang ≤ 2,00 m, pied 0,70–1,50 m, somme ≤ 3,00 m (règle spécifique pente non modélisée) ; irrigation interdite ; Voltis ≤ 5 % de l'encépagement + 10 % d'assemblage. Paramètres réserve : sortie arrachage 9 000 kg/ha (× 3 classique / × 5 sanitaire, décision CIVC du 30/10/2024), plafond 10 000, butoir 15 500. Stock RI terminal = actif contraint, jamais monétisé. Registre kg conforme au classeur de référence (17 tests).</p>
+</main>
+<script src="moteur.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
