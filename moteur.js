@@ -50,10 +50,9 @@ function coucheEuro(rowsKg, eco) {
     const venteRaisin = r.volcoVendu * eco.prixKg;
     const cashRI      = r.sortieArr * eco.prixKg;
     const couts       = (eco.coutsParAnnee[r.t] || 0);
-    const aides       = (eco.aidesParAnnee[r.t] || 0);
-    return { t: r.t, venteRaisin, cashRI, aides, couts,
-             cashNet: venteRaisin + cashRI + aides - couts,
-             cashSansRI: venteRaisin + aides - couts };
+    return { t: r.t, venteRaisin, cashRI, couts,
+             cashNet: venteRaisin + cashRI - couts,
+             cashSansRI: venteRaisin - couts };
   });
 }
 
@@ -66,14 +65,14 @@ function coucheEuro(rowsKg, eco) {
               métayage nature) ; part des coûts (β) au propriétaire. */
 function repartir(row, fv) {
   const rev = row.venteRaisin + row.cashRI;
-  if (fv.regime === 'propriete') return { exp: rev + row.aides - row.couts, prop: 0 };
+  if (fv.regime === 'propriete') return { exp: rev - row.couts, prop: 0 };
   if (fv.regime === 'fermage') {
-    return { exp: rev + row.aides - row.couts - fv.loyerAn, prop: fv.loyerAn };
+    return { exp: rev - row.couts - fv.loyerAn, prop: fv.loyerAn };
   }
   const a = fv.partRecolte, b = fv.partCouts;
   return {
-    prop: a * rev - b * row.couts + b * row.aides,
-    exp: (1 - a) * rev - (1 - b) * row.couts + (1 - b) * row.aides
+    prop: a * rev - b * row.couts,
+    exp: (1 - a) * rev - (1 - b) * row.couts
   };
 }
 
@@ -89,11 +88,10 @@ function construireScenarios(inp) {
   };
   const S = inp.surfParc, dens = inp.densite;
 
-  const coutsArr = {}, aidesArr = {};
+  const coutsArr = {};
   coutsArr[0] = S * inp.coutArrachageHa;
   coutsArr[inp.repos] = (coutsArr[inp.repos] || 0)
     + S * (inp.coutPrepaHa + dens * inp.coutPlant + inp.coutPalissageHa + (inp.irrigation ? inp.coutIrrigHa : 0));
-  aidesArr[inp.repos + 1] = S * inp.aideRestructHa;
   const scArr = simulerReserveKg({ ...base, scenario: 'arrachage',
     rampProfile: inp.ramp, rendFactorProjet: inp.rendFactorProjet });
 
@@ -110,11 +108,11 @@ function construireScenarios(inp) {
   const rendParcSQ = (t, rendY) => rendY * (inp.rendEstime / inp.rendMean) * Math.pow(1 - inp.declinSQ, t);
   const scSQ = simulerReserveKg({ ...base, scenario: 'statuquo', rendParcFn: rendParcSQ });
 
-  const eco = (c, a) => ({ prixKg: inp.prixKg, coutsParAnnee: c, aidesParAnnee: a });
+  const eco = c => ({ prixKg: inp.prixKg, coutsParAnnee: c });
   return {
-    arrachage:     { kg: scArr,   eur: coucheEuro(scArr,   eco(coutsArr, aidesArr)) },
-    complantation: { kg: scCompl, eur: coucheEuro(scCompl, eco(coutsCompl, {})) },
-    statuquo:      { kg: scSQ,    eur: coucheEuro(scSQ,    eco({}, {})) }
+    arrachage:     { kg: scArr,   eur: coucheEuro(scArr,   eco(coutsArr)) },
+    complantation: { kg: scCompl, eur: coucheEuro(scCompl, eco(coutsCompl)) },
+    statuquo:      { kg: scSQ,    eur: coucheEuro(scSQ,    eco({})) }
   };
 }
 

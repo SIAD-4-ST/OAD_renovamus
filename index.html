@@ -78,7 +78,7 @@ details{margin-top:1rem}summary{cursor:pointer;font-weight:600;font-size:.9rem}
 <header>
   <div class="etape">Maquette v1.1 — moteur kg à parité classeur · couche € · 3 scénarios · 17 tests</div>
   <h1>Renouvellement du vignoble<br>Simulateur arrachage · complantation · statu quo</h1>
-  <p>Vous désignez la parcelle et concevez votre replantation ; l'outil déroule les conséquences sur dix ans — réserve, trésorerie, coûts, aides — et les compare honnêtement.</p>
+  <p>Vous désignez la parcelle et concevez votre replantation ; l'outil déroule les conséquences sur dix ans — réserve, trésorerie, coûts — et les compare honnêtement.</p>
   <span class="statut">Sensibilisation — hypothèses économiques et réglementaires à caler avant tout usage réel</span>
 </header>
 <main>
@@ -89,7 +89,8 @@ details{margin-top:1rem}summary{cursor:pointer;font-weight:600;font-size:.9rem}
     <div class="champ"><label for="surfTot">Surface totale</label><input id="surfTot" type="number" step="0.1" min="0.1" value="1"><span class="unite">ha</span></div>
     <div class="champ"><label for="ageMoy">Âge moyen du vignoble</label><input id="ageMoy" type="number" step="1" min="0" value="38"><span class="unite">ans</span></div>
     <div class="champ"><label for="riPct">Réserve individuelle actuelle</label><input id="riPct" type="range" min="0" max="100" value="75"><span class="unite"><b id="riPctLbl">75 %</b> du plafond ≈ <b id="riKgLbl" class="mono">7 500</b> kg/ha</span><span class="src">estimation par défaut — remplacez par votre relevé</span></div>
-    <div class="champ"><label for="prixKg">Prix du raisin</label><input id="prixKg" type="number" step="0.1" min="0" value="6.5"><span class="unite">€/kg</span><span class="src verif">à caler — prix unique v1</span></div>
+    <div class="champ"><label for="volco">Volume commercialisable (VolCo)</label><input id="volco" type="number" step="100" min="0" value="9000"><span class="unite">kg/ha</span><span class="src verif">fixé chaque année par le CIVC — à ajuster selon le rendement de l'appellation</span></div>
+    <div class="champ"><label for="prixKg">Prix du raisin</label><input id="prixKg" type="number" step="0.1" min="0" value="7"><span class="unite">€/kg</span><span class="src verif">à caler — prix unique v1</span></div>
   </div>
 </section>
 
@@ -141,7 +142,7 @@ details{margin-top:1rem}summary{cursor:pointer;font-weight:600;font-size:.9rem}
       <div id="conseq" style="margin-top:.7rem"></div>
     </div>
   </div>
-  <h3 style="margin:1.4rem 0 .3rem">Coûts &amp; aide <span style="font-size:.75rem;font-weight:400;color:var(--alerte)">(tous à caler — référentiel à sourcer)</span></h3>
+  <h3 style="margin:1.4rem 0 .3rem">Coûts <span style="font-size:.75rem;font-weight:400;color:var(--alerte)">(tous à caler — référentiel à sourcer)</span></h3>
   <div class="grille">
     <div class="champ"><label for="motif">Motif d'arrachage</label><select id="motif"><option value="classique" selected>Classique (repos 1 an · sortie 3 ans)</option><option value="sanitaire">Sanitaire — flavescence dorée (repos 3 ans · sortie 5 ans)</option></select><span class="src">le motif commute automatiquement repos et durée de sortie de réserve</span></div>
     <div class="champ"><label for="coutArrachageHa">Coût d'arrachage</label><input id="coutArrachageHa" type="number" step="100" value="4500"><span class="unite">€/ha</span></div>
@@ -149,7 +150,6 @@ details{margin-top:1rem}summary{cursor:pointer;font-weight:600;font-size:.9rem}
     <div class="champ"><label for="coutPlant">Plant (matériel végétal)</label><input id="coutPlant" type="number" step="0.1" value="1.4"><span class="unite">€/pied</span></div>
     <div class="champ"><label for="coutPalissageHa">Palissage</label><input id="coutPalissageHa" type="number" step="500" value="12000"><span class="unite">€/ha</span></div>
     <div class="champ"><label for="coutIrrigHa">Ferti-irrigation (si oui)</label><input id="coutIrrigHa" type="number" step="500" value="5000"><span class="unite">€/ha</span></div>
-    <div class="champ"><label for="aideRestructHa">Aide restructuration</label><input id="aideRestructHa" type="number" step="100" value="6000"><span class="unite">€/ha</span><span class="src verif">FranceAgriMer — par campagne, à vérifier</span></div>
     <div class="champ"><label for="penaliteVSL">Pénalité rendement VSL</label><input id="penaliteVSL" type="number" step="1" min="0" max="40" value="10"><span class="unite">%</span><span class="src verif">hypothèse — appliquée si conduite semi-large</span></div>
     <div class="champ"><label for="survie">Survie entreplants (complantation)</label><input id="survie" type="number" step="5" min="10" max="100" value="50"><span class="unite">%</span></div>
     <div class="champ"><label for="entreeProd">Entrée en production entreplants</label><input id="entreeProd" type="number" step="1" min="3" max="12" value="7"><span class="unite">années</span></div>

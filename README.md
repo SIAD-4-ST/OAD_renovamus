@@ -30,7 +30,7 @@ min 5 021,8 kg/ha en t=3 ; final 10 000 ; Σ sortie arrachage 8 100 kg ;
 scénarios (divergence assumée vs classeur — voir historique).
 
 ## À caler avant tout usage réel
-Prix du raisin, coûts (arrachage/prépa/plants/palissage/entreplants), aide
-FranceAgriMer, pénalité VSL, montée en charge, survie et délai de complantation,
+Prix du raisin, coûts (arrachage/prépa/plants/palissage/entreplants),
+pénalité VSL, montée en charge, survie et délai de complantation,
 et les paramètres réglementaires (sortie 9 000 ×3/×5 depuis le 30/10/2024,
 plafond 10 000, Voltis 5 %). Source de vérité : cahier des charges AOC Champagne.

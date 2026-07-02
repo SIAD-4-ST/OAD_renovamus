@@ -39,7 +39,7 @@
       surfTot: +$('surfTot').value, surfParc: g.surf,
       ageMoy: +$('ageMoy').value, ageParc: +$('ageParc').value,
       repos: sanitaire ? 3 : 1, nbSortie: sanitaire ? 5 : 3, volSortieArr: 9000,
-      plafond, volco: 9000, rendMean: 12296.6, reserveInit: plafond * riPct / 100, horizon: 10,
+      plafond, volco: +$('volco').value, rendMean: 12296.6, reserveInit: plafond * riPct / 100, horizon: 10,
       ramp: $('ramp').value.split(',').map(Number), rendYearFn: sequenceFn($('sequence').value),
       rendFactorProjet: fDens * fMat,
       rendEstime: +$('rendEstime').value, manquants: +$('manquants').value / 100,
@@ -48,7 +48,7 @@
       coutPlant: +$('coutPlant').value, coutPalissageHa: +$('coutPalissageHa').value,
       irrigation: $('irrigation').value === '1', coutIrrigHa: +$('coutIrrigHa').value,
       coutEntreplant: +$('coutEntreplant').value, survie: +$('survie').value / 100,
-      entreeProd: +$('entreeProd').value, aideRestructHa: +$('aideRestructHa').value,
+      entreeProd: +$('entreeProd').value,
       prixKg: +$('prixKg').value,
       fv: {
         regime: $('regime').value,
@@ -117,9 +117,8 @@
     let creux = { v: Infinity, t: 0 };
     arr.forEach((v, t) => { const d = v - sq[t]; if (d < creux.v) creux = { v: d, t }; });
     const coutsTot = sc.arrachage.eur.reduce((s, r) => s + r.couts, 0);
-    const aidesTot = sc.arrachage.eur.reduce((s, r) => s + r.aides, 0);
     const riValo = sc.arrachage.eur.reduce((s, r) => s + r.cashRI, 0);
-    const couv = coutsTot > 0 ? (aidesTot + riValo) / coutsTot : 0;
+    const couv = coutsTot > 0 ? riValo / coutsTot : 0;
     const stockMin = Math.min(...sc.arrachage.kg.map(r => r.stockHa));
     const tMin = sc.arrachage.kg.find(r => r.stockHa === stockMin).t;
     const ageApres = (inp.ageMoy * inp.surfTot - inp.ageParc * inp.surfParc) / inp.surfTot;
@@ -128,15 +127,15 @@
     $('kpis').innerHTML = `
       <div class="kpi" style="--k:var(--alerte)"><div class="lib">Creux de trésorerie vs statu quo</div>
         <div class="val" style="color:var(--alerte)">${fmtE0(creux.v)}</div><div class="det">au plus bas en année ${creux.t}</div></div>
-      <div class="kpi" style="--k:var(--or)"><div class="lib">Coûts couverts (aides + réserve)</div>
-        <div class="val">${Math.round(couv * 100)} %</div><div class="det">${fmtE0(aidesTot)} aides + ${fmtE0(riValo)} sortie RI / ${fmtE0(coutsTot)} coûts</div></div>
+      <div class="kpi" style="--k:var(--or)"><div class="lib">Coûts couverts (réserve)</div>
+        <div class="val">${Math.round(couv * 100)} %</div><div class="det">${fmtE0(riValo)} sortie RI / ${fmtE0(coutsTot)} coûts</div></div>
       <div class="kpi" style="--k:var(--vigne)"><div class="lib">Réserve : point bas</div>
         <div class="val">${fmtKg(stockMin)}<span style="font-size:.85rem"> kg/ha</span></div><div class="det">année ${tMin} · plafond 10 000</div></div>
       <div class="kpi" style="--k:var(--ardoise)"><div class="lib">Âge moyen : effet immédiat</div>
         <div class="val">−${gainAge.toFixed(1)} an${gainAge >= 2 ? 's' : ''}</div><div class="det">${inp.ageMoy} → ${ageApres.toFixed(1)} ans · trajectoire pluriannuelle en v2</div></div>`;
 
     // --- Synthèse phrase ---
-    $('synthese').innerHTML = `Sur dix ans, l'<b>arrachage-replantation</b> creuse la trésorerie de <b>${fmtE0(creux.v)}</b> au plus bas (année ${creux.t}), dont <b>${Math.round(couv * 100) + ' %'}</b> des coûts absorbés par les aides et la sortie de réserve, et rajeunit l'exploitation de <b>${gainAge.toFixed(1)} an${gainAge >= 2 ? 's' : ''}</b>. La réserve descend à <b>${fmtKg(stockMin)} kg/ha</b> en année ${tMin}${stockMin < 4000 ? ' — coussin réduit, vigilance en cas de petite récolte' : ''}.`;
+    $('synthese').innerHTML = `Sur dix ans, l'<b>arrachage-replantation</b> creuse la trésorerie de <b>${fmtE0(creux.v)}</b> au plus bas (année ${creux.t}), dont <b>${Math.round(couv * 100) + ' %'}</b> des coûts absorbés par la sortie de réserve, et rajeunit l'exploitation de <b>${gainAge.toFixed(1)} an${gainAge >= 2 ? 's' : ''}</b>. La réserve descend à <b>${fmtKg(stockMin)} kg/ha</b> en année ${tMin}${stockMin < 4000 ? ' — coussin réduit, vigilance en cas de petite récolte' : ''}.`;
 
     // --- Graphiques ---
     const series = [

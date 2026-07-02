@@ -16,7 +16,7 @@ const inp = { surfTot: 1, surfParc: 0.3, repos: 1, nbSortie: 3, volSortieArr: 90
   volco: 9000, rendMean: 12296.6, reserveInit: 7500, horizon: 10, ramp: [0.3, 0.6, 1], rendYearFn: null,
   rendEstime: 10500, manquants: 0.15, declinSQ: 0, densite: 8264, coutArrachageHa: 4500, coutPrepaHa: 3500,
   coutPlant: 1.4, coutPalissageHa: 12000, irrigation: false, coutIrrigHa: 5000, coutEntreplant: 4.5,
-  survie: 0.5, entreeProd: 7, aideRestructHa: 6000, prixKg: 6.5, rendFactorProjet: 1 };
+  survie: 0.5, entreeProd: 7, prixKg: 6.5, rendFactorProjet: 1 };
 const sc = M.construireScenarios(inp);
 
 console.log('T2 — Non-arrachage : MàG dérivé = 0, vente = VolCo plein');
