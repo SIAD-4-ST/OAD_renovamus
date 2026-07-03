@@ -160,6 +160,8 @@
       coutEntreplant: +$('coutEntreplant').value, survie: +$('survie').value / 100,
       entreeProd: +$('entreeProd').value,
       prixKg: +$('prixKg').value,
+      coutSurfaceHaAn: +$('coutSurfaceHaAn').value, coutRdtParKg: +$('coutRdtParKg').value,
+      coefRepos: +$('coefRepos').value,
       fv: {
         regime: $('regime').value,
         loyerAn: (+$('loyerHa').value) * (+$('surfTot').value),
@@ -230,29 +232,51 @@
       return vueFV === 'exp' ? p.exp : p.prop;
     }));
 
-    // --- KPI ---
+    // --- Indicateurs dérivés ---
     let creux = { v: Infinity, t: 0 };
     arr.forEach((v, t) => { const d = v - sq[t]; if (d < creux.v) creux = { v: d, t }; });
-    const coutsTot = sc.arrachage.eur.reduce((s, r) => s + r.couts, 0);
-    const riValo = sc.arrachage.eur.reduce((s, r) => s + r.cashRI, 0);
-    const couv = coutsTot > 0 ? riValo / coutsTot : 0;
+    const invest = sc.arrachage.investissement;
+    const reserveReelle = sc.arrachage.eur.reduce((s, r) => s + r.cashRI, 0);
+    const reserveTheo = inp.volSortieArr * inp.surfParc * inp.nbSortie * inp.prixKg;
+    const couv = invest > 0 ? reserveReelle / invest : 0;
+    const effortNet = Math.max(0, invest - reserveReelle);
     const stockMin = Math.min(...sc.arrachage.kg.map(r => r.stockHa));
     const tMin = sc.arrachage.kg.find(r => r.stockHa === stockMin).t;
     const ageApres = (inp.ageMoy * inp.surfTot - inp.ageParc * inp.surfParc) / inp.surfTot;
     const gainAge = inp.ageMoy - ageApres;
+    const seuilReserve = 4000;
 
-    $('kpis').innerHTML = `
-      <div class="kpi" style="--k:var(--alerte)"><div class="lib">Creux de trésorerie vs statu quo</div>
-        <div class="val" style="color:var(--alerte)">${fmtE0(creux.v)}</div><div class="det">au plus bas en année ${creux.t}</div></div>
-      <div class="kpi" style="--k:var(--or)"><div class="lib">Coûts couverts (réserve)</div>
-        <div class="val">${Math.round(couv * 100)} %</div><div class="det">${fmtE0(riValo)} sortie RI / ${fmtE0(coutsTot)} coûts</div></div>
-      <div class="kpi" style="--k:var(--vigne)"><div class="lib">Réserve : point bas</div>
-        <div class="val">${fmtKg(stockMin)}<span style="font-size:.85rem"> kg/ha</span></div><div class="det">année ${tMin} · plafond 10 000</div></div>
-      <div class="kpi" style="--k:var(--ardoise)"><div class="lib">Âge moyen : effet immédiat</div>
-        <div class="val">−${gainAge.toFixed(1)} an${gainAge >= 2 ? 's' : ''}</div><div class="det">${inp.ageMoy} → ${ageApres.toFixed(1)} ans · trajectoire pluriannuelle en v2</div></div>`;
+    // charges d'entretien évitées pendant la transition — DÉRIVÉ (déjà dans les courbes, jamais re-soustrait)
+    const chArr = OAD.chargesEntretien('arrachage', sc.arrachage.kg, inp);
+    const chSQ = OAD.chargesEntretien('statuquo', sc.statuquo.kg, inp);
+    const returnYear = 3 + inp.repos;
+    let chargesEvitees = 0;
+    for (let t = 0; t < returnYear; t++) chargesEvitees += Math.max(0, (chSQ[t] || 0) - (chArr[t] || 0));
+    const chargesActives = inp.coutSurfaceHaAn > 0 || inp.coutRdtParKg > 0;
 
-    // --- Synthèse phrase ---
-    $('synthese').innerHTML = `Sur dix ans, l'<b>arrachage-replantation</b> creuse la trésorerie de <b>${fmtE0(creux.v)}</b> au plus bas (année ${creux.t}), dont <b>${Math.round(couv * 100) + ' %'}</b> des coûts absorbés par la sortie de réserve, et rajeunit l'exploitation de <b>${gainAge.toFixed(1)} an${gainAge >= 2 ? 's' : ''}</b>. La réserve descend à <b>${fmtKg(stockMin)} kg/ha</b> en année ${tMin}${stockMin < 4000 ? ' — coussin réduit, vigilance en cas de petite récolte' : ''}.`;
+    // --- KPI hiérarchisés : Financement / Exploitation / Risque & technique ---
+    const kpi = (k, lib, val, det, vc) =>
+      `<div class="kpi" style="--k:${k}"><div class="lib">${lib}</div><div class="val"${vc ? ` style="color:${vc}"` : ''}>${val}</div><div class="det">${det}</div></div>`;
+
+    $('kpisFin').innerHTML =
+      kpi('var(--ardoise)', 'Investissement brut', fmtE0(invest), 'arrachage + installation, hors entretien') +
+      kpi('var(--or)', 'Amortisseur de réserve', fmtE0(reserveReelle), `réellement mobilisé · ${fmtE0(reserveTheo)} théoriques (9 000 ×${inp.nbSortie}) · ${Math.round(couv * 100)} % de l'investissement`) +
+      kpi('var(--vigne)', 'Effort net après réserve', fmtE0(effortNet), 'investissement − réserve = coût réel de décision');
+
+    $('kpisExp').innerHTML =
+      kpi('var(--vigne)', 'Charges évitées en transition', chargesActives ? fmtE0(chargesEvitees) : '—',
+        chargesActives ? 'dérivé, déjà reflété dans les courbes (non re-soustrait)' : 'renseignez les charges d\'entretien (écran 2) pour l\'activer');
+
+    $('kpisRisq').innerHTML =
+      kpi('var(--alerte)', 'Tension maximale de trésorerie', fmtE0(creux.v), `besoin maximal d'absorption, année ${creux.t} — pas le coût total`, 'var(--alerte)') +
+      kpi('var(--or)', 'Réserve minimale en transition', `${fmtKg(stockMin)}<span style="font-size:.85rem"> kg/ha</span>`, `année ${tMin} · ${stockMin < seuilReserve ? '⚠ sous ' + fmtKg(seuilReserve) + ' — coussin réduit' : 'coussin suffisant'}`) +
+      kpi('var(--ardoise)', 'Effet technique du renouvellement', `−${gainAge.toFixed(1)} an${gainAge >= 2 ? 's' : ''}`, `âge moyen ${inp.ageMoy} → ${ageApres.toFixed(1)} ans`);
+
+    // --- Synthèse décisionnelle ---
+    $('synthese').innerHTML =
+      `Sur dix ans, l'<b>arrachage-replantation</b> est une opération de <b>transition</b>. Il permet de mobiliser une réserve liée à la parcelle arrachée — <b>${fmtE0(reserveReelle)}</b> réellement mobilisés (${fmtE0(reserveTheo)} théoriques, selon le stock) — pour amortir un investissement de <b>${fmtE0(invest)}</b>. L'<b>effort net</b> à financer ressort à <b>${fmtE0(effortNet)}</b>.` +
+      (chargesActives ? ` L'opération évite <b>${fmtE0(chargesEvitees)}</b> de charges d'entretien pendant la transition.` : '') +
+      ` La tension de trésorerie est maximale en année ${creux.t} (<b>${fmtE0(creux.v)}</b>) — un besoin d'absorption, pas un coût définitif. Vigilance : la réserve descend à <b>${fmtKg(stockMin)} kg/ha</b> en année ${tMin}${stockMin < seuilReserve ? ' — coussin réduit, sensibilité accrue à une petite récolte' : ''}.`;
 
     // --- Graphiques ---
     const series = [
@@ -262,12 +286,12 @@
     ];
     if ($('toggleSansRI').checked) series.push({ pts: arrSansRI, c: '#C9BB94', w: 2, dash: '5 4', nom: 'sans RI' });
     $('chartTreso').innerHTML = chart(series, {
-      fmt: fmtE0, annot: [{ serie: arr, t: creux.t, label: 'creux ' + fmtE0(creux.v), c: 'var(--alerte)' }],
+      fmt: fmtE0, annot: [{ serie: arr, t: creux.t, label: 'tension max ' + fmtE0(creux.v), c: 'var(--alerte)' }],
       yTitle: '€ cumulés', xTitle: 'année'
     });
     $('lectureTreso').textContent = $('toggleSansRI').checked
-      ? 'La bande entre la courbe pleine et la pointillée est ce que la sortie de réserve « arrachage » injecte : elle transforme un trou brutal en pente amortie.'
-      : 'Cochez l\'option ci-dessus pour visualiser ce que la réserve amortit.';
+      ? 'La bande entre la courbe pleine et la pointillée est ce que la sortie de réserve « arrachage » injecte : elle transforme un trou brutal en pente amortie. Le point bas est un besoin d\'absorption, non le coût total.'
+      : 'Cochez l\'option ci-dessus pour visualiser ce que la réserve amortit. Le point annoté est la tension maximale, pas le coût total de l\'opération.';
 
     $('chartStock').innerHTML = chart([
       { pts: sc.statuquo.kg.map(r => r.stockHa), c: 'var(--ardoise)', w: 2 },

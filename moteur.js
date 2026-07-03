@@ -78,6 +78,35 @@ function repartir(row, fv) {
 
 function cumul(rows, key) { let s = 0; return rows.map(r => (s += (typeof key === 'function' ? key(r) : r[key]))); }
 
+/* Charges d'entretien récurrentes — modèle (c) : décomposition surface / rendement.
+   - charge SURFACE (coutSurfaceHaAn, €/ha/an) : sol, palissage, entretien indépendant
+     du rendement ; persiste tant que la surface est gérée — Y COMPRIS la jeune vigne en
+     établissement — et tombe au coefRepos pendant la jachère de la parcelle arrachée.
+   - charge RENDEMENT (coutRdtParKg, €/kg) : vendange, transport, prestations à la récolte ;
+     proportionnelle aux kg réellement récoltés. Elle s'annule donc d'elle-même en repos et
+     en établissement, puisque `recolte` exclut la parcelle non productive.
+   Branchée PAR SCÉNARIO : le différentiel inter-scénario capte « ce que l'arrachage évite »
+   (la vendange de la parcelle pendant la transition, PAS sa charge de surface) sans aucun
+   crédit additif. Neutre par défaut (coûts nuls ⇒ parité classeur préservée). */
+function chargesEntretien(scenario, rowsKg, inp) {
+  const cs = inp.coutSurfaceHaAn || 0, cr = inp.coutRdtParKg || 0;
+  const coefRepos = inp.coefRepos ?? 0;
+  const surfRest = inp.surfTot - inp.surfParc, S = inp.surfParc;
+  const map = {};
+  rowsKg.forEach(r => {
+    let surfGeree;
+    if (scenario === 'arrachage') {
+      const coefParc = (r.t < inp.repos) ? coefRepos : 1; // jachère réduite -> jeune vigne pleine
+      surfGeree = surfRest + coefParc * S;
+    } else {
+      surfGeree = inp.surfTot;               // statu quo & complantation : parcelle gérée en plein
+    }
+    const tot = cs * surfGeree + cr * r.recolte; // recolte exclut déjà la parcelle non productive
+    if (tot) map[r.t] = (map[r.t] || 0) + tot;
+  });
+  return map;
+}
+
 function construireScenarios(inp) {
   const base = {
     surfTot: inp.surfTot, surfArr: inp.surfParc, repos: inp.repos,
@@ -87,16 +116,19 @@ function construireScenarios(inp) {
     rendYearFn: inp.rendYearFn
   };
   const S = inp.surfParc, dens = inp.densite;
+  const merge = (a, b) => { const m = { ...a }; for (const k in b) m[k] = (m[k] || 0) + b[k]; return m; };
+  const somme = o => Object.values(o).reduce((s, v) => s + v, 0);
 
-  const coutsArr = {};
-  coutsArr[0] = S * inp.coutArrachageHa;
-  coutsArr[inp.repos] = (coutsArr[inp.repos] || 0)
+  // Coûts PONCTUELS d'investissement (arrachage + installation) — base de l'« effort net »
+  const invArr = {};
+  invArr[0] = S * inp.coutArrachageHa;
+  invArr[inp.repos] = (invArr[inp.repos] || 0)
     + S * (inp.coutPrepaHa + dens * inp.coutPlant + inp.coutPalissageHa + (inp.irrigation ? inp.coutIrrigHa : 0));
   const scArr = simulerReserveKg({ ...base, scenario: 'arrachage',
     rampProfile: inp.ramp, rendFactorProjet: inp.rendFactorProjet });
 
   const nbPlants = S * dens * inp.manquants;
-  const coutsCompl = { 0: nbPlants * inp.coutEntreplant / inp.survie };
+  const invCompl = { 0: nbPlants * inp.coutEntreplant / inp.survie };
   const rendCible = inp.rendEstime + (inp.rendMean - inp.rendEstime) * inp.survie;
   const rendParcCompl = (t, rendY) => {
     const ratio = inp.rendEstime / inp.rendMean, ratioCible = rendCible / inp.rendMean;
@@ -108,11 +140,16 @@ function construireScenarios(inp) {
   const rendParcSQ = (t, rendY) => rendY * (inp.rendEstime / inp.rendMean) * Math.pow(1 - inp.declinSQ, t);
   const scSQ = simulerReserveKg({ ...base, scenario: 'statuquo', rendParcFn: rendParcSQ });
 
+  // Coûts totaux = investissement ponctuel + charges d'entretien récurrentes (modèle c)
+  const coutsArr  = merge(invArr,   chargesEntretien('arrachage',     scArr,  inp));
+  const coutsComp = merge(invCompl, chargesEntretien('complantation', scCompl, inp));
+  const coutsSQ   = merge({},       chargesEntretien('statuquo',      scSQ,   inp));
+
   const eco = c => ({ prixKg: inp.prixKg, coutsParAnnee: c });
   return {
-    arrachage:     { kg: scArr,   eur: coucheEuro(scArr,   eco(coutsArr)) },
-    complantation: { kg: scCompl, eur: coucheEuro(scCompl, eco(coutsCompl)) },
-    statuquo:      { kg: scSQ,    eur: coucheEuro(scSQ,    eco({})) }
+    arrachage:     { kg: scArr,   eur: coucheEuro(scArr,   eco(coutsArr)),  investissement: somme(invArr) },
+    complantation: { kg: scCompl, eur: coucheEuro(scCompl, eco(coutsComp)), investissement: somme(invCompl) },
+    statuquo:      { kg: scSQ,    eur: coucheEuro(scSQ,    eco(coutsSQ)),    investissement: 0 }
   };
 }
 
@@ -230,7 +267,7 @@ function preconPorteGreffe(calcairePct, profondeur, drainage) {
 
 if (typeof module !== 'undefined') module.exports =
   { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
-    coutPalissage, PRIX_PALISSAGE_LUTENVI, FILS_PAR_TAILLE, preconPorteGreffe };
+    chargesEntretien, coutPalissage, PRIX_PALISSAGE_LUTENVI, FILS_PAR_TAILLE, preconPorteGreffe };
 if (typeof window !== 'undefined') window.OAD =
   { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
-    coutPalissage, PRIX_PALISSAGE_LUTENVI, FILS_PAR_TAILLE, preconPorteGreffe };
+    chargesEntretien, coutPalissage, PRIX_PALISSAGE_LUTENVI, FILS_PAR_TAILLE, preconPorteGreffe };

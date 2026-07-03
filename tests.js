@@ -107,5 +107,46 @@ const a3 = M.preconPorteGreffe(30, '<30', 'humide'); // >25 % superficiel : guid
 check('>25 % / <30 cm / humide → exact via wildcard (41 B & 333 EM)',
   a3.pg.join('/') === '41 B/333 EM');
 
+/* ---- Charges d'entretien récurrentes — modèle (c) surface / rendement ---- */
+const inpCh = { ...inp, repos: 2, coutSurfaceHaAn: 2000, coutRdtParKg: 0.4, coefRepos: 0.3 };
+const scCh = M.construireScenarios(inpCh);
+const returnYear = 3 + inpCh.repos;
+
+console.log('T25 — Charges neutres (coûts nuls) ⇒ parité préservée');
+const scZero = M.construireScenarios({ ...inp, coutSurfaceHaAn: 0, coutRdtParKg: 0, coefRepos: 0.3 });
+check('couts statu quo = 0 sans charges', scZero.statuquo.eur.every(r => r.couts === 0));
+check('couts arrachage identiques au cas sans champs',
+  scZero.arrachage.eur.every((r, i) => Math.abs(r.couts - sc.arrachage.eur[i].couts) < 1e-6));
+
+console.log('T26 — Statu quo n\'est plus gratuit (corrige le biais)');
+check('charge de surface + rendement chaque année', scCh.statuquo.eur.every(r => r.couts > 0));
+
+const surfRest = inpCh.surfTot - inpCh.surfParc;
+
+console.log('T27 — Établissement : charge de SURFACE pleine, charge de RENDEMENT nulle sur la parcelle');
+const tEtab = inpCh.repos + 1; // établissement pur (planté, non productif, sans coût ponctuel)
+const rEtab = scCh.arrachage.kg[tEtab];
+check('recolte exclut la parcelle en établissement', Math.abs(rEtab.recolte - inp.rendMean * surfRest) < 1e-6);
+check('couts établissement = surface pleine (reste + parcelle) + rendement du reste',
+  Math.abs(scCh.arrachage.eur[tEtab].couts - (2000 * (surfRest + inpCh.surfParc) + 0.4 * rEtab.recolte)) < 1e-6);
+
+console.log('T28 — Jachère : charge de surface réduite au coefRepos sur la parcelle');
+const tJach = 1; // t < repos, sans coût ponctuel (l'arrachage est à t=0)
+const rJach = scCh.arrachage.kg[tJach];
+check('couts jachère = surface (reste + coefRepos·parcelle) + rendement du reste',
+  Math.abs(scCh.arrachage.eur[tJach].couts - (2000 * (surfRest + inpCh.coefRepos * inpCh.surfParc) + 0.4 * rJach.recolte)) < 1e-6);
+
+console.log('T29 — Différentiel honnête : en établissement, l\'arrachage évite la vendange de la parcelle');
+const rdtParcSQ = 0.4 * (scCh.statuquo.kg[tEtab].recolte - inp.rendMean * surfRest);
+check('la parcelle vendange au statu quo (charge rdt parcelle > 0)', rdtParcSQ > 0);
+check('la parcelle ne vendange pas à l\'arrachage (recolte parcelle = 0)',
+  Math.abs(scCh.arrachage.kg[tEtab].recolte - inp.rendMean * surfRest) < 1e-6);
+
+console.log('T30 — Effort net = investissement ponctuel − réserve (l\'entretien n\'y entre pas)');
+check('investissement arrachage exposé et > 0', scCh.arrachage.investissement > 0);
+check('investissement statu quo = 0', scCh.statuquo.investissement === 0);
+const invNu = inp.surfParc * (inp.coutArrachageHa + inp.coutPrepaHa + inp.densite * inp.coutPlant + inp.coutPalissageHa);
+check('investissement = Σ coûts ponctuels (hors entretien)', Math.abs(scCh.arrachage.investissement - invNu) < 1e-6);
+
 console.log(`\n${ok} ✓ / ${ko} ✗`);
 process.exit(ko ? 1 : 0);
