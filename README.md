@@ -24,6 +24,25 @@ Ouvrir `index.html` dans un navigateur (aucun serveur). Tests : `node tests.js` 
 - **Étiquettes conséquences** sourcées et éditables (pénalité VSL, Voltis :
   cap 5 % encépagement + 10 % assemblage, convention INAO/ODG, statut provisoire).
 
+## Écran 2 — dimensionnement palissage (nouveau)
+Le coût de palissage n'est plus un forfait : `coutPalissage(geo, prix, opt)`
+(moteur.js) le **dérive de la géométrie** et **préremplit** le champ coût
+(choix A), éditable — dès que l'utilisateur le modifie, le préremplissage
+s'arrête (bouton ↻ pour reprendre la valeur dérivée).
+- Prix unitaires : classeur **LutEnVi 2025** (feuille « Coût hectare
+  d'installation ») — instantané à réactualiser (acier volatil). Le fil est
+  ramené à 0,132 €/m **par fil** (LutEnVi : 0,528 €/m pour 4 fils groupés ÷ 4).
+- Piquets intermédiaires : règle `longueur_rang / espacement` (choix B),
+  espacement **éditable, défaut 6 m**. ⚠ Divergence assumée : LutEnVi posait
+  ~1 piquet tous les 4 pieds (≈ 4,3 m) ; à 6 m le nombre de piquets est
+  **~30 % plus faible** (repère affiché dans l'UI).
+- Nombre de fils : fonction du **type de taille** (choix C, `FILS_PAR_TAILLE`),
+  éditable — mapping taille→fils **non figé par le guide, à confirmer**.
+- Affichage pur (n'alimente pas le calcul) : fiche conseil **porte-greffe**
+  (Guide 2025, p. 38-39) et diamètre de **fil porteur** (p. 37).
+Tests palissage : T18 (pricing = Σ qté×prix), T19 (règle B monotone),
+T20 (choix C monotone), T21 (parité pricing LutEnVi ±5 %).
+
 ## Parité classeur (inchangée)
 min 5 021,8 kg/ha en t=3 ; final 10 000 ; Σ sortie arrachage 8 100 kg ;
 Σ mise 12 850 kg. Stock initial assis sur la surface totale pour les trois

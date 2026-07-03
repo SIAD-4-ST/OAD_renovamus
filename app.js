@@ -3,6 +3,116 @@
   const $ = id => document.getElementById(id);
   const EC = 3440;
   let vueFV = '1';
+  let palisManuel = false;   // passe à true dès que l'utilisateur édite le coût palissage à la main
+
+  /* Fiche conseil porte-greffe — AFFICHAGE PUR (n'entre pas dans le calcul).
+     Source : Guide pratique 2025, p. 38-39. Donnée peu évolutive (obsolescence assumée). */
+  const PG_INFO = {
+    '41 B':        ['Polyvalent, adapté à de nombreuses situations (calcaire actif 40 %).', 'Peut manquer de maturité en situation tardive, surtout avec des clones trop productifs.'],
+    'SO4':         ['Précoce, sols moyennement calcaires (17 %).', 'Sensible à la pourriture grise et à la carence magnésienne ; à vendanger rapidement.'],
+    '3309 C':      ['Précoce, sols peu calcaires (11 %). Bonne aptitude à l\'enracinement.', 'À éviter si la résistance au calcaire est insuffisante pour la parcelle.'],
+    '161-49 C':    ['Longtemps recommandé, aujourd\'hui sous surveillance.', '⚠ Dépérissements signalés depuis 2008 (baisse de vigueur, perte de récolte en 4ᵉ-5ᵉ feuille). Déconseillé en l\'état actuel des connaissances (Guide 2025, p. 39).'],
+    'Fercal':      ['Précoce, sols calcaires ou humides (40 %).', 'Sensible à la carence magnésienne — veiller à l\'équilibre K/Mg du sol.'],
+    'Riparia Gloire': ['Hors référentiel champenois du Guide 2025 — faible vigueur, sols fertiles et frais.', 'À valider auprès d\'un technicien ; peu adapté aux sols calcaires de Champagne.']
+  };
+  function majPG() {
+    const pg = $('porteGreffe').value, info = PG_INFO[pg];
+    const el = $('pgInfo');
+    if (!info) { el.innerHTML = ''; return; }
+    const alerte = info[1].startsWith('⚠');
+    el.className = 'note' + (alerte ? ' alerte' : '');
+    el.innerHTML = `<b>${pg}</b> — ${info[0]}<br><span style="font-size:.82rem">${info[1]}</span>`
+      + `<div class="src" style="margin-top:.3rem">Guide pratique Viticulture durable en Champagne 2025, p. 38-39 — le porte-greffe doit être validé par une analyse de terre.</div>`;
+  }
+
+  /* Clones diffusés en Champagne — table BRUTE, reproduction fidèle du Guide 2025
+     (p. 42-44). AFFICHAGE PUR. Rendement/Degré/Botrytis sont codés en COULEUR dans
+     le guide (non transcriptibles depuis le PDF) → à compléter depuis la source CIVC. */
+  const CLONES = {
+    'Pinot noir': [
+      ['115','Régulier, port moins retombant, production inférieure aux clones 927 et 779'],
+      ['927','Régulier, apte à la production de vin rouge'],
+      ['779','Régulier, apte à la production de vin rouge'],
+      ['792','RAS'],['872','RAS'],['870','RAS'],
+      ['521','Grappes plus petites mais plus nombreuses'],
+      ['386','Pellicule plus épaisse, baies moins colorées'],
+      ['743','Tendance à faire des fourches'],
+      ['871','RAS'],['375','RAS'],['292','RAS'],
+      ['666','Régulier'],['236','RAS'],['780','RAS'],['665','RAS'],
+      ['668','Vins dilués en cas de surproduction'],
+      ['389','Vins dilués en cas de surproduction'],
+      ['388','Vins dilués en cas de surproduction']
+    ],
+    'Meunier': [
+      ['977','Plus tardif, régulier'],
+      ['900','Mutations réverses plus fréquentes'],
+      ['817','Plus précoce, régulier'],
+      ['865','RAS'],['978','RAS'],
+      ['818','Plus précoce, régulier'],
+      ['924','RAS'],
+      ['864','Degré irrégulier'],
+      ['791','Plus précoce, régulier'],
+      ['925','RAS'],
+      ['983','Mutations réverses plus fréquentes']
+    ],
+    'Chardonnay': [
+      ['76','Régulier, précoce'],
+      ['95','Régulier, plus vigoureux que le clone 76'],
+      ['75','Production irrégulière, grappes plus lâches'],
+      ['121','RAS'],
+      ['96','Régulier, précoce, vins plus acides'],
+      ['78','Peu expressif en surproduction'],
+      ['131','Régulier, vins plus acides'],
+      ['124','Plus tardif, meilleure remise à fruit en cas de gel de printemps'],
+      ['132','Précoce'],
+      ['118','Vins dilués en surproduction'],
+      ['130','Vins dilués en surproduction']
+    ]
+  };
+  function majClones() {
+    const cep = $('cepage').value, list = CLONES[cep] || [];
+    const rows = list.map(c =>
+      `<div class="row" style="align-items:start"><span><b>${c[0]}</b></span><span style="text-align:right;max-width:72%;font-size:.82rem">${c[1]}</span></div>`).join('');
+    $('cloneTable').innerHTML =
+      `<div class="src" style="margin-bottom:.3rem">${list.length} clones diffusés — ${cep} (Guide 2025, p. 42-44)</div>`
+      + rows
+      + `<div class="src verif" style="margin-top:.4rem">Rendement / Degré / Botrytis : codés en couleur dans le guide, non transcrits — à compléter depuis la source CIVC / plantgrape.fr.</div>`;
+  }
+  function majPrecon() {
+    const cal = +$('calcaireActif').value, prof = $('profondeurSol').value, drain = $('drainageSol').value;
+    const r = OAD.preconPorteGreffe(cal, prof, drain), el = $('preconPG'), choisi = $('porteGreffe').value;
+    if (r.match === 'incomplet') {
+      el.className = 'note';
+      el.innerHTML = '<span class="src">Renseignez le calcaire actif et la profondeur pour afficher la branche de l\'arbre du guide.</span>';
+      return;
+    }
+    if (!r.pg.length) {
+      el.className = 'note alerte';
+      el.innerHTML = `<b>Porte-greffes envisageables</b><br><span style="font-size:.85rem">${r.msg || ''}</span>`;
+      return;
+    }
+    const puces = r.pg.map(pg => pg === choisi
+      ? `<b style="color:var(--vigne)">${pg} ✓</b>` : pg).join('&nbsp; · &nbsp;');
+    const approx = r.match === 'approche' ? `<div class="src verif" style="margin-top:.2rem">${r.msg}</div>` : '';
+    const notes = r.notes.length ? `<div class="src" style="margin-top:.3rem">${r.notes.map(n => '⚠ ' + n).join('<br>')}</div>` : '';
+    el.className = 'note';
+    el.innerHTML = `<b>Porte-greffes envisageables</b> <span class="src">(arbre du Guide 2025, p. 39)</span>`
+      + approx
+      + `<div style="margin:.35rem 0;font-size:.92rem">${puces}</div>`
+      + notes
+      + `<div class="src" style="margin-top:.3rem">Préconisation du guide — à valider par une analyse de terre. N'entre pas dans le calcul.</div>`;
+  }
+  function majPalissage(g) {
+    const nbFils = +$('nbFils').value, esp = +$('espPiquet').value;
+    const cp = OAD.coutPalissage(g, null, { espacementPiquet: esp, nbFils });
+    const rows = cp.lignes.map(l =>
+      `<div class="row"><span>${l[0]} <span style="color:var(--lie)">×${Math.round(l[1]).toLocaleString('fr-FR')}</span></span><b>${fmtE0(l[3])}</b></div>`).join('');
+    $('palisDetail').innerHTML = rows
+      + `<div class="row" style="border-bottom:0;margin-top:.35rem"><span><b>Total /ha</b></span><b>${fmtE0(cp.totalHa)}</b></div>`
+      + `<div class="src" style="margin-top:.35rem">soit ${fmtE(cp.totalParcelle)} sur ${g.surf.toFixed(3)} ha · piquets tous les ${esp} m · ${nbFils} fils/rang${palisManuel ? ' · <b>champ coût édité à la main</b>' : ''}</div>`;
+    if (!palisManuel) $('coutPalissageHa').value = Math.round(cp.totalHa);
+    return cp;
+  }
 
   const fmtE = v => (v < 0 ? '−' : '') + Math.abs(Math.round(v)).toLocaleString('fr-FR') + ' €';
   const fmtE0 = v => (v < 0 ? '−' : '') + Math.abs(Math.round(v / 100) * 100).toLocaleString('fr-FR') + ' €';
@@ -94,9 +204,16 @@
     const conseq = [];
     if (g.vsl) conseq.push(['VSL', `rendement −${$('penaliteVSL').value} % (branché sur VolCo) · empreinte réduite · sensible gel−, grêle+`]);
     else conseq.push(['Traditionnelle', 'rendement de référence · empreinte et coûts standard']);
+    conseq.push(['Fil porteur', g.vsl ? 'diamètre conseillé 2,2–2,5 mm (semi-large, charge de raisin ~+50 %) — Guide p. 37'
+                                       : 'diamètre conseillé 1,8–2,0 mm (vigne étroite) — Guide p. 37']);
     if ($('materiel').value === 'voltis') conseq.push(['Voltis (VIFA)', '≤ 5 % de l\'encépagement · +10 % d\'assemblage max · convention INAO/ODG obligatoire · statut provisoire · maturité +8 j']);
     if ($('irrigation').value === '1') conseq.push(['⚠ Irrigation', 'interdite en AOC Champagne (CDC) ; seul l\'arrosage d\'installation des jeunes plants peut être toléré — à vérifier']);
     $('conseq').innerHTML = conseq.map(c => `<span class="badge" title="${c[1]}"><b>${c[0]}</b></span><div class="src" style="margin:.1rem 0 .5rem">${c[1]}</div>`).join('');
+
+    majPG();
+    majPalissage(g);
+    majClones();
+    majPrecon();
 
     majFaireValoir();
     $('fvHint').textContent = inp.fv.regime === 'propriete' ? '100 % exploitant'
@@ -213,6 +330,15 @@
     document.querySelectorAll('#vueFV button').forEach(x => x.classList.remove('actif'));
     b.classList.add('actif'); vueFV = b.dataset.fv; calculer();
   }));
+  // Palissage : le type de taille préremplit le nombre de fils (choix C)
+  $('typeTaille').addEventListener('change', () => {
+    $('nbFils').value = OAD.FILS_PAR_TAILLE[$('typeTaille').value] || 4; calculer();
+  });
+  // Édition manuelle du coût palissage → on cesse de le préremplir
+  $('coutPalissageHa').addEventListener('input', () => { palisManuel = true; });
+  // Bouton ↻ : reprendre la valeur dérivée de la géométrie
+  $('reportPalis').addEventListener('click', () => { palisManuel = false; calculer(); });
+
   document.querySelectorAll('input,select').forEach(el => el.addEventListener('input', calculer));
   majFaireValoir();
   calculer();

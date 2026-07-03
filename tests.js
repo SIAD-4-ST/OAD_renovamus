@@ -64,5 +64,48 @@ console.log('T9 — NOUVEAU : fermage ⇒ propriétaire = loyer chaque année');
 check('prop = loyer', sc.arrachage.eur.every(r =>
   Math.abs(M.repartir(r, { regime: 'fermage', loyerAn: 3000 }).prop - 3000) < 1e-9));
 
+console.log('T18 — Palissage : total = Σ(quantité × prix unitaire)');
+const geoRef = { nbRangs: 54, L: 168.35, surf: 1 };
+const cpRef = M.coutPalissage(geoRef, null, { espacementPiquet: 4.3, nbFils: 4 });
+check('somme des lignes = total parcelle',
+  Math.abs(cpRef.lignes.reduce((s, l) => s + l[3], 0) - cpRef.totalParcelle) < 1e-6);
+check('chaque ligne = qté × prix',
+  cpRef.lignes.every(l => Math.abs(l[1] * l[2] - l[3]) < 1e-6));
+
+console.log('T19 — Règle B : espacement plus court ⇒ plus de piquets ⇒ coût plus élevé');
+const cp6 = M.coutPalissage(geoRef, null, { espacementPiquet: 6, nbFils: 4 });
+const cp4 = M.coutPalissage(geoRef, null, { espacementPiquet: 4.3, nbFils: 4 });
+check('coût(4,3 m) > coût(6 m)', cp4.totalHa > cp6.totalHa, `${cp4.totalHa.toFixed(0)} vs ${cp6.totalHa.toFixed(0)}`);
+check('6 m sous-chiffre vs LutEnVi (< référence ~17 200 €/ha)', cp6.totalHa < 17200);
+
+console.log('T20 — Choix C : plus de fils ⇒ coût plus élevé (fils + gripple)');
+const cpF4 = M.coutPalissage(geoRef, null, { espacementPiquet: 6, nbFils: 4 });
+const cpF5 = M.coutPalissage(geoRef, null, { espacementPiquet: 6, nbFils: 5 });
+check('coût(5 fils) > coût(4 fils)', cpF5.totalHa > cpF4.totalHa);
+
+console.log('T21 — Parité pricing LutEnVi (counts imposés → totaux attendus)');
+// à espacement 4,3 m : ~2052 piquets interm (vs 2066 LutEnVi) ; on borne le total dérivé
+check('total dérivé (4,3 m) proche référence LutEnVi ±5 %',
+  Math.abs(cp4.totalHa - 17235) / 17235 < 0.05, `${cp4.totalHa.toFixed(0)} vs 17235`);
+
+console.log('T22 — Arbre PG : branches exactes du guide (p. 39)');
+const a1 = M.preconPorteGreffe(30, '<30', 'sec');   // >25 %, superficiel
+check('>25 % / <30 cm → 41 B & 333 EM',
+  a1.match === 'exact' && a1.pg.join('/') === '41 B/333 EM');
+const a2 = M.preconPorteGreffe(20, '30-60', 'drainant'); // 15-25 %, 30-60, drainant
+check('15-25 % / 30-60 / drainant contient 161-49 C', a2.pg.includes('161-49 C'));
+check('… et porte le renvoi dépérissement (note 3)',
+  a2.notes.some(n => /dépérissement|d\u00e9p\u00e9rissement/.test(n)));
+
+console.log('T23 — Arbre PG : données manquantes ⇒ pas de verdict');
+check('sans calcaire → incomplet', M.preconPorteGreffe(NaN, '30-60', 'sec').match === 'incomplet');
+check('calcaire < 5 % → hors-grille (pas de PG imposé)',
+  M.preconPorteGreffe(3, '30-60', 'drainant').match === 'hors-grille');
+
+console.log('T24 — Arbre PG : drainage non distingué ⇒ branches proches (approché)');
+const a3 = M.preconPorteGreffe(30, '<30', 'humide'); // >25 % superficiel : guide ne distingue pas → wildcard
+check('>25 % / <30 cm / humide → exact via wildcard (41 B & 333 EM)',
+  a3.pg.join('/') === '41 B/333 EM');
+
 console.log(`\n${ok} ✓ / ${ko} ✗`);
 process.exit(ko ? 1 : 0);

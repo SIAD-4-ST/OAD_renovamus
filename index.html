@@ -126,7 +126,8 @@ details{margin-top:1rem}summary{cursor:pointer;font-weight:600;font-size:.9rem}
       <h3 style="margin:1.2rem 0 .5rem">Matériel &amp; conduite</h3>
       <div class="grille" style="grid-template-columns:1fr 1fr">
         <div class="champ"><label for="materiel">Matériel végétal</label><select id="materiel"><option value="vinifera" selected>Vitis vinifera (cépages AOC)</option><option value="voltis">Voltis (variété résistante, VIFA)</option></select></div>
-        <div class="champ"><label for="porteGreffe">Porte-greffe</label><select id="porteGreffe"><option>41 B</option><option>SO4</option><option>3309 C</option><option>161-49 C</option><option>Fercal</option><option>Riparia Gloire</option></select></div>
+        <div class="champ"><label for="porteGreffe">Porte-greffe</label><select id="porteGreffe"><option>41 B</option><option>SO4</option><option>3309 C</option><option>161-49 C</option><option>Fercal</option><option>Riparia Gloire</option></select><span class="src">information — n'entre pas dans le calcul (choix agronomique lié au sol, à confirmer par analyse de terre)</span></div>
+        <div id="pgInfo" class="note" style="grid-column:1/-1;margin:.2rem 0 0"></div>
         <div class="champ"><label for="irrigation">Ferti-irrigation du plantier</label><select id="irrigation"><option value="0" selected>Non</option><option value="1">Oui</option></select></div>
         <div class="champ"><label for="ramp">Montée en charge des jeunes vignes</label><select id="ramp"><option value="0.3,0.6,1" selected>30 · 60 · 100 %</option><option value="0.5,0.8,1">50 · 80 · 100 %</option><option value="1">Immédiate (hypothèse classeur)</option></select></div>
       </div>
@@ -142,6 +143,39 @@ details{margin-top:1rem}summary{cursor:pointer;font-weight:600;font-size:.9rem}
       <div id="conseq" style="margin-top:.7rem"></div>
     </div>
   </div>
+  <h3 style="margin:1.4rem 0 .3rem">Aide au choix du matériel végétal <span style="font-size:.75rem;font-weight:400;color:var(--lie)">(information, hors calcul · Guide 2025)</span></h3>
+  <div class="geo">
+    <div>
+      <div class="grille" style="grid-template-columns:1fr 1fr">
+        <div class="champ"><label for="cepage">Cépage</label><select id="cepage"><option>Pinot noir</option><option>Meunier</option><option>Chardonnay</option></select><span class="src">filtre la table des clones diffusés</span></div>
+        <div class="champ"><label for="calcaireActif">Calcaire actif sous-sol</label><input id="calcaireActif" type="number" step="1" min="0" max="60" value="18"><span class="unite">%</span><span class="src verif">analyse de terre (sous-sol 30-50 cm) — à confirmer</span></div>
+        <div class="champ"><label for="profondeurSol">Profondeur du sol</label><select id="profondeurSol"><option value="&lt;30">Superficiel (&lt; 30 cm)</option><option value="30-60" selected>Assez profond (30-60 cm)</option><option value="&gt;60">Profond (&gt; 60 cm)</option></select></div>
+        <div class="champ"><label for="drainageSol">Drainage</label><select id="drainageSol"><option value="sec">Sol sec</option><option value="drainant" selected>Sol drainant</option><option value="humide">Humide au printemps</option></select></div>
+      </div>
+      <div id="preconPG" class="note" style="margin-top:.4rem"></div>
+    </div>
+    <div class="geo-synth">
+      <h3 style="margin-bottom:.5rem">Clones diffusés en Champagne</h3>
+      <div id="cloneTable"></div>
+    </div>
+  </div>
+
+  <h3 style="margin:1.4rem 0 .3rem">Dimensionnement du palissage <span style="font-size:.75rem;font-weight:400;color:var(--lie)">(dérivé de la géométrie · prix LutEnVi 2025 à réactualiser)</span></h3>
+  <div class="geo">
+    <div>
+      <div class="grille" style="grid-template-columns:1fr 1fr">
+        <div class="champ"><label for="typeTaille">Type de taille</label><select id="typeTaille"><option value="guyot" selected>Guyot simple (4 fils)</option><option value="cordon">Cordon (4 fils)</option><option value="arcure_simple">Arcure simple (4 fils)</option><option value="arcure_double">Arcure double (5 fils)</option></select><span class="src">choix C — pilote le nombre de fils par rang</span></div>
+        <div class="champ"><label for="nbFils">Nombre de fils par rang</label><input id="nbFils" type="number" step="1" min="2" max="8" value="4"><span class="src verif">hypothèse à confirmer — non figée par le guide</span></div>
+        <div class="champ"><label for="espPiquet">Espacement des piquets</label><input id="espPiquet" type="number" step="0.5" min="2" max="12" value="6"><span class="unite">m</span><span class="src verif">choix B · repère LutEnVi ≈ 4,3 m (1 piquet / 4 pieds) ; 6 m sous-chiffre ~30 %</span></div>
+        <div class="champ" style="justify-content:end"><button type="button" id="reportPalis" style="font:inherit;font-size:.83rem;padding:.5rem;border:1px solid var(--or);background:var(--or-pale);border-radius:4px;cursor:pointer">↻ Reporter dans le coût de palissage</button><span class="src">le champ « Palissage » (coûts) est prérempli automatiquement tant que vous ne le modifiez pas à la main</span></div>
+      </div>
+    </div>
+    <div class="geo-synth">
+      <h3 style="margin-bottom:.5rem">Détail palissage (parcelle)</h3>
+      <div id="palisDetail"></div>
+    </div>
+  </div>
+
   <h3 style="margin:1.4rem 0 .3rem">Coûts <span style="font-size:.75rem;font-weight:400;color:var(--alerte)">(tous à caler — référentiel à sourcer)</span></h3>
   <div class="grille">
     <div class="champ"><label for="motif">Motif d'arrachage</label><select id="motif"><option value="classique" selected>Classique (repos 1 an · sortie 3 ans)</option><option value="sanitaire">Sanitaire — flavescence dorée (repos 3 ans · sortie 5 ans)</option></select><span class="src">le motif commute automatiquement repos et durée de sortie de réserve</span></div>

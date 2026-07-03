@@ -120,7 +120,117 @@ function manqueAGagner(scen, refSQ, prixKg) {
   return scen.kg.map((r, i) => Math.max(0, (refSQ.kg[i].volcoVendu - r.volcoVendu) * prixKg));
 }
 
+/* =====================================================================
+   Coût de palissage dérivé de la géométrie
+   Source des prix unitaires : classeur LutEnVi 2025 (feuille « Coût
+   hectare d'installation ») — instantané à réactualiser (acier volatil).
+   Règle piquets intermédiaires  = longueur_rang / espacement  (choix B).
+     Repère LutEnVi implicite : ~4,3 m (1 piquet tous les 4 pieds à 1,10 m,
+     soit densité/4). Défaut ici 6 m, éditable → sous-chiffre ~30 % vs LutEnVi.
+   Nombre de fils = fonction du type de taille (choix C), éditable.
+   Le total est renvoyé en €/ha (surface parcelle) pour PRÉREMPLIR le
+   champ coût palissage (choix A) sans l'imposer : l'utilisateur garde la main.
+   ===================================================================== */
+const PRIX_PALISSAGE_LUTENVI = {
+  piquetInter: 3.99,   // €/piquet
+  piquetTete: 6,       // €/piquet
+  amarre: 2.64,        // €/amarre
+  filML: 0.132,        // €/mètre linéaire PAR FIL (LutEnVi : 0,528 €/m pour 4 fils groupés ÷ 4)
+  gripple: 1.826,      // €/gripple
+  moPosePiquet: 1.318  // €/piquet posé — dérivé LutEnVi (2 864,56 €/ha ÷ 2 174 piquets/ha)
+};
+// Nb de fils/rang par type de taille — hypothèse à confirmer (non figée par le guide).
+const FILS_PAR_TAILLE = {
+  guyot: 4, cordon: 4, arcure_simple: 4, arcure_double: 5
+};
+
+function coutPalissage(geo, prix, opt) {
+  prix = Object.assign({}, PRIX_PALISSAGE_LUTENVI, prix || {});
+  opt = opt || {};
+  const espacement = opt.espacementPiquet ?? 6;                 // m — choix B, éditable
+  const nbFils = opt.nbFils ?? FILS_PAR_TAILLE[opt.typeTaille] ?? 4; // choix C
+  const nbRangs = geo.nbRangs, Lrang = geo.L, surf = geo.surf;
+
+  const interParRang = Math.max(0, Math.round(Lrang / espacement) - 1);
+  const nbInter  = nbRangs * interParRang;
+  const nbTete   = 2 * nbRangs;
+  const nbAmarre = 2 * nbRangs;
+  const mlFils   = nbFils * nbRangs * Lrang;
+  const nbGripple = nbFils * nbRangs;
+  const nbPiquets = nbInter + nbTete;
+
+  const lignes = [
+    ['Piquets intermédiaires', nbInter,  prix.piquetInter,  nbInter  * prix.piquetInter],
+    ['Piquets de tête',        nbTete,   prix.piquetTete,   nbTete   * prix.piquetTete],
+    ['Amarres',                nbAmarre, prix.amarre,       nbAmarre * prix.amarre],
+    ['Fils (ml)',              mlFils,   prix.filML,        mlFils   * prix.filML],
+    ['Gripple',                nbGripple, prix.gripple,     nbGripple * prix.gripple],
+    ['MO pose piquets',        nbPiquets, prix.moPosePiquet, nbPiquets * prix.moPosePiquet]
+  ];
+  const totalParcelle = lignes.reduce((s, l) => s + l[3], 0);
+  const totalHa = surf > 0 ? totalParcelle / surf : 0;
+  return { lignes, totalParcelle, totalHa, espacement, nbFils,
+           nbInter, nbTete, nbAmarre, mlFils, nbGripple };
+}
+
+/* =====================================================================
+   Arbre de décision porte-greffe — reproduction FIDÈLE du Guide pratique
+   2025 (p. 39). INFORMATION, hors calcul économique. L'outil est un miroir
+   de l'arbre officiel : il ne juge pas, il attribue à la source.
+   ===================================================================== */
+const ARBRE_PG_NOTES = {
+  1: 'Situations gélives : préférer le 41 B.',
+  2: '5 BB : uniquement sols superficiels, caillouteux et secs (vigueur maîtrisée par le milieu) ; intérêt en entreplantation dans les ronds de court-noué.',
+  3: '161-49 C : dépérissements signalés depuis 2008, partout en France — déconseillé en l\u2019état actuel des connaissances (Guide 2025, renvoi 3).'
+};
+// [ calcaire ('>25'|'15-25'|'5-15'), profondeur ('<30'|'30-60'|'>60'), drainage ('sec'|'drainant'|'humide'|'*'), porte-greffes, renvois ]
+const ARBRE_PG = [
+  ['>25',   '<30',  '*',        ['41 B','333 EM'], []],
+  ['>25',   '30-60','sec',      ['41 B','333 EM'], []],
+  ['>25',   '30-60','drainant', ['Fercal','41 B'], [1]],
+  ['>25',   '>60',  'drainant', ['Fercal','41 B'], [1]],
+  ['>25',   '>60',  'humide',   ['Fercal'], []],
+  ['15-25', '<30',  'sec',      ['41 B','5 BB','333 EM','140 Ru'], [2]],
+  ['15-25', '<30',  'drainant', ['SO4','Fercal'], []],
+  ['15-25', '30-60','sec',      ['420 A','SO4','RSB1','41 B','140 Ru','1103 P'], []],
+  ['15-25', '30-60','drainant', ['420 A','Fercal','41 B','161-49 C'], [3]],
+  ['15-25', '30-60','humide',   ['Fercal','SO4'], []],
+  ['15-25', '>60',  'drainant', ['420 A','Fercal','41 B','161-49 C'], [3]],
+  ['5-15',  '<30',  'sec',      ['41 B','RSB1','333 EM','110 R','140 Ru','1103 P'], []],
+  ['5-15',  '<30',  'drainant', ['SO4','Gravesac','5C'], []],
+  ['5-15',  '30-60','sec',      ['3309 C','SO4','Gravesac','RSB1'], []],
+  ['5-15',  '30-60','drainant', ['101-14 MGt','3309 C','420 A','Gravesac','5C'], []],
+  ['5-15',  '30-60','humide',   ['101-14 MGt','Gravesac'], []],
+  ['5-15',  '>60',  'drainant', ['101-14 MGt','3309 C','420 A','Gravesac'], []]
+];
+function bandeCalcaire(pct) {
+  if (pct == null || isNaN(pct)) return null;
+  if (pct > 25) return '>25';
+  if (pct >= 15) return '15-25';
+  if (pct >= 5)  return '5-15';
+  return '<5';
+}
+function preconPorteGreffe(calcairePct, profondeur, drainage) {
+  const bande = bandeCalcaire(calcairePct);
+  if (!bande || !profondeur) return { match: 'incomplet', pg: [], notes: [] };
+  if (bande === '<5') return { match: 'hors-grille', pg: [], notes: [],
+    msg: 'Calcaire actif < 5 % : hors de l\u2019arbre du guide (voir tableau porte-greffes p. 38).' };
+  let r = ARBRE_PG.find(x => x[0] === bande && x[1] === profondeur && (x[2] === drainage || x[2] === '*'));
+  if (r) return { match: 'exact', pg: r[3], notes: r[4].map(n => ARBRE_PG_NOTES[n]) };
+  const proches = ARBRE_PG.filter(x => x[0] === bande && x[1] === profondeur);
+  if (proches.length) {
+    const pg = [...new Set(proches.flatMap(x => x[3]))];
+    const notes = [...new Set(proches.flatMap(x => x[4]))].map(n => ARBRE_PG_NOTES[n]);
+    return { match: 'approche', pg, notes,
+      msg: 'Le guide ne distingue pas ce drainage à cette profondeur — porte-greffes des branches proches :' };
+  }
+  return { match: 'hors-grille', pg: [], notes: [],
+    msg: 'Combinaison non couverte par l\u2019arbre du guide (voir tableau p. 38).' };
+}
+
 if (typeof module !== 'undefined') module.exports =
-  { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner };
+  { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
+    coutPalissage, PRIX_PALISSAGE_LUTENVI, FILS_PAR_TAILLE, preconPorteGreffe };
 if (typeof window !== 'undefined') window.OAD =
-  { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner };
+  { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
+    coutPalissage, PRIX_PALISSAGE_LUTENVI, FILS_PAR_TAILLE, preconPorteGreffe };
