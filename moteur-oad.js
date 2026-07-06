@@ -1,3 +1,4 @@
+if (typeof window === "undefined" || !window.OAD) {
 /* =====================================================================
    OAD Renouvellement — moteur v1.1 (maquette)
    Couche kg (parité classeur) + couche € + 3 scénarios
@@ -271,3 +272,5 @@ if (typeof module !== 'undefined') module.exports =
 if (typeof window !== 'undefined') window.OAD =
   { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
     chargesEntretien, coutPalissage, PRIX_PALISSAGE_LUTENVI, FILS_PAR_TAILLE, preconPorteGreffe };
+
+}

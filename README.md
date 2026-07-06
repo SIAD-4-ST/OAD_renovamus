@@ -1,185 +1,318 @@
-# OAD Renouvellement — maquette v1.1
+# OAD Renouvellement du vignoble — Parcours guidé
 
-Simulateur comparant trois trajectoires à 10 ans pour une parcelle de vigne
-champenoise : **arrachage-replantation**, **complantation** (entreplants) et
-**statu quo**. Aucune dépendance, aucun build : ouvrir `index.html` dans un
-navigateur. Tests moteur : `node tests.js` (40 invariants).
+Simulateur pédagogique qui compare, sur une parcelle champenoise, **trois
+trajectoires à 10 ans** : arrachage-replantation, complantation
+(entreplants) et statu quo (ne rien faire). L'utilisateur avance dans un
+**parcours guidé en 5 étapes** (Exploitation → Parcelle → Plantation →
+Coûts → Résultats) ; à chaque étape, une synthèse chiffrée se met à jour
+en continu dans la colonne de droite.
 
-> Ce document décrit **toutes les données d'entrée, toutes les formules et
-> tous les branchements** entre l'UI (`index.html`), l'orchestration
-> (`app.js`) et le moteur de calcul (`moteur.js`), pour qu'on puisse auditer
-> ou faire évoluer l'outil sans deviner.
+> Ce document explique, du premier coup d'œil à la dernière formule,
+> **comment le fichier est construit, comment il tourne dans le
+> navigateur, et comment chaque nombre affiché à l'écran est calculé** —
+> de façon à ce qu'on puisse l'auditer, le faire évoluer ou le recaler
+> sans avoir à deviner ni à relire tout le code.
 
 ---
 
 ## Sommaire
 
-1. [Architecture des 3 fichiers](#1-architecture-des-3-fichiers)
-2. [Flux de données, de l'écran au calcul](#2-flux-de-données-de-lécran-au-calcul)
-3. [Glossaire des entrées (id HTML → variable → formule)](#3-glossaire-des-entrées-id-html--variable--formule)
-4. [Le moteur kg — `simulerReserveKg`](#4-le-moteur-kg--simulerreservekg)
-5. [Ce qui distingue les 3 scénarios](#5-ce-qui-distingue-les-3-scénarios)
-6. [La couche € — `coucheEuro`](#6-la-couche--coucheeuro)
-7. [Faire-valoir — `repartir`](#7-faire-valoir--repartir)
-8. [Charges d'entretien récurrentes — `chargesEntretien`](#8-charges-dentretien-récurrentes--chargesentretien)
-9. [Assemblage des scénarios — `construireScenarios`](#9-assemblage-des-scénarios--construirescenarios)
-10. [Manque à gagner — `manqueAGagner`](#10-manque-à-gagner--manqueagagner)
-11. [Palissage dérivé de la géométrie — `coutPalissage`](#11-palissage-dérivé-de-la-géométrie--coutpalissage)
-12. [Arbre de décision porte-greffe — `preconPorteGreffe`](#12-arbre-de-décision-porte-greffe--preconportegreffe)
-13. [Géométrie de plantation — `geometrie()`](#13-géométrie-de-plantation--geometrie)
-14. [KPI et synthèse — écran 4](#14-kpi-et-synthèse--écran-4)
-15. [Graphiques SVG — `chart()`](#15-graphiques-svg--chart)
-16. [Table de correspondance id HTML ↔ moteur](#16-table-de-correspondance-id-html--moteur)
-17. [Tests](#17-tests)
-18. [Limites, hypothèses et paramètres cachés](#18-limites-hypothèses-et-paramètres-cachés)
-19. [Historique v1.1](#19-historique-v11)
+1. [Démarrage rapide](#1-démarrage-rapide)
+2. [Architecture des 3 fichiers](#2-architecture-des-3-fichiers)
+3. [Comment tourne la page — le format `.dc` / `x-dc`](#3-comment-tourne-la-page--le-format-dc--x-dc)
+4. [Le parcours en 5 étapes](#4-le-parcours-en-5-étapes)
+5. [Le flux de données, de la frappe au résultat](#5-le-flux-de-données-de-la-frappe-au-résultat)
+6. [Glossaire des champs de saisie](#6-glossaire-des-champs-de-saisie)
+7. [Le moteur kg — `simulerReserveKg`](#7-le-moteur-kg--simulerreservekg)
+8. [Ce qui distingue les 3 scénarios](#8-ce-qui-distingue-les-3-scénarios)
+9. [La couche € — `coucheEuro`](#9-la-couche--coucheeuro)
+10. [Faire-valoir — `repartir`](#10-faire-valoir--repartir)
+11. [Charges d'entretien récurrentes — `chargesEntretien`](#11-charges-dentretien-récurrentes--chargesentretien)
+12. [Assemblage des scénarios — `construireScenarios`](#12-assemblage-des-scénarios--construirescenarios)
+13. [Manque à gagner — `manqueAGagner`](#13-manque-à-gagner--manqueagagner)
+14. [Palissage dérivé de la géométrie — `coutPalissage`](#14-palissage-dérivé-de-la-géométrie--coutpalissage)
+15. [Arbre de décision porte-greffe — `preconPorteGreffe`](#15-arbre-de-décision-porte-greffe--preconportegreffe)
+16. [Géométrie de plantation — `geometrie()`](#16-géométrie-de-plantation--geometrie)
+17. [KPI et synthèse](#17-kpi-et-synthèse)
+18. [Graphiques SVG faits main](#18-graphiques-svg-faits-main)
+19. [Limites, hypothèses et paramètres cachés](#19-limites-hypothèses-et-paramètres-cachés)
+20. [Pour aller plus loin](#20-pour-aller-plus-loin)
 
 ---
 
-## 1. Architecture des 3 fichiers
+## 1. Démarrage rapide
+
+Aucune installation, aucun build, aucune dépendance à gérer :
 
 ```
-index.html   — tous les champs de saisie (id=…) + zones de résultat (id=…), aucune logique
-app.js       — lit le DOM, construit l'objet `inp`, appelle moteur.js, réinjecte le
-               résultat dans le DOM (texte, tableaux, SVG). IIFE unique, pas de framework.
-moteur.js    — pur, sans DOM : fonctions de calcul exposées via `window.OAD`
-               (navigateur) et `module.exports` (Node, pour tests.js).
-tests.js     — 40 assertions sur moteur.js exécutées avec `node tests.js`.
+ouvrir index.html dans un navigateur (double-clic, ou un serveur local type
+`python -m http.server`)
 ```
 
-`index.html` charge les scripts dans cet ordre : `moteur.js` puis `app.js`.
-`app.js` s'exécute une fois au chargement (`calculer()` en bas de fichier)
-puis se ré-exécute à **chaque** `input`/`change` sur n'importe quel champ
-(`document.querySelectorAll('input,select').forEach(el => el.addEventListener('input', calculer))`),
-plus sur les boutons de bascule faire-valoir. Il n'y a pas de debounce : le
-recalcul est intégralement synchrone et redessine tout l'écran 4 à chaque
-frappe.
+**Une connexion Internet est nécessaire au premier chargement** : la page
+va chercher les polices (Google Fonts) et, surtout, `support.js` télécharge
+lui-même **React, ReactDOM et Babel** depuis `unpkg.com` avant de pouvoir
+afficher quoi que ce soit (voir [§3](#3-comment-tourne-la-page--le-format-dc--x-dc)).
+Sans réseau, l'écran reste blanc.
 
-## 2. Flux de données, de l'écran au calcul
+Il n'y a actuellement **aucune suite de tests automatisés** dans le
+dépôt (voir [§20](#20-pour-aller-plus-loin)) : toute modification du moteur
+de calcul (`moteur-oad.js`) doit être vérifiée manuellement, en comparant
+quelques cas connus avant/après.
+
+## 2. Architecture des 3 fichiers
 
 ```
-DOM (37 champs)
-   │  lireEntrees()                              app.js
+index.html     — la totalité de l'interface : structure visuelle (balisage
+                 « x-dc », voir §3), tous les champs de saisie, ET la
+                 logique d'orchestration (lecture des champs, appel au
+                 moteur, mise en forme des résultats), regroupée dans un
+                 unique <script type="text/x-dc" data-dc-script> en bas
+                 de fichier. Il n'y a pas de fichier app.js séparé : cette
+                 version fusionne « vue » et « contrôleur » dans le HTML.
+
+moteur-oad.js  — pur, sans DOM, sans état : uniquement des fonctions de
+                 calcul. Exposé via `window.OAD` (navigateur) et
+                 `module.exports` (Node, si on veut l'utiliser dans des
+                 scripts de test ou d'analyse). C'est la seule partie du
+                 projet qui contient de la logique métier/financière.
+
+support.js     — MOTEUR DE RENDU GÉNÉRIQUE, généré (bannière en tête de
+                 fichier : « GENERATED from dc-runtime/src/*.ts — do not
+                 edit »). Il ne contient aucune logique propre à ce
+                 simulateur : c'est un composant technique réutilisable,
+                 vendu tel quel, qui sait lire un fichier au format
+                 « .dc.html » (balise <x-dc>, directives sc-for/sc-if,
+                 interpolations {{ }}) et le transformer en application
+                 React qui tourne dans la page. Ne pas modifier ce fichier
+                 à la main.
+```
+
+**Fichiers de travail à connaître :** si vous devez changer une **formule
+de calcul** (un rendement, un coût, une répartition), c'est dans
+`moteur-oad.js`. Si vous devez changer un **champ, un libellé, une mise en
+page, l'ordre des étapes**, c'est dans le template `<x-dc>` d'`index.html`
+(§4 et §6). Si vous devez changer **ce que fait un bouton, comment un KPI
+est calculé, quel texte s'affiche**, c'est dans le bloc
+`<script data-dc-script>` d'`index.html` (§5, §17). Vous ne devriez jamais
+avoir besoin de toucher `support.js`.
+
+## 3. Comment tourne la page — le format `.dc` / `x-dc`
+
+`index.html` n'est pas un fichier HTML « classique » : c'est le format de
+travail d'un outil de design (celui qui a servi à produire cette
+maquette), rendu directement jouable dans un navigateur grâce à
+`support.js`. Trois ingrédients :
+
+- **`<x-dc>…</x-dc>`** — délimite le *template* : du HTML enrichi de
+  quelques directives.
+  - `{{ expression }}` : interpolation. Affiche la valeur d'une propriété
+    calculée par le composant (ex. `{{ investTxt }}`).
+  - `<sc-if value="{{ condition }}">…</sc-if>` : affiche son contenu
+    seulement si `condition` est vraie. Utilisé pour n'afficher qu'une
+    seule étape à la fois (`estEtape0` … `estEtape4`, voir §4) ou les
+    panneaux dépliables.
+  - `<sc-for list="{{ tableau }}" as="x">…</sc-for>` : répète son contenu
+    pour chaque élément de `tableau`, exposé sous le nom `x`. Utilisé pour
+    la navigation latérale (`etapes`), les listes de KPI (`kpis`), les
+    lignes de tableaux (`detailRows`, `magRows`…).
+  - Les attributs `onClick="{{ fonction }}"`, `onInput="{{ on.xxx }}"` etc.
+    branchent les événements DOM sur des fonctions exposées par le
+    composant.
+- **`<script type="text/x-dc" data-dc-script">`** — le code du composant,
+  écrit comme une classe React (`class Component extends DCLogic`). C'est
+  ici que vivent l'état (`this.state`), les gestionnaires d'événements, et
+  la méthode `renderVals()` qui **recalcule tout** (géométrie, scénarios,
+  KPI, textes, graphiques) à chaque rendu et renvoie un objet ordinaire —
+  c'est cet objet qui alimente les `{{ }}` du template.
+- **`support.js`** — au chargement de la page, il repère le bloc `<x-dc>`
+  et le script `data-dc-script`, télécharge dynamiquement **React 18**,
+  **ReactDOM** et **Babel standalone** depuis `unpkg.com` (Babel sert à
+  transpiler le JS du composant à la volée, sans étape de build), compile
+  le template en éléments React, instancie le composant, et l'attache au
+  DOM. Ensuite, le fonctionnement est du React tout ce qu'il y a de plus
+  normal : chaque `setState` déclenche un nouveau rendu, donc un nouvel
+  appel à `renderVals()`, donc un recalcul complet du moteur — exactement
+  comme l'ancienne version recalculait tout à chaque `input`/`change`,
+  mais via le cycle de rendu React plutôt qu'un écouteur DOM manuel.
+
+En résumé : **`index.html` + `support.js` ne sont pas un vrai/faux
+HTML statique** — c'est une petite application React assemblée au vol
+dans le navigateur, à partir d'un fichier unique. C'est ce qui permet de
+livrer l'outil sous la forme d'un seul fichier ouvrable directement, sans
+build ni serveur Node.
+
+## 4. Le parcours en 5 étapes
+
+La navigation de gauche (`etapes`, généré depuis un tableau de labels dans
+`renderVals()`) et le bouton « {{ labelSuivant }} → » en bas de page
+pilotent un simple index `state.step` (0 à 4). Une seule étape est visible
+à la fois (`estEtape0`…`estEtape4`), mais **le calcul tourne sur
+l'ensemble des champs déjà saisis à tout moment** — la colonne de droite
+(« Synthèse en continu ») affiche donc des résultats mis à jour dès
+l'étape 1, avec les valeurs par défaut pour tout ce qui n'a pas encore été
+renseigné.
+
+| # | Étape | Contenu |
+|---|---|---|
+| 1 | **Votre exploitation** | Surface totale, âge moyen du vignoble, VolCo, prix du raisin, réserve individuelle actuelle (curseur en % du plafond). Ce sont les repères globaux, dénominateurs de toute la comparaison. |
+| 2 | **La parcelle que vous désignez** | Âge, taux de pieds manquants, rendement estimé, déclin en statu quo, régime de faire-valoir (propriété / fermage / métayage) et ses paramètres. |
+| 3 | **Votre projet de replantation** | Géométrie (longueur, largeur, écarts) avec contrôle en direct du cahier des charges AOC ; matériel végétal et conduite (porte-greffe, irrigation, montée en charge) avec fiche conseil ; aide au choix du matériel végétal (dépliable, purement informative) ; dimensionnement du palissage dérivé de la géométrie. |
+| 4 | **Coûts et charges** | Investissement ponctuel (arrachage, préparation, plant, palissage, irrigation, pénalité VSL), paramètres de la complantation (survie, entrée en production, coût par entreplant), charges d'entretien récurrentes (nulles par défaut). |
+| 5 | **Résultats** | Synthèse rédigée, sélecteur de vue (Ensemble / Part exploitant / Part propriétaire) et de test de résistance climatique, 6 KPI, 3 graphiques (décomposition de l'effort, comparaison à 10 ans, stock de réserve), détail annuel dépliable, tableau du manque à gagner. |
+
+La colonne de droite (`<aside>`, « Synthèse en continu ») est visible à
+**toutes** les étapes : elle reprend un sous-ensemble des mêmes résultats
+(surface, densité, pieds à planter, conformité AOC, investissement,
+réserve mobilisée, effort net, tension de trésorerie, réserve minimale) et
+propose un raccourci direct vers l'étape 5.
+
+## 5. Le flux de données, de la frappe au résultat
+
+```
+Saisie utilisateur (input/select/range)
+   │  onInput/onChange="{{ on.xxx }}"                    index.html (template)
    ▼
-inp = { geo, surfTot, ageMoy, repos, nbSortie, volSortieArr, plafond, volco,
-        rendMean, reserveInit, horizon, ramp, rendYearFn, rendFactorProjet,
-        rendEstime, manquants, declinSQ, densite, coutArrachageHa, coutPrepaHa,
-        coutPlant, coutPalissageHa, irrigation, coutIrrigHa, coutEntreplant,
-        survie, entreeProd, prixKg, coutSurfaceHaAn, coutRdtParKg, coefRepos, fv }
+this.on[xxx](e)  →  setState({ v: { ...v, [xxx]: e.target.value } })   data-dc-script
    │
-   ▼  OAD.construireScenarios(inp)                moteur.js
+   ▼  React re-render  →  renderVals() ré-exécuté EN ENTIER
    │
-sc = { arrachage:     { kg:[...11 lignes t=0..10], eur:[...], investissement },
-       complantation: { kg:[...],                  eur:[...], investissement },
-       statuquo:      { kg:[...],                  eur:[...], investissement:0 } }
+   ├─ geometrie(v)                        → g   (densité, rangs, surface, conformité AOC)
+   ├─ OAD.coutPalissage(g, …)             → cp  (préremplit coutPalissageHa si non édité)
    │
-   ├─► cumSerie(serieRepartie(sc.X, inp))  → séries cumulées pour le graphique trésorerie
-   ├─► OAD.manqueAGagner(...)              → tableau « manque à gagner »
-   ├─► OAD.chargesEntretien(...)           → KPI « charges évitées en transition »
+   ▼  construction de `inp` (l'objet attendu par le moteur)
+inp = { geo, surfTot, surfParc:g.surf, ageMoy, ageParc, repos, nbSortie,
+        volSortieArr, plafond, volco, rendMean, reserveInit, horizon, ramp,
+        rendYearFn, rendFactorProjet, rendEstime, manquants, declinSQ,
+        densite, coutArrachageHa, coutPrepaHa, coutPlant, coutPalissageHa,
+        irrigation, coutIrrigHa, coutEntreplant, survie, entreeProd, prixKg,
+        coutSurfaceHaAn, coutRdtParKg, coefRepos, fv:{regime,loyerAn,…} }
+   │
+   ▼  OAD.construireScenarios(inp)                        moteur-oad.js
+sc = { arrachage:     { kg:[…11 lignes t=0..10], eur:[…], investissement },
+       complantation: { kg:[…],                  eur:[…], investissement },
+       statuquo:      { kg:[…],                  eur:[…], investissement:0 } }
+   │
+   ├─► cum(serieRep(sc.X))            → séries cumulées (trésorerie, selon la vue faire-valoir)
+   ├─► OAD.manqueAGagner(...)         → tableau « manque à gagner »
+   ├─► OAD.chargesEntretien(...)      → KPI « charges évitées en transition »
    └─► KPI directs (invest, reserveReelle, stockMin, ageApres…)
    │
-   ▼  écritures DOM (innerHTML / textContent)     app.js
-Écran 4 : synthèse, 9 KPI, 2 graphiques SVG, 2 tableaux dépliables
+   ▼  `out = { …tous les textes, couleurs, handlers, éléments <svg> React… }`
+return out    // consommé par le template <x-dc> au prochain rendu
 ```
 
-Chaque `row` d'une série `kg` (sortie de `simulerReserveKg`) porte, pour une
-année `t` : `surfProd, rendY, recolte, volcoVendu, volcoCible, mise, deficit,
-sortieInsuff, sortieArr, stockDebut, stockFin, stockHa`. Chaque `row` de la
-série `eur` correspondante (sortie de `coucheEuro`) porte : `venteRaisin,
-cashRI, couts, cashNet, cashSansRI`. Les deux tableaux sont indexés au même
-`t`, donc `sc.arrachage.kg[i]` et `sc.arrachage.eur[i]` décrivent la même
-année.
+Chaque `row` d'une série `kg` (sortie de `simulerReserveKg`) porte, pour
+une année `t` : `surfProd, rendY, recolte, volcoVendu, volcoCible, mise,
+deficit, sortieInsuff, sortieArr, stockDebut, stockFin, stockHa`. Chaque
+`row` de la série `eur` correspondante (sortie de `coucheEuro`) porte :
+`venteRaisin, cashRI, couts, cashNet, cashSansRI`. Les deux tableaux sont
+indexés au même `t` : `sc.arrachage.kg[i]` et `sc.arrachage.eur[i]`
+décrivent la même année.
 
-## 3. Glossaire des entrées (id HTML → variable → formule)
+**Il n'y a pas de debounce** : chaque frappe déclenche un recalcul complet
+des 3 scénarios sur 10 ans, plus tous les KPI et graphiques. Sur une
+machine normale, c'est instantané ; ça n'a jamais posé de problème de
+fluidité en pratique.
 
-### Écran 0 — Votre exploitation
+## 6. Glossaire des champs de saisie
 
-| id HTML | clé dans `inp` | unité | défaut | rôle |
-|---|---|---|---|---|
-| `surfTot` | `surfTot` | ha | 1 | surface totale de l'exploitation (dénominateur de l'effet âge et des charges statu quo) |
-| `ageMoy` | `ageMoy` | ans | 38 | âge moyen du vignoble **avant** l'opération |
-| `riPct` (slider) | → `reserveInit = plafond × riPct / 100` | % | 75 | niveau actuel de réserve individuelle, en % du plafond 10 000 kg/ha |
-| `volco` | `volco` | kg/ha | 9000 | Volume commercialisable fixé chaque année par le CIVC |
-| `prixKg` | `prixKg` | €/kg | 7 | prix unique du raisin (v1 : pas de distinction cépage/cru) |
+Toutes les valeurs saisies vivent dans un seul objet, `state.v`, initialisé
+avec ces valeurs par défaut (constructeur du composant, `index.html`) :
 
-### Écran 1 — La parcelle désignée
+### Étape 1 — Votre exploitation
 
-| id HTML | clé dans `inp` | unité | défaut | rôle |
-|---|---|---|---|---|
-| `ageParc` | `ageParc` | ans | 55 | âge de la parcelle candidate au renouvellement |
-| `manquants` | `manquants` (÷100) | % | 15 | taux de pieds manquants → dimensionne la complantation |
-| `rendEstime` | `rendEstime` | kg/ha | 10500 | rendement actuel de la parcelle (sert au statu quo **et** à la complantation) |
-| `declinSQ` | `declinSQ` (÷100) | %/an | 0 | déclin annuel de rendement si on ne touche à rien (statu quo) |
-| `regime` | `fv.regime` | `propriete｜fermage｜metayage` | propriete | régime de faire-valoir, pilote la répartition des flux (§7) |
-| `loyerHa` | → `fv.loyerAn = loyerHa × surfTot` | €/ha/an | 3000 | loyer fermage (visible seulement si régime = fermage) |
-| `partRecolte` | `fv.partRecolte` (÷100) | % | 33 | part de recettes au propriétaire (métayage) |
-| `partCouts` | `fv.partCouts` (÷100) | % | 33 | part de coûts au propriétaire (métayage) |
-
-### Écran 2 — Projet de replantation
-
-**Géométrie** (→ objet `geo`, voir [§13](#13-géométrie-de-plantation--geometrie)) :
-
-| id HTML | variable | unité | défaut |
+| champ (`v.xxx`) | unité | défaut | rôle |
 |---|---|---|---|
-| `geoL` | `L` | m | 200 |
-| `geoW` | `W` | m | 15 |
-| `ecartRang` | `eR` | m | 1.10 |
-| `ecartPied` | `eP` | m | 1.10 |
+| `surfTot` | ha | 1 | surface totale de l'exploitation — dénominateur de l'effet âge et des charges statu quo |
+| `ageMoy` | ans | 38 | âge moyen du vignoble **avant** l'opération |
+| `riPct` (curseur) | % | 75 | niveau actuel de réserve individuelle, en % du plafond 10 000 kg/ha → `reserveInit = 10000 × riPct/100` |
+| `volco` | kg/ha | 9000 | volume commercialisable, fixé chaque année par le CIVC |
+| `prixKg` | €/kg | 7 | prix unique du raisin (v1 : pas de distinction cépage/cru) |
+
+### Étape 2 — La parcelle désignée
+
+| champ | unité | défaut | rôle |
+|---|---|---|---|
+| `ageParc` | ans | 55 | âge de la parcelle candidate au renouvellement |
+| `manquants` | % | 15 | taux de pieds manquants → dimensionne la complantation |
+| `rendEstime` | kg/ha | 10500 | rendement actuel de la parcelle — sert au statu quo **et** à la complantation |
+| `declinSQ` | %/an | 0 | déclin annuel de rendement si on ne touche à rien (statu quo) |
+| `regime` | propriete\|fermage\|metayage | propriete | régime de faire-valoir, pilote la répartition des flux (§10) |
+| `loyerHa` (si fermage) | €/ha/an | 3000 | loyer fermage → `fv.loyerAn = loyerHa × surfTot` |
+| `partRecolte` (si métayage) | % | 33 | part de recettes au propriétaire |
+| `partCouts` (si métayage) | % | 33 | part de coûts au propriétaire |
+
+### Étape 3 — Projet de replantation
+
+**Géométrie** (→ objet `g`, voir [§16](#16-géométrie-de-plantation--geometrie)) :
+
+| champ | unité | défaut |
+|---|---|---|
+| `geoL` (longueur) | m | 200 |
+| `geoW` (largeur) | m | 15 |
+| `ecartRang` | m | 1.10 |
+| `ecartPied` | m | 1.10 |
 
 **Matériel & conduite :**
 
-| id HTML | clé dans `inp` | défaut | rôle |
-|---|---|---|---|
-| `materiel` | dérive `fMat` (=1, effet Voltis jugé négligeable ≤5 %) | vinifera | badge d'avertissement réglementaire seulement |
-| `porteGreffe` | — (affichage pur) | 41 B | alimente la fiche conseil `PG_INFO` (app.js), **n'entre pas dans le calcul** |
-| `irrigation` | `irrigation` (bool) | Non | active `coutIrrigHa` dans l'investissement ; déclenche un badge « interdite en AOC » |
-| `ramp` | `ramp` (liste) | `[0.3,0.6,1]` | montée en charge du rendement les 3 premières années après repos (§4) |
+| champ | défaut | rôle |
+|---|---|---|
+| `materiel` | vinifera | vinifera / Voltis — badge d'information réglementaire seulement, n'entre pas dans le calcul |
+| `porteGreffe` | 41 B | affichage pur, alimente la fiche conseil (`PG_INFO`), **hors calcul** |
+| `irrigation` | '0' (non) | active `coutIrrigHa` dans l'investissement ; déclenche un badge « interdite en AOC » |
+| `ramp` | `0.3,0.6,1` | montée en charge du rendement les 3 premières années après repos (§7) |
 
-**Aide au choix du matériel végétal** (`cepage`, `calcaireActif`, `profondeurSol`,
-`drainageSol`) : purement informatif, alimente `majClones()` et
-`OAD.preconPorteGreffe()` (§12), **hors calcul économique**.
+**Aide au choix du matériel végétal** (`cepage`, `calcaireActif`,
+`profondeurSol`, `drainageSol`) : purement informatif, alimente
+`OAD.preconPorteGreffe()` (§15), **hors calcul économique**.
 
 **Dimensionnement du palissage** (`typeTaille`, `nbFils`, `espPiquet`) :
-alimente `OAD.coutPalissage()` (§11) qui préremplit `coutPalissageHa` tant
-que l'utilisateur ne l'a pas édité à la main (`palisManuel`).
+alimente `OAD.coutPalissage()` (§14), qui **préremplit** `coutPalissageHa`
+tant que l'utilisateur ne l'a pas édité à la main (drapeau
+`state.palisManuel`, remis à `false` par le bouton « ↻ Reprendre la valeur
+dérivée de la géométrie »).
 
 **Coûts (investissement ponctuel) :**
 
-| id HTML | clé dans `inp` | unité | défaut | utilisé pour |
-|---|---|---|---|---|
-| `motif` | → `sanitaire` (bool) | classique | commute `repos`/`nbSortie` (§4) |
-| `coutArrachageHa` | `coutArrachageHa` | €/ha | 4500 | `invArr[0]` |
-| `coutPrepaHa` | `coutPrepaHa` | €/ha | 3500 | `invArr[repos]` |
-| `coutPlant` | `coutPlant` | €/pied | 1.4 | `invArr[repos]` (× densité) |
-| `coutPalissageHa` | `coutPalissageHa` | €/ha | 12000 (préremp.) | `invArr[repos]` |
-| `coutIrrigHa` | `coutIrrigHa` | €/ha | 5000 | `invArr[repos]` si `irrigation` |
-| `penaliteVSL` | → `fDens = 1 − penaliteVSL/100` | % | 10 | pénalité de rendement si conduite semi-large (`eR ≥ 1.5`) |
-| `survie` | `survie` (÷100) | % | 50 | taux de survie des entreplants |
-| `entreeProd` | `entreeProd` | années | 7 | début de montée en charge des entreplants |
-| `coutEntreplant` | `coutEntreplant` | €/pied | 4.5 | `invCompl[0]` |
-
-**Charges d'entretien récurrentes** (nouveau — modèle surface / rendement,
-§8), **nulles par défaut** pour préserver la parité avec le classeur de
-référence tant qu'elles ne sont pas calées :
-
-| id HTML | clé dans `inp` | unité | défaut |
+| champ | unité | défaut | utilisé pour |
 |---|---|---|---|
-| `coutSurfaceHaAn` | `coutSurfaceHaAn` | €/ha/an | 0 |
-| `coutRdtParKg` | `coutRdtParKg` | €/kg | 0 |
-| `coefRepos` | `coefRepos` | × surface | 0 |
+| `motif` | classique\|sanitaire | classique | commute `repos`/`nbSortie` (§7) |
+| `coutArrachageHa` | €/ha | 4500 | coût de l'arrachage, année 0 |
+| `coutPrepaHa` | €/ha | 3500 | préparation du sol, année `repos` |
+| `coutPlant` | €/pied | 1.8 | plant, année `repos` (× densité) |
+| `coutPalissageHa` | €/ha | 12000 (prérempli) | palissage, année `repos` |
+| `coutIrrigHa` | €/ha | 5000 | irrigation, année `repos`, si activée |
+| `penaliteVSL` | % | 15 | pénalité de rendement si conduite semi-large (`ecartRang ≥ 1.5`) |
+| `survie` | % | 50 | taux de survie des entreplants |
+| `entreeProd` | années | 7 | début de montée en charge des entreplants |
+| `coutEntreplant` | €/pied | 4.5 | coût des entreplants, année 0 |
 
-### Écran 3 — Aléa climatique
+### Étape 4 — Coûts et charges (suite) : charges d'entretien récurrentes
 
-| id HTML | clé dans `inp` | défaut | rôle |
-|---|---|---|---|
-| `sequence` | → `rendYearFn` via `sequenceFn()` | aucune | force une ou plusieurs années à `12296,6 − 3440` kg/ha (écart-type régional), appliqué **à l'identique** aux 3 scénarios |
+Modèle surface/rendement (§11), **nulles par défaut** pour préserver la
+parité avec le classeur de référence tant qu'elles ne sont pas calées :
 
-## 4. Le moteur kg — `simulerReserveKg`
+| champ | unité | défaut |
+|---|---|---|
+| `coutSurfaceHaAn` | €/ha/an | 0 |
+| `coutRdtParKg` | €/kg | 0 |
+| `coefRepos` | × surface | 0 |
 
-C'est la fonction centrale (`moteur.js:7`). Elle simule, année par année de
-`t=0` à `t=horizon` (10), le compte de réserve individuelle (kg/ha) d'**un**
-scénario. Elle est appelée trois fois par `construireScenarios` (une fois
-par scénario), avec des paramètres différents.
+### Étape 5 — Résultats
+
+| champ | défaut | rôle |
+|---|---|---|
+| `sequence` (« Test de résistance ») | aucune | force une ou deux années à `12296,6 − 3440` kg/ha (écart-type régional), appliqué **à l'identique** aux 3 scénarios |
+| `state.vueFV` | `'1'` (Ensemble) | bascule Ensemble / Part exploitant / Part propriétaire — traverse `OAD.repartir()` avant cumul (§10) |
+
+## 7. Le moteur kg — `simulerReserveKg`
+
+C'est la fonction centrale (`moteur-oad.js:8`). Elle simule, année par
+année de `t=0` à `t=horizon` (10), le compte de réserve individuelle
+(kg/ha) d'**un** scénario. Elle est appelée trois fois par
+`construireScenarios` (une fois par scénario), avec des paramètres
+différents.
 
 Notations : `surfArr` = surface de la parcelle concernée (`surfParc`),
 `surfRest = surfTot − surfArr` = le reste de l'exploitation (non concerné
@@ -188,7 +321,7 @@ rendFactorProjet` = pénalité de rendement du projet (VSL…).
 
 **Étape 1 — rendement de l'année :**
 ```
-rendY = rendYearFn(t)  si fourni (séquence d'aléa, écran 3)
+rendY = rendYearFn(t)  si fourni (test de résistance, étape 5)
       = rendMean        sinon (12 296,6 kg/ha, moyenne régionale)
 ```
 
@@ -224,8 +357,7 @@ stockDebut = reserveInit × surfTot     si t = 0
            = stockFin de l'année t−1   sinon
 ```
 `reserveInit` est assis sur `surfTot` (surface totale) pour les trois
-scénarios — c'est une divergence assumée vs. le classeur de référence, mais
-appliquée identiquement partout donc neutre pour la comparaison.
+scénarios.
 
 **Étape 5 — mise en réserve** (le surplus récolté au-dessus du VolCo,
 plafonné par la place disponible sous le plafond 10 000 kg/ha) :
@@ -250,7 +382,8 @@ sortieArr = min(volSortieArr × surfArr, max(0, stockDebut − sortieInsuff))
             si scenario='arrachage' et 1 ≤ t ≤ nbSortie
           = 0  sinon
 ```
-`volSortieArr = 9000 kg/ha` (fixé, non éditable dans l'UI — voir §18).
+`volSortieArr = 9000 kg/ha` et `plafond = 10000 kg/ha` sont fixés en dur
+dans `renderVals()` (non éditables dans l'UI — voir §19).
 `nbSortie = 3` (motif classique) ou `5` (motif sanitaire).
 
 **Étape 8 — stock de fin d'année et ratio à l'hectare :**
@@ -263,7 +396,7 @@ stockHa  = stockFin / surfProd      (0 si surfProd = 0)
 min(recolte,volco)+sortieInsuff, volcoCible: volco, mise, deficit,
 sortieInsuff, sortieArr, stockDebut, stockFin, stockHa}`.
 
-## 5. Ce qui distingue les 3 scénarios
+## 8. Ce qui distingue les 3 scénarios
 
 | | `arrachage` | `complantation` | `statuquo` |
 |---|---|---|---|
@@ -273,7 +406,7 @@ sortieInsuff, sortieArr, stockDebut, stockFin, stockHa}`.
 | Investissement ponctuel | arrachage (t=0) + replantation (t=repos) | entreplants (t=0), ajustés du taux de survie | aucun |
 | Repos / interruption | oui (`repos` années) | non | non |
 
-`rendParcCompl` (moteur.js:132-137) :
+`rendParcCompl` (`moteur-oad.js:134-138`) :
 ```
 rendCible    = rendEstime + (rendMean − rendEstime)·survie
 ratio        = rendEstime / rendMean
@@ -283,21 +416,21 @@ prog(t)      = 0                              si t < entreeProd
 rendParcCompl(t, rendY) = rendY · (ratio + (ratioCible − ratio) · prog(t))
 ```
 
-## 6. La couche € — `coucheEuro`
+## 9. La couche € — `coucheEuro`
 
-Transforme une série `kg` en série `€` (moteur.js:48) :
+Transforme une série `kg` en série `€` (`moteur-oad.js:49`) :
 ```
 venteRaisin = volcoVendu × prixKg
 cashRI      = sortieArr × prixKg      // valorisation de la sortie de réserve « arrachage »
-couts       = coutsParAnnee[t] || 0   // investissement ponctuel + charges d'entretien (§9)
+couts       = coutsParAnnee[t] || 0   // investissement ponctuel + charges d'entretien (§11)
 cashNet     = venteRaisin + cashRI − couts
-cashSansRI  = venteRaisin − couts     // pour visualiser ce que la réserve apporte (toggle « sans RI »)
+cashSansRI  = venteRaisin − couts     // pour visualiser ce que la réserve apporte
 ```
 
-## 7. Faire-valoir — `repartir`
+## 10. Faire-valoir — `repartir`
 
 Répartit un flux `€` déjà calculé entre exploitant et propriétaire, **sans
-changer le total** (moteur.js:66) :
+changer le total** (`moteur-oad.js:67`) :
 ```
 rev = venteRaisin + cashRI
 propriete : exp = rev − couts                           , prop = 0
@@ -305,17 +438,16 @@ fermage   : exp = rev − couts − loyerAn                 , prop = loyerAn
 metayage  : prop = a·rev − b·couts                       , exp = (1−a)·rev − (1−b)·couts
             avec a = partRecolte, b = partCouts
 ```
-Utilisé par `app.js` (`serieRepartie`) pour les 3 boutons **Ensemble / Part
-exploitant / Part propriétaire** de l'écran 4 : dans les deux derniers cas,
-chaque point de la série trésorerie passe par `OAD.repartir()` avant d'être
-cumulé.
+Utilisé dans `renderVals()` (fonction `serieRep`) pour les 3 boutons
+**Ensemble / Part exploitant / Part propriétaire** de l'étape 5 : dans les
+deux derniers cas, chaque point de la série trésorerie passe par
+`OAD.repartir()` avant d'être cumulé.
 
-## 8. Charges d'entretien récurrentes — `chargesEntretien`
+## 11. Charges d'entretien récurrentes — `chargesEntretien`
 
-Ajoutées en v1.1 pour que le **statu quo ne soit plus gratuit** — sans
-elles, ne rien faire n'a aucun coût dans le modèle, ce qui biaise
+Sans elles, **ne rien faire n'a aucun coût** dans le modèle, ce qui biaise
 systématiquement la comparaison en faveur du statu quo. Modèle en deux
-composantes (moteur.js:91), neutre par défaut (`coutSurfaceHaAn =
+composantes (`moteur-oad.js:92`), neutre par défaut (`coutSurfaceHaAn =
 coutRdtParKg = 0`) :
 
 - **Charge de surface** (`coutSurfaceHaAn`, €/ha/an) : sol, palissage,
@@ -340,16 +472,17 @@ scénarios 'statuquo' / 'complantation' :
 charge(t) = coutSurfaceHaAn·surfGeree + coutRdtParKg·recolte(t)
 ```
 Branchée **par scénario** : le différentiel entre statu quo et arrachage
-pendant la transition capte « ce que l'arrachage évite » (la vendange de la
-parcelle, pas sa charge de surface) — c'est le KPI « Charges évitées en
-transition » de l'écran 4 (§14), purement dérivé et jamais réinjecté dans
-le calcul.
+pendant la transition capte « ce que l'arrachage évite » (la vendange de
+la parcelle, pas sa charge de surface) — c'est le KPI « Charges évitées en
+transition » de l'étape 5 (affiché seulement si au moins une des deux
+charges est non nulle), purement dérivé et jamais réinjecté dans le calcul.
 
-## 9. Assemblage des scénarios — `construireScenarios`
+## 12. Assemblage des scénarios — `construireScenarios`
 
-Point d'entrée principal du moteur (moteur.js:110), appelé une fois par
-`calculer()`. Construit les paramètres communs (`base`), calcule les trois
-séries `kg`, puis les coûts poncturels + récurrents, puis la couche `€`.
+Point d'entrée principal du moteur (`moteur-oad.js:111`), appelé une fois
+par rendu (`renderVals()`). Construit les paramètres communs (`base`),
+calcule les trois séries `kg`, puis les coûts ponctuels + récurrents, puis
+la couche `€`.
 
 **Investissement ponctuel arrachage** (`invArr`, indexé par année) :
 ```
@@ -365,7 +498,7 @@ invCompl[0]  = nbPlants × coutEntreplant / survie  // coût pondéré du taux d
 ```
 
 **Coûts totaux par année, par scénario** (fusion investissement +
-entretien §8) :
+entretien §11) :
 ```
 coutsArr  = invArr   ⊕ chargesEntretien('arrachage', scArr, inp)
 coutsComp = invCompl ⊕ chargesEntretien('complantation', scCompl, inp)
@@ -379,29 +512,29 @@ coutsSQ   = {}       ⊕ chargesEntretien('statuquo', scSQ, inp)
   complantation: { kg, eur, investissement: Σ invCompl},
   statuquo:      { kg, eur, investissement: 0          } }
 ```
-`investissement` est volontairement **hors charges d'entretien** : c'est la
-base du KPI « Effort net après réserve » (§14), qui répond à « combien
+`investissement` est volontairement **hors charges d'entretien** : c'est
+la base du KPI « Effort net après réserve » (§17), qui répond à « combien
 dois-je financer pour l'opération elle-même », indépendamment de charges
 d'exploitation récurrentes qui existeraient de toute façon.
 
-## 10. Manque à gagner — `manqueAGagner`
+## 13. Manque à gagner — `manqueAGagner`
 
-Indicateur **dérivé**, jamais réinjecté dans le calcul (affiché dans le
-tableau dépliable « Manque à gagner ») :
+Indicateur **dérivé**, jamais réinjecté dans le calcul (tableau dépliable
+« Manque à gagner », étape 5) :
 ```
 manqueAGagner(scen, refSQ, prixKg)[t] = max(0, (refSQ.kg[t].volcoVendu − scen.kg[t].volcoVendu) × prixKg)
 ```
-Mesure la perte de vente (jamais négative) par rapport au statu quo, causée
-par une parcelle temporairement hors production ou en montée en charge.
+Mesure la perte de vente (jamais négative) par rapport au statu quo,
+causée par une parcelle temporairement hors production ou en montée en
+charge.
 
-## 11. Palissage dérivé de la géométrie — `coutPalissage`
+## 14. Palissage dérivé de la géométrie — `coutPalissage`
 
-`coutPalissage(geo, prix, opt)` (moteur.js:184) dérive un coût de
+`coutPalissage(geo, prix, opt)` (`moteur-oad.js:185`) dérive un coût de
 palissage à l'hectare à partir de la géométrie de plantation, sur la base
 des prix unitaires du classeur **LutEnVi 2025** (feuille « Coût hectare
-d'installation »). Il **préremplit** `coutPalissageHa` (champ éditable) tant
-que l'utilisateur ne l'a pas modifié à la main (`palisManuel`, remis à
-`false` par le bouton ↻).
+d'installation »). Il **préremplit** `coutPalissageHa` (champ éditable)
+tant que l'utilisateur ne l'a pas modifié à la main.
 
 ```
 espacement  = espPiquet ?? 6 m                              // choix éditable — repère LutEnVi ≈ 4,3 m
@@ -419,7 +552,7 @@ totalParcelle = Σ (quantité × prix unitaire) sur les 6 lignes
 totalHa       = totalParcelle / surf
 ```
 
-**Prix unitaires** (`PRIX_PALISSAGE_LUTENVI`, moteur.js:171) :
+**Prix unitaires** (`PRIX_PALISSAGE_LUTENVI`, `moteur-oad.js:172`) :
 
 | poste | prix | source |
 |---|---|---|
@@ -434,7 +567,7 @@ totalHa       = totalParcelle / surf
 est **~30 % plus faible** que le repère implicite LutEnVi (~1 piquet tous
 les 4 pieds, soit ≈ 4,3 m) — divergence assumée et affichée dans l'UI.
 
-## 12. Arbre de décision porte-greffe — `preconPorteGreffe`
+## 15. Arbre de décision porte-greffe — `preconPorteGreffe`
 
 **Information pure, hors calcul économique.** Reproduction fidèle de
 l'arbre du Guide pratique Viticulture durable en Champagne 2025 (p. 39).
@@ -448,17 +581,17 @@ preconPorteGreffe(calcaire, profondeur, drainage) :
      drainage → match "approche" (le guide ne distingue pas ce cas)
   3. sinon → "hors-grille"
 ```
-`ARBRE_PG` est une table de 17 branches (moteur.js:224) reproduisant les
-combinaisons calcaire × profondeur × drainage du guide, avec les
-porte-greffes envisageables et des renvois d'avertissement (ex. `161-49 C` :
-dépérissements signalés depuis 2008, déconseillé). Alimente les blocs
-`#preconPG` et `#pgInfo` de l'écran 2 (`majPrecon()`, `majPG()` dans
-app.js) ; **n'entre jamais dans `inp`**.
+`ARBRE_PG` est une table de 17 branches (`moteur-oad.js:225`) reproduisant
+les combinaisons calcaire × profondeur × drainage du guide, avec les
+porte-greffes envisageables et des renvois d'avertissement (ex. `161-49 C`
+: dépérissements signalés depuis 2008, déconseillé). Alimente les blocs
+« Porte-greffes envisageables » et la fiche `PG_INFO` (statique, dans le
+composant) de l'étape 3 ; **n'entre jamais dans `inp`**.
 
-## 13. Géométrie de plantation — `geometrie()`
+## 16. Géométrie de plantation — `geometrie()`
 
-Calculée côté `app.js` (ligne 121), à partir de `geoL`, `geoW`,
-`ecartRang`, `ecartPied` :
+Calculée côté composant (méthode `geometrie(v)`, `index.html:642`), à
+partir de `geoL`, `geoW`, `ecartRang`, `ecartPied` :
 ```
 densite  = round(10000 / (eR × eP))              // pieds/ha
 nbRangs  = max(1, floor(W / eR))
@@ -476,9 +609,10 @@ pénalité de rendement (`penaliteVSL`) et le conseil de diamètre de fil
 porteur. `aoc.*` alimente le bandeau de conformité au cahier des charges
 homologué le 31/07/2025 (rang ≤ 2,00 m, pied 0,70–1,50 m, somme ≤ 3,00 m).
 
-## 14. KPI et synthèse — écran 4
+## 17. KPI et synthèse
 
-Tous calculés dans `calculer()` (app.js:190), après `OAD.construireScenarios(inp)` :
+Tous calculés dans `renderVals()` (`index.html:765`), après
+`OAD.construireScenarios(inp)` :
 
 | KPI | formule | groupe |
 |---|---|---|
@@ -487,102 +621,53 @@ Tous calculés dans `calculer()` (app.js:190), après `OAD.construireScenarios(i
 | — dont % de couverture | `couv = reserveReelle / invest` | Financement |
 | — théorique | `reserveTheo = volSortieArr × surfParc × nbSortie × prixKg` | Financement |
 | Effort net après réserve | `effortNet = max(0, invest − reserveReelle)` | Financement |
-| Charges évitées en transition | `Σ_{t=0}^{returnYear−1} max(0, chSQ[t] − chArr[t])`, avec `returnYear = 3+repos` et `chX = OAD.chargesEntretien(...)` — affiché seulement si `coutSurfaceHaAn>0 \|\| coutRdtParKg>0` | Exploitation |
-| Tension maximale de trésorerie | `creux = min_t (arr_cum[t] − sq_cum[t])`, où `arr_cum`/`sq_cum` sont les séries cumulées de `serieRepartie()` | Risque |
-| Réserve minimale en transition | `stockMin = min_t sc.arrachage.kg[t].stockHa`, alerte si `< 4000` kg/ha | Risque |
+| Charges évitées en transition | `Σ_{t=0}^{returnYear−1} max(0, chSQ[t] − chArr[t])`, avec `returnYear = 3+repos` — affiché seulement si `coutSurfaceHaAn>0 \|\| coutRdtParKg>0` | Exploitation |
+| Tension maximale de trésorerie | `creux = min_t (arr_cum[t] − sq_cum[t])`, où `arr_cum`/`sq_cum` sont les séries cumulées selon la vue faire-valoir active | Risque |
+| Réserve minimale en transition | `stockMin = min_t sc.arrachage.kg[t].stockHa`, alerte si `< 4000` kg/ha (`seuilReserve`) | Risque |
 | Effet technique du renouvellement | `ageApres = (ageMoy·surfTot − ageParc·surfParc)/surfTot` ; `gainAge = ageMoy − ageApres` | Risque |
 
-`serieRepartie(sc, inp)` (app.js:180) choisit, selon le bouton actif
-(**Ensemble / Part exploitant / Part propriétaire**), soit `row.cashNet`
-directement, soit `OAD.repartir(row, inp.fv).exp` ou `.prop`. `cumSerie()`
-en fait la somme cumulée, base des deux courbes de trésorerie (statu quo,
-complantation, arrachage) et de la variante « sans mobilisation de la
-réserve » (`arrSansRI`, calculée avec `cashRI` forcé à 0 avant répartition).
+`serieRep(scn)` choisit, selon le bouton actif (**Ensemble / Part
+exploitant / Part propriétaire**), soit `row.cashNet` directement, soit
+`OAD.repartir(row, inp.fv).exp` ou `.prop`. La somme cumulée de cette série
+est la base des courbes de trésorerie (statu quo, complantation,
+arrachage) et de la variante « sans mobilisation de la réserve »
+(`arrSansRI`, calculée avec `cashRI` forcé à 0 avant répartition).
 
-Le paragraphe `#synthese` et les 3 blocs `#kpisFin` / `#kpisExp` /
-`#kpisRisq` sont regénérés en HTML à chaque appel de `calculer()`.
+`horizon` (10 ans par défaut) et `seuilReserve` (4000 kg/ha) sont en
+réalité des **props du composant** (`this.props.horizon`,
+`this.props.seuilReserve`) — un mécanisme prévu par le format `.dc` pour
+qu'un site hôte puisse les surcharger. Cette version d'`index.html` ne les
+expose dans aucun champ visible : ils restent donc toujours à leur valeur
+par défaut tant que la page est ouverte seule.
 
-## 15. Graphiques SVG — `chart()`
+## 18. Graphiques SVG faits main
 
-Pas de librairie : `chart(series, opt)` (app.js:314) génère un `<svg>` à la
-main. `series` est une liste de `{pts: number[], c: couleur, w: épaisseur,
-dash?}` ; toutes les séries doivent avoir la même longueur (11 points,
-t=0..10).
+Pas de librairie de graphiques : chaque figure est un `<svg>` construit à
+la main avec `React.createElement('svg', …)`, méthode par méthode :
 
-```
-échelle Y : yMin = min(0, tous les points, opt.y0)
-            yMax = max(0, tous les points, opt.ref.v)
-            + marge de 8 % (ou 1 si l'amplitude est nulle)
-échelle X : linéaire, t=0..n réparti sur la largeur utile
+- **`chart(series, opt)`** (`index.html:652`) — courbes multi-séries avec
+  grille, ligne de référence en pointillé (ex. plafond 10 000 kg/ha) et
+  annotations ponctuelles. Utilisé pour le graphique de stock de réserve
+  (`chartStock`).
+- **`waterfall(invest, reserve, effort)`** (`index.html:689`) — graphique
+  en cascade à 3 colonnes (Investissement → Réserve → Effort net),
+  utilisé pour « Décomposition de l'effort ».
+- **`compareBars(items, fmt)`** (`index.html:711`) — barres horizontales
+  comparant un point d'arrivée par scénario, utilisé pour « Les trois
+  voies à 10 ans » (`chartCompare`).
+- **`annualBars(rows)`** (`index.html:731`) — barres empilées année par
+  année (cash net vs cash sans réserve). **Définie mais non appelée** dans
+  `renderVals()` actuellement : code mort laissé par une itération
+  précédente de la maquette, à nettoyer ou à rebrancher selon le besoin.
 
-éléments dessinés, dans l'ordre :
-  - 5 lignes de grille horizontales + libellés d'axe Y (opt.fmt)
-  - ligne de référence à Y=0 (toujours)
-  - ligne de référence opt.ref (ex. plafond 10 000 kg/ha), en pointillé or
-  - graduations d'axe X (années)
-  - un <path> par série (courbe brisée point à point)
-  - un cercle + libellé par annotation (opt.annot), ex. le point bas de trésorerie
-```
-Deux graphiques l'utilisent : `#chartTreso` (trésorerie cumulée, avec
-annotation du creux) et `#chartStock` (stock de réserve kg/ha, avec ligne
-de plafond à 10 000 et annotation du point bas).
-
-## 16. Table de correspondance id HTML ↔ moteur
-
-Vérifiée automatiquement : tout `$('id')` référencé dans `app.js`
-correspond à un `id="..."` existant dans `index.html` (sinon `calculer()`
-lève une exception et **tout l'écran 4, y compris les graphiques, cesse de
-se mettre à jour** — c'est la cause du bug corrigé précédemment sur cette
-branche : `renderDecision()` était appelée sans être définie, et `#kpisFin`
-/ `#kpisExp` / `#kpisRisq` n'existaient pas encore dans le HTML).
-
-| Zone résultat (id) | Alimentée par |
-|---|---|
-| `#syDens`, `#syRangs`, `#syLong`, `#syPieds`, `#sySurf`, `#syMode` | `geometrie()` |
-| `#aocCheck` | `geometrie().aoc` |
-| `#conseq` | badges VSL / fil porteur / Voltis / irrigation |
-| `#pgInfo` | `PG_INFO` (app.js, statique) |
-| `#preconPG` | `OAD.preconPorteGreffe()` |
-| `#cloneTable` | `CLONES` (app.js, statique) |
-| `#palisDetail`, préremplit `#coutPalissageHa` | `OAD.coutPalissage()` |
-| `#fvHint` | régime de faire-valoir (`inp.fv`) |
-| `#synthese`, `#kpisFin`, `#kpisExp`, `#kpisRisq` | §14 |
-| `#chartTreso`, `#lectureTreso` | `chart()` sur les séries cumulées |
-| `#chartStock`, `#lectureStock` | `chart()` sur `stockHa` |
-| `#tableDetail` | détail annuel du scénario `arrachage` |
-| `#tableMaG` | `OAD.manqueAGagner()` |
-
-## 17. Tests
-
-`node tests.js` — 40 assertions, toutes sur `moteur.js` (aucun test DOM).
-Points clés couverts :
-
-- **T1–T9** : parité avec le classeur de référence (stock min ≈ 5 021,8
-  kg/ha en t=3, stock final 10 000, Σ sorties/mises), non-régression des
-  scénarios non-arrachage, conservation du total lors de la répartition
-  faire-valoir.
-- **T18–T21** : cohérence du calcul de palissage (pricing = Σ qté×prix,
-  monotonies des choix B/C, parité ±5 % avec LutEnVi).
-- **T25–T30** (charges d'entretien, ajoutées avec le modèle surface/
-  rendement) : neutralité à coûts nuls, statu quo non gratuit dès que les
-  charges sont calées, charge de surface pleine en établissement / réduite
-  au `coefRepos` en jachère, charge de rendement nulle sur la parcelle tant
-  qu'elle ne vendange pas, investissement exposé indépendamment de
-  l'entretien.
-
-## 18. Limites, hypothèses et paramètres cachés
-
-Reprend et complète la note de bas de page de `index.html` :
+## 19. Limites, hypothèses et paramètres cachés
 
 - **Mono-parcelle, prix unique.** Pas de distinction cépage/cru/millésime.
-- **Paramètres fixés en dur dans `lireEntrees()` (app.js), non éditables
-  dans l'UI :** `volSortieArr = 9000` kg/ha, `plafond = 10000` kg/ha,
-  `rendMean = 12296.6` kg/ha (moyenne régionale), `horizon = 10` ans. Le
-  facteur écart-type régional (`EC = 3440` kg/ha) est câblé dans
-  `sequenceFn()`.
-- **Le texte de `index.html` mentionne un « butoir 15 500 » qui n'existe
-  pas dans le code actuel** (aucune référence à 15500 dans `moteur.js` ou
-  `app.js`) — soit un paramètre à implémenter, soit une note à retirer.
+- **Paramètres fixés en dur dans `renderVals()`, non éditables dans
+  l'UI :** `volSortieArr = 9000` kg/ha, `plafond = 10000` kg/ha,
+  `rendMean = 12296.6` kg/ha (moyenne régionale), `horizon = 10` ans
+  (sauf prop `horizon`, non exposée — §17). Le facteur écart-type régional
+  (`EC = 3440` kg/ha) est câblé directement dans `renderVals()`.
 - **Faire-valoir simplifié** : fermage = loyer fixe (souvent indexé
   kg/bouteilles en réalité) ; métayage = parts éditables mais fixes dans le
   temps ; les contrats réels varient davantage.
@@ -599,24 +684,20 @@ Reprend et complète la note de bas de page de `index.html` :
   somme ≤ 3,00 m (cahier des charges homologué le 31/07/2025) ; irrigation
   interdite (avertissement seulement, ne bloque pas le calcul) ; Voltis
   ≤ 5 % de l'encépagement + 10 % d'assemblage (badge informatif).
+- **Dépendance réseau** : `support.js` charge React/ReactDOM/Babel depuis
+  `unpkg.com`, et `index.html` charge les polices depuis Google Fonts. Sans
+  connexion Internet au premier chargement, la page reste blanche.
+- **Aucun test automatisé** dans le dépôt actuel (voir §20).
 
-## 19. Historique v1.1
+## 20. Pour aller plus loin
 
-- **Rendement des leviers → VolCo** : la conduite (VSL) porte une pénalité
-  de rendement branchée sur la récolte, donc sur le VolCo. En année
-  normale, le coussin au-dessus du VolCo + le plafond absorbent une
-  pénalité modérée (quasi invisible) ; elle ne mord la vente que sous
-  stress (petite récolte) — voir T7 dans `tests.js`.
-- **Motif d'arrachage → commutation sanitaire** : « Sanitaire (FD) »
-  bascule automatiquement `repos = 3` ans et `nbSortie = 5` (au lieu de
-  1 / 3).
-- **Faire-valoir** : propriété / fermage / métayage, répartition appliquée
-  aux € seuls, total conservé (T8–T9).
-- **Géométrie de plantation** pilote densité, nombre de rangs et surface,
-  avec contrôle du cahier des charges (rang/pied/somme).
-- **Dimensionnement du palissage** dérivé de la géométrie (§11), préremplit
-  le coût plutôt que de l'imposer.
-- **Charges d'entretien récurrentes** (modèle surface/rendement, §8) :
-  corrige le biais « statu quo gratuit », neutre par défaut.
-- **Écran 4 remanié** : synthèse décisionnelle, KPI hiérarchisés
-  (Financement / Exploitation / Risque & technique), graphiques annotés.
+Idées de suite, non entamées à ce jour :
+
+- **Réintroduire une suite de tests** sur `moteur-oad.js` (il est pur et
+  s'exporte via `module.exports`, donc testable avec `node` sans aucune
+  dépendance) — au minimum, figer quelques cas de parité avec le classeur
+  de référence pour détecter toute régression de formule.
+- **Nettoyer ou rebrancher `annualBars`** (§18), actuellement mort.
+- **Décider du sort de `this.props.horizon` / `this.props.seuilReserve`**
+  (§17) : les exposer dans l'UI, ou les documenter comme un point
+  d'intégration pour un site hôte qui embarquerait ce composant.
