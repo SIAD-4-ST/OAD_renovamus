@@ -333,8 +333,10 @@ rendY = rendYearFn(t)  si fourni (test de résistance, étape 5)
   returnYear = 3 + repos                    // 4 (classique) ou 6 (sanitaire)
   jeune      = t ≥ returnYear
   f          = ramp[t − returnYear]  si jeune et dans la table ramp, sinon 1
-  surfProd   = surfRest + (jeune ? surfArr : 0)
-  recolte    = rendY·surfRest + (jeune ? rendY·f·fProjet·surfArr : 0)
+  surfProd        = surfRest + (jeune ? surfArr : 0)
+  recolteReste    = rendY·surfRest
+  recolteParcelle = jeune ? rendY·f·fProjet·surfArr : 0
+  recolte         = recolteReste + recolteParcelle
   ```
   Le facteur projet (`fProjet`, pénalité VSL/matériel) ne s'applique **qu'au
   bloc replanté**, jamais au reste de l'exploitation.
@@ -342,9 +344,17 @@ rendY = rendYearFn(t)  si fourni (test de résistance, étape 5)
 - **`complantation` / `statuquo`** — la parcelle reste en production toute
   la période, mais avec un rendement propre `rendParcFn(t, rendY)` :
   ```
-  surfProd = surfTot                                  // toujours plein
-  recolte  = rendY·surfRest + rendParcFn(t, rendY)·surfArr
+  surfProd        = surfTot                                  // toujours plein
+  recolteReste    = rendY·surfRest
+  recolteParcelle = rendParcFn(t, rendY)·surfArr
+  recolte         = recolteReste + recolteParcelle
   ```
+
+`recolteParcelle`/`recolteReste` (chantier 5) décomposent explicitement la
+récolte entre la parcelle étudiée et le reste de l'exploitation — c'est sur
+cette décomposition que s'appuient `coucheEuro` (§9) et `chargesEntretien`
+(§11) pour n'appliquer le régime de faire-valoir qu'aux flux attribuables à
+la parcelle (§10).
 
 **Étape 3 — VolCo cible :**
 ```
@@ -392,52 +402,115 @@ stockFin = max(0, stockDebut + mise − sortieInsuff − sortieArr)
 stockHa  = stockFin / surfProd      (0 si surfProd = 0)
 ```
 
-**Sortie**, une ligne par année : `{t, surfProd, rendY, recolte, volcoVendu:
-min(recolte,volco)+sortieInsuff, volcoCible: volco, mise, deficit,
-sortieInsuff, sortieArr, stockDebut, stockFin, stockHa}`.
+**Sortie**, une ligne par année : `{t, surfProd, rendY, recolte,
+recolteParcelle, recolteReste, volcoVendu: min(recolte,volco)+sortieInsuff,
+volcoCible: volco, mise, deficit, sortieInsuff, sortieArr, stockDebut,
+stockFin, stockHa}`.
 
 ## 8. Ce qui distingue les 3 scénarios
 
 | | `arrachage` | `complantation` | `statuquo` |
 |---|---|---|---|
 | Surface productive | `surfRest`, puis `surfTot` après `returnYear` | toujours `surfTot` | toujours `surfTot` |
-| Rendement de la parcelle | `rendMean·f·fProjet` une fois relancée | `rendParcCompl(t, rendY)` — monte de `rendEstime` vers un mix `rendEstime`/`rendMean` pondéré par `survie`, à partir de `entreeProd` | `rendParcSQ(t, rendY) = rendY·(rendEstime/rendMean)·(1−declinSQ)ᵗ` |
+| Rendement de la parcelle | `rendMean·f·fProjet` une fois relancée | `rendParcCompl(t, rendY)` — monte de `rendEstime` vers un rendement cible qui suppose les manquants comblés à 100 % (pondérés par un facteur de récupération), à partir de `entreeProd` | `rendParcSQ(t, rendY) = rendY·(rendEstime/rendMean)·(1−declinSQ)ᵗ` |
 | Sortie de réserve « arrachage » | oui, années 1 à `nbSortie` | non | non |
 | Investissement ponctuel | arrachage (t=0) + replantation (t=repos) | entreplants (t=0), ajustés du taux de survie | aucun |
 | Repos / interruption | oui (`repos` années) | non | non |
 
-`rendParcCompl` (`moteur-oad.js:134-138`) :
+`rendParcCompl` (`moteur-oad.js`, juste au-dessus de sa définition dans
+`construireScenarios`) — **chantier 6**, cohérence coût/rendement de la
+complantation. Avant ce chantier, le coût (`invCompl`, ÷ `survie`) achetait
+déjà assez de plants pour compenser la casse et combler 100 % des
+manquants, mais `rendCible` ne portait le gain qu'à hauteur de `survie` :
+double pénalité (on payait pour compenser la mortalité *et* on la subissait
+quand même dans le rendement). Modèle retenu — « on repique jusqu'à
+combler » : le coût reste ÷ `survie`, et le rendement cible suppose donc le
+comblement complet des manquants, pondéré par un facteur de récupération
+(un entreplant ne produit pas tout de suite comme le reste d'une parcelle
+déjà en place) :
 ```
-rendCible    = rendEstime + (rendMean − rendEstime)·survie
+gainComblement = manquants · rendMean · facteurRecup      // facteurRecup = 0.8 (constante moteur)
+rendCible    = rendEstime + gainComblement
 ratio        = rendEstime / rendMean
 ratioCible   = rendCible / rendMean
 prog(t)      = 0                              si t < entreeProd
              = min(1, (t − entreeProd + 1)/3)  sinon   // montée linéaire sur 3 ans
 rendParcCompl(t, rendY) = rendY · (ratio + (ratioCible − ratio) · prog(t))
 ```
+Modèle rejeté — « on plante une fois » : coût sans ÷ `survie` (pas de
+réachat des pieds morts) et rendement pondéré par `survie` (ex-formule).
+Rejeté car incohérent avec le champ « Coût par entreplant » de l'UI, dont
+le calcul présuppose déjà un réachat implicite compensant la mortalité.
 
 ## 9. La couche € — `coucheEuro`
 
-Transforme une série `kg` en série `€` (`moteur-oad.js:49`) :
+Transforme une série `kg` en série `€` (`moteur-oad.js:49`). Depuis le
+chantier 5, chaque flux est **décomposé entre la parcelle étudiée et le
+reste de l'exploitation**, pour que le régime de faire-valoir (§10) ne
+s'applique qu'aux flux attribuables à la parcelle :
+
 ```
-venteRaisin = volcoVendu × prixKg
-cashRI      = sortieArr × prixKg      // valorisation de la sortie de réserve « arrachage »
-couts       = coutsParAnnee[t] || 0   // investissement ponctuel + charges d'entretien (§11)
-cashNet     = venteRaisin + cashRI − couts
-cashSansRI  = venteRaisin − couts     // pour visualiser ce que la réserve apporte
+venduRecolte        = min(recolte, volcoCible)
+ratioParcelle       = recolte > 0 ? recolteParcelle / recolte : 0
+venduRecolteParcelle = venduRecolte × ratioParcelle
+venduRecolteReste     = venduRecolte − venduRecolteParcelle
+
+venteRaisinParcelle = venduRecolteParcelle × prixKg
+venteRaisinReste    = (venduRecolteReste + sortieInsuff) × prixKg
+venteRaisin         = venteRaisinParcelle + venteRaisinReste          // = volcoVendu × prixKg, inchangé
+
+cashRI       = sortieArr × prixKg      // 100 % parcelle : sortieArr ne dépend que de surfArr
+coutsParcelle = coutsParcelleParAnnee[t] || 0   // investissement ponctuel + charges d'entretien parcelle (§11)
+coutsReste    = coutsResteParAnnee[t] || 0      // charges d'entretien du reste de l'exploitation (§11)
+couts        = coutsParcelle + coutsReste       // inchangé
+cashNet      = venteRaisin + cashRI − couts
+cashSansRI   = venteRaisin − couts     // pour visualiser ce que la réserve apporte
 ```
+
+**Convention de répartition de `volcoVendu`** — la part de récolte
+plafonnée par le VolCo (`min(recolte, volco)`) est répartie **au prorata de
+la récolte réelle** de la parcelle et du reste : tant que le plafond n'est
+pas atteint (`recolte ≤ volco`, cas courant), `venduRecolte = recolte` et
+chacun vend l'intégralité de sa propre récolte, sans arbitraire. Le
+plafonnement n'intervient qu'en cas de surproduction, et il est alors
+partagé proportionnellement aux contributions de chacun — c'est la seule
+convention neutre, cohérente avec le fait que `volco` est calculé sur
+`surfProd` global (il n'existe pas de VolCo « par parcelle » dans le
+modèle).
+
+`sortieInsuff` (déstockage de la réserve pour compenser un déficit de
+récolte face au VolCo) est en revanche **toujours logé côté « reste »**,
+donc toujours 100 % exploitant : le stock (`stockDebut`/`stockFin`) n'est
+jamais individualisé par parcelle dans `simulerReserveKg` — c'est un compte
+de réserve d'exploitation unique — l'attribuer partiellement à la parcelle
+serait donc une convention arbitraire non traçable dans les données
+disponibles.
 
 ## 10. Faire-valoir — `repartir`
 
 Répartit un flux `€` déjà calculé entre exploitant et propriétaire, **sans
-changer le total** (`moteur-oad.js:67`) :
+changer le total** (`moteur-oad.js:67`). Depuis le chantier 5, le régime ne
+s'applique **qu'aux flux attribuables à la parcelle** — le reste de
+l'exploitation (récolte du reste, `sortieInsuff` mutualisée) reste 100 %
+exploitant quel que soit le régime choisi :
 ```
-rev = venteRaisin + cashRI
-propriete : exp = rev − couts                           , prop = 0
-fermage   : exp = rev − couts − loyerAn                 , prop = loyerAn
-metayage  : prop = a·rev − b·couts                       , exp = (1−a)·rev − (1−b)·couts
+revParcelle = venteRaisinParcelle + cashRI
+resteNet    = venteRaisinReste − coutsReste            // toujours 100 % exploitant
+
+propriete : exp = revParcelle − coutsParcelle + resteNet                        , prop = 0
+fermage   : exp = revParcelle − coutsParcelle − loyerAn + resteNet              , prop = loyerAn
+metayage  : prop = a·revParcelle − b·coutsParcelle
+            exp  = (1−a)·revParcelle − (1−b)·coutsParcelle + resteNet
             avec a = partRecolte, b = partCouts
 ```
+Dans les 3 cas : `exp + prop = revParcelle − coutsParcelle + resteNet =
+venteRaisin + cashRI − couts = cashNet` — le total reste conservé,
+indépendamment du découpage parcelle/reste.
+
+`loyerAn` (calculé dans `renderVals()`, `index.html`) est désormais assis
+sur `surfParc` (la surface de la parcelle), pas `surfTot` : le loyer d'une
+parcelle louée porte sur cette parcelle, pas sur toute l'exploitation.
+
 Utilisé dans `renderVals()` (fonction `serieRep`) pour les 3 boutons
 **Ensemble / Part exploitant / Part propriétaire** de l'étape 5 : dans les
 deux derniers cas, chaque point de la série trésorerie passe par
@@ -448,29 +521,35 @@ deux derniers cas, chaque point de la série trésorerie passe par
 Sans elles, **ne rien faire n'a aucun coût** dans le modèle, ce qui biaise
 systématiquement la comparaison en faveur du statu quo. Modèle en deux
 composantes (`moteur-oad.js:92`), neutre par défaut (`coutSurfaceHaAn =
-coutRdtParKg = 0`) :
+coutRdtParKg = 0`), et **décomposé parcelle / reste** depuis le chantier 5 :
 
 - **Charge de surface** (`coutSurfaceHaAn`, €/ha/an) : sol, palissage,
   entretien hors récolte. Persiste tant que la surface est gérée — **y
   compris la jeune vigne en établissement**.
 - **Charge de rendement** (`coutRdtParKg`, €/kg) : vendange, transport,
   prestations. Proportionnelle aux kg réellement récoltés → s'annule
-  d'elle-même en repos et en établissement puisque `recolte` exclut déjà
-  la parcelle non productive.
+  d'elle-même en repos et en établissement puisque `recolteParcelle` exclut
+  déjà la parcelle non productive.
 
 ```
 surfRest = surfTot − surfParc,  S = surfParc
 
 scénario 'arrachage' :
-  coefParc  = coefRepos  si t < repos   (jachère : charge de surface réduite)
-            = 1           sinon          (jeune vigne : charge de surface pleine)
-  surfGeree = surfRest + coefParc·S
+  coefParc          = coefRepos  si t < repos   (jachère : charge de surface réduite)
+                     = 1           sinon          (jeune vigne : charge de surface pleine)
+  surfGereeParcelle = coefParc·S
 
 scénarios 'statuquo' / 'complantation' :
-  surfGeree = surfTot                    // parcelle toujours gérée en plein
+  surfGereeParcelle = S                    // parcelle toujours gérée en plein
 
-charge(t) = coutSurfaceHaAn·surfGeree + coutRdtParKg·recolte(t)
+charge_parcelle(t) = coutSurfaceHaAn·surfGereeParcelle + coutRdtParKg·recolteParcelle(t)
+charge_reste(t)    = coutSurfaceHaAn·surfRest          + coutRdtParKg·recolteReste(t)
 ```
+`charge_parcelle(t) + charge_reste(t)` = comportement figé avant le
+chantier 5 (identique en valeur totale). La fonction retourne désormais
+`{ parcelle, reste }` (deux maps indexées par année) au lieu d'une seule
+map fusionnée.
+
 Branchée **par scénario** : le différentiel entre statu quo et arrachage
 pendant la transition capte « ce que l'arrachage évite » (la vendange de
 la parcelle, pas sa charge de surface) — c'est le KPI « Charges évitées en
@@ -494,17 +573,29 @@ invArr[repos] += surfParc × (coutPrepaHa + densite·coutPlant + coutPalissageHa
 **Investissement ponctuel complantation** (`invCompl`) :
 ```
 nbPlants     = surfParc × densite × manquants     // pieds manquants à combler
-invCompl[0]  = nbPlants × coutEntreplant / survie  // coût pondéré du taux de survie
+invCompl[0]  = nbPlants × coutEntreplant / survie  // achat majoré pour combler 100 % malgré la casse
 ```
+Ce ÷ `survie` (on rachète plus de plants que de manquants pour finir à 100 %
+comblé) est la raison pour laquelle, depuis le **chantier 6** (voir §8), le
+rendement cible de la complantation (`rendCible`) ne repondère plus par
+`survie` : il suppose le comblement complet et ne discounte que par un
+facteur de récupération (jeunesse de l'entreplant), pour éviter de payer la
+mortalité deux fois (une fois dans le coût, une fois dans le rendement).
 
-**Coûts totaux par année, par scénario** (fusion investissement +
-entretien §11) :
+**Coûts totaux par année, par scénario** (fusion investissement + entretien
+§11 — l'investissement, 100 % causé par `surfParc`, ne fusionne qu'avec la
+part `.parcelle` de `chargesEntretien`, jamais avec `.reste`) :
 ```
-coutsArr  = invArr   ⊕ chargesEntretien('arrachage', scArr, inp)
-coutsComp = invCompl ⊕ chargesEntretien('complantation', scCompl, inp)
-coutsSQ   = {}       ⊕ chargesEntretien('statuquo', scSQ, inp)
+ceArr  = chargesEntretien('arrachage', scArr, inp)          // { parcelle, reste }
+ceComp = chargesEntretien('complantation', scCompl, inp)
+ceSQ   = chargesEntretien('statuquo', scSQ, inp)
+
+coutsArrParcelle  = invArr   ⊕ ceArr.parcelle    ,  coutsArrReste  = ceArr.reste
+coutsCompParcelle = invCompl ⊕ ceComp.parcelle   ,  coutsCompReste = ceComp.reste
+coutsSQParcelle   =            ceSQ.parcelle     ,  coutsSQReste   = ceSQ.reste
 ```
-(`⊕` = fusion additive année par année.)
+(`⊕` = fusion additive année par année.) Ces quatre maps par scénario
+alimentent `coucheEuro` (§9) via `eco(coutsParcelle, coutsReste)`.
 
 **Sortie :**
 ```

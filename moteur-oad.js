@@ -14,19 +14,22 @@ function simulerReserveKg(p) {
   let stockPrev = null;
   for (let t = 0; t <= p.horizon; t++) {
     const rendY = p.rendYearFn ? p.rendYearFn(t) : p.rendMean;
-    let surfProd, recolte;
+    let surfProd, recolteParcelle, recolteReste;
     if (p.scenario === 'arrachage') {
       const jeune = t >= returnYear;
       let f = 1;
       if (jeune) { const k = t - returnYear; f = k < ramp.length ? ramp[k] : 1; }
       surfProd = surfRest + (jeune ? p.surfArr : 0);
       // le rendement du bloc replanté porte le facteur projet -> alimente VolCo
-      recolte = rendY * surfRest + (jeune ? rendY * f * fProjet * p.surfArr : 0);
+      recolteReste = rendY * surfRest;
+      recolteParcelle = jeune ? rendY * f * fProjet * p.surfArr : 0;
     } else {
       surfProd = p.surfTot;
       const rendParc = p.rendParcFn ? p.rendParcFn(t, rendY) : rendY;
-      recolte = rendY * surfRest + rendParc * p.surfArr;
+      recolteReste = rendY * surfRest;
+      recolteParcelle = rendParc * p.surfArr;
     }
+    const recolte = recolteReste + recolteParcelle;
     const volco = surfProd * p.volco;
     const stockDebut = (t === 0) ? p.reserveInit * p.surfTot : stockPrev;
     const mise = Math.max(0, Math.min(recolte - volco,
@@ -37,7 +40,7 @@ function simulerReserveKg(p) {
       ? Math.min(p.volSortieArr * p.surfArr, Math.max(0, stockDebut - sortieInsuff))
       : 0;
     const stockFin = Math.max(0, stockDebut + mise - sortieInsuff - sortieArr);
-    rows.push({ t, surfProd, rendY, recolte,
+    rows.push({ t, surfProd, rendY, recolte, recolteParcelle, recolteReste,
       volcoVendu: Math.min(recolte, volco) + sortieInsuff, volcoCible: volco,
       mise, deficit, sortieInsuff, sortieArr, stockDebut, stockFin,
       stockHa: surfProd === 0 ? 0 : stockFin / surfProd });
@@ -46,34 +49,62 @@ function simulerReserveKg(p) {
   return rows;
 }
 
+/* Décomposition parcelle / reste de l'exploitation — chantier 5.
+   La part de récolte plafonnée par le VolCo est répartie au prorata de la
+   récolte réelle de chacun (parcelle vs reste) : tant que le plafond n'est
+   pas atteint, chacun vend l'intégralité de sa récolte ; le plafonnement,
+   quand il joue, est donc partagé proportionnellement — aucune convention
+   arbitraire n'est nécessaire dans le cas courant (recolte <= volco).
+   `sortieInsuff` (déstockage de la réserve mutualisée) est en revanche
+   TOUJOURS logé côté "reste" : le stock n'est jamais individualisé par
+   parcelle dans simulerReserveKg, l'attribuer à la parcelle serait donc
+   arbitraire — voir README §9/§10. */
 function coucheEuro(rowsKg, eco) {
   return rowsKg.map(r => {
-    const venteRaisin = r.volcoVendu * eco.prixKg;
-    const cashRI      = r.sortieArr * eco.prixKg;
-    const couts       = (eco.coutsParAnnee[r.t] || 0);
-    return { t: r.t, venteRaisin, cashRI, couts,
+    const venduRecolte = Math.min(r.recolte, r.volcoCible);
+    const ratioParcelle = r.recolte > 0 ? r.recolteParcelle / r.recolte : 0;
+    const venduRecolteParcelle = venduRecolte * ratioParcelle;
+    const venduRecolteReste = venduRecolte - venduRecolteParcelle;
+
+    const venteRaisinParcelle = venduRecolteParcelle * eco.prixKg;
+    const venteRaisinReste    = (venduRecolteReste + r.sortieInsuff) * eco.prixKg;
+    const venteRaisin         = venteRaisinParcelle + venteRaisinReste;
+    const cashRI              = r.sortieArr * eco.prixKg; // 100 % parcelle (sortieArr ~ surfArr)
+    const coutsParcelle       = eco.coutsParcelleParAnnee[r.t] || 0;
+    const coutsReste          = eco.coutsResteParAnnee[r.t] || 0;
+    const couts                = coutsParcelle + coutsReste;
+    return { t: r.t, venteRaisin, venteRaisinParcelle, venteRaisinReste,
+             cashRI, couts, coutsParcelle, coutsReste,
              cashNet: venteRaisin + cashRI - couts,
              cashSansRI: venteRaisin - couts };
   });
 }
 
-/* Répartition faire-valoir — appliquée aux € seulement, total conservé.
+/* Répartition faire-valoir — chantier 5 : le régime ne s'applique qu'aux
+   flux ATTRIBUABLES À LA PARCELLE (venteRaisinParcelle, cashRI, coutsParcelle).
+   Le reste de l'exploitation (venteRaisinReste, coutsReste — qui inclut la
+   part mutualisée sortieInsuff, voir coucheEuro) reste 100 % exploitant,
+   quel que soit le régime. Total conservé dans les 3 cas :
+   exp + prop = revParcelle - coutsParcelle + resteNet = cashNet.
    propriété : tout à l'exploitant.
    fermage  : loyer fixe annuel versé au propriétaire ; le fermier porte
-              les coûts et garde recettes + réserve.
+              les coûts et garde recettes + réserve de la parcelle.
    métayage : part de récolte (α) au propriétaire sur recettes + réserve
-              mobilisée (la sortie arrachage concerne aussi le bailleur à
-              métayage nature) ; part des coûts (β) au propriétaire. */
+              mobilisée de la parcelle (la sortie arrachage concerne aussi
+              le bailleur à métayage nature) ; part des coûts (β) au
+              propriétaire, sur les coûts de la parcelle uniquement. */
 function repartir(row, fv) {
-  const rev = row.venteRaisin + row.cashRI;
-  if (fv.regime === 'propriete') return { exp: rev - row.couts, prop: 0 };
+  const revParcelle = row.venteRaisinParcelle + row.cashRI;
+  const coutsParcelle = row.coutsParcelle;
+  const resteNet = row.venteRaisinReste - row.coutsReste;
+  if (fv.regime === 'propriete') return { exp: revParcelle - coutsParcelle + resteNet, prop: 0 };
   if (fv.regime === 'fermage') {
-    return { exp: rev - row.couts - fv.loyerAn, prop: fv.loyerAn };
+    return { exp: revParcelle - coutsParcelle - fv.loyerAn + resteNet, prop: fv.loyerAn };
   }
   const a = fv.partRecolte, b = fv.partCouts;
   return {
-    prop: a * rev - b * row.couts,
-    exp: (1 - a) * rev - (1 - b) * row.couts
+    prop: a * revParcelle - b * coutsParcelle,
+    exp: (1 - a) * revParcelle - (1 - b) * coutsParcelle + resteNet
   };
 }
 
@@ -93,22 +124,28 @@ function chargesEntretien(scenario, rowsKg, inp) {
   const cs = inp.coutSurfaceHaAn || 0, cr = inp.coutRdtParKg || 0;
   const coefRepos = inp.coefRepos ?? 0;
   const surfRest = inp.surfTot - inp.surfParc, S = inp.surfParc;
-  const map = {};
+  const parcelle = {}, reste = {};
   rowsKg.forEach(r => {
-    let surfGeree;
+    let surfGereeParcelle;
     if (scenario === 'arrachage') {
       const coefParc = (r.t < inp.repos) ? coefRepos : 1; // jachère réduite -> jeune vigne pleine
-      surfGeree = surfRest + coefParc * S;
+      surfGereeParcelle = coefParc * S;
     } else {
-      surfGeree = inp.surfTot;               // statu quo & complantation : parcelle gérée en plein
+      surfGereeParcelle = S;                  // statu quo & complantation : parcelle gérée en plein
     }
-    const tot = cs * surfGeree + cr * r.recolte; // recolte exclut déjà la parcelle non productive
-    if (tot) map[r.t] = (map[r.t] || 0) + tot;
+    // recolteParcelle/recolteReste excluent déjà la parcelle non productive
+    const totParcelle = cs * surfGereeParcelle + cr * r.recolteParcelle;
+    const totReste     = cs * surfRest          + cr * r.recolteReste;
+    if (totParcelle) parcelle[r.t] = (parcelle[r.t] || 0) + totParcelle;
+    if (totReste)    reste[r.t]    = (reste[r.t]    || 0) + totReste;
   });
-  return map;
+  return { parcelle, reste };
 }
 
 function construireScenarios(inp) {
+  if (inp.surfParc > inp.surfTot + 1e-9) {
+    throw new Error(`surfParc (${inp.surfParc} ha) > surfTot (${inp.surfTot} ha)`);
+  }
   const base = {
     surfTot: inp.surfTot, surfArr: inp.surfParc, repos: inp.repos,
     nbSortie: inp.nbSortie, volSortieArr: inp.volSortieArr,
@@ -130,7 +167,29 @@ function construireScenarios(inp) {
 
   const nbPlants = S * dens * inp.manquants;
   const invCompl = { 0: nbPlants * inp.coutEntreplant / inp.survie };
-  const rendCible = inp.rendEstime + (inp.rendMean - inp.rendEstime) * inp.survie;
+  /* Chantier 6 — cohérence coût/rendement de la complantation.
+     Avant ce chantier, double pénalité de survie : le coût achetait déjà
+     1/survie plants pour compenser la casse et ARRIVER À COMBLER les
+     manquants (d'où le ÷ survie ci-dessus), MAIS rendCible ne portait le
+     gain de rendement qu'à hauteur de survie — comme si seuls survie % des
+     manquants avaient réellement été comblés. On payait pour compenser la
+     mortalité ET on en subissait quand même l'effet sur le rendement.
+     Choix retenu — modèle A « on repique jusqu'à combler » : le coût reste
+     ÷ survie (on rachète assez de plants pour combler 100 % des manquants
+     malgré la casse), donc le rendement cible suppose ce comblement complet,
+     pondéré seulement par un facteur de récupération : un entreplant, même
+     installé, ne produit pas tout de suite comme le reste d'une parcelle
+     déjà en place (enracinement/vigueur plus faibles). gainComblement =
+     manquants × rendMean × facteur de récupération (0.8 — dire d'expert,
+     à ajuster si besoin).
+     Rejeté — modèle B « on plante une fois » : coût sans ÷ survie (pas de
+     réachat des pieds morts) et rendement pondéré par survie (formule
+     ex-existante). Rejeté car incohérent avec le champ "Coût par
+     entreplant" existant dans l'UI, dont le calcul présuppose déjà un
+     réachat implicite compensant la mortalité — voir README §12. */
+  const FACTEUR_RECUP_ENTREPLANT = 0.8;
+  const gainComblement = inp.manquants * inp.rendMean * FACTEUR_RECUP_ENTREPLANT;
+  const rendCible = inp.rendEstime + gainComblement;
   const rendParcCompl = (t, rendY) => {
     const ratio = inp.rendEstime / inp.rendMean, ratioCible = rendCible / inp.rendMean;
     const prog = t >= inp.entreeProd ? Math.min(1, (t - inp.entreeProd + 1) / 3) : 0;
@@ -141,16 +200,21 @@ function construireScenarios(inp) {
   const rendParcSQ = (t, rendY) => rendY * (inp.rendEstime / inp.rendMean) * Math.pow(1 - inp.declinSQ, t);
   const scSQ = simulerReserveKg({ ...base, scenario: 'statuquo', rendParcFn: rendParcSQ });
 
-  // Coûts totaux = investissement ponctuel + charges d'entretien récurrentes (modèle c)
-  const coutsArr  = merge(invArr,   chargesEntretien('arrachage',     scArr,  inp));
-  const coutsComp = merge(invCompl, chargesEntretien('complantation', scCompl, inp));
-  const coutsSQ   = merge({},       chargesEntretien('statuquo',      scSQ,   inp));
+  // Coûts totaux = investissement ponctuel (100 % parcelle) + charges d'entretien
+  // récurrentes (modèle c), décomposées parcelle / reste — chantier 5.
+  const ceArr  = chargesEntretien('arrachage',     scArr,  inp);
+  const ceComp = chargesEntretien('complantation', scCompl, inp);
+  const ceSQ   = chargesEntretien('statuquo',      scSQ,   inp);
+  const coutsArrParcelle  = merge(invArr,   ceArr.parcelle);
+  const coutsCompParcelle = merge(invCompl, ceComp.parcelle);
+  const coutsSQParcelle   = ceSQ.parcelle;
 
-  const eco = c => ({ prixKg: inp.prixKg, coutsParAnnee: c });
+  const eco = (cParcelle, cReste) => ({ prixKg: inp.prixKg,
+    coutsParcelleParAnnee: cParcelle, coutsResteParAnnee: cReste });
   return {
-    arrachage:     { kg: scArr,   eur: coucheEuro(scArr,   eco(coutsArr)),  investissement: somme(invArr) },
-    complantation: { kg: scCompl, eur: coucheEuro(scCompl, eco(coutsComp)), investissement: somme(invCompl) },
-    statuquo:      { kg: scSQ,    eur: coucheEuro(scSQ,    eco(coutsSQ)),    investissement: 0 }
+    arrachage:     { kg: scArr,   eur: coucheEuro(scArr,   eco(coutsArrParcelle,  ceArr.reste)),  investissement: somme(invArr) },
+    complantation: { kg: scCompl, eur: coucheEuro(scCompl, eco(coutsCompParcelle, ceComp.reste)), investissement: somme(invCompl) },
+    statuquo:      { kg: scSQ,    eur: coucheEuro(scSQ,    eco(coutsSQParcelle,   ceSQ.reste)),    investissement: 0 }
   };
 }
 

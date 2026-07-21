@@ -15,6 +15,16 @@
 body{margin:0;background:#FAF9F5}
 input,select,button{font-family:'Archivo',sans-serif}
 input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
+.print-sheet{display:none}
+@media print {
+  nav, aside, button { display:none !important; }
+  #appGrid { grid-template-columns: 1fr !important; }
+  header { position:static !important; top:auto !important; }
+  body, body * { color:#000 !important; background:#fff !important; }
+  .print-sheet { display:block !important; }
+  .print-sheet table { width:100%; border-collapse:collapse; margin-bottom:14px; }
+  .print-sheet th, .print-sheet td { border:1px solid #000 !important; padding:3px 6px; }
+}
 </style>
 <script src="moteur-oad.js"></script>
 </helmet>
@@ -28,7 +38,7 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
     </div>
   </header>
 
-  <div style="max-width:1360px;margin:0 auto;width:100%;flex:1;display:grid;grid-template-columns:216px minmax(0,1fr) 296px;gap:0;align-items:start">
+  <div id="appGrid" style="max-width:1360px;margin:0 auto;width:100%;flex:1;display:grid;grid-template-columns:216px minmax(0,1fr) 296px;gap:0;align-items:start">
 
     <nav style="padding:28px 0 28px 28px;position:sticky;top:64px;display:flex;flex-direction:column;gap:2px">
       <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#9A9E97;letter-spacing:0.1em;margin-bottom:10px">VOTRE PARCOURS</div>
@@ -47,6 +57,9 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
 
       <sc-if value="{{ estEtape0 }}" hint-placeholder-val="{{ true }}">
         <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.08em">ÉTAPE 1 SUR 5</div>
+        <sc-if value="{{ erreurSurface }}" hint-placeholder-val="{{ false }}">
+          <div style="margin:8px 0;font-size:13px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">⚠ {{ erreurSurface }}</div>
+        </sc-if>
         <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:26px;margin:4px 0 6px">Votre exploitation</h2>
         <p style="color:#5C6157;font-size:14.5px;max-width:60ch;margin:0 0 24px">Quelques repères sur l'ensemble de votre exploitation — ils servent de dénominateur à toute la comparaison.</p>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px 20px">
@@ -100,7 +113,7 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
           <div style="display:flex;flex-direction:column;gap:5px">
             <label style="font-size:13px;font-weight:600">Déclin annuel en statu quo</label>
             <div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.1" min="0" max="10" value="{{ v.declinSQ }}" onInput="{{ on.declinSQ }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">%/an</span></div>
-            <span style="font-size:11.5px;color:#5C6157">0 par défaut — à votre appréciation</span>
+            <span style="font-size:11.5px;color:#A5433A">défaut indicatif (1 %/an) — à ajuster à la parcelle, à caler sur vos données âge-rendement ou la littérature</span>
           </div>
         </div>
         <h3 style="font-family:'Fraunces',serif;font-size:17px;margin:28px 0 12px">Faire-valoir de la parcelle</h3>
@@ -131,9 +144,13 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
               <label style="font-size:13px;font-weight:600">Part des coûts au propriétaire</label>
               <div style="display:flex;align-items:center;gap:8px"><input type="number" step="1" min="0" max="100" value="{{ v.partCouts }}" onInput="{{ on.partCouts }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">%</span></div>
               <span style="font-size:11.5px;color:#A5433A">selon le bail — possibilité de partage des coûts de renouvellement</span>
+              <span style="font-size:11.5px;color:#A5433A">part de l'investissement de replantation portée par le propriétaire — hypothèse contractuelle forte, à vérifier dans votre bail</span>
             </div>
           </sc-if>
         </div>
+        <sc-if value="{{ estFermage }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px;font-size:13px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">⚠ L'arrachage et la replantation d'une parcelle louée supposent l'accord du bailleur (statut du fermage). L'outil suppose que le preneur porte l'investissement.</div>
+        </sc-if>
       </sc-if>
 
       <sc-if value="{{ estEtape2 }}" hint-placeholder-val="{{ false }}">
@@ -403,11 +420,20 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
 
       <sc-if value="{{ estEtape4 }}" hint-placeholder-val="{{ false }}">
         <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.08em">ÉTAPE 5 SUR 5 · RÉSULTATS</div>
-        <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:26px;margin:4px 0 6px">Les trois voies, sur dix ans</h2>
+        <sc-if value="{{ erreurSurface }}" hint-placeholder-val="{{ false }}">
+          <div style="margin:8px 0;font-size:13px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">⚠ {{ erreurSurface }}</div>
+        </sc-if>
+        <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:26px;margin:4px 0 6px">Les trois voies, sur {{ horizonTxt }}</h2>
+
+        <div style="margin:10px 0 4px">
+          <button onClick="{{ imprimerFiche }}" style="font-size:13px;padding:9px 16px;border:1px solid #20291F;background:#fff;border-radius:6px;cursor:pointer;color:#20291F">🖨 Imprimer la fiche d'hypothèses et de résultats</button>
+          <span style="font-size:11.5px;color:#5C6157;margin-left:10px">ouvre l'aperçu avant impression du navigateur — inclut une fiche d'audit exhaustive (hypothèses, KPI, détail des 3 scénarios)</span>
+        </div>
 
         <div style="background:#20291F;color:#FAF9F5;border-radius:10px;padding:20px 24px;margin:16px 0;font-size:15px;line-height:1.65">
-          Sur dix ans, l'<b style="color:#F1E6CC">arrachage-replantation</b> est une opération de <b style="color:#F1E6CC">transition</b>. La réserve mobilisable — <b style="color:#F1E6CC">{{ reserveReelleTxt }}</b> réellement mobilisés ({{ reserveTheoTxt }} théoriques) — amortit un investissement de <b style="color:#F1E6CC">{{ investTxt }}</b>. L'effort net à financer ressort à <b style="color:#F1E6CC">{{ effortNetTxt }}</b>. Tension de trésorerie maximale en année {{ creuxT }} (<b style="color:#F1E6CC">{{ creuxTxt }}</b>) — un besoin d'absorption, pas un coût définitif. Vigilance : la réserve descend à <b style="color:#F1E6CC">{{ stockMinTxt }} kg/ha</b> en année {{ tMin }}.
+          Sur {{ horizonTxt }}, l'<b style="color:#F1E6CC">arrachage-replantation</b> est une opération de <b style="color:#F1E6CC">transition</b>. La réserve mobilisable — <b style="color:#F1E6CC">{{ reserveReelleTxt }}</b> réellement mobilisés ({{ reserveTheoTxt }} théoriques) — {{ syntheseCouvTxt }} <b style="color:#F1E6CC">{{ investTxt }}</b>{{ syntheseCouvSuffixTxt }}. L'effort net à financer ressort à <b style="color:#F1E6CC">{{ effortNetTxt }}</b>. Tension de trésorerie maximale en année {{ creuxT }} (<b style="color:#F1E6CC">{{ creuxTxt }}</b>){{ syntheseAbsorptionTxt }}. {{ syntheseStockLeadTxt }} <b style="color:#F1E6CC">{{ stockMinTxt }} kg/ha</b> {{ syntheseStockTailTxt }} {{ syntheseHorizonTxt }}
         </div>
+        <div style="font-size:11.5px;color:#5C6157;margin:8px 0 16px;line-height:1.5">Ordres de grandeur pédagogiques établis sur vos saisies — une décision d'investissement s'instruit avec votre conseil comptable et, le cas échéant, votre bailleur.</div>
 
         <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin:14px 0 18px">
           <span style="font-size:13px;color:#5C6157">Trésorerie affichée :</span>
@@ -418,7 +444,12 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
           </div>
           <span style="font-size:12.5px;color:#5C6157">{{ fvHint }}</span>
           <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
-            <span style="font-size:13px;color:#5C6157">Test de résistance :</span>
+            <span style="font-size:13px;color:#5C6157">Horizon :</span>
+            <select value="{{ v.horizon }}" onChange="{{ on.horizon }}" style="padding:7px 10px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-size:13px">
+              <option value="10">10 ans</option>
+              <option value="25">25 ans</option>
+            </select>
+            <span style="font-size:13px;color:#5C6157;margin-left:10px">Test de résistance :</span>
             <select value="{{ v.sequence }}" onChange="{{ on.sequence }}" style="padding:7px 10px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-size:13px">
               <option value="aucune">Moyenne régionale chaque année</option>
               <option value="creux34">Deux récoltes courtes, années 3–4</option>
@@ -437,6 +468,23 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
           </sc-for>
         </div>
 
+        <figure style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
+          <figcaption style="font-family:'Fraunces',serif;font-weight:600;font-size:16px">Trajectoire de trésorerie cumulée</figcaption>
+          <div style="font-size:12.5px;color:#5C6157;margin:2px 0 8px;max-width:78ch">Selon la vue faire-valoir active. La courbe pointillée montre ce que serait l'arrachage SANS le mécanisme de réserve.</div>
+          {{ chartTreso }}
+          <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:12.5px;margin-top:10px">
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#A97F26;display:inline-block"></span>arrachage-replantation</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#4C7A57;display:inline-block"></span>complantation</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#9A9E97;display:inline-block"></span>statu quo</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;border-top:1.6px dashed #A97F26;display:inline-block"></span>arrachage sans réserve</span>
+          </div>
+          <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px;margin-top:14px;font-size:13.5px;line-height:1.6">
+            <b>Pourquoi le mécanisme de réserve est décisif</b><br>
+            Écart final, à horizon, entre l'arrachage avec et sans mobilisation de la réserve : <b>{{ ecartReserveTxt }}</b>.<br>
+            Sans le système de réserve, l'effort de trésorerie maximal serait de <b style="color:#A5433A">{{ creuxSansRITxt }}</b> au lieu de <b>{{ creuxTxt }}</b>.
+          </div>
+        </figure>
+
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:20px 0;align-items:stretch">
           <figure style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:0">
             <figcaption style="font-family:'Fraunces',serif;font-weight:600;font-size:16px">Décomposition de l'effort</figcaption>
@@ -445,10 +493,16 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
             <div style="font-size:12.5px;color:#5C6157;margin-top:8px;border-top:1px dotted #DDD9CE;padding-top:8px">La réserve mobilisée par l'arrachage amortit l'investissement : il ne reste que l'<b style="color:#4C7A57">effort net</b> à financer.</div>
           </figure>
           <figure style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:0">
-            <figcaption style="font-family:'Fraunces',serif;font-weight:600;font-size:16px">Les trois voies à 10 ans</figcaption>
+            <figcaption style="font-family:'Fraunces',serif;font-weight:600;font-size:16px">Les trois voies à {{ horizonTxt }}</figcaption>
             <div style="font-size:12.5px;color:#5C6157;margin:2px 0 8px">Trésorerie nette cumulée en fin de période — {{ vueLabel }}.</div>
             {{ chartCompare }}
             <div style="font-size:12.5px;color:#5C6157;margin-top:8px;border-top:1px dotted #DDD9CE;padding-top:8px">Comparaison directe des points d'arrivée. À lire avec le stock de réserve ci-dessous : un cumul flatteur peut cacher une réserve asséchée.</div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;margin-top:10px;border-top:1px dotted #DDD9CE;padding-top:8px">
+              <span>Annuité équivalente — Arrachage : <b style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ annuiteArrTxt }}</b></span>
+              <span>Complantation : <b style="font-family:'JetBrains Mono',monospace;color:#4C7A57">{{ annuiteComplTxt }}</b></span>
+              <span>Statu quo : <b style="font-family:'JetBrains Mono',monospace;color:#9A9E97">{{ annuiteSQTxt }}</b></span>
+            </div>
+            <div style="font-size:11px;color:#5C6157;margin-top:3px">moyenne annuelle sur l'horizon — permet de comparer 10 et 25 ans entre eux</div>
           </figure>
         </div>
 
@@ -536,6 +590,107 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
         </div>
 
         <p style="font-size:12px;color:#5C6157;max-width:78ch;margin-top:24px;border-top:1px solid #DDD9CE;padding-top:14px;line-height:1.6"><b>Limites assumées de la v1.1</b> — mono-parcelle ; prix unique ; faire-valoir simplifié ; hypothèses à caler (pénalité VSL, montée en charge, survie complantation) ; coût de stockage de la réserve négligé. Règles AOC (CDC homologué le 31/07/2025) : rang ≤ 2,00 m, pied 0,70–1,50 m, somme ≤ 3,00 m ; irrigation interdite ; Voltis ≤ 5 %. Sortie arrachage 9 000 kg/ha (× 3 classique / × 5 sanitaire), plafond 10 000. Stock RI terminal = actif contraint, jamais monétisé.</p>
+
+        <div class="print-sheet">
+          <h2 style="font-family:'Fraunces',serif;font-size:20px;margin:0 0 4px">Fiche d'hypothèses et de résultats — OAD Renouvellement du vignoble</h2>
+          <div style="font-size:12px;margin-bottom:16px">Imprimé le {{ printDateTxt }} · toutes les hypothèses ci-dessous pilotent les résultats affichés — aucune n'est masquée.</div>
+
+          <h3 style="font-size:15px;margin:16px 0 8px">1. Paramètres de la simulation — saisis, dérivés, câblés en dur</h3>
+          <table>
+            <thead><tr>
+              <th style="text-align:left">Paramètre</th>
+              <th style="text-align:right">Valeur</th>
+              <th style="text-align:left">Unité</th>
+              <th style="text-align:left">Origine</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ printInpRows }}" as="pr" hint-placeholder-count="6">
+                <tr>
+                  <td>{{ pr.lib }}</td>
+                  <td style="text-align:right;font-family:'JetBrains Mono',monospace">{{ pr.val }}</td>
+                  <td>{{ pr.unite }}</td>
+                  <td>{{ pr.origine }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+
+          <h3 style="font-size:15px;margin:16px 0 8px">2. KPI — valeur et formule</h3>
+          <table>
+            <thead><tr>
+              <th style="text-align:left">KPI</th>
+              <th style="text-align:right">Valeur</th>
+              <th style="text-align:left">Formule</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ printKpiRows }}" as="pk" hint-placeholder-count="7">
+                <tr>
+                  <td>{{ pk.lib }}</td>
+                  <td style="text-align:right;font-family:'JetBrains Mono',monospace">{{ pk.val }}</td>
+                  <td>{{ pk.formule }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+
+          <h3 style="font-size:15px;margin:16px 0 8px">3. Détail annuel — scénario Arrachage-replantation</h3>
+          <table>
+            <thead><tr>
+              <th style="text-align:left">t</th><th style="text-align:right">Surf. prod (ha)</th><th style="text-align:right">Récolte (kg)</th>
+              <th style="text-align:right">VolCo vendu (kg)</th><th style="text-align:right">Mise rés. (kg)</th><th style="text-align:right">Sortie insuff. (kg)</th>
+              <th style="text-align:right">Sortie arr. (kg)</th><th style="text-align:right">Stock (kg/ha)</th><th style="text-align:right">Cash net (€)</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ printDetailArr }}" as="r" hint-placeholder-count="4">
+                <tr>
+                  <td>{{ r.t }}</td><td style="text-align:right">{{ r.surfProd }}</td><td style="text-align:right">{{ r.recolte }}</td>
+                  <td style="text-align:right">{{ r.volcoVendu }}</td><td style="text-align:right">{{ r.mise }}</td><td style="text-align:right">{{ r.sortieInsuff }}</td>
+                  <td style="text-align:right">{{ r.sortieArr }}</td><td style="text-align:right">{{ r.stockHa }}</td><td style="text-align:right">{{ r.cashNet }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+
+          <h3 style="font-size:15px;margin:16px 0 8px">3bis. Détail annuel — scénario Complantation</h3>
+          <table>
+            <thead><tr>
+              <th style="text-align:left">t</th><th style="text-align:right">Surf. prod (ha)</th><th style="text-align:right">Récolte (kg)</th>
+              <th style="text-align:right">VolCo vendu (kg)</th><th style="text-align:right">Mise rés. (kg)</th><th style="text-align:right">Sortie insuff. (kg)</th>
+              <th style="text-align:right">Sortie arr. (kg)</th><th style="text-align:right">Stock (kg/ha)</th><th style="text-align:right">Cash net (€)</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ printDetailCompl }}" as="r" hint-placeholder-count="4">
+                <tr>
+                  <td>{{ r.t }}</td><td style="text-align:right">{{ r.surfProd }}</td><td style="text-align:right">{{ r.recolte }}</td>
+                  <td style="text-align:right">{{ r.volcoVendu }}</td><td style="text-align:right">{{ r.mise }}</td><td style="text-align:right">{{ r.sortieInsuff }}</td>
+                  <td style="text-align:right">{{ r.sortieArr }}</td><td style="text-align:right">{{ r.stockHa }}</td><td style="text-align:right">{{ r.cashNet }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+
+          <h3 style="font-size:15px;margin:16px 0 8px">3ter. Détail annuel — scénario Statu quo</h3>
+          <table>
+            <thead><tr>
+              <th style="text-align:left">t</th><th style="text-align:right">Surf. prod (ha)</th><th style="text-align:right">Récolte (kg)</th>
+              <th style="text-align:right">VolCo vendu (kg)</th><th style="text-align:right">Mise rés. (kg)</th><th style="text-align:right">Sortie insuff. (kg)</th>
+              <th style="text-align:right">Sortie arr. (kg)</th><th style="text-align:right">Stock (kg/ha)</th><th style="text-align:right">Cash net (€)</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ printDetailSQ }}" as="r" hint-placeholder-count="4">
+                <tr>
+                  <td>{{ r.t }}</td><td style="text-align:right">{{ r.surfProd }}</td><td style="text-align:right">{{ r.recolte }}</td>
+                  <td style="text-align:right">{{ r.volcoVendu }}</td><td style="text-align:right">{{ r.mise }}</td><td style="text-align:right">{{ r.sortieInsuff }}</td>
+                  <td style="text-align:right">{{ r.sortieArr }}</td><td style="text-align:right">{{ r.stockHa }}</td><td style="text-align:right">{{ r.cashNet }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+
+          <div style="margin-top:16px;padding-top:10px;border-top:1px solid #000;font-size:11px">
+            Imprimé le {{ printDateTxt }} — OAD Renouvellement v1.2 — maquette, référentiel de coûts en cours de validation.
+          </div>
+        </div>
       </sc-if>
 
       <div style="display:flex;gap:12px;margin-top:32px;align-items:center">
@@ -557,6 +712,9 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
           <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px dotted #DDD9CE"><span style="color:#5C6157">Densité</span><b style="font-family:'JetBrains Mono',monospace">{{ syDens }}</b></div>
           <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px dotted #DDD9CE"><span style="color:#5C6157">Pieds à planter</span><b style="font-family:'JetBrains Mono',monospace">{{ syPieds }}</b></div>
           <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0"><span style="color:#5C6157">Cahier des charges</span><b style="color:{{ aocFg }}">{{ aocBadge }}</b></div>
+          <sc-if value="{{ erreurSurface }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:8px;font-size:12.5px;padding:8px 10px;border-radius:5px;background:#F3E0DD;color:#A5433A">⚠ {{ erreurSurface }}</div>
+          </sc-if>
 
           <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#9A9E97;letter-spacing:0.08em;margin:14px 0 6px">FINANCEMENT</div>
           <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px dotted #DDD9CE"><span style="color:#5C6157">Investissement brut</span><b style="font-family:'JetBrains Mono',monospace">{{ investTxt }}</b></div>
@@ -580,14 +738,14 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = {
-      step: 0, vueFV: '1', sansRI: false, palisManuel: false,
+      step: 0, vueFV: '1', palisManuel: false,
       aideOuverte: false, detailOuvert: false, magOuvert: false,
       oadReady: typeof window !== 'undefined' && !!window.OAD,
       v: {
-        surfTot: 1, ageMoy: 38, riPct: 75, volco: 9000, prixKg: 7,
-        ageParc: 55, manquants: 15, rendEstime: 10500, declinSQ: 0,
+        surfTot: 10, ageMoy: 38, riPct: 75, volco: 9000, prixKg: 7,
+        ageParc: 55, manquants: 15, rendEstime: 10500, declinSQ: 1,
         regime: 'propriete', loyerHa: 3000, partRecolte: 33, partCouts: 33,
-        geoL: 200, geoW: 15, ecartRang: 1.10, ecartPied: 1.10,
+        geoL: 100, geoW: 100, ecartRang: 1, ecartPied: 1.10,
         materiel: 'vinifera', porteGreffe: '41 B', irrigation: '0', ramp: '0.3,0.6,1',
         cepage: 'Pinot noir', calcaireActif: 18, profondeurSol: '30-60', drainageSol: 'drainant',
         typeTaille: 'guyot', nbFils: 4, espPiquet: 6,
@@ -595,7 +753,7 @@ class Component extends DCLogic {
         coutPalissageHa: 12000, coutIrrigHa: 5000, penaliteVSL: 15, survie: 50,
         entreeProd: 7, coutEntreplant: 4.5,
         coutSurfaceHaAn: 0, coutRdtParKg: 0, coefRepos: 0,
-        sequence: 'aucune'
+        sequence: 'aucune', horizon: '10'
       }
     };
     this.on = {};
@@ -638,6 +796,7 @@ class Component extends DCLogic {
   fmtE0(v) { return (v < 0 ? '−' : '') + Math.abs(Math.round(v / 100) * 100).toLocaleString('fr-FR') + ' €'; }
   fmtE(v) { return (v < 0 ? '−' : '') + Math.abs(Math.round(v)).toLocaleString('fr-FR') + ' €'; }
   fmtKg(v) { return Math.round(v).toLocaleString('fr-FR'); }
+  fmtHa(v) { return v.toFixed(3).replace('.', ','); }
 
   geometrie(v) {
     const L = +v.geoL || 0, W = +v.geoW || 0, eR = +v.ecartRang || 1, eP = +v.ecartPied || 1;
@@ -728,40 +887,6 @@ class Component extends DCLogic {
     return e('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', style: { width: '100%', height: 'auto', display: 'block' } }, ch);
   }
 
-  annualBars(rows) {
-    const e = React.createElement;
-    const W = 760, H = 280, mL = 66, mR = 14, mT = 16, mB = 34;
-    const nets = rows.map(r => r.cashNet), sans = rows.map(r => r.cashSansRI);
-    let yMin = Math.min(0, ...nets, ...sans), yMax = Math.max(0, ...nets, ...sans);
-    const pad = (yMax - yMin) * 0.08 || 1; yMin -= pad; yMax += pad;
-    const n = rows.length;
-    const Y = val => mT + (H - mT - mB) * (1 - (val - yMin) / (yMax - yMin));
-    const slot = (W - mL - mR) / n;
-    const bw = Math.min(34, slot * 0.62);
-    const ch = [];
-    for (let i = 0; i <= 4; i++) {
-      const val = yMin + (yMax - yMin) * i / 4, y = Y(val);
-      ch.push(e('line', { key: 'g' + i, x1: mL, x2: W - mR, y1: y, y2: y, stroke: '#EDEAE1' }));
-      ch.push(e('text', { key: 'gl' + i, x: mL - 8, y: y + 4, textAnchor: 'end', fontSize: 10, fill: '#8B8E8A', fontFamily: 'JetBrains Mono' }, this.fmtE0(val).replace(' €', '')));
-    }
-    ch.push(e('line', { key: 'z', x1: mL, x2: W - mR, y1: Y(0), y2: Y(0), stroke: '#20291F', strokeWidth: 1 }));
-    rows.forEach((r, t) => {
-      const cx = mL + slot * t + slot / 2, x = cx - bw / 2;
-      const net = r.cashNet, sansv = r.cashSansRI, ri = net - sansv;
-      const yZero = Y(0);
-      const baseColor = sansv < 0 ? '#A5433A' : '#20291F';
-      const yS = Y(sansv);
-      ch.push(e('rect', { key: 's' + t, x, width: bw, y: Math.min(yZero, yS), height: Math.max(1, Math.abs(yS - yZero)), fill: baseColor, rx: 1.5 }));
-      if (ri > 0.5) {
-        const yN = Y(net);
-        ch.push(e('rect', { key: 'ri' + t, x, width: bw, y: Math.min(yS, yN), height: Math.max(1, Math.abs(yN - yS)), fill: '#A97F26', rx: 1.5 }));
-      }
-      ch.push(e('text', { key: 'xl' + t, x: cx, y: H - mB + 15, textAnchor: 'middle', fontSize: 10, fill: '#8B8E8A', fontFamily: 'JetBrains Mono' }, String(t)));
-    });
-    ch.push(e('text', { key: 'xt', x: (mL + W - mR) / 2, y: H - 3, textAnchor: 'middle', fontSize: 10, fill: '#5C6157' }, 'année'));
-    return e('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', style: { width: '100%', height: 'auto', display: 'block' } }, ch);
-  }
-
   renderVals() {
     const s = this.state, v = s.v;
     const g = this.geometrie(v);
@@ -796,7 +921,7 @@ class Component extends DCLogic {
       ageMoy: +v.ageMoy || 0, ageParc: +v.ageParc || 0,
       repos: sanitaire ? 3 : 1, nbSortie: sanitaire ? 5 : 3, volSortieArr: 9000,
       plafond: 10000, volco: +v.volco || 0, rendMean: m,
-      reserveInit: 10000 * (+v.riPct || 0) / 100, horizon: this.props.horizon ?? 10,
+      reserveInit: 10000 * (+v.riPct || 0) / 100, horizon: +v.horizon || 10,
       ramp: String(v.ramp).split(',').map(Number), rendYearFn,
       rendFactorProjet: fDens,
       rendEstime: +v.rendEstime || 0, manquants: (+v.manquants || 0) / 100,
@@ -808,12 +933,16 @@ class Component extends DCLogic {
       entreeProd: +v.entreeProd || 7, prixKg: +v.prixKg || 0,
       coutSurfaceHaAn: +v.coutSurfaceHaAn || 0, coutRdtParKg: +v.coutRdtParKg || 0,
       coefRepos: +v.coefRepos || 0,
-      fv: { regime: v.regime, loyerAn: (+v.loyerHa || 0) * (+v.surfTot || 1),
+      // chantier 5 : loyerAn porte sur la surface de la PARCELLE (g.surf), pas sur
+      // toute l'exploitation — le régime de faire-valoir de l'étape 2 ne s'applique
+      // qu'aux flux attribuables à la parcelle (voir OAD.repartir, README §10).
+      fv: { regime: v.regime, loyerAn: (+v.loyerHa || 0) * g.surf,
         partRecolte: (+v.partRecolte || 0) / 100, partCouts: (+v.partCouts || 0) / 100 }
     };
 
     let out = {
       etapes, v, on: this.on,
+      horizonTxt: inp.horizon + ' ans',
       estEtape0: s.step === 0, estEtape1: s.step === 1, estEtape2: s.step === 2,
       estEtape3: s.step === 3, estEtape4: s.step === 4,
       estFermage: v.regime === 'fermage', estMetayage: v.regime === 'metayage',
@@ -836,15 +965,75 @@ class Component extends DCLogic {
       detailChevron: s.detailOuvert ? '−' : '+',
       magOuvert: s.magOuvert, toggleMaG: () => this.setState(st => ({ magOuvert: !st.magOuvert })),
       magChevron: s.magOuvert ? '−' : '+',
-      sansRI: s.sansRI, toggleSansRI: () => this.setState(st => ({ sansRI: !st.sansRI })),
       reportPalis: () => this.setState({ palisManuel: false }),
       coutPalissageAffiche: coutPalisEffectif,
       palisBadge: s.palisManuel ? '· édité à la main' : '· prérempli depuis la géométrie',
       vue1: () => this.setState({ vueFV: '1' }), vueExp: () => this.setState({ vueFV: 'exp' }), vueProp: () => this.setState({ vueFV: 'prop' }),
       vueBg1: s.vueFV === '1' ? '#20291F' : '#fff', vueFg1: s.vueFV === '1' ? '#FAF9F5' : '#20291F',
       vueBgExp: s.vueFV === 'exp' ? '#20291F' : '#fff', vueFgExp: s.vueFV === 'exp' ? '#FAF9F5' : '#20291F',
-      vueBgProp: s.vueFV === 'prop' ? '#20291F' : '#fff', vueFgProp: s.vueFV === 'prop' ? '#FAF9F5' : '#20291F'
+      vueBgProp: s.vueFV === 'prop' ? '#20291F' : '#fff', vueFgProp: s.vueFV === 'prop' ? '#FAF9F5' : '#20291F',
+      imprimerFiche: () => window.print(),
+      printDateTxt: new Date().toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
     };
+
+    // Fiche d'audit imprimable — chantier "auditabilité des hypothèses" :
+    // toutes les valeurs de `inp` doivent être traçables (saisi / défaut /
+    // dérivé de la géométrie / câblé en dur), y compris les constantes non
+    // éditables par l'utilisateur (volSortieArr, plafond, rendMean, EC).
+    const nf = (x, d = 2) => (typeof x !== 'number' || isNaN(x)) ? String(x) : x.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: d });
+    const oui = b => b ? 'oui' : 'non';
+    out.printInpRows = [
+      { lib: "Surface totale de l'exploitation", val: nf(inp.surfTot, 2), unite: 'ha', origine: 'Saisi' },
+      { lib: 'Âge moyen du vignoble', val: nf(+v.ageMoy || 0, 0), unite: 'ans', origine: 'Saisi' },
+      { lib: 'Volume commercialisable (VolCo)', val: nf(inp.volco, 0), unite: 'kg/ha', origine: 'Saisi' },
+      { lib: 'Prix du raisin', val: nf(inp.prixKg, 2), unite: '€/kg', origine: 'Saisi' },
+      { lib: 'Réserve individuelle initiale (saisie)', val: nf(+v.riPct || 0, 0), unite: '% du plafond', origine: 'Saisi' },
+      { lib: 'Réserve individuelle initiale', val: nf(inp.reserveInit, 0), unite: 'kg/ha', origine: 'Dérivé — plafond câblé en dur (10 000) × réserve saisie / 100' },
+      { lib: 'Âge de la parcelle', val: nf(+v.ageParc || 0, 0), unite: 'ans', origine: 'Saisi' },
+      { lib: 'Pieds manquants', val: nf(inp.manquants * 100, 1), unite: '%', origine: 'Saisi' },
+      { lib: 'Rendement estimé de la parcelle', val: nf(inp.rendEstime, 0), unite: 'kg/ha', origine: 'Saisi' },
+      { lib: 'Déclin annuel en statu quo', val: nf(inp.declinSQ * 100, 2), unite: '%/an', origine: 'Saisi' },
+      { lib: 'Régime de faire-valoir', val: v.regime, unite: '—', origine: 'Saisi' },
+      { lib: 'Loyer annuel (fermage)', val: nf(+v.loyerHa || 0, 0), unite: '€/ha/an', origine: 'Saisi — utilisé si régime = fermage' },
+      { lib: 'Loyer annuel × surface parcelle', val: nf(inp.fv.loyerAn, 0), unite: '€/an', origine: 'Dérivé — loyer/ha × surface réelle de la parcelle' },
+      { lib: 'Part de récolte au propriétaire (métayage)', val: nf(+v.partRecolte || 0, 0), unite: '%', origine: 'Saisi — utilisé si régime = métayage' },
+      { lib: 'Part des coûts au propriétaire (métayage)', val: nf(+v.partCouts || 0, 0), unite: '%', origine: 'Saisi — utilisé si régime = métayage' },
+      { lib: 'Longueur de la parcelle', val: nf(+v.geoL || 0, 0), unite: 'm', origine: 'Saisi' },
+      { lib: 'Largeur de la parcelle', val: nf(+v.geoW || 0, 0), unite: 'm', origine: 'Saisi' },
+      { lib: 'Écart entre rangs', val: nf(+v.ecartRang || 0, 2), unite: 'm', origine: 'Saisi' },
+      { lib: 'Écart entre pieds', val: nf(+v.ecartPied || 0, 2), unite: 'm', origine: 'Saisi' },
+      { lib: 'Densité de plantation', val: nf(g.densite, 0), unite: 'pieds/ha', origine: 'Dérivé de la géométrie — 10 000 / (écart rang × écart pied)' },
+      { lib: 'Surface réelle de la parcelle', val: nf(g.surf, 4), unite: 'ha', origine: 'Dérivé de la géométrie — longueur × largeur / 10 000' },
+      { lib: 'Nombre de rangs', val: nf(g.nbRangs, 0), unite: '—', origine: 'Dérivé de la géométrie' },
+      { lib: 'Nombre de pieds à planter', val: nf(g.pieds, 0), unite: 'pieds', origine: 'Dérivé de la géométrie' },
+      { lib: 'Conduite semi-large (VSL)', val: oui(g.vsl), unite: '—', origine: 'Dérivé de la géométrie — écart rang ≥ 1,50 m' },
+      { lib: 'Matériel végétal', val: v.materiel, unite: '—', origine: 'Saisi' },
+      { lib: 'Porte-greffe', val: v.porteGreffe, unite: '—', origine: 'Saisi — information, hors calcul économique' },
+      { lib: 'Ferti-irrigation du plantier', val: oui(inp.irrigation), unite: '—', origine: 'Saisi' },
+      { lib: 'Montée en charge jeunes vignes (ramp)', val: inp.ramp.map(x => nf(x, 2)).join(' · '), unite: 'ratio/an', origine: 'Saisi — choix parmi 3 profils câblés en dur (0,3·0,6·1 / 0,5·0,8·1 / 1)' },
+      { lib: 'Pénalité rendement VSL', val: nf(+v.penaliteVSL || 0, 0), unite: '%', origine: 'Saisi — appliquée seulement si conduite VSL' },
+      { lib: 'Facteur rendement projet (résultante)', val: nf(fDens, 3), unite: 'ratio', origine: 'Dérivé — 1 − pénalité VSL si VSL, sinon 1' },
+      { lib: "Motif d'arrachage", val: v.motif, unite: '—', origine: 'Saisi' },
+      { lib: 'Repos avant replantation', val: nf(inp.repos, 0), unite: 'ans', origine: 'Câblé en dur selon motif — 1 an (classique) / 3 ans (sanitaire)' },
+      { lib: 'Durée de sortie de réserve', val: nf(inp.nbSortie, 0), unite: 'ans', origine: 'Câblé en dur selon motif — 3 ans (classique) / 5 ans (sanitaire)' },
+      { lib: "Volume de sortie de réserve à l'arrachage", val: nf(inp.volSortieArr, 0), unite: 'kg/ha/an', origine: 'CÂBLÉ EN DUR — 9 000, non éditable' },
+      { lib: 'Plafond de la réserve individuelle', val: nf(inp.plafond, 0), unite: 'kg/ha', origine: 'CÂBLÉ EN DUR — 10 000, non éditable' },
+      { lib: 'Rendement moyen régional de référence', val: nf(inp.rendMean, 1), unite: 'kg/ha', origine: 'CÂBLÉ EN DUR — 12 296,6, non éditable' },
+      { lib: "Coût d'arrachage", val: nf(inp.coutArrachageHa, 0), unite: '€/ha', origine: 'Saisi' },
+      { lib: 'Préparation du sol', val: nf(inp.coutPrepaHa, 0), unite: '€/ha', origine: 'Saisi' },
+      { lib: 'Plant (matériel végétal)', val: nf(inp.coutPlant, 2), unite: '€/pied', origine: 'Saisi' },
+      { lib: 'Palissage', val: nf(inp.coutPalissageHa, 0), unite: '€/ha', origine: s.palisManuel ? 'Saisi — édité à la main' : 'Dérivé de la géométrie — devis LutEnVi 2025' },
+      { lib: 'Ferti-irrigation (si oui)', val: nf(inp.coutIrrigHa, 0), unite: '€/ha', origine: 'Saisi' },
+      { lib: 'Survie des entreplants', val: nf(inp.survie * 100, 1), unite: '%', origine: 'Saisi' },
+      { lib: 'Entrée en production (entreplants)', val: nf(inp.entreeProd, 0), unite: 'années', origine: 'Saisi' },
+      { lib: 'Coût par entreplant', val: nf(inp.coutEntreplant, 2), unite: '€/pied', origine: 'Saisi' },
+      { lib: 'Charge liée à la surface', val: nf(inp.coutSurfaceHaAn, 0), unite: '€/ha/an', origine: 'Saisi — défaut 0' },
+      { lib: 'Charge liée au rendement', val: nf(inp.coutRdtParKg, 2), unite: '€/kg', origine: 'Saisi — défaut 0' },
+      { lib: 'Coefficient de charge en jachère', val: nf(inp.coefRepos, 2), unite: '× surface', origine: 'Saisi — défaut 0' },
+      { lib: 'Test de résistance — séquence', val: v.sequence, unite: '—', origine: 'Saisi' },
+      { lib: 'Choc de rendement en test de résistance', val: nf(EC, 0), unite: 'kg/ha', origine: 'CÂBLÉ EN DUR — 3 440, non éditable' },
+      { lib: 'Horizon de simulation', val: nf(inp.horizon, 0), unite: 'ans', origine: 'Saisi' }
+    ];
 
     // AOC
     const aocOK = g.aoc.rang && g.aoc.pied && g.aoc.somme;
@@ -892,16 +1081,24 @@ class Component extends DCLogic {
       out.palisDetailTxt = `soit ${this.fmtE(cp.totalParcelle)} sur ${g.surf.toFixed(3)} ha · piquets tous les ${v.espPiquet} m · ${v.nbFils} fils/rang`;
     } else { out.palisLignes = []; out.palisTotalHa = '—'; out.palisDetailTxt = ''; }
 
-    // fv hint
+    // fv hint — chantier 5 : le régime ne s'applique qu'aux flux de la parcelle
     out.fvHint = v.regime === 'propriete' ? '100 % exploitant'
-      : v.regime === 'fermage' ? `loyer ${this.fmtE(inp.fv.loyerAn)}/an au propriétaire`
-      : `${v.partRecolte} % récolte / ${v.partCouts} % coûts au propriétaire`;
+      : v.regime === 'fermage' ? `loyer ${this.fmtE(inp.fv.loyerAn)}/an au propriétaire (flux de la parcelle uniquement)`
+      : `${v.partRecolte} % récolte / ${v.partCouts} % coûts au propriétaire (flux de la parcelle uniquement)`;
 
     // moteur
-    if (!OAD) {
+    out.erreurSurface = (g.surf > inp.surfTot + 1e-9)
+      ? `La parcelle (${this.fmtHa(g.surf)} ha) dépasse la surface d'exploitation (${this.fmtHa(inp.surfTot)} ha) — corrigez l'une des deux valeurs.`
+      : '';
+    if (!OAD || out.erreurSurface) {
       Object.assign(out, { investTxt: '…', reserveReelleTxt: '…', reserveTheoTxt: '…', effortNetTxt: '…',
         creuxTxt: '…', creuxT: '…', stockMinTxt: '…', stockMinC: '#A97F26', tMin: '…',
-        kpis: [], chartTreso: null, chartStock: null, detailRows: [], magRows: [], lectureTreso: '' });
+        kpis: [], chartTreso: null, chartStock: null, detailRows: [], magRows: [], lectureTreso: '',
+        ecartReserveTxt: '…', creuxSansRITxt: '…',
+        annuiteArrTxt: '…', annuiteComplTxt: '…', annuiteSQTxt: '…',
+        syntheseCouvTxt: '…', syntheseCouvSuffixTxt: '', syntheseAbsorptionTxt: '',
+        syntheseStockLeadTxt: '…', syntheseStockTailTxt: '…', syntheseHorizonTxt: '…',
+        printKpiRows: [], printDetailArr: [], printDetailCompl: [], printDetailSQ: [] });
       return out;
     }
     const sc = OAD.construireScenarios(inp);
@@ -922,6 +1119,8 @@ class Component extends DCLogic {
 
     let creux = { v: Infinity, t: 0 };
     arr.forEach((val, t) => { const d = val - sq[t]; if (d < creux.v) creux = { v: d, t }; });
+    let creuxSansRI = { v: Infinity, t: 0 };
+    arrSansRI.forEach((val, t) => { const d = val - sq[t]; if (d < creuxSansRI.v) creuxSansRI = { v: d, t }; });
     const invest = sc.arrachage.investissement;
     const reserveReelle = sc.arrachage.eur.reduce((acc, r) => acc + r.cashRI, 0);
     const reserveTheo = inp.volSortieArr * inp.surfParc * inp.nbSortie * inp.prixKg;
@@ -932,6 +1131,7 @@ class Component extends DCLogic {
     const ageApres = (inp.ageMoy * inp.surfTot - inp.ageParc * inp.surfParc) / inp.surfTot;
     const gainAge = inp.ageMoy - ageApres;
     const seuil = this.props.seuilReserve ?? 4000;
+    const h = inp.horizon;
 
     const chArr = OAD.chargesEntretien('arrachage', sc.arrachage.kg, inp);
     const chSQ = OAD.chargesEntretien('statuquo', sc.statuquo.kg, inp);
@@ -950,6 +1150,37 @@ class Component extends DCLogic {
     out.stockMinC = stockMin < seuil ? '#A5433A' : '#4C7A57';
     out.tMin = String(tMin);
 
+    // Synthèse rédigée (étape 5, bloc sombre) — texte assemblé selon les résultats,
+    // jamais une conclusion fixe (voir CLAUDE.md : les conclusions dépendent des chiffres).
+    if (couv >= 0.8) { out.syntheseCouvTxt = "couvre l'essentiel de l'investissement de"; out.syntheseCouvSuffixTxt = ''; }
+    else if (couv >= 0.3) { out.syntheseCouvTxt = "amortit une partie de l'investissement de"; out.syntheseCouvSuffixTxt = ''; }
+    else { out.syntheseCouvTxt = "couvre peu l'investissement de"; out.syntheseCouvSuffixTxt = " — l'essentiel reste à financer"; }
+
+    if (stockMin < seuil) {
+      out.syntheseStockLeadTxt = 'Vigilance : votre coussin de sécurité descend à';
+      out.syntheseStockTailTxt = `en année ${tMin} — une récolte courte pendant la transition serait difficile à absorber.`;
+    } else {
+      out.syntheseStockLeadTxt = 'La réserve reste à un niveau suffisant durant la transition, avec un minimum de';
+      out.syntheseStockTailTxt = `en année ${tMin}.`;
+    }
+
+    const seuilAtteintH = arr[h] >= sq[h];
+    out.syntheseAbsorptionTxt = seuilAtteintH
+      ? `, résorbé d'ici ${out.horizonTxt} : pas un coût définitif`
+      : `, non résorbé à ${out.horizonTxt} d'après vos hypothèses`;
+
+    if (arr[h] < sq[h]) {
+      const hBack = Math.min(3, h);
+      const ecartNow = sq[h] - arr[h];
+      const ecartBack = sq[h - hBack] - arr[h - hBack];
+      const tendance = hBack > 0 ? (ecartBack - ecartNow) / hBack : 0;
+      out.syntheseHorizonTxt = tendance > 0
+        ? `À ${out.horizonTxt}, le statu quo reste devant en trésorerie cumulée — l'écart se résorbe d'environ ${this.fmtE0(tendance)} par an en fin de période.`
+        : `À ${out.horizonTxt}, le statu quo reste devant en trésorerie cumulée, sans tendance nette au rattrapage sur la période.`;
+    } else {
+      out.syntheseHorizonTxt = `À ${out.horizonTxt}, l'arrachage-replantation devance le statu quo en trésorerie cumulée, de ${this.fmtE0(arr[h] - sq[h])}.`;
+    }
+
     out.kpis = [
       { c: '#9A9E97', vc: '#20291F', lib: 'Investissement brut', val: this.fmtE0(invest), det: 'arrachage + installation, hors entretien' },
       { c: '#A97F26', vc: '#20291F', lib: 'Amortisseur de réserve', val: this.fmtE0(reserveReelle), det: `réellement mobilisé · ${this.fmtE0(reserveTheo)} théoriques · ${Math.round(couv * 100)} % de l'investissement` },
@@ -960,7 +1191,6 @@ class Component extends DCLogic {
     ];
     if (chargesActives) out.kpis.splice(3, 0, { c: '#4C7A57', vc: '#20291F', lib: 'Charges évitées en transition', val: this.fmtE0(chargesEvitees), det: 'dérivé, déjà reflété dans les courbes' });
 
-    const h = inp.horizon;
     out.vueLabel = s.vueFV === '1' ? 'ensemble' : s.vueFV === 'exp' ? 'part exploitant' : 'part propriétaire';
     out.chartWaterfall = this.waterfall(invest, reserveReelle, effortNet);
     out.chartCompare = this.compareBars([
@@ -968,6 +1198,13 @@ class Component extends DCLogic {
       { label: 'Complantation', val: compl[h], c: '#4C7A57' },
       { label: 'Statu quo', val: sq[h], c: '#9A9E97' }
     ], x => this.fmtE0(x));
+
+    // Annuité équivalente = cumul_t=h / h — moyenne simple, PAS d'actualisation
+    // dans cette version (pas de taux retenu) : sert uniquement à comparer un
+    // horizon 10 ans et un horizon 25 ans sur une base commune (€/an).
+    out.annuiteArrTxt = this.fmtE0(arr[h] / h) + '/an';
+    out.annuiteComplTxt = this.fmtE0(compl[h] / h) + '/an';
+    out.annuiteSQTxt = this.fmtE0(sq[h] / h) + '/an';
 
 
     out.chartStock = this.chart([
@@ -978,19 +1215,54 @@ class Component extends DCLogic {
       annot: [{ serie: sc.arrachage.kg.map(r => r.stockHa), t: tMin, label: this.fmtKg(stockMin), c: '#A97F26' }],
       yTitle: 'kg/ha', xTitle: 'année' });
 
+    out.chartTreso = this.chart([
+      { pts: sq, c: '#9A9E97', w: 2 },
+      { pts: compl, c: '#4C7A57', w: 2 },
+      { pts: arr, c: '#A97F26', w: 2.6 },
+      { pts: arrSansRI, c: '#A97F26', w: 1.6, dash: '4 3' }
+    ], { fmt: x => this.fmtE0(x), yTitle: '€ cumulés', xTitle: 'année',
+      annot: [{ serie: arr, t: creux.t, label: this.fmtE0(creux.v), c: '#A97F26' }] });
+    out.ecartReserveTxt = this.fmtE0(arr[h] - arrSansRI[h]);
+    out.creuxSansRITxt = this.fmtE0(creuxSansRI.v);
+
     const sorties = sc.arrachage.kg.filter(r => r.sortieArr > 0.5);
     out.sortieAnnees = sorties.map(r => ({ t: String(r.t), kg: this.fmtKg(r.sortieArr), eur: this.fmtE0(r.sortieArr * inp.prixKg) }));
     out.sortieTotalTxt = this.fmtKg(sorties.reduce((a, r) => a + r.sortieArr, 0));
 
-    out.detailRows = sc.arrachage.kg.map((r, i) => ({
+    const buildDetailRows = (kgRows, eurRows) => kgRows.map((r, i) => ({
       t: String(r.t), surfProd: r.surfProd.toFixed(2), recolte: this.fmtKg(r.recolte),
       volcoVendu: this.fmtKg(r.volcoVendu), mise: this.fmtKg(r.mise),
       sortieInsuff: this.fmtKg(r.sortieInsuff), sortieArr: this.fmtKg(r.sortieArr),
-      stockHa: this.fmtKg(r.stockHa), cashNet: this.fmtE(sc.arrachage.eur[i].cashNet)
+      stockHa: this.fmtKg(r.stockHa), cashNet: this.fmtE(eurRows[i].cashNet)
     }));
+    out.detailRows = buildDetailRows(sc.arrachage.kg, sc.arrachage.eur);
     const magA = OAD.manqueAGagner(sc.arrachage, sc.statuquo, inp.prixKg);
     const magC = OAD.manqueAGagner(sc.complantation, sc.statuquo, inp.prixKg);
     out.magRows = magA.map((val, i) => ({ t: String(i), arr: this.fmtE(val), compl: this.fmtE(magC[i]) }));
+
+    // Fiche d'audit imprimable — détail annuel des 3 scénarios (pas seulement l'arrachage)
+    out.printDetailArr = out.detailRows;
+    out.printDetailCompl = buildDetailRows(sc.complantation.kg, sc.complantation.eur);
+    out.printDetailSQ = buildDetailRows(sc.statuquo.kg, sc.statuquo.eur);
+
+    // Fiche d'audit imprimable — les 7 KPI (y compris "charges évitées", masqué à
+    // l'écran quand les charges sont nulles mais toujours calculé) avec leur formule.
+    out.printKpiRows = [
+      { lib: 'Investissement brut', val: this.fmtE0(invest),
+        formule: "S_parcelle × coûtArrachageHa (an. 0) + S_parcelle × (coûtPrepaHa + densité × coûtPlant + coûtPalissageHa + irrigation × coûtIrrigHa) (an. repos)" },
+      { lib: 'Amortisseur de réserve', val: `${this.fmtE0(reserveReelle)} (${Math.round(couv * 100)} % de l'investissement)`,
+        formule: 'Σₜ cashRIₜ = Σₜ sortieArrₜ × prixKg, scénario arrachage' },
+      { lib: 'Effort net après réserve', val: this.fmtE0(effortNet),
+        formule: 'max(0, investissement brut − réserve réellement mobilisée)' },
+      { lib: 'Tension max de trésorerie', val: `${this.fmtE0(creux.v)} (année ${creux.t})`,
+        formule: 'minₜ (cumulArrachageₜ − cumulStatuQuoₜ), sur la vue faire-valoir affichée' },
+      { lib: 'Réserve min en transition', val: `${this.fmtKg(stockMin)} kg/ha (année ${tMin})`,
+        formule: `minₜ stockHaₜ (scénario arrachage) ; seuil d'alerte câblé en dur = ${this.fmtKg(seuil)} kg/ha` },
+      { lib: 'Effet technique (rajeunissement)', val: '−' + gainAge.toFixed(1) + ' an' + (gainAge >= 2 ? 's' : ''),
+        formule: 'âgeMoyen − (âgeMoyen × surfTot − âgeParcelle × surfParcelle) / surfTot' },
+      { lib: 'Charges évitées en transition', val: this.fmtE0(chargesEvitees) + (chargesActives ? '' : ' (affiché à l’écran seulement si charges > 0)'),
+        formule: 'Σ_{t<returnYear} max(0, chargesStatuQuoₜ − chargesArrachageₜ), returnYear = 3 (câblé en dur) + repos' }
+    ];
 
     return out;
   }
