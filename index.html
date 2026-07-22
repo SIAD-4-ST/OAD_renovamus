@@ -400,20 +400,137 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px">
             <div style="display:flex;flex-direction:column;gap:5px">
-              <label style="font-size:13px;font-weight:600">Charge liée à la surface</label>
-              <div style="display:flex;align-items:center;gap:8px"><input type="number" step="100" min="0" value="{{ v.coutSurfaceHaAn }}" onInput="{{ on.coutSurfaceHaAn }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/ha/an</span></div>
-              <span style="font-size:11.5px;color:#A5433A">à caler — sol, palissage, entretien hors récolte</span>
+              <label style="font-size:13px;font-weight:600">Charge liée à la surface (vigne en production)</label>
+              <div style="display:flex;align-items:center;gap:8px"><input type="number" step="100" min="0" value="{{ v.coutSurfaceProdHaAn }}" onInput="{{ on.coutSurfaceProdHaAn }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/ha/an</span></div>
+              <span style="font-size:11.5px;color:#A5433A">à caler — sol, palissage, entretien hors récolte. Voir le détail par opération ci-dessous.</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:5px">
               <label style="font-size:13px;font-weight:600">Charge liée au rendement</label>
               <div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.01" min="0" value="{{ v.coutRdtParKg }}" onInput="{{ on.coutRdtParKg }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/kg</span></div>
               <span style="font-size:11.5px;color:#A5433A">à caler — vendange, transport, prestations récolte</span>
             </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:14px;overflow:hidden">
+            <button onClick="{{ toggleVoletProd }}" style="width:100%;border:0;background:none;cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:10px;text-align:left">
+              <span style="font-size:13.5px;font-weight:600">Détail par opération — vigne en production</span>
+              <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;color:#A97F26">{{ voletProdChevron }}</span>
+            </button>
+            <sc-if value="{{ voletProdOuvert }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:0 16px 16px">
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px">
+                  <label style="font-size:12.5px;font-weight:600">Taux horaire chargé</label>
+                  <div style="display:flex;align-items:center;gap:6px"><input type="number" step="0.5" min="0" value="{{ v.tauxHoraire }}" onInput="{{ on.tauxHoraire }}" style="width:90px;padding:7px 9px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:13px"><span style="font-size:12px;color:#5C6157">€/h</span></div>
+                  <span style="font-size:11.5px;color:#5C6157">SMIC 2026 chargé ≈ 17 €/h — à caler</span>
+                </div>
+                <div style="overflow-x:auto">
+                  <div style="display:grid;grid-template-columns:1.8fr 0.9fr 0.9fr 1fr 1.6fr;gap:0;font-size:12px;min-width:600px">
+                    <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE">Opération</div>
+                    <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE">Type</div>
+                    <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE;text-align:right">h/ha</div>
+                    <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE;text-align:right">€/ha</div>
+                    <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE">Source</div>
+                    <sc-for list="{{ voletProdLignes }}" as="l" hint-placeholder-count="5">
+                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1">{{ l.lib }}</div>
+                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1;color:#5C6157">{{ l.type }}</div>
+                      <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:12.5px;text-align:right"></div>
+                      <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:12.5px;text-align:right"></div>
+                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1;font-size:11px;color:#5C6157">{{ l.src }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px">
+                  <span style="font-size:13px">Total : <b style="font-family:'JetBrains Mono',monospace">{{ voletProdTotalTxt }}</b> <span style="color:#5C6157">({{ voletProdHeuresTxt }} manuelles)</span></span>
+                  <button onClick="{{ reprendreVoletProd }}" style="font-size:12px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre cette estimation</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:20px 22px;margin-top:16px">
+          <h3 style="font-family:'Fraunces',serif;font-size:16px;margin:0 0 6px">Charge de transition (arrachage)</h3>
+          <div style="background:#F3E0DD;border-radius:6px;padding:12px 14px;font-size:13px;line-height:1.55;max-width:72ch;margin-bottom:14px;color:#A5433A">
+            <b>Ne pas inclure l'installation</b> (arrachage, préparation, plants, palissage) : déjà comptée en coûts ponctuels. Ce volet ne couvre que l'entretien récurrent, pendant le repos puis le plantier.
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px">
             <div style="display:flex;flex-direction:column;gap:5px">
-              <label style="font-size:13px;font-weight:600">Charge de surface en jachère</label>
-              <div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.05" min="0" max="1" value="{{ v.coefRepos }}" onInput="{{ on.coefRepos }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">× surface</span></div>
-              <span style="font-size:11.5px;color:#5C6157">repos négligé par défaut (0)</span>
+              <label style="font-size:13px;font-weight:600">Charge de transition — repos</label>
+              <div style="display:flex;align-items:center;gap:8px"><input type="number" step="100" min="0" value="{{ v.coutReposHaAn }}" onInput="{{ on.coutReposHaAn }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/ha/an</span></div>
+              <span style="font-size:11.5px;color:#A5433A">à caler — jachère après arrachage. Voir le détail par opération ci-dessous.</span>
             </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="font-size:13px;font-weight:600">Charge de transition — plantier</label>
+              <div style="display:flex;align-items:center;gap:8px"><input type="number" step="100" min="0" value="{{ v.coutPlantierHaAn }}" onInput="{{ on.coutPlantierHaAn }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/ha/an</span></div>
+              <span style="font-size:11.5px;color:#A5433A">à caler — jeune vigne en formation. Voir le détail par opération ci-dessous.</span>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:14px;overflow:hidden">
+            <button onClick="{{ toggleVoletRepos }}" style="width:100%;border:0;background:none;cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:10px;text-align:left">
+              <span style="font-size:13.5px;font-weight:600">Détail par opération — repos</span>
+              <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;color:#A97F26">{{ voletReposChevron }}</span>
+            </button>
+            <sc-if value="{{ voletReposOuvert }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:0 16px 16px">
+                <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;margin-bottom:12px">
+                  <input type="checkbox" checked="{{ voletReposCourtNoue }}" onChange="{{ toggleReposCourtNoue }}">
+                  Inclure la dévitalisation court-noué (optionnel)
+                </label>
+                <div style="overflow-x:auto">
+                  <div style="display:grid;grid-template-columns:1.8fr 0.9fr 1fr 1.8fr;gap:0;font-size:12px;min-width:560px">
+                    <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE">Opération</div>
+                    <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE;text-align:right">h/ha</div>
+                    <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE;text-align:right">€/ha</div>
+                    <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE">Source</div>
+                    <sc-for list="{{ voletReposLignes }}" as="l" hint-placeholder-count="3">
+                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1">{{ l.lib }}</div>
+                      <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:12.5px;text-align:right"></div>
+                      <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:12.5px;text-align:right"></div>
+                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1;font-size:11px;color:#5C6157">{{ l.src }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px">
+                  <span style="font-size:13px">Total : <b style="font-family:'JetBrains Mono',monospace">{{ voletReposTotalTxt }}</b></span>
+                  <button onClick="{{ reprendreVoletRepos }}" style="font-size:12px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre cette estimation</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:12px;overflow:hidden">
+            <button onClick="{{ toggleVoletPlantier }}" style="width:100%;border:0;background:none;cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:10px;text-align:left">
+              <span style="font-size:13.5px;font-weight:600">Détail par opération — plantier</span>
+              <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;color:#A97F26">{{ voletPlantierChevron }}</span>
+            </button>
+            <sc-if value="{{ voletPlantierOuvert }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:0 16px 16px">
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px">
+                  <label style="font-size:12.5px;font-weight:600">Fraction de formation</label>
+                  <div style="display:flex;align-items:center;gap:6px"><input type="number" step="0.05" min="0" max="1" value="{{ v.fracFormation }}" onInput="{{ on.fracFormation }}" style="width:70px;padding:7px 9px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:13px"></div>
+                  <span style="font-size:11.5px;color:#5C6157">appliquée au volet production pour proposer la base « taille de formation » — à caler</span>
+                </div>
+                <div style="overflow-x:auto">
+                  <div style="display:grid;grid-template-columns:1.8fr 0.9fr 1fr 1.8fr;gap:0;font-size:12px;min-width:560px">
+                    <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE">Opération</div>
+                    <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE;text-align:right">h/ha</div>
+                    <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE;text-align:right">€/ha</div>
+                    <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE">Source</div>
+                    <sc-for list="{{ voletPlantierLignes }}" as="l" hint-placeholder-count="4">
+                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1">{{ l.lib }}</div>
+                      <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:12.5px;text-align:right"></div>
+                      <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:12.5px;text-align:right"></div>
+                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1;font-size:11px;color:#5C6157">{{ l.src }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px">
+                  <span style="font-size:13px">Total : <b style="font-family:'JetBrains Mono',monospace">{{ voletPlantierTotalTxt }}</b></span>
+                  <button onClick="{{ reprendreVoletPlantier }}" style="font-size:12px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre cette estimation</button>
+                </div>
+              </div>
+            </sc-if>
           </div>
         </div>
       </sc-if>
@@ -443,6 +560,11 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
             <button onClick="{{ vueProp }}" style="font-size:13px;padding:7px 14px;border:0;cursor:pointer;background:{{ vueBgProp }};color:{{ vueFgProp }}">Part propriétaire</button>
           </div>
           <span style="font-size:12.5px;color:#5C6157">{{ fvHint }}</span>
+          <span style="font-size:13px;color:#5C6157;margin-left:10px">Main d'œuvre :</span>
+          <div style="display:inline-flex;border:1px solid #DDD9CE;border-radius:6px;overflow:hidden">
+            <button onClick="{{ moPrestataire }}" style="font-size:13px;padding:7px 14px;border:0;cursor:pointer;border-right:1px solid #DDD9CE;background:{{ moBgExterne }};color:{{ moFgExterne }}">Prestataire</button>
+            <button onClick="{{ moFamiliale }}" style="font-size:13px;padding:7px 14px;border:0;cursor:pointer;background:{{ moBgFamiliale }};color:{{ moFgFamiliale }}">Familiale</button>
+          </div>
           <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
             <span style="font-size:13px;color:#5C6157">Horizon :</span>
             <select value="{{ v.horizon }}" onChange="{{ on.horizon }}" style="padding:7px 10px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-size:13px">
@@ -466,6 +588,17 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
               <div style="font-size:12px;color:#5C6157;line-height:1.45">{{ k.det }}</div>
             </div>
           </sc-for>
+        </div>
+
+        <div style="background:#F1E6CC;border:1px solid #DDD9CE;border-radius:8px;padding:16px 20px;margin:18px 0;font-size:13.5px;line-height:1.6">
+          <b>Main d'œuvre manuelle économisée pendant la transition</b> <span style="color:#5C6157">— indicateur physique, jamais dans la trésorerie</span><br>
+          ≈ <b style="font-family:'JetBrains Mono',monospace">{{ moHeuresTxt }}</b> de main d'œuvre manuelle non engagée sur la transition.
+          <sc-if value="{{ moExterne }}" hint-placeholder-val="{{ true }}">
+            <br>≈ <b style="font-family:'JetBrains Mono',monospace">{{ moEuroTxt }}</b> de prestation évitée <span style="color:#A5433A">— indicatif, hors trésorerie</span>.
+          </sc-if>
+          <sc-if value="{{ moFamilialeActive }}" hint-placeholder-val="{{ false }}">
+            <br><span style="color:#5C6157">Temps redéployable sur l'exploitation.</span>
+          </sc-if>
         </div>
 
         <figure style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
@@ -738,8 +871,11 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = {
-      step: 0, vueFV: '1', palisManuel: false,
+      step: 0, vueFV: '1', palisManuel: false, moExterne: true,
       aideOuverte: false, detailOuvert: false, magOuvert: false,
+      voletProdOuvert: false, voletProdOverrides: {},
+      voletReposOuvert: false, voletReposOverrides: {}, voletReposCourtNoue: false,
+      voletPlantierOuvert: false, voletPlantierOverrides: {},
       oadReady: typeof window !== 'undefined' && !!window.OAD,
       v: {
         surfTot: 10, ageMoy: 38, riPct: 75, volco: 9000, prixKg: 7,
@@ -752,7 +888,8 @@ class Component extends DCLogic {
         motif: 'classique', coutArrachageHa: 4500, coutPrepaHa: 3500, coutPlant: 1.8,
         coutPalissageHa: 12000, coutIrrigHa: 5000, penaliteVSL: 15, survie: 50,
         entreeProd: 7, coutEntreplant: 4.5,
-        coutSurfaceHaAn: 0, coutRdtParKg: 0, coefRepos: 0,
+        coutSurfaceProdHaAn: 0, coutRdtParKg: 0, tauxHoraire: 17,
+        coutReposHaAn: 0, coutPlantierHaAn: 0, fracFormation: 0.35,
         sequence: 'aucune', horizon: '10'
       }
     };
@@ -777,6 +914,19 @@ class Component extends DCLogic {
       'Fercal': ['Précoce, sols calcaires ou humides (40 %).', 'Sensible à la carence magnésienne — veiller à l\'équilibre K/Mg du sol.'],
       'Riparia Gloire': ['Hors référentiel champenois du Guide 2025 — faible vigueur, sols fertiles et frais.', 'À valider auprès d\'un technicien ; peu adapté aux sols calcaires de Champagne.']
     };
+    // Détail par opération — volet transition (repos / plantier). Défauts nuls,
+    // opt-in strict : n'écrivent coutReposHaAn / coutPlantierHaAn que via "Reprendre".
+    this.REF_REPOS = [
+      { id: 'couvert',        lib: 'Couvert végétal',                       hHa: 0, intrantEuroHa: 0, src: 'à caler — dire d\'expert coop' },
+      { id: 'desherbage',     lib: 'Désherbage',                            hHa: 0, intrantEuroHa: 0, src: 'à caler — dire d\'expert coop' },
+      { id: 'sousSolage',     lib: 'Sous-solage léger',                     hHa: 0, intrantEuroHa: 0, src: 'à caler — dire d\'expert coop' },
+      { id: 'devitalisation', lib: 'Dévitalisation court-noué (optionnel)', hHa: 0, intrantEuroHa: 0, src: 'à caler — dire d\'expert coop' },
+    ];
+    this.REF_PLANTIER = [
+      { id: 'protection',    lib: 'Protection des jeunes plants',     hHa: 0, intrantEuroHa: 0, src: 'à caler — dire d\'expert coop' },
+      { id: 'entretienPal',  lib: 'Entretien du palissage posé',      hHa: 0, intrantEuroHa: 0, src: 'à caler — dire d\'expert coop' },
+      { id: 'remplacement',  lib: 'Remplacement des reprises ratées', hHa: 0, intrantEuroHa: 0, src: 'à caler — dire d\'expert coop' },
+    ];
     this.CLONES = {
       'Pinot noir': [['115','Régulier, port moins retombant, production inférieure aux clones 927 et 779'],['927','Régulier, apte à la production de vin rouge'],['779','Régulier, apte à la production de vin rouge'],['792','RAS'],['872','RAS'],['870','RAS'],['521','Grappes plus petites mais plus nombreuses'],['386','Pellicule plus épaisse, baies moins colorées'],['743','Tendance à faire des fourches'],['871','RAS'],['375','RAS'],['292','RAS'],['666','Régulier'],['236','RAS'],['780','RAS'],['665','RAS'],['668','Vins dilués en cas de surproduction'],['389','Vins dilués en cas de surproduction'],['388','Vins dilués en cas de surproduction']],
       'Meunier': [['977','Plus tardif, régulier'],['900','Mutations réverses plus fréquentes'],['817','Plus précoce, régulier'],['865','RAS'],['978','RAS'],['818','Plus précoce, régulier'],['924','RAS'],['864','Degré irrégulier'],['791','Plus précoce, régulier'],['925','RAS'],['983','Mutations réverses plus fréquentes']],
@@ -931,14 +1081,82 @@ class Component extends DCLogic {
       irrigation: v.irrigation === '1', coutIrrigHa: +v.coutIrrigHa || 0,
       coutEntreplant: +v.coutEntreplant || 0, survie: Math.max(0.01, (+v.survie || 50) / 100),
       entreeProd: +v.entreeProd || 7, prixKg: +v.prixKg || 0,
-      coutSurfaceHaAn: +v.coutSurfaceHaAn || 0, coutRdtParKg: +v.coutRdtParKg || 0,
-      coefRepos: +v.coefRepos || 0,
+      coutSurfaceProdHaAn: +v.coutSurfaceProdHaAn || 0, coutRdtParKg: +v.coutRdtParKg || 0,
+      coutReposHaAn: +v.coutReposHaAn || 0, coutPlantierHaAn: +v.coutPlantierHaAn || 0,
+      tauxHoraire: +v.tauxHoraire || 0,
       // chantier 5 : loyerAn porte sur la surface de la PARCELLE (g.surf), pas sur
       // toute l'exploitation — le régime de faire-valoir de l'étape 2 ne s'applique
       // qu'aux flux attribuables à la parcelle (voir OAD.repartir, README §10).
       fv: { regime: v.regime, loyerAn: (+v.loyerHa || 0) * g.surf,
         partRecolte: (+v.partRecolte || 0) / 100, partCouts: (+v.partCouts || 0) / 100 }
     };
+
+    // Volet 1 — détail par opération (préremplissage opt-in, jamais injecté dans inp
+    // tant que l'utilisateur n'a pas cliqué « Reprendre cette estimation »).
+    const voletBase = OAD ? OAD.proposerVoletProduction(g.densite, +v.tauxHoraire || 0) : { lignes: [] };
+    const voletProdLignes = voletBase.lignes.map(l => {
+      const ov = s.voletProdOverrides[l.id] || {};
+      const hHa = ov.hHa !== undefined ? (+ov.hHa || 0) : l.hHa;
+      const euroHa = ov.euroHa !== undefined ? (+ov.euroHa || 0) : l.euroHa;
+      return {
+        id: l.id, lib: l.lib, src: l.src, type: l.type === 'manuel' ? 'manuel' : 'mécanisé',
+        hHaVal: ov.hHa !== undefined ? ov.hHa : Math.round(l.hHa * 100) / 100,
+        euroHaVal: ov.euroHa !== undefined ? ov.euroHa : Math.round(l.euroHa),
+        hHa, euroHa,
+        onHInput: (e) => { const val = e.target.value; this.setState(st => ({ voletProdOverrides: { ...st.voletProdOverrides, [l.id]: { ...(st.voletProdOverrides[l.id] || {}), hHa: val } } })); },
+        onEInput: (e) => { const val = e.target.value; this.setState(st => ({ voletProdOverrides: { ...st.voletProdOverrides, [l.id]: { ...(st.voletProdOverrides[l.id] || {}), euroHa: val } } })); }
+      };
+    });
+    const voletProdTotalEuroHa = voletProdLignes.reduce((acc, l) => acc + l.euroHa, 0);
+    const voletProdHeuresManuellesHa = voletProdLignes.filter(l => l.type === 'manuel').reduce((acc, l) => acc + l.hHa, 0);
+
+    // Volet transition — repos (anti-double-compte #3 : entretien récurrent uniquement,
+    // jamais l'installation déjà comptée en investissement ponctuel). Défauts nuls (à
+    // caler — dire d'expert coop) ; la ligne "dévitalisation" n'apparaît que si cochée.
+    const reposRefs = this.REF_REPOS.filter(o => o.id !== 'devitalisation' || s.voletReposCourtNoue);
+    const voletReposLignes = reposRefs.map(o => {
+      const ov = s.voletReposOverrides[o.id] || {};
+      const baseEuroHa = o.hHa * (+v.tauxHoraire || 0) + o.intrantEuroHa;
+      const hHa = ov.hHa !== undefined ? (+ov.hHa || 0) : o.hHa;
+      const euroHa = ov.euroHa !== undefined ? (+ov.euroHa || 0) : baseEuroHa;
+      return {
+        id: o.id, lib: o.lib, src: o.src,
+        hHaVal: ov.hHa !== undefined ? ov.hHa : Math.round(o.hHa * 100) / 100,
+        euroHaVal: ov.euroHa !== undefined ? ov.euroHa : Math.round(baseEuroHa),
+        hHa, euroHa,
+        onHInput: (e) => { const val = e.target.value; this.setState(st => ({ voletReposOverrides: { ...st.voletReposOverrides, [o.id]: { ...(st.voletReposOverrides[o.id] || {}), hHa: val } } })); },
+        onEInput: (e) => { const val = e.target.value; this.setState(st => ({ voletReposOverrides: { ...st.voletReposOverrides, [o.id]: { ...(st.voletReposOverrides[o.id] || {}), euroHa: val } } })); }
+      };
+    });
+    const voletReposTotalEuroHa = voletReposLignes.reduce((acc, l) => acc + l.euroHa, 0);
+
+    // Volet transition — plantier. "Taille de formation" propose une base dérivée du
+    // volet production (proposerVoletProduction) × fraction de formation (défaut 0,35,
+    // éditable) ; le reste (protection, palissage posé, remplacement des reprises) est
+    // à caler, nul par défaut.
+    const fracFormation = Math.max(0, Math.min(1, +v.fracFormation || 0));
+    const plantierRefs = [
+      this.REF_PLANTIER[0],
+      { id: 'tailleFormation', lib: 'Taille de formation', hHa: voletProdHeuresManuellesHa * fracFormation,
+        intrantEuroHa: 0, base: voletProdTotalEuroHa * fracFormation,
+        src: 'Dérivé — volet production × fraction de formation (éditable)' },
+      this.REF_PLANTIER[1], this.REF_PLANTIER[2]
+    ];
+    const voletPlantierLignes = plantierRefs.map(o => {
+      const ov = s.voletPlantierOverrides[o.id] || {};
+      const baseEuroHa = o.base !== undefined ? o.base : (o.hHa * (+v.tauxHoraire || 0) + o.intrantEuroHa);
+      const hHa = ov.hHa !== undefined ? (+ov.hHa || 0) : o.hHa;
+      const euroHa = ov.euroHa !== undefined ? (+ov.euroHa || 0) : baseEuroHa;
+      return {
+        id: o.id, lib: o.lib, src: o.src,
+        hHaVal: ov.hHa !== undefined ? ov.hHa : Math.round(o.hHa * 100) / 100,
+        euroHaVal: ov.euroHa !== undefined ? ov.euroHa : Math.round(baseEuroHa),
+        hHa, euroHa,
+        onHInput: (e) => { const val = e.target.value; this.setState(st => ({ voletPlantierOverrides: { ...st.voletPlantierOverrides, [o.id]: { ...(st.voletPlantierOverrides[o.id] || {}), hHa: val } } })); },
+        onEInput: (e) => { const val = e.target.value; this.setState(st => ({ voletPlantierOverrides: { ...st.voletPlantierOverrides, [o.id]: { ...(st.voletPlantierOverrides[o.id] || {}), euroHa: val } } })); }
+      };
+    });
+    const voletPlantierTotalEuroHa = voletPlantierLignes.reduce((acc, l) => acc + l.euroHa, 0);
 
     let out = {
       etapes, v, on: this.on,
@@ -965,6 +1183,20 @@ class Component extends DCLogic {
       detailChevron: s.detailOuvert ? '−' : '+',
       magOuvert: s.magOuvert, toggleMaG: () => this.setState(st => ({ magOuvert: !st.magOuvert })),
       magChevron: s.magOuvert ? '−' : '+',
+      voletProdOuvert: s.voletProdOuvert, toggleVoletProd: () => this.setState(st => ({ voletProdOuvert: !st.voletProdOuvert })),
+      voletProdChevron: s.voletProdOuvert ? '−' : '+',
+      voletProdLignes,
+      reprendreVoletProd: () => this.setState(st => ({ v: { ...st.v, coutSurfaceProdHaAn: String(Math.round(voletProdTotalEuroHa)) } })),
+      voletReposOuvert: s.voletReposOuvert, toggleVoletRepos: () => this.setState(st => ({ voletReposOuvert: !st.voletReposOuvert })),
+      voletReposChevron: s.voletReposOuvert ? '−' : '+',
+      voletReposLignes,
+      voletReposCourtNoue: s.voletReposCourtNoue,
+      toggleReposCourtNoue: () => this.setState(st => ({ voletReposCourtNoue: !st.voletReposCourtNoue })),
+      reprendreVoletRepos: () => this.setState(st => ({ v: { ...st.v, coutReposHaAn: String(Math.round(voletReposTotalEuroHa)) } })),
+      voletPlantierOuvert: s.voletPlantierOuvert, toggleVoletPlantier: () => this.setState(st => ({ voletPlantierOuvert: !st.voletPlantierOuvert })),
+      voletPlantierChevron: s.voletPlantierOuvert ? '−' : '+',
+      voletPlantierLignes,
+      reprendreVoletPlantier: () => this.setState(st => ({ v: { ...st.v, coutPlantierHaAn: String(Math.round(voletPlantierTotalEuroHa)) } })),
       reportPalis: () => this.setState({ palisManuel: false }),
       coutPalissageAffiche: coutPalisEffectif,
       palisBadge: s.palisManuel ? '· édité à la main' : '· prérempli depuis la géométrie',
@@ -982,6 +1214,10 @@ class Component extends DCLogic {
     // éditables par l'utilisateur (volSortieArr, plafond, rendMean, EC).
     const nf = (x, d = 2) => (typeof x !== 'number' || isNaN(x)) ? String(x) : x.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: d });
     const oui = b => b ? 'oui' : 'non';
+    out.voletProdTotalTxt = nf(voletProdTotalEuroHa, 0) + ' €/ha';
+    out.voletProdHeuresTxt = nf(voletProdHeuresManuellesHa, 1) + ' h/ha';
+    out.voletReposTotalTxt = nf(voletReposTotalEuroHa, 0) + ' €/ha';
+    out.voletPlantierTotalTxt = nf(voletPlantierTotalEuroHa, 0) + ' €/ha';
     out.printInpRows = [
       { lib: "Surface totale de l'exploitation", val: nf(inp.surfTot, 2), unite: 'ha', origine: 'Saisi' },
       { lib: 'Âge moyen du vignoble', val: nf(+v.ageMoy || 0, 0), unite: 'ans', origine: 'Saisi' },
@@ -1027,9 +1263,12 @@ class Component extends DCLogic {
       { lib: 'Survie des entreplants', val: nf(inp.survie * 100, 1), unite: '%', origine: 'Saisi' },
       { lib: 'Entrée en production (entreplants)', val: nf(inp.entreeProd, 0), unite: 'années', origine: 'Saisi' },
       { lib: 'Coût par entreplant', val: nf(inp.coutEntreplant, 2), unite: '€/pied', origine: 'Saisi' },
-      { lib: 'Charge liée à la surface', val: nf(inp.coutSurfaceHaAn, 0), unite: '€/ha/an', origine: 'Saisi — défaut 0' },
+      { lib: 'Charge liée à la surface (production)', val: nf(inp.coutSurfaceProdHaAn, 0), unite: '€/ha/an', origine: 'Saisi — défaut 0, ou repris du détail par opération' },
       { lib: 'Charge liée au rendement', val: nf(inp.coutRdtParKg, 2), unite: '€/kg', origine: 'Saisi — défaut 0' },
-      { lib: 'Coefficient de charge en jachère', val: nf(inp.coefRepos, 2), unite: '× surface', origine: 'Saisi — défaut 0' },
+      { lib: 'Charge de transition — repos', val: nf(inp.coutReposHaAn, 0), unite: '€/ha/an', origine: 'Saisi — défaut 0, ou repris du détail par opération (repos)' },
+      { lib: 'Charge de transition — plantier', val: nf(inp.coutPlantierHaAn, 0), unite: '€/ha/an', origine: 'Saisi — défaut 0, ou repris du détail par opération (plantier)' },
+      { lib: 'Fraction de formation (plantier)', val: nf(fracFormation, 2), unite: 'ratio', origine: 'Saisi — défaut 0,35, applique le volet production à la ligne "taille de formation"' },
+      { lib: 'Taux horaire chargé (volet 1)', val: nf(+v.tauxHoraire || 0, 2), unite: '€/h', origine: 'Saisi — défaut SMIC 2026 chargé ≈ 17' },
       { lib: 'Test de résistance — séquence', val: v.sequence, unite: '—', origine: 'Saisi' },
       { lib: 'Choc de rendement en test de résistance', val: nf(EC, 0), unite: 'kg/ha', origine: 'CÂBLÉ EN DUR — 3 440, non éditable' },
       { lib: 'Horizon de simulation', val: nf(inp.horizon, 0), unite: 'ans', origine: 'Saisi' }
@@ -1137,8 +1376,24 @@ class Component extends DCLogic {
     const chSQ = OAD.chargesEntretien('statuquo', sc.statuquo.kg, inp);
     const returnYear = 3 + inp.repos;
     let chargesEvitees = 0;
-    for (let t = 0; t < returnYear; t++) chargesEvitees += Math.max(0, (chSQ[t] || 0) - (chArr[t] || 0));
-    const chargesActives = inp.coutSurfaceHaAn > 0 || inp.coutRdtParKg > 0;
+    // chargesEntretien renvoie { parcelle, reste } (objets indexés par t), pas un
+    // tableau plat — .reste est identique aux deux scénarios (même surface hors
+    // parcelle) et s'annule dans la différence ; seule .parcelle porte l'écart.
+    for (let t = 0; t < returnYear; t++) chargesEvitees += Math.max(0, (chSQ.parcelle[t] || 0) - (chArr.parcelle[t] || 0));
+    const chargesActives = inp.coutSurfaceProdHaAn > 0 || inp.coutRdtParKg > 0 || inp.coutReposHaAn > 0 || inp.coutPlantierHaAn > 0;
+
+    // Indicateur MO économisée (F6/F7) : physique (h/ha), € indicatif à part.
+    // JAMAIS additionné à cashNet / la trésorerie / un KPI financier (invariant #2) —
+    // n'alimente que l'encadré dédié plus bas, jamais out.kpis ni les graphiques.
+    const mo = OAD.moEconomisee(sc.arrachage.kg, sc.statuquo.kg, inp, inp.tauxHoraire);
+    out.moHeuresTxt = mo.heuresHa.toFixed(1).replace('.', ',') + ' h/ha';
+    out.moEuroTxt = this.fmtE0(mo.euroIndicatifHa);
+    out.moExterne = s.moExterne;
+    out.moFamilialeActive = !s.moExterne;
+    out.moPrestataire = () => this.setState({ moExterne: true });
+    out.moFamiliale = () => this.setState({ moExterne: false });
+    out.moBgExterne = s.moExterne ? '#20291F' : '#fff'; out.moFgExterne = s.moExterne ? '#FAF9F5' : '#20291F';
+    out.moBgFamiliale = !s.moExterne ? '#20291F' : '#fff'; out.moFgFamiliale = !s.moExterne ? '#FAF9F5' : '#20291F';
 
     out.investTxt = this.fmtE0(invest);
     out.reserveReelleTxt = this.fmtE0(reserveReelle);

@@ -186,7 +186,8 @@ inp = { geo, surfTot, surfParc:g.surf, ageMoy, ageParc, repos, nbSortie,
         rendYearFn, rendFactorProjet, rendEstime, manquants, declinSQ,
         densite, coutArrachageHa, coutPrepaHa, coutPlant, coutPalissageHa,
         irrigation, coutIrrigHa, coutEntreplant, survie, entreeProd, prixKg,
-        coutSurfaceHaAn, coutRdtParKg, coefRepos, fv:{regime,loyerAn,…} }
+        coutSurfaceProdHaAn, coutRdtParKg, coutReposHaAn, coutPlantierHaAn,
+        tauxHoraire, fv:{regime,loyerAn,…} }
    │
    ▼  OAD.construireScenarios(inp)                        moteur-oad.js
 sc = { arrachage:     { kg:[…11 lignes t=0..10], eur:[…], investissement },
@@ -196,6 +197,7 @@ sc = { arrachage:     { kg:[…11 lignes t=0..10], eur:[…], investissement },
    ├─► cum(serieRep(sc.X))            → séries cumulées (trésorerie, selon la vue faire-valoir)
    ├─► OAD.manqueAGagner(...)         → tableau « manque à gagner »
    ├─► OAD.chargesEntretien(...)      → KPI « charges évitées en transition »
+   ├─► OAD.moEconomisee(...)          → encadré « main d'œuvre économisée » (h/ha, jamais dans cashNet — §11)
    └─► KPI directs (invest, reserveReelle, stockMin, ageApres…)
    │
    ▼  `out = { …tous les textes, couleurs, handlers, éléments <svg> React… }`
@@ -290,14 +292,24 @@ dérivée de la géométrie »).
 
 ### Étape 4 — Coûts et charges (suite) : charges d'entretien récurrentes
 
-Modèle surface/rendement (§11), **nulles par défaut** pour préserver la
-parité avec le classeur de référence tant qu'elles ne sont pas calées :
+Modèle à 3 volets (§11, refonte détaillée dans le journal d'arbitrages qui
+suit), **nulles par défaut** pour préserver la parité avec le classeur de
+référence tant qu'elles ne sont pas calées :
 
-| champ | unité | défaut |
-|---|---|---|
-| `coutSurfaceHaAn` | €/ha/an | 0 |
-| `coutRdtParKg` | €/kg | 0 |
-| `coefRepos` | × surface | 0 |
+| champ | unité | défaut | rôle |
+|---|---|---|---|
+| `coutSurfaceProdHaAn` | €/ha/an | 0 | vigne mature en production — et taux permanent du « reste » de l'exploitation |
+| `coutRdtParKg` | €/kg | 0 | vendange, transport, prestations récolte — proportionnel aux kg récoltés |
+| `coutReposHaAn` | €/ha/an | 0 | jachère après arrachage (`t < repos`) |
+| `coutPlantierHaAn` | €/ha/an | 0 | jeune vigne en formation (`repos ≤ t < repos+rampYears`) |
+| `tauxHoraire` | €/h | 17 (SMIC 2026 chargé) | conversion h → € dans les détails par opération ci-dessous |
+| `fracFormation` | ratio | 0,35 | applique le volet production à la ligne « taille de formation » du volet plantier |
+
+Chacun de ces trois taux de charge (`coutSurfaceProdHaAn`,
+`coutReposHaAn`, `coutPlantierHaAn`) peut être saisi directement ou
+**repris** d'un détail par opération dépliable (volets « production »,
+« repos », « plantier »), préremplissage opt-in décrit dans le journal
+d'arbitrages ci-dessous (F4).
 
 ### Étape 5 — Résultats
 
@@ -519,42 +531,125 @@ deux derniers cas, chaque point de la série trésorerie passe par
 ## 11. Charges d'entretien récurrentes — `chargesEntretien`
 
 Sans elles, **ne rien faire n'a aucun coût** dans le modèle, ce qui biaise
-systématiquement la comparaison en faveur du statu quo. Modèle en deux
-composantes (`moteur-oad.js:92`), neutre par défaut (`coutSurfaceHaAn =
-coutRdtParKg = 0`), et **décomposé parcelle / reste** depuis le chantier 5 :
+systématiquement la comparaison en faveur du statu quo. Modèle à **3
+volets** (`moteur-oad.js:127`, refonte détaillée dans le journal
+d'arbitrages ci-dessous), neutre par défaut (les trois taux à `0`), et
+**décomposé parcelle / reste** depuis le chantier 5 :
 
-- **Charge de surface** (`coutSurfaceHaAn`, €/ha/an) : sol, palissage,
-  entretien hors récolte. Persiste tant que la surface est gérée — **y
-  compris la jeune vigne en établissement**.
+- **Charge de surface**, déclinée en **trois taux exclusifs dans le
+  temps** pour le scénario arrachage : `coutReposHaAn` (jachère),
+  `coutPlantierHaAn` (jeune vigne en formation) et `coutSurfaceProdHaAn`
+  (vigne mature — c'est aussi le taux permanent appliqué au « reste » de
+  l'exploitation et aux scénarios statu quo / complantation, toujours en
+  production).
 - **Charge de rendement** (`coutRdtParKg`, €/kg) : vendange, transport,
   prestations. Proportionnelle aux kg réellement récoltés → s'annule
-  d'elle-même en repos et en établissement puisque `recolteParcelle` exclut
-  déjà la parcelle non productive.
+  d'elle-même en repos et en plantier puisque `recolteParcelle` exclut
+  déjà la parcelle non productive sur cette fenêtre.
 
 ```
 surfRest = surfTot − surfParc,  S = surfParc
+rampYears = inp.rampYears ?? ramp.length   // 3 par défaut
 
 scénario 'arrachage' :
-  coefParc          = coefRepos  si t < repos   (jachère : charge de surface réduite)
-                     = 1           sinon          (jeune vigne : charge de surface pleine)
-  surfGereeParcelle = coefParc·S
+  csParc = coutReposHaAn      si t < repos                        (jachère)
+         = coutPlantierHaAn   si repos ≤ t < repos + rampYears     (jeune vigne en formation)
+         = coutSurfaceProdHaAn  sinon                              (vigne mature)
 
 scénarios 'statuquo' / 'complantation' :
-  surfGereeParcelle = S                    // parcelle toujours gérée en plein
+  csParc = coutSurfaceProdHaAn                // parcelle toujours en production
 
-charge_parcelle(t) = coutSurfaceHaAn·surfGereeParcelle + coutRdtParKg·recolteParcelle(t)
-charge_reste(t)    = coutSurfaceHaAn·surfRest          + coutRdtParKg·recolteReste(t)
+charge_parcelle(t) = csParc·S              + coutRdtParKg·recolteParcelle(t)
+charge_reste(t)    = coutSurfaceProdHaAn·surfRest + coutRdtParKg·recolteReste(t)
 ```
-`charge_parcelle(t) + charge_reste(t)` = comportement figé avant le
-chantier 5 (identique en valeur totale). La fonction retourne désormais
-`{ parcelle, reste }` (deux maps indexées par année) au lieu d'une seule
-map fusionnée.
+La fonction retourne `{ parcelle, reste }` (deux maps indexées par année,
+non fusionnées — un piège classique est de les traiter comme un tableau
+plat, voir le journal d'arbitrages ci-dessous).
 
 Branchée **par scénario** : le différentiel entre statu quo et arrachage
 pendant la transition capte « ce que l'arrachage évite » (la vendange de
 la parcelle, pas sa charge de surface) — c'est le KPI « Charges évitées en
-transition » de l'étape 5 (affiché seulement si au moins une des deux
-charges est non nulle), purement dérivé et jamais réinjecté dans le calcul.
+transition » de l'étape 5 (affiché seulement si au moins un des quatre
+taux est non nul), purement dérivé et jamais réinjecté dans le calcul.
+
+### Journal d'arbitrages — Charges d'entretien, refonte 3 volets
+
+Chantier qui remplace le modèle à 2 composantes ci-dessus (figé avant ce
+chantier : `coutSurfaceHaAn` + `coefRepos`, un coefficient réducteur
+appliqué seulement pendant le repos, puis charge pleine dès la
+replantation) par le modèle à 3 volets décrit plus haut, ajoute un
+préremplissage par opération opt-in, et un indicateur physique de main
+d'œuvre économisée séparé de la trésorerie.
+
+**F4 — préremplissage opt-in par opération.**
+`OAD.proposerVoletProduction(densite, tauxHoraire)` (`moteur-oad.js:374`)
+calcule un détail par opération (taille, liage, ébourgeonnage, relevage,
+rognage — manuel ; sol, ferti-irrigation, traitements — mécanisé) à
+partir du référentiel `REF_OPS_MANUEL`/`REF_OPS_MECANISE`. Ce détail
+n'alimente **jamais** `inp` tant que l'utilisateur n'a pas cliqué « ↻
+Reprendre cette estimation » (`index.html`, boutons `reprendreVoletProd` /
+`reprendreVoletRepos` / `reprendreVoletPlantier`) : `coutSurfaceProdHaAn`,
+`coutReposHaAn` et `coutPlantierHaAn` restent à `0` tant qu'on ne clique
+pas dessus. Opt-in strict : les snapshots de parité (§1, totaux `610349` /
+`52954`) restent inchangés tant qu'aucun de ces trois champs n'a été
+repris.
+
+**F5 / F5a — volet transition en deux sous-phases absolues (repos /
+plantier).** Remplace `coefRepos` et l'hypothèse « établissement = charge
+pleine » du modèle précédent, qui appliquait `coutSurfaceHaAn` en plein
+dès la replantation — y compris pendant la formation de la jeune vigne,
+alors qu'aucune vendange n'est encore rentrée. Les deux sous-phases sont
+des **taux absolus indépendants** (pas un coefficient multiplicatif de
+`coutSurfaceProdHaAn`) : `coutReposHaAn` pour la jachère (`t < repos`),
+`coutPlantierHaAn` pour la jeune vigne en formation
+(`repos ≤ t < repos + rampYears`), chacun éditable directement ou repris
+d'un détail par opération dédié (sous-blocs « Repos » et « Plantier »,
+`index.html`). Encadré anti-double-compte affiché dans l'UI : ce volet ne
+couvre que l'entretien récurrent, jamais l'installation (arrachage,
+préparation, plants, palissage), déjà comptée dans l'investissement
+ponctuel (`invArr`, §12).
+
+**F6 — heures = indicateur physique, jamais monétisé dans le calcul.**
+`OAD.heuresManuellesParAnnee` (`moteur-oad.js:396`) et `OAD.moEconomisee`
+(`moteur-oad.js:411`) calculent un différentiel d'heures manuelles
+(h/ha) entre arrachage et statu quo sur la fenêtre de transition. Ce
+différentiel — et lui seul — alimente l'encadré « Main d'œuvre
+économisée » de l'étape 5 (`index.html`) : il n'entre **jamais** dans
+`cashNet`, la trésorerie ou un KPI financier. Garde-fou vérifié par
+`tests/parite.test.js` (§7 du fichier de tests) : `cashNet` des 3
+scénarios est identique, que l'indicateur soit calculé ou non.
+
+**F7 — toggle prestataire / familiale.**
+`state.moExterne` (défaut `true`, prestataire — hypothèse majoritaire en
+Champagne) bascule l'affichage de l'encadré MO, sans jamais toucher au
+calcul : en mode prestataire, `mo.euroIndicatifHa` (heures × taux
+horaire) s'affiche en plus, avec la mention explicite « indicatif, hors
+trésorerie » ; en mode familiale, seul le texte « temps redéployable »
+apparaît, sans équivalent €. Le toggle ne pilote qu'un affichage
+conditionnel côté `index.html` — jamais un paramètre de
+`construireScenarios`.
+
+**Provenance à deux étages.**
+1. Agrégats **€/ha Cerfrance** (temps et coûts par hectare, source
+   professionnelle agrégée), ventilés par opération via le **barème de la
+   tâche de l'Avenant n°217 à la convention collective des exploitations
+   viticoles de la Champagne délimitée (IDCC 8216)**, étendu le
+   08/09/2021 — `REF_OPS_MANUEL` (`moteur-oad.js:350`), exprimé en heures
+   pour 1000 pieds.
+2. **€/h : SMIC 2026 chargé ≈ 17 €/h** (`TAUX_HORAIRE_DEFAUT`,
+   `moteur-oad.js:369`), éditable dans l'UI (`v.tauxHoraire`).
+
+**Caveat — le barème 217 est un plancher, pas une moyenne.** C'est un
+tarif de tâche (rémunération professionnelle minimale par unité
+d'ouvrage), pas une mesure du temps réellement passé sur le terrain : le
+temps réel est souvent supérieur. Repères indicatifs (UMC) : taille
+≈ 200 h/ha, liage ≈ 90 h/ha, relevage ≈ 120 h/ha, rognage ≈ 60 h/ha — à
+comparer, densité par densité, aux h/ha issues du barème 217. Les postes
+mécanisés (sol, ferti-irrigation, traitements — `REF_OPS_MECANISE`,
+`moteur-oad.js:361`) et les coûts de repos/plantier (`REF_REPOS`/
+`REF_PLANTIER`, `index.html`) sont, eux, entièrement **à caler sur des
+données coopératives réelles** : nuls par défaut, badgés « à caler — dire
+d'expert coop » dans l'UI.
 
 ## 12. Assemblage des scénarios — `construireScenarios`
 
@@ -712,10 +807,20 @@ Tous calculés dans `renderVals()` (`index.html:765`), après
 | — dont % de couverture | `couv = reserveReelle / invest` | Financement |
 | — théorique | `reserveTheo = volSortieArr × surfParc × nbSortie × prixKg` | Financement |
 | Effort net après réserve | `effortNet = max(0, invest − reserveReelle)` | Financement |
-| Charges évitées en transition | `Σ_{t=0}^{returnYear−1} max(0, chSQ[t] − chArr[t])`, avec `returnYear = 3+repos` — affiché seulement si `coutSurfaceHaAn>0 \|\| coutRdtParKg>0` | Exploitation |
+| Charges évitées en transition | `Σ_{t=0}^{returnYear−1} max(0, chSQ.parcelle[t] − chArr.parcelle[t])`, avec `returnYear = 3+repos` — affiché seulement si l'un des quatre taux (`coutSurfaceProdHaAn`, `coutRdtParKg`, `coutReposHaAn`, `coutPlantierHaAn`) est `>0` (`chargesActives`) | Exploitation |
 | Tension maximale de trésorerie | `creux = min_t (arr_cum[t] − sq_cum[t])`, où `arr_cum`/`sq_cum` sont les séries cumulées selon la vue faire-valoir active | Risque |
 | Réserve minimale en transition | `stockMin = min_t sc.arrachage.kg[t].stockHa`, alerte si `< 4000` kg/ha (`seuilReserve`) | Risque |
 | Effet technique du renouvellement | `ageApres = (ageMoy·surfTot − ageParc·surfParc)/surfTot` ; `gainAge = ageMoy − ageApres` | Risque |
+
+`chargesEntretien` renvoie `{ parcelle, reste }` (§11) : le KPI ne lit que
+`.parcelle`, qui seule porte l'écart de phase (repos/plantier/production)
+propre au scénario arrachage — `.reste` est identique aux deux scénarios
+comparés et s'annulerait dans la différence de toute façon.
+
+Séparé de ce tableau, un encadré dédié (non listé ici, jamais dans
+`out.kpis`) affiche l'indicateur physique « main d'œuvre économisée »
+(F6/F7, voir le journal d'arbitrages en §11) — volontairement hors grille
+KPI puisqu'il n'est pas un montant financier.
 
 `serieRep(scn)` choisit, selon le bouton actif (**Ensemble / Part
 exploitant / Part propriétaire**), soit `row.cashNet` directement, soit
@@ -767,8 +872,13 @@ la main avec `React.createElement('svg', …)`, méthode par méthode :
   (`ramp`), survie et délai de complantation (`survie`, `entreeProd`).
 - **Coût de stockage de la réserve négligé.**
 - **Charges d'entretien récurrentes nulles par défaut** — tant qu'elles ne
-  sont pas calées (`coutSurfaceHaAn`, `coutRdtParKg`), le statu quo reste
-  gratuit dans le modèle et la comparaison est optimiste pour le statu quo.
+  sont pas calées (`coutSurfaceProdHaAn`, `coutRdtParKg`, `coutReposHaAn`,
+  `coutPlantierHaAn`), le statu quo reste gratuit dans le modèle et la
+  comparaison est optimiste pour le statu quo. Le référentiel manuel
+  (`REF_OPS_MANUEL`, barème Avenant 217) est un **plancher** de tarif de
+  tâche, pas une moyenne de temps réel ; les postes mécanisés et les coûts
+  repos/plantier sont, eux, entièrement à caler sur données coop (voir le
+  journal d'arbitrages, §11).
 - **Porte-greffe, clones, fiche conseil** : purement informatifs, n'entrent
   jamais dans `inp` ni dans le calcul.
 - **Règles AOC modélisées** : écartement rang ≤ 2,00 m, pied 0,70–1,50 m,

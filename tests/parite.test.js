@@ -109,9 +109,13 @@ const INP_A = {
   survie: 0.5,
   entreeProd: 7,
   prixKg: 7,
-  coutSurfaceHaAn: 0,
+  // chantier 6 : modèle de charges à 3 volets (production / repos / plantier),
+  // remplace l'ancien coutSurfaceHaAn/coefRepos (voir moteur-oad.js:113-126).
+  // Tous à 0 par défaut ici : opt-in strict, snapshots ci-dessous inchangés.
+  coutSurfaceProdHaAn: 0,
   coutRdtParKg: 0,
-  coefRepos: 0,
+  coutReposHaAn: 0,
+  coutPlantierHaAn: 0,
   fv: { regime: 'propriete', loyerAn: 3000, partRecolte: 0.33, partCouts: 0.33 }
 };
 
@@ -349,8 +353,52 @@ section('5. Décomposition parcelle / reste (chantier 5)');
 
 // Charges d'entretien non nulles pour que la décomposition parcelle/reste
 // de coucheEuro/chargesEntretien soit réellement exercée (INP_A les a à 0).
-const INP_E_CHARGES = { ...INP_A, declinSQ: 0, coutSurfaceHaAn: 1200, coutRdtParKg: 0.15 };
+// Chantier 6 : les 3 volets (production / repos / plantier) sont désormais
+// tous non nuls et distincts, pour exercer chargesEntretien sur ses 3 phases.
+const INP_E_CHARGES = {
+  ...INP_A, declinSQ: 0,
+  coutSurfaceProdHaAn: 1200, coutReposHaAn: 300, coutPlantierHaAn: 700, coutRdtParKg: 0.15
+};
 const SC_E = OAD.construireScenarios(INP_E_CHARGES);
+
+// chargesEntretien renvoie { parcelle, reste } (objets indexés par t) — voir
+// moteur-oad.js:127-150. Ces 3 tests figent le montant exact porté par la
+// parcelle pour chacune des 3 phases du scénario arrachage :
+//   totParcelle(t) = csParc(t) × S + coutRdtParKg × recolteParcelle(t)
+// où csParc vaut coutReposHaAn (t < repos), coutPlantierHaAn (repos ≤ t <
+// repos+rampYears) ou coutSurfaceProdHaAn (t ≥ repos+rampYears). Avec
+// repos=1 et rampYears=ramp.length=3, recolteParcelle est nulle pour
+// t < repos+rampYears=4 (voir simulerReserveKg : returnYear = 3+repos = 4),
+// donc le terme rendement s'annule de lui-même en repos et en plantier —
+// seule la phase production porte une charge rendement non nulle.
+const CH_ARR_E = OAD.chargesEntretien('arrachage', SC_E.arrachage.kg, INP_E_CHARGES);
+const S_E = INP_E_CHARGES.surfParc;
+const REPOS_E = INP_E_CHARGES.repos;
+const RAMP_E = INP_E_CHARGES.ramp.length;
+
+test('volet transition (arrachage) — repos (t < repos) : coutReposHaAn × S, récolte nulle', () => {
+  SC_E.arrachage.kg.forEach(row => {
+    if (row.t >= REPOS_E) return;
+    assertClose(row.recolteParcelle, 0, 1e-6, `t=${row.t}`);
+    assertClose(CH_ARR_E.parcelle[row.t] || 0, INP_E_CHARGES.coutReposHaAn * S_E, 1e-6, `t=${row.t}`);
+  });
+});
+
+test('volet transition (arrachage) — plantier (repos ≤ t < repos+rampYears) : coutPlantierHaAn × S (+ charge rendement)', () => {
+  SC_E.arrachage.kg.forEach(row => {
+    if (!(row.t >= REPOS_E && row.t < REPOS_E + RAMP_E)) return;
+    const attendu = INP_E_CHARGES.coutPlantierHaAn * S_E + INP_E_CHARGES.coutRdtParKg * row.recolteParcelle;
+    assertClose(CH_ARR_E.parcelle[row.t] || 0, attendu, 1e-6, `t=${row.t}`);
+  });
+});
+
+test('volet transition (arrachage) — production (t ≥ repos+rampYears) : coutSurfaceProdHaAn × S (+ charge rendement)', () => {
+  SC_E.arrachage.kg.forEach(row => {
+    if (row.t < REPOS_E + RAMP_E) return;
+    const attendu = INP_E_CHARGES.coutSurfaceProdHaAn * S_E + INP_E_CHARGES.coutRdtParKg * row.recolteParcelle;
+    assertClose(CH_ARR_E.parcelle[row.t] || 0, attendu, 1e-6, `t=${row.t}`);
+  });
+});
 
 test('coucheEuro : venteRaisinParcelle + venteRaisinReste = venteRaisin, à chaque année, 3 scénarios', () => {
   SCENARIOS.forEach(k => {
@@ -411,6 +459,98 @@ test('surfParc = surfTot, régime métayage : le reste (sortieInsuff) reste 100 
     assertClose(rep.exp, (1 - fv.partRecolte) * (row.venteRaisinParcelle + row.cashRI)
       - (1 - fv.partCouts) * row.coutsParcelle + resteNet, 1e-6, `t=${row.t}`);
   });
+});
+
+// ----------------------------------------------------------------------
+// Section 6 — Fonctions pures : référentiel temps de travaux, volet
+// transition et indicateur MO économisée (chantier 3 / prompt 7).
+//
+// Ces fonctions sont volontairement hors du calcul financier : préremplissage
+// opt-in (proposerVoletProduction) et indicateur physique parallèle
+// (heuresManuellesParAnnee, moEconomisee). Voir moteur-oad.js:340-419.
+// ----------------------------------------------------------------------
+
+section('6. Fonctions pures — volet transition & MO économisée');
+
+test('proposerVoletProduction(8000, 17).heuresManuellesHa ≈ 364', () => {
+  const r = OAD.proposerVoletProduction(8000, 17);
+  // somme des h1000 de REF_OPS_MANUEL (16+8.5+4.5+14+2.5=45.5) × densite/1000
+  assertClose(r.heuresManuellesHa, 364, 1e-6);
+});
+
+test("heuresManuellesParAnnee('arrachage', …) : 0 en repos, hProd × 0.35 en plantier, hProd en production", () => {
+  const inp = { densite: 8000, repos: 1, ramp: [0.3, 0.6, 1] }; // rampYears = ramp.length = 3
+  const rowsKg = [{ t: 0 }, { t: 1 }, { t: 2 }, { t: 3 }, { t: 4 }, { t: 5 }];
+  const hProd = OAD.REF_OPS_MANUEL.reduce((s, o) => s + o.h1000 * inp.densite / 1000, 0);
+  const h = OAD.heuresManuellesParAnnee('arrachage', rowsKg, inp);
+  assertClose(h[0], 0, 1e-9, 'repos t=0 (t < repos=1)');
+  assertClose(h[1], hProd * 0.35, 1e-9, 'plantier t=1');
+  assertClose(h[2], hProd * 0.35, 1e-9, 'plantier t=2');
+  assertClose(h[3], hProd * 0.35, 1e-9, 'plantier t=3');
+  assertClose(h[4], hProd, 1e-9, 'production t=4 (t ≥ repos+rampYears=4)');
+  assertClose(h[5], hProd, 1e-9, 'production t=5');
+});
+
+test("heuresManuellesParAnnee('statuquo', …) : hProd à chaque année (jamais de repos/plantier hors arrachage)", () => {
+  const inp = { densite: 8000, repos: 1, ramp: [0.3, 0.6, 1] };
+  const rowsKg = [{ t: 0 }, { t: 1 }, { t: 4 }];
+  const hProd = OAD.REF_OPS_MANUEL.reduce((s, o) => s + o.h1000 * inp.densite / 1000, 0);
+  const h = OAD.heuresManuellesParAnnee('statuquo', rowsKg, inp);
+  h.forEach((val, i) => assertClose(val, hProd, 1e-9, `t=${rowsKg[i].t}`));
+});
+
+test('moEconomisee : heuresHa ≥ 0, et strictement positif quand la transition (repos+plantier) existe', () => {
+  const mo = OAD.moEconomisee(SC_BASE.arrachage.kg, SC_BASE.statuquo.kg, INP_A, 17);
+  assert.ok(mo.heuresHa >= 0, `heuresHa=${mo.heuresHa} < 0`);
+  assert.ok(mo.heuresHa > 0, 'INP_A a repos=1 et une phase plantier : heuresHa devrait être > 0');
+  assertClose(mo.euroIndicatifHa, mo.heuresHa * 17, 1e-9, 'euroIndicatifHa = heuresHa × tauxHoraire');
+});
+
+test('moEconomisee : nul quand il n\'y a pas de fenêtre de transition (repos=0, rampYears=0)', () => {
+  // rampYears explicite à 0 (le ?? de heuresManuellesParAnnee/moEconomisee ne retombe
+  // sur inp.ramp.length que si rampYears est undefined — 0 est bien préservé).
+  const inpSansTransition = { ...INP_A, repos: 0, rampYears: 0 };
+  const scSansTransition = OAD.construireScenarios(inpSansTransition);
+  const mo = OAD.moEconomisee(scSansTransition.arrachage.kg, scSansTransition.statuquo.kg, inpSansTransition, 17);
+  assertClose(mo.heuresHa, 0, 1e-6, 'repos=0 et rampYears=0 : aucune fenêtre repos/plantier, donc aucun écart d\'heures');
+});
+
+// ----------------------------------------------------------------------
+// Section 7 — Garde-fou #2 : l'indicateur MO économisée (heures et son
+// équivalent € indicatif) ne fuit JAMAIS dans cashNet / la trésorerie.
+//
+// INP_A a ses charges financières (coutSurfaceProdHaAn, coutRdtParKg,
+// coutReposHaAn, coutPlantierHaAn) à 0 — "financièrement inactif" — alors
+// que la transition (repos=1 + plantier) est bien réelle, donc l'indicateur
+// MO est "actif" (heuresHa > 0, cf. section 6). Le test vérifie que calculer
+// cet indicateur, quel que soit son état, ne modifie ni ne recoupe jamais
+// construireScenarios/cashNet : moEconomisee lit sc.*.kg en lecture seule et
+// ne renvoie qu'un objet séparé {heuresHa, euroIndicatifHa}.
+// ----------------------------------------------------------------------
+
+section('7. Garde-fou — indicateur MO économisée hors trésorerie');
+
+test("cashNet des 3 scénarios est identique, que l'indicateur MO soit calculé ou non", () => {
+  const scSansIndicateurMO = OAD.construireScenarios(INP_A);
+  const snapshotAvant = SCENARIOS.map(k => scSansIndicateurMO[k].eur.map(r => r.cashNet));
+
+  // "charges heures/MO actives" : la transition existe (heuresHa > 0, cf.
+  // section 6), on calcule l'indicateur — mais rien n'est réinjecté dans inp.
+  const mo = OAD.moEconomisee(scSansIndicateurMO.arrachage.kg, scSansIndicateurMO.statuquo.kg, INP_A, 17);
+  assert.ok(mo.heuresHa > 0, 'précondition : indicateur MO réellement actif pour ce test');
+
+  const scAvecIndicateurMO = OAD.construireScenarios(INP_A);
+  SCENARIOS.forEach((k, i) => {
+    const snapshotApres = scAvecIndicateurMO[k].eur.map(r => r.cashNet);
+    assert.deepStrictEqual(snapshotApres, snapshotAvant[i], `${k} : cashNet a changé après calcul de l'indicateur MO`);
+  });
+});
+
+test("moEconomisee ne mute pas les lignes kg qu'on lui passe (lecture seule)", () => {
+  const sc = OAD.construireScenarios(INP_A);
+  const avant = JSON.parse(JSON.stringify(sc.arrachage.kg));
+  OAD.moEconomisee(sc.arrachage.kg, sc.statuquo.kg, INP_A, 17);
+  assert.deepStrictEqual(sc.arrachage.kg, avant, 'sc.arrachage.kg a été modifié par moEconomisee');
 });
 
 // ----------------------------------------------------------------------

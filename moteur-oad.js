@@ -110,32 +110,39 @@ function repartir(row, fv) {
 
 function cumul(rows, key) { let s = 0; return rows.map(r => (s += (typeof key === 'function' ? key(r) : r[key]))); }
 
-/* Charges d'entretien récurrentes — modèle (c) : décomposition surface / rendement.
-   - charge SURFACE (coutSurfaceHaAn, €/ha/an) : sol, palissage, entretien indépendant
-     du rendement ; persiste tant que la surface est gérée — Y COMPRIS la jeune vigne en
-     établissement — et tombe au coefRepos pendant la jachère de la parcelle arrachée.
+/* Charges d'entretien récurrentes — modèle à 3 volets : production / repos / plantier.
+   - charge SURFACE, déclinée en trois taux (€/ha/an) selon la phase de la parcelle :
+     coutSurfaceProdHaAn (vigne mature, en production — c'est aussi le taux appliqué au
+     « reste » de l'exploitation, toujours en production), coutReposHaAn (jachère après
+     arrachage) et coutPlantierHaAn (jeune vigne en formation, rampYears années après le
+     repos). Ce découpage remplace l'ancienne hypothèse « établissement = charge pleine »
+     (coefRepos appliqué uniquement pendant le repos, plein tarif dès la plantation) : le
+     plantier a désormais son propre taux, distinct de la production.
    - charge RENDEMENT (coutRdtParKg, €/kg) : vendange, transport, prestations à la récolte ;
      proportionnelle aux kg réellement récoltés. Elle s'annule donc d'elle-même en repos et
-     en établissement, puisque `recolte` exclut la parcelle non productive.
-   Branchée PAR SCÉNARIO : le différentiel inter-scénario capte « ce que l'arrachage évite »
-   (la vendange de la parcelle pendant la transition, PAS sa charge de surface) sans aucun
-   crédit additif. Neutre par défaut (coûts nuls ⇒ parité classeur préservée). */
+     en plantier, puisque `recolte` exclut la parcelle non productive.
+   Branchée PAR SCÉNARIO : seul le scénario arrachage traverse repos puis plantier ; statu
+   quo et complantation restent en production sur toute la période. Neutre par défaut
+   (coûts nuls ⇒ parité classeur préservée). */
 function chargesEntretien(scenario, rowsKg, inp) {
-  const cs = inp.coutSurfaceHaAn || 0, cr = inp.coutRdtParKg || 0;
-  const coefRepos = inp.coefRepos ?? 0;
+  const csProd  = inp.coutSurfaceProdHaAn ?? inp.coutSurfaceHaAn ?? 0; // vigne en production
+  const csRepos = inp.coutReposHaAn    || 0;   // sous-phase repos (arrachage)
+  const csPlant = inp.coutPlantierHaAn || 0;   // sous-phase plantier en formation (arrachage)
+  const cr      = inp.coutRdtParKg     || 0;
+  const rampYears = inp.rampYears ?? (inp.ramp ? inp.ramp.length : 3);
   const surfRest = inp.surfTot - inp.surfParc, S = inp.surfParc;
   const parcelle = {}, reste = {};
   rowsKg.forEach(r => {
-    let surfGereeParcelle;
+    let csParc;
     if (scenario === 'arrachage') {
-      const coefParc = (r.t < inp.repos) ? coefRepos : 1; // jachère réduite -> jeune vigne pleine
-      surfGereeParcelle = coefParc * S;
+      if (r.t < inp.repos)                     csParc = csRepos;  // repos
+      else if (r.t < inp.repos + rampYears)    csParc = csPlant;  // plantier
+      else                                     csParc = csProd;   // production
     } else {
-      surfGereeParcelle = S;                  // statu quo & complantation : parcelle gérée en plein
+      csParc = csProd;                                            // statu quo & complantation
     }
-    // recolteParcelle/recolteReste excluent déjà la parcelle non productive
-    const totParcelle = cs * surfGereeParcelle + cr * r.recolteParcelle;
-    const totReste     = cs * surfRest          + cr * r.recolteReste;
+    const totParcelle = csParc * S       + cr * r.recolteParcelle;
+    const totReste    = csProd * surfRest + cr * r.recolteReste;
     if (totParcelle) parcelle[r.t] = (parcelle[r.t] || 0) + totParcelle;
     if (totReste)    reste[r.t]    = (reste[r.t]    || 0) + totReste;
   });
@@ -330,11 +337,96 @@ function preconPorteGreffe(calcairePct, profondeur, drainage) {
     msg: 'Combinaison non couverte par l\u2019arbre du guide (voir tableau p. 38).' };
 }
 
+/* =====================================================================
+   Référentiel temps de travaux & taux horaire — préremplissage opt-in et
+   indicateur heures uniquement. Aucun branchement dans le moteur de calcul :
+   ces constantes ne modifient ni chargesEntretien ni construireScenarios.
+   ===================================================================== */
+
+// Référentiel temps de travaux — travaux MANUELS sur la vigne.
+// Source : Avenant n°217 à la CCT des exploitations viticoles de la Champagne
+// délimitée (IDCC 8216), barème indicatif du travail à la tâche, étendu 08/09/2021.
+// Unité : heures pour 1000 pieds (à multiplier par densité/1000 pour obtenir h/ha).
+const REF_OPS_MANUEL = [
+  { id: 'taille',     lib: 'Prétaille + taille',        h1000: 16,  src: 'Avenant 217' },
+  { id: 'liage',      lib: 'Liage (charpentes + pieds)', h1000: 8.5, src: 'Avenant 217' },
+  { id: 'ebourg',     lib: 'Ébourgeonnage / épamprage',  h1000: 4.5, src: 'Avenant 217' },
+  { id: 'relevage',   lib: 'Relevage / palissage',       h1000: 14,  src: 'Avenant 217' },
+  { id: 'rognage',    lib: 'Rognage (mécanisé + finition cisaille)', h1000: 2.5, src: 'Avenant 217' },
+];
+
+// Travaux MÉCANISÉS : temps tracteur, hors barème à la tâche. Temps à sourcer
+// (fiches technico-éco Chambre d'agriculture Marne / données CUMA). Défaut 0 h,
+// éditable. L'intrant associé est un coût € pur (engrais, phyto), à caler Cerfrance.
+const REF_OPS_MECANISE = [
+  { id: 'sol',        lib: 'Travaux du sol / désherbage', hHa: 0, intrantEuroHa: 0, src: 'à sourcer' },
+  { id: 'ferti',      lib: 'Fertilisation (épandage)',    hHa: 0, intrantEuroHa: 0, src: 'à sourcer / engrais Cerfrance' },
+  { id: 'traitements',lib: 'Traitements (application)',   hHa: 0, intrantEuroHa: 0, src: 'à sourcer / phyto Cerfrance' },
+];
+
+// Clé de conversion euros. SMIC 2026 = 11,88 €/h brut ; coût chargé permanent
+// ≈ ×1,43. Éditable dans l'UI.
+const TAUX_HORAIRE_DEFAUT = 17;      // €/h chargé (permanent) — src: SMIC 2026 chargé
+const SMIC_2026_BRUT = 11.88;        // €/h — référence
+
+// Propose le volet 1 (surface en production) à partir des opérations.
+// Retourne le détail par opération + les totaux, pour affichage et bouton "reprendre".
+function proposerVoletProduction(densite, tauxHoraire, opsManuel = REF_OPS_MANUEL, opsMeca = REF_OPS_MECANISE) {
+  const manuel = opsManuel.map(o => {
+    const hHa = o.h1000 * densite / 1000;
+    return { id: o.id, lib: o.lib, hHa, euroHa: hHa * tauxHoraire, src: o.src, type: 'manuel' };
+  });
+  const meca = opsMeca.map(o => ({
+    id: o.id, lib: o.lib, hHa: o.hHa || 0,
+    euroHa: (o.hHa || 0) * tauxHoraire + (o.intrantEuroHa || 0),
+    src: o.src, type: 'mecanise'
+  }));
+  const lignes = [...manuel, ...meca];
+  return {
+    lignes,
+    totalEuroHa:   lignes.reduce((s, l) => s + l.euroHa, 0),
+    totalHeuresHa: lignes.reduce((s, l) => s + l.hHa, 0),      // heures manuelles + mécanisées
+    heuresManuellesHa: manuel.reduce((s, l) => s + l.hHa, 0),  // sert l'indicateur MO
+  };
+}
+
+// Heures MANUELLES par année et par scénario, en h/ha, à partir du timing moteur.
+// Année en production -> total manuel ; repos -> 0 ; plantier -> fraction de formation.
+// fracFormation par défaut 0.35 (à caler), appliquée aux seules opérations de formation.
+function heuresManuellesParAnnee(scenario, rowsKg, inp, opsManuel = REF_OPS_MANUEL, fracFormation = 0.35) {
+  const densite = inp.densite, rampYears = inp.rampYears ?? (inp.ramp ? inp.ramp.length : 3);
+  const hProd = opsManuel.reduce((s, o) => s + o.h1000 * densite / 1000, 0);
+  return rowsKg.map(r => {
+    if (scenario !== 'arrachage') return hProd;
+    if (r.t < inp.repos) return 0;                              // repos : pas de vigne
+    if (r.t < inp.repos + rampYears) return hProd * fracFormation; // plantier : formation réduite
+    return hProd;                                               // production
+  });
+}
+
+// Indicateur "MO économisée" (F6) : différentiel d'heures manuelles arrachage vs statu quo,
+// sur la fenêtre de transition. Physique ; l'équivalent € n'est qu'indicatif (F7).
+// euroIndicatifHa n'entre JAMAIS dans cashNet, la trésorerie ou un KPI financier —
+// il ne doit être consommé que par l'affichage indicatif (F7).
+function moEconomisee(scArr, scSQ, inp, tauxHoraire, opsManuel = REF_OPS_MANUEL, fracFormation = 0.35) {
+  const hArr = heuresManuellesParAnnee('arrachage', scArr, inp, opsManuel, fracFormation);
+  const hSQ  = heuresManuellesParAnnee('statuquo',  scSQ,  inp, opsManuel, fracFormation);
+  const rampYears = inp.rampYears ?? (inp.ramp ? inp.ramp.length : 3);
+  const fin = inp.repos + rampYears;
+  let heuresHa = 0;
+  for (let t = 0; t < Math.min(fin, hArr.length); t++) heuresHa += Math.max(0, hSQ[t] - hArr[t]);
+  return { heuresHa, euroIndicatifHa: heuresHa * tauxHoraire }; // € indicatif, JAMAIS dans la trésorerie
+}
+
 if (typeof module !== 'undefined') module.exports =
   { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
-    chargesEntretien, coutPalissage, PRIX_PALISSAGE_LUTENVI, FILS_PAR_TAILLE, preconPorteGreffe };
+    chargesEntretien, coutPalissage, PRIX_PALISSAGE_LUTENVI, FILS_PAR_TAILLE, preconPorteGreffe,
+    REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
+    proposerVoletProduction, heuresManuellesParAnnee, moEconomisee };
 if (typeof window !== 'undefined') window.OAD =
   { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
-    chargesEntretien, coutPalissage, PRIX_PALISSAGE_LUTENVI, FILS_PAR_TAILLE, preconPorteGreffe };
+    chargesEntretien, coutPalissage, PRIX_PALISSAGE_LUTENVI, FILS_PAR_TAILLE, preconPorteGreffe,
+    REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
+    proposerVoletProduction, heuresManuellesParAnnee, moEconomisee };
 
 }

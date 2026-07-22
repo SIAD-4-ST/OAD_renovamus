@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node \"tests/parite.test.js\")",
+      "Bash(node -e ' *)",
+      "Bash(node --check /tmp/_dc_script_check.js)",
+      "Bash(node --check 'C:\\\\Users\\\\ghoudard\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-ghoudard-OneDrive---COMITE-INTERPROFESSIONNEL-DU-VIN-DE-CHAMPAGNE-01-Projets-Transverses-2026-10-renouvellement-vignoble-02-Outils-et-livrables-OAD-Renovamus-OAD-renovamus\\\\1d801789-97be-452c-b1f0-0302fce670dd\\\\scratchpad/_dc_script_check.js')",
+      "Bash(echo \"SYNTAX OK\")",
+      "Bash(python -c \"import http.server\")"
+    ]
+  }
+}
