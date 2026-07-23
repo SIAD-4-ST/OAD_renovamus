@@ -390,6 +390,18 @@ const FILS_PAR_TAILLE = {
   guyot: 4, cordon: 4, arcure_simple: 4, arcure_double: 5
 };
 
+/* =====================================================================
+   Largeur équivalente — chantier "réconciliation géométrie/registre"
+   (option A). En mode registre, la surface directrice vient du registre
+   parcellaire, pas du rectangle saisi : la largeur en est déduite,
+   jamais l'inverse — la longueur de rang saisie par l'utilisateur n'est
+   ni corrigée ni recalculée (voir README, journal d'arbitrages).
+   ===================================================================== */
+function largeurEquivalente(surfHa, longueurM) {
+  if (!(surfHa > 0) || !(longueurM > 0)) return 0;
+  return surfHa * 10000 / longueurM;
+}
+
 function coutPalissage(geo, prix, opt) {
   prix = Object.assign({}, PRIX_PALISSAGE, prix || {});
   opt = opt || {};
@@ -596,14 +608,14 @@ function moEconomisee(scArr, scSQ, inp, tauxHoraire, opsManuel = REF_OPS_MANUEL,
 
 if (typeof module !== 'undefined') module.exports =
   { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
-    chargesEntretien, coutPalissage, PRIX_PALISSAGE, FILS_PAR_TAILLE,
+    chargesEntretien, coutPalissage, PRIX_PALISSAGE, FILS_PAR_TAILLE, largeurEquivalente,
     coutProtectionPlant, PRIX_PROTECTION_PLANT, preconPorteGreffe,
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee,
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge };
 if (typeof window !== 'undefined') window.OAD =
   { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
-    chargesEntretien, coutPalissage, PRIX_PALISSAGE, FILS_PAR_TAILLE,
+    chargesEntretien, coutPalissage, PRIX_PALISSAGE, FILS_PAR_TAILLE, largeurEquivalente,
     coutProtectionPlant, PRIX_PROTECTION_PLANT, preconPorteGreffe,
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee,

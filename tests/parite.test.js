@@ -962,6 +962,70 @@ test("trajectoireAge est un indicateur physique pur : prixKg (ou tout autre para
 });
 
 // ----------------------------------------------------------------------
+// Section 13 — Largeur équivalente (chantier "réconciliation
+// géométrie/registre", option A). En mode registre, la surface directrice
+// vient du registre parcellaire ; la largeur du rectangle saisi n'a plus
+// de sens et est remplacée par une largeur dérivée (surf / longueur).
+// La longueur, elle, n'est jamais recalculée : voir README, journal
+// d'arbitrages, pour la justification économique (W neutre au ratio par
+// hectare de coutPalissage, L ne l'est pas).
+// ----------------------------------------------------------------------
+
+section('13. Largeur équivalente (chantier réconciliation géométrie/registre)');
+
+test('largeurEquivalente(1,2345 ha, 180 m) : valeur attendue explicite', () => {
+  assertClose(OAD.largeurEquivalente(1.2345, 180), 1.2345 * 10000 / 180, 1e-9);
+});
+
+test('largeurEquivalente : longueur nulle ou négative → 0', () => {
+  assertClose(OAD.largeurEquivalente(1.5, 0), 0, 1e-9);
+  assertClose(OAD.largeurEquivalente(1.5, -10), 0, 1e-9);
+});
+
+test('largeurEquivalente : surface nulle ou négative → 0', () => {
+  assertClose(OAD.largeurEquivalente(0, 180), 0, 1e-9);
+  assertClose(OAD.largeurEquivalente(-1, 180), 0, 1e-9);
+});
+
+// Reproduit la dérivation de index.html:geometrie(v, surfImposee) — W vient
+// exclusivement de largeurEquivalente(surfImposee, L), jamais de v.geoW —
+// pour prouver que deux largeurs saisies différentes convergent vers le
+// même coutPalissage().totalHa en mode registre (option A, non re-arbitrée).
+function geometrieRegistre(geoWSaisie, surfImposee, L, eR) {
+  const W = OAD.largeurEquivalente(surfImposee, L); // v.geoW (geoWSaisie) ignoré
+  const nbRangs = Math.max(1, Math.floor(W / eR));
+  return { nbRangs, L, surf: surfImposee, W };
+}
+
+test('invariance : à surface et écartements constants, la largeur saisie n\'affecte plus coutPalissage().totalHa en mode registre', () => {
+  const surf = 0.3, L = 200, eR = 1.10;
+  const geoA = geometrieRegistre(50, surf, L, eR);   // largeur saisie = 50 m (ignorée)
+  const geoB = geometrieRegistre(999, surf, L, eR);  // largeur saisie = 999 m (ignorée)
+  assertClose(geoA.W, geoB.W, 1e-9, 'largeur dérivée identique quelle que soit la largeur saisie à l\'origine');
+  const cpA = OAD.coutPalissage(geoA, null, { espacementPiquet: 6, nbFils: 4 });
+  const cpB = OAD.coutPalissage(geoB, null, { espacementPiquet: 6, nbFils: 4 });
+  assertClose(cpA.totalHa, cpB.totalHa, 1e-9,
+    'coutPalissage ne lit ni W ni la largeur saisie — seuls nbRangs/L/surf comptent');
+});
+
+test('sensibilité conservée : à surface constante, L=200 puis L=50 → totalHa augmente d\'au moins 3 500 €/ha (garde-fou anti-régression)', () => {
+  const surf = 0.3, eR = 1.10;
+  const geo200 = { nbRangs: Math.max(1, Math.floor(OAD.largeurEquivalente(surf, 200) / eR)), L: 200, surf };
+  const geo50  = { nbRangs: Math.max(1, Math.floor(OAD.largeurEquivalente(surf, 50) / eR)), L: 50, surf };
+  const cp200 = OAD.coutPalissage(geo200, null, { espacementPiquet: 6, nbFils: 4 });
+  const cp50  = OAD.coutPalissage(geo50, null, { espacementPiquet: 6, nbFils: 4 });
+  assert.ok(cp50.totalHa - cp200.totalHa >= 3500,
+    `attendu un surcoût ≥ 3 500 €/ha entre L=200 (${cp200.totalHa.toFixed(0)} €/ha) et L=50 (${cp50.totalHa.toFixed(0)} €/ha), obtenu ${(cp50.totalHa - cp200.totalHa).toFixed(0)} €/ha`);
+});
+
+test('cohérence : surfHa × 10000 / largeurEquivalente(surfHa, L) === L (la largeur dérivée redonne la surface imposée)', () => {
+  const surfHa = 0.4567, L = 150;
+  const W = OAD.largeurEquivalente(surfHa, L);
+  assertClose(surfHa, W * L / 10000, 1e-9,
+    'la largeur dérivée, remultipliée par la longueur, redonne exactement la surface imposée (surf === surfParc)');
+});
+
+// ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------
 

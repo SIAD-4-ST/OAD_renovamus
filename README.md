@@ -1,8 +1,9 @@
 # OAD Renouvellement du vignoble — Parcours guidé
 
 Simulateur pédagogique qui compare, sur une parcelle champenoise, **trois
-trajectoires à 10 ans** : arrachage-replantation, complantation
-(entreplants) et statu quo (ne rien faire). L'utilisateur avance dans un
+trajectoires sur un horizon de 10 ou 25 ans** (au choix, étape 5) :
+arrachage-replantation, complantation (entreplants) et statu quo (ne rien
+faire). L'utilisateur avance dans un
 **parcours guidé en 5 étapes** (Exploitation → Parcelle → Plantation →
 Coûts → Résultats) ; à chaque étape, une synthèse chiffrée se met à jour
 en continu dans la colonne de droite.
@@ -23,6 +24,7 @@ en continu dans la colonne de droite.
 4. [Le parcours en 5 étapes](#4-le-parcours-en-5-étapes)
 5. [Le flux de données, de la frappe au résultat](#5-le-flux-de-données-de-la-frappe-au-résultat)
 6. [Glossaire des champs de saisie](#6-glossaire-des-champs-de-saisie)
+    - [6bis. Le registre parcellaire — un mode de saisie alternatif](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif)
 7. [Le moteur kg — `simulerReserveKg`](#7-le-moteur-kg--simulerreservekg)
 8. [Ce qui distingue les 3 scénarios](#8-ce-qui-distingue-les-3-scénarios)
 9. [La couche € — `coucheEuro`](#9-la-couche--coucheeuro)
@@ -116,8 +118,8 @@ maquette), rendu directement jouable dans un navigateur grâce à
     panneaux dépliables.
   - `<sc-for list="{{ tableau }}" as="x">…</sc-for>` : répète son contenu
     pour chaque élément de `tableau`, exposé sous le nom `x`. Utilisé pour
-    la navigation latérale (`etapes`), les listes de KPI (`kpis`), les
-    lignes de tableaux (`detailRows`, `magRows`…).
+    la navigation latérale (`etapes`), les listes de KPI (`kpisFinance`,
+    `kpisPhysique`), les lignes de tableaux (`detailRows`, `magRows`…).
   - Les attributs `onClick="{{ fonction }}"`, `onInput="{{ on.xxx }}"` etc.
     branchent les événements DOM sur des fonctions exposées par le
     composant.
@@ -157,11 +159,11 @@ renseigné.
 
 | # | Étape | Contenu |
 |---|---|---|
-| 1 | **Votre exploitation** | Surface totale, âge moyen du vignoble, VolCo, prix du raisin, réserve individuelle actuelle (curseur en % du plafond). Ce sont les repères globaux, dénominateurs de toute la comparaison. |
-| 2 | **La parcelle que vous désignez** | Âge, taux de pieds manquants, rendement estimé, déclin en statu quo, régime de faire-valoir (propriété / fermage / métayage) et ses paramètres. |
+| 1 | **Votre exploitation** | Surface totale, âge moyen du vignoble, VolCo, prix du raisin, réserve individuelle actuelle (curseur en % du plafond). Ce sont les repères globaux, dénominateurs de toute la comparaison. Saisie manuelle par défaut, ou bascule vers un **registre parcellaire** (jeu d'exemple préchargé, en mémoire de session uniquement, aucun import de fichier pour l'instant) qui dérive surface totale et âge moyen d'un tableau de parcelles — voir [§6bis](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif). |
+| 2 | **La parcelle que vous désignez** | Âge, taux de pieds manquants, rendement estimé, déclin en statu quo, régime de faire-valoir (propriété / fermage / métayage) et ses paramètres. En mode registre, un sélecteur d'`idu` et des cases à cocher par ligne désignent la parcelle et en dérivent âge et taux de manquants (§6bis). |
 | 3 | **Votre projet de replantation** | Géométrie (longueur, largeur, écarts) avec contrôle en direct du cahier des charges AOC ; matériel végétal et conduite (porte-greffe, irrigation, montée en charge) avec fiche conseil ; aide au choix du matériel végétal (dépliable, purement informative) ; dimensionnement du palissage dérivé de la géométrie. |
-| 4 | **Coûts et charges** | Investissement ponctuel (arrachage, préparation, plant, palissage, irrigation, pénalité VSL), paramètres de la complantation (survie, entrée en production, coût par entreplant), charges d'entretien récurrentes (nulles par défaut). |
-| 5 | **Résultats** | Synthèse rédigée, sélecteur de vue (Ensemble / Part exploitant / Part propriétaire) et de test de résistance climatique, KPI en 2 familles typographiquement distinctes — décision financière (€) et effets physiques non monétisés (voir §17) —, encadré main d'œuvre économisée, graphique de stock de réserve (replié par défaut), détail annuel dépliable, tableau du manque à gagner. |
+| 4 | **Coûts et charges** | Investissement ponctuel (arrachage, préparation, plant, palissage, protection du jeune plant, irrigation, pénalité VSL), paramètres de la complantation (survie, entrée en production, coût par entreplant), charges d'entretien récurrentes (calées par défaut sur Cerfrance/MHCS pour 3 des 4 taux — voir §11). |
+| 5 | **Résultats** | Synthèse rédigée, sélecteur d'horizon (10 ou 25 ans), sélecteur de vue (Ensemble / Part exploitant / Part propriétaire), de test de résistance climatique et de mode main d'œuvre (Prestataire / Familiale — affichage seul, §11 F7), KPI en 2 familles typographiquement distinctes — décision financière (€) et effets physiques non monétisés (voir §17) —, encadré main d'œuvre économisée, graphiques de stock de réserve et de trajectoire d'âge (repliés par défaut), détail annuel dépliable, tableau du manque à gagner, et une fiche imprimable regroupant hypothèses, KPI (avec formule) et détail annuel des 3 scénarios (bouton « Imprimer », `window.print()`). |
 
 La colonne de droite (`<aside>`, « Synthèse en continu ») est visible à
 **toutes** les étapes : elle reprend un sous-ensemble des mêmes résultats
@@ -192,7 +194,7 @@ inp = { geo, surfTot, surfParc:g.surf, ageMoy, ageParc, repos, nbSortie,
         tauxHoraire, fv:{regime,loyerAn,…} }
    │
    ▼  OAD.construireScenarios(inp)                        moteur-oad.js
-sc = { arrachage:     { kg:[…11 lignes t=0..10], eur:[…], investissement },
+sc = { arrachage:     { kg:[…lignes t=0..horizon], eur:[…], investissement },
        complantation: { kg:[…],                  eur:[…], investissement },
        statuquo:      { kg:[…],                  eur:[…], investissement:0 } }
    │
@@ -216,9 +218,9 @@ indexés au même `t` : `sc.arrachage.kg[i]` et `sc.arrachage.eur[i]`
 décrivent la même année.
 
 **Il n'y a pas de debounce** : chaque frappe déclenche un recalcul complet
-des 3 scénarios sur 10 ans, plus tous les KPI et graphiques. Sur une
-machine normale, c'est instantané ; ça n'a jamais posé de problème de
-fluidité en pratique.
+des 3 scénarios sur l'horizon choisi (10 ou 25 ans), plus tous les KPI et
+graphiques. Sur une machine normale, c'est instantané ; ça n'a jamais posé
+de problème de fluidité en pratique.
 
 ## 6. Glossaire des champs de saisie
 
@@ -229,7 +231,7 @@ avec ces valeurs par défaut (constructeur du composant, `index.html`) :
 
 | champ (`v.xxx`) | unité | défaut | rôle |
 |---|---|---|---|
-| `surfTot` | ha | 1 | surface totale de l'exploitation — dénominateur de l'effet âge et des charges statu quo |
+| `surfTot` | ha | 10 | surface totale de l'exploitation — dénominateur de l'effet âge et des charges statu quo. Ignoré en mode registre parcellaire, où il est dérivé du registre (§6bis) |
 | `ageMoy` | ans | 38 | âge moyen du vignoble **avant** l'opération |
 | `riPct` (curseur) | % | 75 | niveau actuel de réserve individuelle, en % du plafond 10 000 kg/ha → `reserveInit = 10000 × riPct/100` |
 | `volco` | kg/ha | 9000 | volume commercialisable, fixé chaque année par le CIVC |
@@ -239,12 +241,12 @@ avec ces valeurs par défaut (constructeur du composant, `index.html`) :
 
 | champ | unité | défaut | rôle |
 |---|---|---|---|
-| `ageParc` | ans | 55 | âge de la parcelle candidate au renouvellement |
-| `manquants` | % | 15 | taux de pieds manquants → dimensionne la complantation |
+| `ageParc` | ans | 55 | âge de la parcelle candidate au renouvellement. Dérivé du registre en mode registre (§6bis) |
+| `manquants` | % | 15 | taux de pieds manquants → dimensionne la complantation. Dérivé du registre en mode registre (§6bis) |
 | `rendEstime` | kg/ha | 10500 | rendement actuel de la parcelle — sert au statu quo **et** à la complantation |
-| `declinSQ` | %/an | 0 | déclin annuel de rendement si on ne touche à rien (statu quo) |
+| `declinSQ` | %/an | 1 | déclin annuel de rendement si on ne touche à rien (statu quo) — défaut indicatif, à ajuster à la parcelle |
 | `regime` | propriete\|fermage\|metayage | propriete | régime de faire-valoir, pilote la répartition des flux (§10) |
-| `loyerHa` (si fermage) | €/ha/an | 3000 | loyer fermage → `fv.loyerAn = loyerHa × surfTot` |
+| `loyerHa` (si fermage) | €/ha/an | 3000 | loyer fermage → `fv.loyerAn = loyerHa × surfParc` (surface de la parcelle, pas de l'exploitation — voir §10) |
 | `partRecolte` (si métayage) | % | 33 | part de recettes au propriétaire |
 | `partCouts` (si métayage) | % | 33 | part de coûts au propriétaire |
 
@@ -254,9 +256,9 @@ avec ces valeurs par défaut (constructeur du composant, `index.html`) :
 
 | champ | unité | défaut |
 |---|---|---|
-| `geoL` (longueur) | m | 200 |
-| `geoW` (largeur) | m | 15 |
-| `ecartRang` | m | 1.10 |
+| `geoL` (longueur) | m | 100 |
+| `geoW` (largeur) | m | 100 |
+| `ecartRang` | m | 1 |
 | `ecartPied` | m | 1.10 |
 
 **Matériel & conduite :**
@@ -320,13 +322,72 @@ d'arbitrages ci-dessous (F4).
 
 | champ | défaut | rôle |
 |---|---|---|
+| `v.horizon` | `'10'` (10 ans) | sélecteur 10 / 25 ans → `inp.horizon` ; recalcule les 3 scénarios sur toute la durée choisie (§17) |
 | `sequence` (« Test de résistance ») | aucune | force une ou deux années à `12296,6 − 3440` kg/ha (écart-type régional), appliqué **à l'identique** aux 3 scénarios |
 | `state.vueFV` | `'1'` (Ensemble) | bascule Ensemble / Part exploitant / Part propriétaire — traverse `OAD.repartir()` avant cumul (§10) |
+| `state.moExterne` | `true` (Prestataire) | bascule Prestataire / Familiale de l'encadré « main d'œuvre économisée » — affichage uniquement, jamais dans le calcul (§11 F7) |
+
+## 6bis. Le registre parcellaire — un mode de saisie alternatif
+
+**Chantier 1.** Aux étapes 1 et 2, deux boutons « Saisie manuelle » /
+« Registre parcellaire » (`out.setSourceManuel` / `out.setSourceRegistre`,
+`index.html`) basculent `state.sourceParcellaire` (`'manuel'` par défaut).
+Quand `modeRegistre` (= `sourceParcellaire === 'registre'`) est actif,
+`surfTot`, `ageMoy`, `ageParc` et `manquants` ne sont plus des champs
+saisis directement : ils sont **dérivés d'un tableau de parcelles**, plutôt
+que d'un chiffre unique par champ — utile quand l'exploitation a déjà un
+registre parcellaire (type CIVC/douanes) sous la main.
+
+**Origine des données — jeu d'exemple, pas d'import réel.** `state.registreRows`
+est peuplé au chargement à partir d'une constante `REGISTRE_EXEMPLE_CSV`
+(`index.html`, chaîne CSV `;`-séparée codée en dur, 12 lignes), parsée par
+`parseRegistreCSV()` (résolution des colonnes par en-tête, indépendante de
+l'ordre ; normalisation de `situation` en `'plantee'`/`'arrachee'`).
+**Aucun import de fichier n'est câblé pour l'instant** — c'est prévu pour
+une prochaine version. Le registre **ne persiste pas** : ni envoyé, ni
+`localStorage` (rappel de la contrainte CLAUDE.md), il vit en mémoire de
+l'onglet et disparaît au rechargement — un bandeau dans l'UI le rappelle
+explicitement à l'utilisateur.
+
+**Étape 1 — agrégation exploitation.** `OAD.agregerRegistreExploitation(registreRows,
+campagne)` (`moteur-oad.js`) renvoie `{ surfTot, ageMoy }` :
+`surfTot` = somme de **toutes** les lignes (plantées + arrachées, une
+parcelle arrachée reste une surface de l'exploitation, en repos) ;
+`ageMoy` = moyenne pondérée par surface, **excluant** les lignes arrachées
+du numérateur et du dénominateur (une parcelle sans vigne en terre n'a pas
+d'âge de vigne). `v.campagne` (défaut : année courante du navigateur) sert
+de référence pour `age = campagne − anneePlant`.
+
+**Étape 2 — désignation de la parcelle.** Un sélecteur `idu` (`iduOptions`,
+les `idu` distincts parmi les lignes *plantées* uniquement) choisit un
+identifiant de parcelle ; un tableau de ses lignes (`parcelleLignesTable`)
+propose une case à cocher par ligne (`state.parcelleLignesExclues`) pour
+inclure/exclure une sous-ligne de la sélection — utile si un même `idu`
+regroupe des sous-parcelles hétérogènes. Les lignes retenues alimentent
+`OAD.agregerRegistreParcelle(lignesRetenues, campagne)` (`moteur-oad.js`),
+qui renvoie `surfParc`, `ageParc` et `tauxManquant` (pondérés par surface),
+ainsi que `cepage` (le cépage de plus grande surface cumulée dans la
+sélection) et `cepageMixte` (alerte purement informative si la sélection
+mélange plusieurs cépages — l'UI n'a qu'un seul champ cépage, voir §15).
+
+**Branchement dans `inp`.** En mode registre, `renderVals()` (`index.html`)
+substitue les 4 valeurs dérivées à celles de `state.v` : `inp.surfTot`,
+`inp.ageMoy`, `inp.ageParc`, `inp.manquants` (= `tauxManquant/100`)
+viennent du registre plutôt que des champs `v.surfTot`/`v.ageMoy`/
+`v.ageParc`/`v.manquants`. `agregParcelle.surfParc` cascade jusqu'à
+`fv.loyerAn = loyerHa × surfParcResolu` (§10). Depuis le chantier
+« réconciliation géométrie/registre » (§16), cette surface **passe
+par la géométrie** plutôt que de la court-circuiter :
+`geometrie(v, agregParcelle.surfParc)` reprend `surfImposee` telle
+quelle comme `g.surf` (donc `surfParcResolu = g.surf === agregParcelle.surfParc`,
+sans écart) et n'en dérive que la largeur équivalente — la densité, elle,
+continue de dépendre uniquement des écartements, indépendamment du mode
+actif.
 
 ## 7. Le moteur kg — `simulerReserveKg`
 
 C'est la fonction centrale (`moteur-oad.js:8`). Elle simule, année par
-année de `t=0` à `t=horizon` (10), le compte de réserve individuelle
+année de `t=0` à `t=horizon` (10 ans par défaut, ou 25 — §6), le compte de réserve individuelle
 (kg/ha) d'**un** scénario. Elle est appelée trois fois par
 `construireScenarios` (une fois par scénario), avec des paramètres
 différents.
@@ -461,7 +522,7 @@ le calcul présuppose déjà un réachat implicite compensant la mortalité.
 
 ## 9. La couche € — `coucheEuro`
 
-Transforme une série `kg` en série `€` (`moteur-oad.js:49`). Depuis le
+Transforme une série `kg` en série `€` (`moteur-oad.js:62`). Depuis le
 chantier 5, chaque flux est **décomposé entre la parcelle étudiée et le
 reste de l'exploitation**, pour que le régime de faire-valoir (§10) ne
 s'applique qu'aux flux attribuables à la parcelle :
@@ -506,7 +567,7 @@ disponibles.
 ## 10. Faire-valoir — `repartir`
 
 Répartit un flux `€` déjà calculé entre exploitant et propriétaire, **sans
-changer le total** (`moteur-oad.js:67`). Depuis le chantier 5, le régime ne
+changer le total** (`moteur-oad.js:96`). Depuis le chantier 5, le régime ne
 s'applique **qu'aux flux attribuables à la parcelle** — le reste de
 l'exploitation (récolte du reste, `sortieInsuff` mutualisée) reste 100 %
 exploitant quel que soit le régime choisi :
@@ -590,7 +651,7 @@ préremplissage par opération opt-in, et un indicateur physique de main
 d'œuvre économisée séparé de la trésorerie.
 
 **F4 — préremplissage opt-in par opération.**
-`OAD.proposerVoletProduction(densite, tauxHoraire)` (`moteur-oad.js:374`)
+`OAD.proposerVoletProduction(densite, tauxHoraire)` (`moteur-oad.js:550`)
 calcule un détail par opération (taille, liage, ébourgeonnage, relevage,
 rognage — manuel ; sol, ferti-irrigation, traitements — mécanisé) à
 partir du référentiel `REF_OPS_MANUEL`/`REF_OPS_MECANISE`. Ce détail
@@ -625,8 +686,8 @@ préparation, plants, palissage), déjà comptée dans l'investissement
 ponctuel (`invArr`, §12).
 
 **F6 — heures = indicateur physique, jamais monétisé dans le calcul.**
-`OAD.heuresManuellesParAnnee` (`moteur-oad.js:396`) et `OAD.moEconomisee`
-(`moteur-oad.js:411`) calculent un différentiel d'heures manuelles
+`OAD.heuresManuellesParAnnee` (`moteur-oad.js:572`) et `OAD.moEconomisee`
+(`moteur-oad.js:587`) calculent un différentiel d'heures manuelles
 (h/ha) entre arrachage et statu quo sur la fenêtre de transition. Ce
 différentiel — et lui seul — alimente l'encadré « Main d'œuvre
 économisée » de l'étape 5 (`index.html`) : il n'entre **jamais** dans
@@ -649,10 +710,10 @@ conditionnel côté `index.html` — jamais un paramètre de
    professionnelle agrégée), ventilés par opération via le **barème de la
    tâche de l'Avenant n°217 à la convention collective des exploitations
    viticoles de la Champagne délimitée (IDCC 8216)**, étendu le
-   08/09/2021 — `REF_OPS_MANUEL` (`moteur-oad.js:350`), exprimé en heures
+   08/09/2021 — `REF_OPS_MANUEL` (`moteur-oad.js:526`), exprimé en heures
    pour 1000 pieds.
 2. **€/h : SMIC 2026 chargé ≈ 17 €/h** (`TAUX_HORAIRE_DEFAUT`,
-   `moteur-oad.js:369`), éditable dans l'UI (`v.tauxHoraire`).
+   `moteur-oad.js:545`), éditable dans l'UI (`v.tauxHoraire`).
 
 **Caveat — le barème 217 est un plancher, pas une moyenne.** C'est un
 tarif de tâche (rémunération professionnelle minimale par unité
@@ -661,7 +722,7 @@ temps réel est souvent supérieur. Repères indicatifs (UMC) : taille
 ≈ 200 h/ha, liage ≈ 90 h/ha, relevage ≈ 120 h/ha, rognage ≈ 60 h/ha — à
 comparer, densité par densité, aux h/ha issues du barème 217. Les postes
 mécanisés (sol, ferti-irrigation, traitements — `REF_OPS_MECANISE`,
-`moteur-oad.js:361`) et les coûts de repos/plantier (`REF_REPOS`/
+`moteur-oad.js:537`) et les coûts de repos/plantier (`REF_REPOS`/
 `REF_PLANTIER`, `index.html`) sont, eux, entièrement **à caler sur des
 données coopératives réelles** : nuls par défaut, badgés « à caler — dire
 d'expert coop » dans l'UI.
@@ -721,7 +782,7 @@ séparément) sont hors périmètre de ce chantier.
 
 ## 12. Assemblage des scénarios — `construireScenarios`
 
-Point d'entrée principal du moteur (`moteur-oad.js:111`), appelé une fois
+Point d'entrée principal du moteur (`moteur-oad.js:152`), appelé une fois
 par rendu (`renderVals()`). Construit les paramètres communs (`base`),
 calcule les trois séries `kg`, puis les coûts ponctuels + récurrents, puis
 la couche `€`.
@@ -773,8 +834,10 @@ par ce chantier — d'où l'avertissement explicite affiché sous le champ
 source donnée, l'entreplant est sous-évalué de `tuteurU + cachePlant`
 (≈ 1,25 €/pied avec les prix ci-dessous) par rapport à l'arrachage.
 
-**Chiffrage de l'écart** (géométrie par défaut UI : 200×15 m, écarts
-1,10×1,10 → densite = 8 264 pieds/ha, surf = 0,30 ha) :
+**Chiffrage de l'écart** (géométrie de référence retenue pour ce chantier :
+200×15 m, écarts 1,10×1,10 → densite = 8 264 pieds/ha, surf = 0,30 ha — à
+distinguer des valeurs par défaut *actuelles* de l'UI, qui ont changé
+depuis, voir §6) :
 - Modèle palissage seul, ancien (6 lignes, LutEnVi 2025) : ≈ 13 116 €/ha.
 - Modèle palissage seul, nouveau (8 lignes, relevé fournisseur + gripple/MO
   LutEnVi conservés) : ≈ 14 577 €/ha.
@@ -971,7 +1034,7 @@ preconPorteGreffe(calcaire, profondeur, drainage) :
      drainage → match "approche" (le guide ne distingue pas ce cas)
   3. sinon → "hors-grille"
 ```
-`ARBRE_PG` est une table de 17 branches (`moteur-oad.js:225`) reproduisant
+`ARBRE_PG` est une table de 17 branches (`moteur-oad.js:472`) reproduisant
 les combinaisons calcaire × profondeur × drainage du guide, avec les
 porte-greffes envisageables et des renvois d'avertissement (ex. `161-49 C`
 : dépérissements signalés depuis 2008, déconseillé). Alimente les blocs
@@ -980,24 +1043,104 @@ composant) de l'étape 3 ; **n'entre jamais dans `inp`**.
 
 ## 16. Géométrie de plantation — `geometrie()`
 
-Calculée côté composant (méthode `geometrie(v)`, `index.html:642`), à
-partir de `geoL`, `geoW`, `ecartRang`, `ecartPied` :
+Calculée côté composant (méthode `geometrie(v, surfImposee)`,
+`index.html:1136`), à partir de `geoL`, `geoW`, `ecartRang`, `ecartPied`,
+et d'un second argument optionnel `surfImposee` (ha).
+
+**Mode manuel** (`surfImposee` absent) — comportement historique, inchangé :
 ```
 densite  = round(10000 / (eR × eP))              // pieds/ha
+W        = geoW                                   // saisi
 nbRangs  = max(1, floor(W / eR))
 piedsRang= max(1, floor(L / eP))
-surf     = round(L × W / 10000, 4)                // ha, 4 décimales
+surf     = round(L × W / 10000, 4)                // ha, 4 décimales — pilote inp.surfParc
 pieds    = nbRangs × piedsRang
-vsl      = eR ≥ 1.5                                // conduite semi-large si rangs larges
-aoc.rang   = eR ≤ 2.00
-aoc.pied   = 0.70 ≤ eP ≤ 1.50
-aoc.somme  = eR + eP ≤ 3.00
 ```
-`surf` devient `inp.surfParc` — **c'est la géométrie qui pilote la surface
-de la parcelle**, pas un champ de saisie direct. `vsl` déclenche la
+
+**Mode registre** (`surfImposee > 0`, chantier "réconciliation
+géométrie/registre") — la surface directrice est désormais celle du
+registre parcellaire (`agregParcelle.surfParc`), pas le rectangle saisi :
+```
+densite  = round(10000 / (eR × eP))              // pieds/ha, inchangé
+W        = OAD.largeurEquivalente(surfImposee, L) // dérivée, PAS geoW
+nbRangs  = max(1, floor(W / eR))                  // même formule, plancher conservateur
+piedsRang= max(1, floor(L / eP))
+surf     = surfImposee                            // EXACTEMENT — jamais recalculé depuis L×W
+pieds    = nbRangs × piedsRang
+```
+`L` (la longueur de rang saisie) n'est **jamais** corrigée ni recalculée,
+dans aucun des deux modes — voir journal d'arbitrages ci-dessous pour la
+justification. Dans les deux modes, `vsl = eR ≥ 1.5` déclenche la
 pénalité de rendement (`penaliteVSL`) et le conseil de diamètre de fil
-porteur. `aoc.*` alimente le bandeau de conformité au cahier des charges
+porteur ; `aoc.*` alimente le bandeau de conformité au cahier des charges
 homologué le 31/07/2025 (rang ≤ 2,00 m, pied 0,70–1,50 m, somme ≤ 3,00 m).
+
+### Journal d'arbitrages — réconciliation géométrie/registre (option A)
+
+**Constat de départ.** En mode registre, `renderVals()` pilotait déjà
+`inp.surfParc` (et donc `nbPlants`, `piedsAffiches`) depuis le registre
+parcellaire (chantier 1, §6bis), mais l'écran 3 laissait l'utilisateur
+saisir librement une largeur qui ne servait plus à rien de cohérent : la
+vignette « Surface » du bandeau affichait la surface du registre pendant
+que le rectangle saisi (L × W) donnait une tout autre valeur — incohérence
+visible et non signalée.
+
+**Décision : surface directrice = registre, largeur dérivée, longueur
+intouchable.** Plutôt que de laisser deux sources de surface coexister
+sans lien, la largeur devient `largeurEquivalente(surfImposee, L) =
+surfImposee × 10000 / L` (`moteur-oad.js`) : une fonction pure qui
+recalcule W pour que `L × W / 10000 = surfImposee` exactement. La
+longueur, elle, n'est **jamais** modifiée par l'outil.
+
+**Raison — asymétrie économique démontrée entre L et W.** Ramené à
+l'hectare, `coutPalissage()` (§14) ne dépend de la géométrie qu'à travers
+`nbRangs`, `L` et `surf` — jamais directement de `W`. En reformulant
+`nbRangs ≈ W / eR`, chaque poste par hectare se réduit à :
+
+| Poste | par hectare | dépend de |
+|---|---|---|
+| Fils (ml) | `nbFils × 10000 / eR` | ni L ni W |
+| Têtes de rang | `2 × 10000 / (eR × L)` | **L seul** |
+| Piquets intermédiaires | `(10000/eR) × (1/esp − 1/L)` | **L seul** |
+| Gripples | `nbFils × 10000 / (eR × L)` | **L seul** |
+
+**W est économiquement neutre au ratio par hectare — L ne l'est pas.**
+Avec les constantes `PRIX_PALISSAGE` actuelles (eR = 1,10 m, piquets tous
+les 6 m, 4 fils), passer d'un rang de 200 m à un rang de 50 m à surface
+égale renchérit le palissage de l'ordre de 4 000 à 5 000 €/ha (vérifié par
+`tests/parite.test.js`, §13, garde-fou ≥ 3 500 €/ha). Dériver la largeur
+plutôt que la longueur est donc le seul choix qui ne fausse pas
+silencieusement un poste de coût à cinq chiffres.
+
+**Limite assumée — la largeur affichée est un artefact de calcul, pas une
+mesure de terrain.** Une parcelle réelle issue d'un agrégat de lignes de
+registre (potentiellement plusieurs `idu`, formes irrégulières) n'est
+presque jamais un rectangle. La « largeur équivalente » n'a donc de sens
+que comme paramètre d'entrée de `coutPalissage()`, jamais comme grandeur à
+vérifier sur le terrain — d'où le libellé et la mention explicite dans
+l'UI (« la parcelle n'est pas un rectangle, cette largeur est un
+équivalent de calcul, pas une mesure de terrain »).
+
+**Limite assumée — biais conservateur du plancher sur `nbRangs`.**
+`nbRangs = max(1, floor(W / eR))` accepte `nbRangs × eR ≤ W` (un rang
+partiel ne se plante pas) : à largeur dérivée égale, le nombre de rangs
+réellement plantables est légèrement sous-estimé plutôt que
+sur-estimé — biais jugé préférable à l'inverse (sur-promettre un rang qui
+ne rentre pas).
+
+**Dette ouverte, non traitée ici.** La bonne cible à terme est de
+supprimer complètement la notion de largeur et de raisonner directement en
+mètres linéaires de rang par hectare dans `coutPalissage()` (refonte du
+moteur, hors périmètre de ce chantier — la fonction actuelle continue de
+lire `geo.nbRangs`/`geo.L`/`geo.surf`, jamais `geo.W`, ce qui a permis
+cette réconciliation sans toucher `coutPalissage()`). Restent également
+ouverts, à trancher séparément : la définition exacte de
+`surface_ss_parcelle` dans l'export registre (surface plantée ou
+déclarée, avec ou sans tournières — impacte la densité de pieds
+appliquée) ; l'opportunité d'introduire un champ « surface » explicite en
+mode manuel pour lui appliquer la même mécanique ; et le cas d'un `idu`
+multi-lignes aux longueurs de rang hétérogènes, où une longueur unique
+pour l'agrégat reste une approximation.
 
 ## 17. KPI et synthèse
 
@@ -1025,13 +1168,24 @@ identique aux deux scénarios comparés et s'annulerait dans la différence
 de toute façon.
 
 **Retirés de l'écran par le chantier P6** (toujours calculés, conservés
-dans `out.printKpiRows` pour la fiche imprimable — voir plus bas) :
+dans `out.printKpiRows` pour la fiche imprimable — voir ci-dessous) :
 « Tension maximale de trésorerie » (`creux = min_t (arr_cum[t] − sq_cum[t])`,
 la version *relative* au statu quo — remplacée à l'écran par le « Point
 bas de trésorerie » *absolu* ci-dessus, qui répond directement à « combien
 dois-je être en mesure de financer, et quand ») et « Charges évitées en
 transition » (`Σ_{t=0}^{returnYear−1} max(0, chSQ.parcelle[t] −
 chArr.parcelle[t])`, `returnYear = 3+repos`).
+
+**Fiche imprimable** (étape 5, bouton « Imprimer » → `window.print()`,
+mise en page dédiée via `@media print` dans `index.html`, masque nav/aside
+et n'affiche que `.print-sheet`) : un document d'audit autonome, distinct
+de l'écran, construit dans `renderVals()` à partir de 5 tableaux —
+`out.printInpRows` (rappel de toutes les hypothèses saisies), `out.printKpiRows`
+(tous les KPI, y compris ceux retirés de l'écran ci-dessus, chacun avec sa
+formule), et `out.printDetailArr` / `printDetailCompl` / `printDetailSQ`
+(détail annuel complet des 3 scénarios). Pensé pour qu'un chiffre affiché
+à l'écran puisse toujours être retracé jusqu'à sa formule et à l'hypothèse
+qui l'alimente, sans avoir à relire le code.
 
 Séparé de ces grilles, un encadré dédié (jamais dans `out.kpisFinance` ni
 `out.kpisPhysique`) affiche l'indicateur physique « main d'œuvre
@@ -1053,8 +1207,9 @@ Trois conventions tranchées avant codage :
 - **Pendant le repos (arrachage, `t < repos`)** : la parcelle sort du
   numérateur **et** du dénominateur (option B) — même règle que
   `agregerRegistreExploitation` pour les lignes « Arrachée » du registre
-  (chantier 1, §6) : une parcelle sans vigne en terre n'a pas d'âge de
-  vigne. Rejeté : la compter à l'âge 0 dès `t=0` (convention de l'ancien
+  (chantier 1, [§6bis](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif)) :
+  une parcelle sans vigne en terre n'a pas d'âge de vigne. Rejeté : la
+  compter à l'âge 0 dès `t=0` (convention de l'ancien
   KPI, flatteuse) ou la garder à l'écran avec un âge nul non distingué.
 - **Redémarrage à l'âge 0 ancré sur `repos`** (replantation physique, date
   de `invArr[repos]`), pas sur `returnYear` (3+repos, entrée en production
@@ -1087,12 +1242,13 @@ est la base des courbes de trésorerie (statu quo, complantation,
 arrachage) et de la variante « sans mobilisation de la réserve »
 (`arrSansRI`, calculée avec `cashRI` forcé à 0 avant répartition).
 
-`horizon` (10 ans par défaut) et `seuilReserve` (4000 kg/ha) sont en
-réalité des **props du composant** (`this.props.horizon`,
-`this.props.seuilReserve`) — un mécanisme prévu par le format `.dc` pour
-qu'un site hôte puisse les surcharger. Cette version d'`index.html` ne les
-expose dans aucun champ visible : ils restent donc toujours à leur valeur
-par défaut tant que la page est ouverte seule.
+`horizon` est désormais un champ éditable (`v.horizon`, sélecteur 10/25
+ans, étape 5), et non plus une prop cachée du composant — voir §6.
+`seuilReserve` (4000 kg/ha, alerte de réserve minimale) reste, lui, une
+**prop du composant** (`this.props.seuilReserve ?? 4000`) — un mécanisme
+prévu par le format `.dc` pour qu'un site hôte puisse la surcharger. Cette
+version d'`index.html` ne l'expose dans aucun champ visible : elle reste
+donc toujours à sa valeur par défaut tant que la page est ouverte seule.
 
 ## 18. Graphiques SVG faits main
 
@@ -1114,21 +1270,19 @@ la main avec `React.createElement('svg', …)`, méthode par méthode :
   construit via `legendSwatch(c, dash, marker)`, jamais en HTML/SVG brut
   dans le template `<x-dc>` (cohérent avec le reste des graphiques,
   entièrement construits en script).
-- **`annualBars(rows)`** — barres empilées année par année (cash net vs
-  cash sans réserve). **Définie mais non appelée** dans `renderVals()`
-  actuellement : code mort laissé par une itération précédente de la
-  maquette, à nettoyer ou à rebrancher selon le besoin.
 
-**Retirés par le chantier P6** (méthodes supprimées, plus de trace dans
-`index.html`) : `waterfall(invest, reserve, effort)` — graphique en
-cascade « Décomposition de l'effort » — et `compareBars(items, fmt)` —
+**Retirés par le chantier P6** (méthodes supprimées, plus aucune trace
+dans `index.html`) : `waterfall(invest, reserve, effort)` — graphique en
+cascade « Décomposition de l'effort » —, `compareBars(items, fmt)` —
 barres horizontales « Les trois voies à 10 ans », avec la ligne des
-annuités équivalentes qui l'accompagnait. Le graphique « Trajectoire de
-trésorerie cumulée » (courbes `chartTreso`, avec et sans mobilisation de
-la réserve) et son encadré « pourquoi la réserve est décisive » ont
-également été retirés de l'écran. Ces trois figures n'existent plus que
-dans l'historique git ; rien de leur logique ne subsiste ailleurs — les
-chiffres qu'elles portaient (investissement, réserve, effort net, écart
+annuités équivalentes qui l'accompagnait — et `annualBars(rows)` —
+barres empilées année par année (cash net vs cash sans réserve). Le
+graphique « Trajectoire de trésorerie cumulée » (courbes `chartTreso`,
+avec et sans mobilisation de la réserve) et son encadré « pourquoi la
+réserve est décisive » ont également été retirés de l'écran. Ces quatre
+figures n'existent plus que dans l'historique git ; rien de leur logique
+ne subsiste ailleurs — les chiffres qu'elles portaient (investissement,
+réserve, effort net, écart
 final avec/sans réserve) restent lisibles via les KPI et, pour le détail
 formule par formule, via la fiche imprimable (`out.printKpiRows`, §17).
 
@@ -1164,8 +1318,9 @@ formule par formule, via la fiche imprimable (`out.printKpiRows`, §17).
   commercialisable (`v.volco`, déjà un champ de saisie éditable, lui).
 - **Paramètres fixés en dur dans `renderVals()`, non éditables dans
   l'UI :** `volSortieArr = 9000` kg/ha, `plafond = 10000` kg/ha,
-  `rendMean = 12296.6` kg/ha (moyenne régionale), `horizon = 10` ans
-  (sauf prop `horizon`, non exposée — §17). Le facteur écart-type régional
+  `rendMean = 12296.6` kg/ha (moyenne régionale). `horizon` (10 ou 25 ans),
+  lui, **est** éditable (sélecteur étape 5) — seule `seuilReserve` reste une
+  prop cachée non exposée (§17). Le facteur écart-type régional
   (`EC = 3440` kg/ha) est câblé directement dans `renderVals()`.
 - **Faire-valoir simplifié** : fermage = loyer fixe (souvent indexé
   kg/bouteilles en réalité) ; métayage = parts éditables mais fixes dans le
@@ -1211,9 +1366,10 @@ formule par formule, via la fiche imprimable (`out.printKpiRows`, §17).
 
 Idées de suite, non entamées à ce jour :
 
-- **Nettoyer ou rebrancher `annualBars`** (§18), actuellement mort.
-- **Décider du sort de `this.props.horizon` / `this.props.seuilReserve`**
-  (§17) : les exposer dans l'UI, ou les documenter comme un point
+- **Décider du sort de `this.props.seuilReserve`** (§17) : `horizon` a
+  depuis été exposé dans l'UI (sélecteur 10/25 ans, étape 5) mais
+  `seuilReserve` (alerte de réserve minimale, 4000 kg/ha) reste une prop
+  non exposée — l'exposer dans l'UI, ou la documenter comme un point
   d'intégration pour un site hôte qui embarquerait ce composant.
 - **Seuil de bascule sur le niveau de réserve individuelle** : indiquer, à
   partir de quel niveau de RI actuel (`v.riPct`) un projet donné devient

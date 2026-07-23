@@ -253,7 +253,12 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
       <sc-if value="{{ estEtape2 }}" hint-placeholder-val="{{ false }}">
         <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.08em">ÉTAPE 3 SUR 5</div>
         <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:26px;margin:4px 0 6px">Votre projet de replantation</h2>
-        <p style="color:#5C6157;font-size:14.5px;max-width:60ch;margin:0 0 24px">La géométrie pilote la densité, la surface de la parcelle et le contrôle du cahier des charges.</p>
+        <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
+          <p style="color:#5C6157;font-size:14.5px;max-width:60ch;margin:0 0 24px">La surface de la parcelle vient du registre parcellaire — la géométrie pilote la densité, la largeur équivalente et le contrôle du cahier des charges.</p>
+        </sc-if>
+        <sc-if value="{{ !modeRegistre }}" hint-placeholder-val="{{ true }}">
+          <p style="color:#5C6157;font-size:14.5px;max-width:60ch;margin:0 0 24px">La géométrie pilote la densité, la surface de la parcelle et le contrôle du cahier des charges.</p>
+        </sc-if>
 
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:20px 22px">
           <h3 style="font-family:'Fraunces',serif;font-size:16px;margin:0 0 14px">Géométrie de la parcelle</h3>
@@ -262,10 +267,19 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
               <label style="font-size:13px;font-weight:600">Longueur</label>
               <div style="display:flex;align-items:center;gap:8px"><input type="number" step="1" value="{{ v.geoL }}" onInput="{{ on.geoL }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">m</span></div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:5px">
-              <label style="font-size:13px;font-weight:600">Largeur</label>
-              <div style="display:flex;align-items:center;gap:8px"><input type="number" step="1" value="{{ v.geoW }}" onInput="{{ on.geoW }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">m</span></div>
-            </div>
+            <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <label style="font-size:13px;font-weight:600">Largeur équivalente</label>
+                <div style="display:flex;align-items:center;gap:8px"><div style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#F1E6CC;font-family:'JetBrains Mono',monospace;font-size:14px">{{ largeurEquivTxt }}</div><span style="font-size:12.5px;color:#5C6157;flex:none">m</span></div>
+                <span style="font-size:11.5px;color:#5C6157">dérivée de la surface du registre ÷ longueur — la parcelle n'est pas un rectangle, cette largeur est un équivalent de calcul, pas une mesure de terrain</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ !modeRegistre }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <label style="font-size:13px;font-weight:600">Largeur</label>
+                <div style="display:flex;align-items:center;gap:8px"><input type="number" step="1" value="{{ v.geoW }}" onInput="{{ on.geoW }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">m</span></div>
+              </div>
+            </sc-if>
             <div style="display:flex;flex-direction:column;gap:5px">
               <label style="font-size:13px;font-weight:600">Écart entre rangs</label>
               <div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.05" value="{{ v.ecartRang }}" onInput="{{ on.ecartRang }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">m</span></div>
@@ -278,13 +292,18 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
             </div>
           </div>
           <div style="margin-top:14px;font-size:13px;padding:9px 12px;border-radius:5px;background:{{ aocBg }};color:{{ aocFg }}">{{ aocTxt }}</div>
-          <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px dotted #DDD9CE">
-            <div><div style="font-size:11px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Densité</div><div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500">{{ syDens }}</div></div>
-            <div><div style="font-size:11px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Rangs</div><div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500">{{ syRangs }}</div></div>
-            <div><div style="font-size:11px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Pieds à planter</div><div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500">{{ syPieds }}</div></div>
-            <div><div style="font-size:11px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Surface</div><div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500">{{ sySurf }}</div></div>
-            <div><div style="font-size:11px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Conduite</div><div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500">{{ syMode }}</div></div>
-          </div>
+          <sc-if value="{{ longueurManquante }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:14px;font-size:13px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">Saisissez la longueur de rang pour dériver la géométrie.</div>
+          </sc-if>
+          <sc-if value="{{ !longueurManquante }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px dotted #DDD9CE">
+              <div><div style="font-size:11px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Densité</div><div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500">{{ syDens }}</div></div>
+              <div><div style="font-size:11px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Rangs</div><div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500">{{ syRangs }}</div></div>
+              <div><div style="font-size:11px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Pieds à planter</div><div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500">{{ syPieds }}</div></div>
+              <div><div style="font-size:11px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Surface</div><div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500">{{ sySurf }}</div></div>
+              <div><div style="font-size:11px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Conduite</div><div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500">{{ syMode }}</div></div>
+            </div>
+          </sc-if>
         </div>
 
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:20px 22px;margin-top:16px">
@@ -390,40 +409,45 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:20px 22px;margin-top:16px">
           <h3 style="font-family:'Fraunces',serif;font-size:16px;margin:0 0 4px">Dimensionnement du palissage</h3>
           <div style="font-size:12px;color:#5C6157;margin-bottom:14px">dérivé de la géométrie · relevé fournisseur [date à réactualiser] + gripple/MO LutEnVi 2025</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;align-content:start">
-              <div style="display:flex;flex-direction:column;gap:5px;grid-column:1/-1">
-                <label style="font-size:13px;font-weight:600">Type de taille</label>
-                <select value="{{ v.typeTaille }}" onChange="{{ on.typeTaille }}" style="padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-size:14px">
-                  <option value="guyot">Guyot simple (4 fils)</option>
-                  <option value="cordon">Cordon (4 fils)</option>
-                  <option value="arcure_simple">Arcure simple (4 fils)</option>
-                  <option value="arcure_double">Arcure double (5 fils)</option>
-                </select>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <label style="font-size:13px;font-weight:600">Fils par rang</label>
-                <input type="number" step="1" min="2" max="8" value="{{ v.nbFils }}" onInput="{{ on.nbFils }}" style="padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px">
-              </div>
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <label style="font-size:13px;font-weight:600">Espacement des piquets</label>
-                <div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.5" min="2" max="12" value="{{ v.espPiquet }}" onInput="{{ on.espPiquet }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">m</span></div>
-                <span style="font-size:11.5px;color:#A5433A">repère LutEnVi ≈ 4,3 m ; 6 m sous-chiffre ~30 %</span>
-              </div>
-            </div>
-            <div style="border:1px solid #DDD9CE;border-radius:6px;padding:14px 16px">
-              <sc-for list="{{ palisLignes }}" as="pl" hint-placeholder-count="6">
-                <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px dotted #DDD9CE">
-                  <span>{{ pl.lib }} <span style="color:#9A9E97">×{{ pl.qte }}</span></span>
-                  <b style="font-family:'JetBrains Mono',monospace">{{ pl.tot }}</b>
+          <sc-if value="{{ longueurManquante }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:13px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">Saisissez la longueur de rang pour dériver la géométrie.</div>
+          </sc-if>
+          <sc-if value="{{ !longueurManquante }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;align-content:start">
+                <div style="display:flex;flex-direction:column;gap:5px;grid-column:1/-1">
+                  <label style="font-size:13px;font-weight:600">Type de taille</label>
+                  <select value="{{ v.typeTaille }}" onChange="{{ on.typeTaille }}" style="padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-size:14px">
+                    <option value="guyot">Guyot simple (4 fils)</option>
+                    <option value="cordon">Cordon (4 fils)</option>
+                    <option value="arcure_simple">Arcure simple (4 fils)</option>
+                    <option value="arcure_double">Arcure double (5 fils)</option>
+                  </select>
                 </div>
-              </sc-for>
-              <div style="display:flex;justify-content:space-between;font-size:13.5px;padding-top:8px">
-                <b>Total /ha</b><b style="font-family:'JetBrains Mono',monospace">{{ palisTotalHa }}</b>
+                <div style="display:flex;flex-direction:column;gap:5px">
+                  <label style="font-size:13px;font-weight:600">Fils par rang</label>
+                  <input type="number" step="1" min="2" max="8" value="{{ v.nbFils }}" onInput="{{ on.nbFils }}" style="padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px">
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px">
+                  <label style="font-size:13px;font-weight:600">Espacement des piquets</label>
+                  <div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.5" min="2" max="12" value="{{ v.espPiquet }}" onInput="{{ on.espPiquet }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">m</span></div>
+                  <span style="font-size:11.5px;color:#A5433A">repère LutEnVi ≈ 4,3 m ; 6 m sous-chiffre ~30 %</span>
+                </div>
               </div>
-              <div style="font-size:11.5px;color:#5C6157;margin-top:6px">{{ palisDetailTxt }}</div>
+              <div style="border:1px solid #DDD9CE;border-radius:6px;padding:14px 16px">
+                <sc-for list="{{ palisLignes }}" as="pl" hint-placeholder-count="6">
+                  <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px dotted #DDD9CE">
+                    <span>{{ pl.lib }} <span style="color:#9A9E97">×{{ pl.qte }}</span></span>
+                    <b style="font-family:'JetBrains Mono',monospace">{{ pl.tot }}</b>
+                  </div>
+                </sc-for>
+                <div style="display:flex;justify-content:space-between;font-size:13.5px;padding-top:8px">
+                  <b>Total /ha</b><b style="font-family:'JetBrains Mono',monospace">{{ palisTotalHa }}</b>
+                </div>
+                <div style="font-size:11.5px;color:#5C6157;margin-top:6px">{{ palisDetailTxt }}</div>
+              </div>
             </div>
-          </div>
+          </sc-if>
         </div>
       </sc-if>
 
@@ -1102,13 +1126,27 @@ class Component extends DCLogic {
   fmtE(v) { return (v < 0 ? '−' : '') + Math.abs(Math.round(v)).toLocaleString('fr-FR') + ' €'; }
   fmtKg(v) { return Math.round(v).toLocaleString('fr-FR'); }
   fmtHa(v) { return v.toFixed(3).replace('.', ','); }
+  fmtM(v) { return v.toFixed(1).replace('.', ','); }
 
-  geometrie(v) {
-    const L = +v.geoL || 0, W = +v.geoW || 0, eR = +v.ecartRang || 1, eP = +v.ecartPied || 1;
+  // surfImposee (ha, optionnel) : mode registre — la surface directrice vient
+  // du registre parcellaire, pas du rectangle saisi. La largeur en est alors
+  // dérivée (surf / longueur) ; la longueur saisie n'est jamais recalculée ;
+  // surf reprend surfImposee telle quelle (pas de recalcul depuis L×W arrondi
+  // ni depuis nbRangs planchéifié — voir README, journal d'arbitrages).
+  geometrie(v, surfImposee) {
+    const L = +v.geoL || 0, eR = +v.ecartRang || 1, eP = +v.ecartPied || 1;
     const densite = Math.round(10000 / (eR * eP));
+    const OAD = (typeof window !== 'undefined') ? window.OAD : null;
+    let W, surf;
+    if (surfImposee > 0 && OAD) {
+      W = OAD.largeurEquivalente(surfImposee, L);
+      surf = surfImposee;
+    } else {
+      W = +v.geoW || 0;
+      surf = +(L * W / 10000).toFixed(4);
+    }
     const nbRangs = Math.max(1, Math.floor(W / eR));
     const piedsRang = Math.max(1, Math.floor(L / eP));
-    const surf = +(L * W / 10000).toFixed(4);
     return { L, W, eR, eP, densite, nbRangs, piedsRang, surf, pieds: nbRangs * piedsRang,
       vsl: eR >= 1.5, aoc: { rang: eR <= 2.0, pied: eP >= 0.7 && eP <= 1.5, somme: (eR + eP) <= 3.0 } };
   }
@@ -1225,8 +1263,26 @@ class Component extends DCLogic {
 
   renderVals() {
     const s = this.state, v = s.v;
-    const g = this.geometrie(v);
     const OAD = (typeof window !== 'undefined' && window.OAD) ? window.OAD : null;
+
+    // Registre parcellaire (chantier 1) — bascule manuel/registre, une seule
+    // source active à la fois. surfTot/ageMoy viennent de l'agrégat de tout
+    // le registre ; surfParc/ageParc/manquants/cepage viennent de la
+    // sélection multi-lignes de la parcelle désignée (lignes Plantée d'un
+    // même idu, pondérées par surface). Calculé avant `g` : la géométrie a
+    // besoin de agregParcelle.surfParc pour dériver la largeur équivalente
+    // en mode registre (chantier "réconciliation géométrie/registre").
+    const modeRegistre = s.sourceParcellaire === 'registre';
+    const campagne = +v.campagne || new Date().getFullYear();
+    const registreRows = s.registreRows || [];
+    const agregExploitation = OAD ? OAD.agregerRegistreExploitation(registreRows, campagne) : { surfTot: 0, ageMoy: 0 };
+    const iduDisponibles = [...new Set(registreRows.filter(r => r.situation === 'plantee').map(r => r.idu))];
+    const lignesParcelleCandidates = registreRows.filter(r => r.idu === s.parcelleIdu && r.situation === 'plantee');
+    const lignesParcelleRetenues = lignesParcelleCandidates.filter(r => !s.parcelleLignesExclues[r._id]);
+    const agregParcelle = OAD ? OAD.agregerRegistreParcelle(lignesParcelleRetenues, campagne)
+      : { surfParc: 0, ageParc: 0, tauxManquant: 0, cepage: null, cepageMixte: false };
+
+    const g = this.geometrie(v, modeRegistre ? agregParcelle.surfParc : null);
     const labels = ['Exploitation', 'Parcelle', 'Plantation', 'Coûts', 'Résultats'];
     const etapes = labels.map((label, i) => ({
       num: String(i + 1), label,
@@ -1258,22 +1314,10 @@ class Component extends DCLogic {
     if (OAD) cprot = OAD.coutProtectionPlant(g.densite);
     const coutProtectionEffectif = s.protectionManuel || !cprot ? (+v.coutProtectionHa || 0) : Math.round(cprot.totalHa);
 
-    // Registre parcellaire (chantier 1) — bascule manuel/registre, une seule
-    // source active à la fois. surfTot/ageMoy viennent de l'agrégat de tout
-    // le registre ; surfParc/ageParc/manquants/cepage viennent de la
-    // sélection multi-lignes de la parcelle désignée (lignes Plantée d'un
-    // même idu, pondérées par surface). La géométrie (g) garde son rôle sur
-    // densité/palissage/AOC — voir README, journal d'arbitrages du chantier.
-    const modeRegistre = s.sourceParcellaire === 'registre';
-    const campagne = +v.campagne || new Date().getFullYear();
-    const registreRows = s.registreRows || [];
-    const agregExploitation = OAD ? OAD.agregerRegistreExploitation(registreRows, campagne) : { surfTot: 0, ageMoy: 0 };
-    const iduDisponibles = [...new Set(registreRows.filter(r => r.situation === 'plantee').map(r => r.idu))];
-    const lignesParcelleCandidates = registreRows.filter(r => r.idu === s.parcelleIdu && r.situation === 'plantee');
-    const lignesParcelleRetenues = lignesParcelleCandidates.filter(r => !s.parcelleLignesExclues[r._id]);
-    const agregParcelle = OAD ? OAD.agregerRegistreParcelle(lignesParcelleRetenues, campagne)
-      : { surfParc: 0, ageParc: 0, tauxManquant: 0, cepage: null, cepageMixte: false };
-    const surfParcResolu = modeRegistre ? agregParcelle.surfParc : g.surf;
+    // En mode registre, g.surf === agregParcelle.surfParc exactement (imposé
+    // par geometrie() ci-dessus) : surfParcResolu n'a plus besoin d'arbitrer
+    // entre les deux sources.
+    const surfParcResolu = g.surf;
     // Nombre de pieds affiché : en mode manuel, comptage exact du rectangle
     // (nbRangs × piedsRang, inchangé) ; en mode registre, la géométrie ne
     // pilote plus que la densité (pieds/ha) — le nombre absolu de pieds doit
@@ -1397,6 +1441,12 @@ class Component extends DCLogic {
       syPieds: this.fmtKg(piedsAffiches) + ' pieds',
       sySurf: this.fmtHa(surfParcResolu) + ' ha',
       syMode: g.vsl ? 'Vigne semi-large (VSL)' : 'Traditionnelle',
+      // Garde-fou écran 3 : en mode registre, sans longueur de rang la largeur
+      // équivalente (et tout ce qui en dépend — densité affichée, palissage)
+      // n'a pas de sens ; on bloque l'affichage plutôt que de montrer des
+      // indicateurs dérivés d'une longueur nulle.
+      longueurManquante: modeRegistre && !(g.L > 0),
+      largeurEquivTxt: this.fmtM(g.W),
       aideOuverte: s.aideOuverte, toggleAide: () => this.setState(st => ({ aideOuverte: !st.aideOuverte })),
       aideChevron: s.aideOuverte ? '−' : '+',
       detailOuvert: s.detailOuvert, toggleDetail: () => this.setState(st => ({ detailOuvert: !st.detailOuvert })),
@@ -1464,7 +1514,7 @@ class Component extends DCLogic {
       { lib: 'Part de récolte au propriétaire (métayage)', val: nf(+v.partRecolte || 0, 0), unite: '%', origine: 'Saisi — utilisé si régime = métayage' },
       { lib: 'Part des coûts au propriétaire (métayage)', val: nf(+v.partCouts || 0, 0), unite: '%', origine: 'Saisi — utilisé si régime = métayage' },
       { lib: 'Longueur de la parcelle', val: nf(+v.geoL || 0, 0), unite: 'm', origine: 'Saisi' },
-      { lib: 'Largeur de la parcelle', val: nf(+v.geoW || 0, 0), unite: 'm', origine: 'Saisi' },
+      { lib: modeRegistre ? 'Largeur équivalente de la parcelle' : 'Largeur de la parcelle', val: nf(g.W, 0), unite: 'm', origine: modeRegistre ? 'Dérivé — surface du registre ÷ longueur de rang' : 'Saisi' },
       { lib: 'Écart entre rangs', val: nf(+v.ecartRang || 0, 2), unite: 'm', origine: 'Saisi' },
       { lib: 'Écart entre pieds', val: nf(+v.ecartPied || 0, 2), unite: 'm', origine: 'Saisi' },
       { lib: 'Densité de plantation', val: nf(g.densite, 0), unite: 'pieds/ha', origine: 'Dérivé de la géométrie — 10 000 / (écart rang × écart pied)' },
