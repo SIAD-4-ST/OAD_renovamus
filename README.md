@@ -161,7 +161,7 @@ renseigné.
 |---|---|---|
 | 1 | **Votre exploitation** | Surface totale, âge moyen du vignoble, VolCo, prix du raisin, réserve individuelle actuelle (curseur en % du plafond). Ce sont les repères globaux, dénominateurs de toute la comparaison. Saisie manuelle par défaut, ou bascule vers un **registre parcellaire** (jeu d'exemple préchargé, en mémoire de session uniquement, aucun import de fichier pour l'instant) qui dérive surface totale et âge moyen d'un tableau de parcelles — voir [§6bis](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif). |
 | 2 | **La parcelle que vous désignez** | Âge, taux de pieds manquants, rendement estimé, déclin en statu quo, régime de faire-valoir (propriété / fermage / métayage) et ses paramètres. En mode registre, un sélecteur d'`idu` et des cases à cocher par ligne désignent la parcelle et en dérivent âge et taux de manquants (§6bis). |
-| 3 | **Votre projet de replantation** | Géométrie (longueur, largeur, écarts) avec contrôle en direct du cahier des charges AOC ; matériel végétal et conduite (porte-greffe, irrigation, montée en charge) avec fiche conseil ; aide au choix du matériel végétal (dépliable, purement informative) ; dimensionnement du palissage dérivé de la géométrie. |
+| 3 | **Votre projet de replantation** | Géométrie (longueur, largeur, écarts) avec contrôle en direct du cahier des charges AOC ; matériel végétal et conduite (porte-greffe, irrigation, montée en charge) avec fiche conseil ; aide au choix du matériel végétal (dépliable, purement informative) ; dimensionnement du palissage dérivé de la géométrie. En mode registre, la largeur n'est plus saisie : elle est dérivée de la surface du registre ÷ la longueur saisie (« largeur équivalente », §16) ; un message bloquant remplace les indicateurs si la longueur est vide. |
 | 4 | **Coûts et charges** | Investissement ponctuel (arrachage, préparation, plant, palissage, protection du jeune plant, irrigation, pénalité VSL), paramètres de la complantation (survie, entrée en production, coût par entreplant), charges d'entretien récurrentes (calées par défaut sur Cerfrance/MHCS pour 3 des 4 taux — voir §11). |
 | 5 | **Résultats** | Synthèse rédigée, sélecteur d'horizon (10 ou 25 ans), sélecteur de vue (Ensemble / Part exploitant / Part propriétaire), de test de résistance climatique et de mode main d'œuvre (Prestataire / Familiale — affichage seul, §11 F7), KPI en 2 familles typographiquement distinctes — décision financière (€) et effets physiques non monétisés (voir §17) —, encadré main d'œuvre économisée, graphiques de stock de réserve et de trajectoire d'âge (repliés par défaut), détail annuel dépliable, tableau du manque à gagner, et une fiche imprimable regroupant hypothèses, KPI (avec formule) et détail annuel des 3 scénarios (bouton « Imprimer », `window.print()`). |
 
@@ -181,7 +181,9 @@ this.on[xxx](e)  →  setState({ v: { ...v, [xxx]: e.target.value } })   data-dc
    │
    ▼  React re-render  →  renderVals() ré-exécuté EN ENTIER
    │
-   ├─ geometrie(v)                        → g   (densité, rangs, surface, conformité AOC)
+   ├─ geometrie(v, surfImposee)           → g   (densité, rangs, surface, conformité AOC ;
+   │                                            surfImposee = surface du registre en mode
+   │                                            registre, sinon null — §16)
    ├─ OAD.coutPalissage(g, …)             → cp  (préremplit coutPalissageHa si non édité)
    │
    ▼  construction de `inp` (l'objet attendu par le moteur)
@@ -256,8 +258,8 @@ avec ces valeurs par défaut (constructeur du composant, `index.html`) :
 
 | champ | unité | défaut |
 |---|---|---|
-| `geoL` (longueur) | m | 100 |
-| `geoW` (largeur) | m | 100 |
+| `geoL` (longueur) | m | 100 — jamais dérivé ni recalculé, dans aucun des deux modes (§16) |
+| `geoW` (largeur) | m | 100 — saisi en mode manuel ; en mode registre, ignoré et remplacé par la largeur équivalente dérivée de la surface du registre (§16) |
 | `ecartRang` | m | 1 |
 | `ecartPied` | m | 1.10 |
 
