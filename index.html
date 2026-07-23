@@ -62,15 +62,44 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
         </sc-if>
         <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:26px;margin:4px 0 6px">Votre exploitation</h2>
         <p style="color:#5C6157;font-size:14.5px;max-width:60ch;margin:0 0 24px">Quelques repères sur l'ensemble de votre exploitation — ils servent de dénominateur à toute la comparaison.</p>
+
+        <div style="display:flex;gap:8px;margin-bottom:18px">
+          <button onClick="{{ setSourceManuel }}" style="padding:8px 14px;border:1px solid #20291F;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:{{ srcBgManuel }};color:{{ srcFgManuel }}">Saisie manuelle</button>
+          <button onClick="{{ setSourceRegistre }}" style="padding:8px 14px;border:1px solid #20291F;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:{{ srcBgRegistre }};color:{{ srcFgRegistre }}">Registre parcellaire</button>
+        </div>
+
+        <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-bottom:18px;padding:10px 14px;border-radius:6px;background:#F1E6CC;font-size:12.5px;line-height:1.5">Le registre reste en mémoire de votre navigateur pour cette session — il n'est ni envoyé ni enregistré, et sera perdu au rechargement de la page. Jeu d'exemple préchargé ({{ registreNbLignes }} lignes) — l'import de votre propre fichier arrivera dans une prochaine version.</div>
+        </sc-if>
+
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px 20px">
-          <div style="display:flex;flex-direction:column;gap:5px">
-            <label style="font-size:13px;font-weight:600">Surface totale</label>
-            <div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.1" min="0.1" value="{{ v.surfTot }}" onInput="{{ on.surfTot }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">ha</span></div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:5px">
-            <label style="font-size:13px;font-weight:600">Âge moyen du vignoble</label>
-            <div style="display:flex;align-items:center;gap:8px"><input type="number" step="1" min="0" value="{{ v.ageMoy }}" onInput="{{ on.ageMoy }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">ans</span></div>
-          </div>
+          <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="font-size:13px;font-weight:600">Surface totale</label>
+              <div style="padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#F1E6CC;font-family:'JetBrains Mono',monospace;font-size:14px">{{ registreSurfTotTxt }}</div>
+              <span style="font-size:11.5px;color:#5C6157">dérivé du registre — Plantée + Arrachée</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="font-size:13px;font-weight:600">Âge moyen du vignoble</label>
+              <div style="padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#F1E6CC;font-family:'JetBrains Mono',monospace;font-size:14px">{{ registreAgeMoyTxt }}</div>
+              <span style="font-size:11.5px;color:#5C6157">moyenne pondérée par surface, lignes Plantée uniquement</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="font-size:13px;font-weight:600">Campagne de référence</label>
+              <div style="display:flex;align-items:center;gap:8px"><input type="number" step="1" value="{{ v.campagne }}" onInput="{{ on.campagne }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"></div>
+              <span style="font-size:11.5px;color:#5C6157">âge = campagne − année de plantation</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ !modeRegistre }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="font-size:13px;font-weight:600">Surface totale</label>
+              <div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.1" min="0.1" value="{{ v.surfTot }}" onInput="{{ on.surfTot }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">ha</span></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="font-size:13px;font-weight:600">Âge moyen du vignoble</label>
+              <div style="display:flex;align-items:center;gap:8px"><input type="number" step="1" min="0" value="{{ v.ageMoy }}" onInput="{{ on.ageMoy }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">ans</span></div>
+            </div>
+          </sc-if>
           <div style="display:flex;flex-direction:column;gap:5px">
             <label style="font-size:13px;font-weight:600">Volume commercialisable (VolCo)</label>
             <div style="display:flex;align-items:center;gap:8px"><input type="number" step="100" min="0" value="{{ v.volco }}" onInput="{{ on.volco }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">kg/ha</span></div>
@@ -90,21 +119,89 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
           </div>
           <div style="font-size:11.5px;color:#5C6157;margin-top:6px">estimation par défaut — remplacez par votre relevé</div>
         </div>
+
+        <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:22px;background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;overflow-x:auto">
+            <h3 style="font-family:'Fraunces',serif;font-size:15px;margin:0 0 12px">Registre parcellaire ({{ registreNbLignes }} lignes)</h3>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(90px,1fr));gap:0;font-size:12.5px;min-width:640px">
+              <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 8px;border-bottom:1px solid #DDD9CE">idu</div>
+              <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 8px;border-bottom:1px solid #DDD9CE">Commune</div>
+              <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 8px;border-bottom:1px solid #DDD9CE">Cépage</div>
+              <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 8px;border-bottom:1px solid #DDD9CE">Planté</div>
+              <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 8px;border-bottom:1px solid #DDD9CE">Âge</div>
+              <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 8px;border-bottom:1px solid #DDD9CE">Surface</div>
+              <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 8px;border-bottom:1px solid #DDD9CE">Situation</div>
+              <sc-for list="{{ registreLignesTable }}" as="r" hint-placeholder-count="3">
+                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC;font-family:'JetBrains Mono',monospace">{{ r.idu }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.commune }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.cepage }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.anneePlant }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.age }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.surfaceTxt }} ha</div>
+                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC;color:{{ r.situationFg }}">{{ r.situationTxt }}</div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
       </sc-if>
 
       <sc-if value="{{ estEtape1 }}" hint-placeholder-val="{{ false }}">
         <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.08em">ÉTAPE 2 SUR 5</div>
         <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:26px;margin:4px 0 6px">La parcelle que vous désignez</h2>
         <p style="color:#5C6157;font-size:14.5px;max-width:60ch;margin:0 0 24px">Décrivez la parcelle candidate au renouvellement, telle qu'elle produit aujourd'hui.</p>
+
+        <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin-bottom:20px">
+            <div style="display:flex;flex-direction:column;gap:5px;max-width:320px">
+              <label style="font-size:13px;font-weight:600">Parcelle (idu du registre)</label>
+              <select value="{{ parcelleIdu }}" onChange="{{ onParcelleIdu }}" style="padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-size:14px">
+                <sc-for list="{{ iduOptions }}" as="o" hint-placeholder-count="3">
+                  <option value="{{ o.value }}">{{ o.value }}</option>
+                </sc-for>
+              </select>
+              <span style="font-size:11.5px;color:#5C6157">seules les lignes Plantée sont proposées</span>
+            </div>
+            <div style="display:grid;grid-template-columns:36px repeat(4,minmax(80px,1fr));gap:0;font-size:12.5px;margin-top:14px">
+              <div style="border-bottom:1px solid #DDD9CE"></div>
+              <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 8px;border-bottom:1px solid #DDD9CE">Cépage</div>
+              <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 8px;border-bottom:1px solid #DDD9CE">Planté</div>
+              <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 8px;border-bottom:1px solid #DDD9CE">Âge</div>
+              <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 8px;border-bottom:1px solid #DDD9CE">Surface</div>
+              <sc-for list="{{ parcelleLignesTable }}" as="r" hint-placeholder-count="2">
+                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC"><input type="checkbox" checked="{{ r.coche }}" onChange="{{ r.toggle }}"></div>
+                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.cepage }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.anneePlant }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.age }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.surfaceTxt }} ha</div>
+              </sc-for>
+            </div>
+            <div style="font-size:11.5px;color:#5C6157;margin-top:6px">décochez une ligne pour l'exclure de la parcelle désignée — la pondération (âge, pieds manquants) se recalcule automatiquement · surface retenue : <b>{{ surfParcRegistreTxt }}</b><sc-if value="{{ cepageMixteTxt }}" hint-placeholder-val="{{ false }}"><br>{{ cepageMixteTxt }}</sc-if></div>
+          </div>
+        </sc-if>
+
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px 20px">
-          <div style="display:flex;flex-direction:column;gap:5px">
-            <label style="font-size:13px;font-weight:600">Âge de la parcelle</label>
-            <div style="display:flex;align-items:center;gap:8px"><input type="number" step="1" min="0" value="{{ v.ageParc }}" onInput="{{ on.ageParc }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">ans</span></div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:5px">
-            <label style="font-size:13px;font-weight:600">Pieds manquants</label>
-            <div style="display:flex;align-items:center;gap:8px"><input type="number" step="1" min="0" max="60" value="{{ v.manquants }}" onInput="{{ on.manquants }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">%</span></div>
-          </div>
+          <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="font-size:13px;font-weight:600">Âge de la parcelle</label>
+              <div style="padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#F1E6CC;font-family:'JetBrains Mono',monospace;font-size:14px">{{ ageParcRegistreTxt }}</div>
+              <span style="font-size:11.5px;color:#5C6157">dérivé du registre — moyenne pondérée par surface</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="font-size:13px;font-weight:600">Pieds manquants</label>
+              <div style="padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#F1E6CC;font-family:'JetBrains Mono',monospace;font-size:14px">{{ manquantsRegistreTxt }}</div>
+              <span style="font-size:11.5px;color:#5C6157">dérivé du registre — moyenne pondérée par surface</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ !modeRegistre }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="font-size:13px;font-weight:600">Âge de la parcelle</label>
+              <div style="display:flex;align-items:center;gap:8px"><input type="number" step="1" min="0" value="{{ v.ageParc }}" onInput="{{ on.ageParc }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">ans</span></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="font-size:13px;font-weight:600">Pieds manquants</label>
+              <div style="display:flex;align-items:center;gap:8px"><input type="number" step="1" min="0" max="60" value="{{ v.manquants }}" onInput="{{ on.manquants }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">%</span></div>
+            </div>
+          </sc-if>
           <div style="display:flex;flex-direction:column;gap:5px">
             <label style="font-size:13px;font-weight:600">Rendement estimé de la parcelle</label>
             <div style="display:flex;align-items:center;gap:8px"><input type="number" step="100" min="0" value="{{ v.rendEstime }}" onInput="{{ on.rendEstime }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">kg/ha</span></div>
@@ -292,7 +389,7 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
 
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:20px 22px;margin-top:16px">
           <h3 style="font-family:'Fraunces',serif;font-size:16px;margin:0 0 4px">Dimensionnement du palissage</h3>
-          <div style="font-size:12px;color:#5C6157;margin-bottom:14px">dérivé de la géométrie · prix LutEnVi 2025 à réactualiser</div>
+          <div style="font-size:12px;color:#5C6157;margin-bottom:14px">dérivé de la géométrie · relevé fournisseur [date à réactualiser] + gripple/MO LutEnVi 2025</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;align-content:start">
               <div style="display:flex;flex-direction:column;gap:5px;grid-column:1/-1">
@@ -347,12 +444,9 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
               <span style="font-size:11.5px;color:#5C6157">commute automatiquement repos et sortie de réserve</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:5px">
-              <label style="font-size:13px;font-weight:600">Coût d'arrachage</label>
+              <label style="font-size:13px;font-weight:600">Coût d'arrachage (tout compris — MHCS)</label>
               <div style="display:flex;align-items:center;gap:8px"><input type="number" step="100" value="{{ v.coutArrachageHa }}" onInput="{{ on.coutArrachageHa }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/ha</span></div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:5px">
-              <label style="font-size:13px;font-weight:600">Préparation du sol</label>
-              <div style="display:flex;align-items:center;gap:8px"><input type="number" step="100" value="{{ v.coutPrepaHa }}" onInput="{{ on.coutPrepaHa }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/ha</span></div>
+              <span style="font-size:11.5px;color:#5C6157">inclut arrachage, évacuation des souches, amendement calcaire et préparation du sol</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:5px">
               <label style="font-size:13px;font-weight:600">Plant (matériel végétal)</label>
@@ -362,6 +456,13 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
               <label style="font-size:13px;font-weight:600">Palissage <span style="font-weight:400;color:#A97F26">{{ palisBadge }}</span></label>
               <div style="display:flex;align-items:center;gap:8px"><input type="number" step="500" value="{{ coutPalissageAffiche }}" onInput="{{ on.coutPalissageHa }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/ha</span></div>
               <button onClick="{{ reportPalis }}" style="align-self:start;font-size:12px;padding:5px 10px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre la valeur dérivée de la géométrie</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="font-size:13px;font-weight:600">Protection du jeune plant (tuteur + cache-plant) <span style="font-weight:400;color:#A97F26">{{ protectionBadge }}</span></label>
+              <div style="display:flex;align-items:center;gap:8px"><input type="number" step="250" value="{{ coutProtectionAffiche }}" onInput="{{ on.coutProtectionHa }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/ha</span></div>
+              <button onClick="{{ reportProtection }}" style="align-self:start;font-size:12px;padding:5px 10px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre la valeur dérivée de la densité</button>
+              <span style="font-size:11.5px;color:#5C6157">{{ protectionDetailTxt }}</span>
+              <span style="font-size:11.5px;color:#A5433A">distinct du palissage (structure du rang) et de la charge « plantier » (§ Charges d'entretien, MO uniquement) ; non appliqué à la complantation — voir « Coût par entreplant » ci-dessous</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:5px">
               <label style="font-size:13px;font-weight:600">Ferti-irrigation (si oui)</label>
@@ -389,6 +490,7 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
             <div style="display:flex;flex-direction:column;gap:5px">
               <label style="font-size:13px;font-weight:600">Coût par entreplant</label>
               <div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.5" value="{{ v.coutEntreplant }}" onInput="{{ on.coutEntreplant }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/pied</span></div>
+              <span style="font-size:11.5px;color:#A5433A">supposé inclure tuteur + cache-plant de l'entreplant (à vérifier auprès de votre source) — sinon, ce prix sous-estime l'entreplant du même écart que « Protection du jeune plant » ci-dessus</span>
             </div>
           </div>
         </div>
@@ -396,18 +498,18 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:20px 22px;margin-top:16px">
           <h3 style="font-family:'Fraunces',serif;font-size:16px;margin:0 0 6px">Charges d'entretien récurrentes</h3>
           <div style="background:#E3EDE5;border-radius:6px;padding:12px 14px;font-size:13px;line-height:1.55;max-width:72ch;margin-bottom:14px">
-            Elles rendent le <b>statu quo non gratuit</b> et rétablissent une comparaison honnête. N'y mettre que des charges <b>proportionnelles réellement évitables</b>. Nulles par défaut : tant qu'elles ne sont pas calées, la comparaison reste inchangée.
+            Elles rendent le <b>statu quo non gratuit</b> et rétablissent une comparaison honnête. N'y mettre que des charges <b>proportionnelles réellement évitables</b>. Calées par défaut sur Cerfrance 2024 (charges de structure et charges proportionnelles, hors charges locatives et hors amortissement — voir détail).
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px">
             <div style="display:flex;flex-direction:column;gap:5px">
               <label style="font-size:13px;font-weight:600">Charge liée à la surface (vigne en production)</label>
               <div style="display:flex;align-items:center;gap:8px"><input type="number" step="100" min="0" value="{{ v.coutSurfaceProdHaAn }}" onInput="{{ on.coutSurfaceProdHaAn }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/ha/an</span></div>
-              <span style="font-size:11.5px;color:#A5433A">à caler — sol, palissage, entretien hors récolte. Voir le détail par opération ci-dessous.</span>
+              <span style="font-size:11.5px;color:#5C6157">Cerfrance 2024 — charges de structure hors charges locatives, amortissement retiré (15 300 − 3 900 €/ha, anti-double-compte avec l'investissement de plantation). Voir le détail par opération ci-dessous.</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:5px">
               <label style="font-size:13px;font-weight:600">Charge liée au rendement</label>
               <div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.01" min="0" value="{{ v.coutRdtParKg }}" onInput="{{ on.coutRdtParKg }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/kg</span></div>
-              <span style="font-size:11.5px;color:#A5433A">à caler — vendange, transport, prestations récolte</span>
+              <span style="font-size:11.5px;color:#5C6157">Cerfrance 2024 — charges proportionnelles (vendange, transport, prestations récolte) ÷ rendement de référence 10 000 kg/ha</span>
             </div>
           </div>
 
@@ -462,7 +564,7 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
             <div style="display:flex;flex-direction:column;gap:5px">
               <label style="font-size:13px;font-weight:600">Charge de transition — plantier</label>
               <div style="display:flex;align-items:center;gap:8px"><input type="number" step="100" min="0" value="{{ v.coutPlantierHaAn }}" onInput="{{ on.coutPlantierHaAn }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/ha/an</span></div>
-              <span style="font-size:11.5px;color:#A5433A">à caler — jeune vigne en formation. Voir le détail par opération ci-dessous.</span>
+              <span style="font-size:11.5px;color:#5C6157">MHCS — taille de formation + remplacement des plants morts. Voir le détail par opération ci-dessous.</span>
             </div>
           </div>
 
@@ -580,8 +682,9 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
           </div>
         </div>
 
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5C6157;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px">Décision financière (€)</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
-          <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="6">
+          <sc-for list="{{ kpisFinance }}" as="k" hint-placeholder-count="3">
             <div style="background:#fff;border:1px solid #DDD9CE;border-left:4px solid {{ k.c }};border-radius:6px;padding:14px 16px">
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ k.lib }}</div>
               <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:650;margin:3px 0;line-height:1.1;color:{{ k.vc }}">{{ k.val }}</div>
@@ -590,9 +693,34 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
           </sc-for>
         </div>
 
-        <div style="background:#F1E6CC;border:1px solid #DDD9CE;border-radius:8px;padding:16px 20px;margin:18px 0;font-size:13.5px;line-height:1.6">
+        <div style="margin-top:10px">
+          <button onClick="{{ toggleEffortNet }}" style="font-size:12.5px;padding:7px 14px;border:1px solid #DDD9CE;background:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
+            <span>Détail — effort net après réserve</span>
+            <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ effortNetChevron }}</span>
+          </button>
+          <sc-if value="{{ effortNetOuvert }}" hint-placeholder-val="{{ false }}">
+            <div style="max-width:260px;margin-top:10px;background:#fff;border:1px solid #DDD9CE;border-left:4px solid #4C7A57;border-radius:6px;padding:14px 16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiEffortNet.lib }}</div>
+              <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiEffortNet.val }}</div>
+              <div style="font-size:12px;color:#5C6157;line-height:1.45">{{ kpiEffortNet.det }}</div>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5C6157;letter-spacing:0.06em;text-transform:uppercase;margin:22px 0 8px">Effets physiques du renouvellement — non monétisés</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+          <sc-for list="{{ kpisPhysique }}" as="k" hint-placeholder-count="2">
+            <div style="background:#F1E6CC;border:1px solid #DDD9CE;border-radius:6px;padding:14px 16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ k.lib }}</div>
+              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin:3px 0;line-height:1.1;color:#5C4B1F">{{ k.val }}</div>
+              <div style="font-size:12px;color:#5C6157;line-height:1.45">{{ k.det }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:#F1E6CC;border:1px solid #DDD9CE;border-radius:8px;padding:16px 20px;margin:14px 0 18px;font-size:13.5px;line-height:1.6">
           <b>Main d'œuvre manuelle économisée pendant la transition</b> <span style="color:#5C6157">— indicateur physique, jamais dans la trésorerie</span><br>
-          ≈ <b style="font-family:'JetBrains Mono',monospace">{{ moHeuresTxt }}</b> de main d'œuvre manuelle non engagée sur la transition.
+          ≈ <b style="font-family:'JetBrains Mono',monospace">{{ moHeuresTxt }}</b> de main d'œuvre manuelle non engagée sur la transition — une heure non travaillée sur la parcelle en repos est aussi une heure de vendange en moins sur cette même parcelle.
           <sc-if value="{{ moExterne }}" hint-placeholder-val="{{ true }}">
             <br>≈ <b style="font-family:'JetBrains Mono',monospace">{{ moEuroTxt }}</b> de prestation évitée <span style="color:#A5433A">— indicatif, hors trésorerie</span>.
           </sc-if>
@@ -602,52 +730,22 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
         </div>
 
         <figure style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
-          <figcaption style="font-family:'Fraunces',serif;font-weight:600;font-size:16px">Trajectoire de trésorerie cumulée</figcaption>
-          <div style="font-size:12.5px;color:#5C6157;margin:2px 0 8px;max-width:78ch">Selon la vue faire-valoir active. La courbe pointillée montre ce que serait l'arrachage SANS le mécanisme de réserve.</div>
-          {{ chartTreso }}
-          <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:12.5px;margin-top:10px">
-            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#A97F26;display:inline-block"></span>arrachage-replantation</span>
-            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#4C7A57;display:inline-block"></span>complantation</span>
-            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#9A9E97;display:inline-block"></span>statu quo</span>
-            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;border-top:1.6px dashed #A97F26;display:inline-block"></span>arrachage sans réserve</span>
-          </div>
-          <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px;margin-top:14px;font-size:13.5px;line-height:1.6">
-            <b>Pourquoi le mécanisme de réserve est décisif</b><br>
-            Écart final, à horizon, entre l'arrachage avec et sans mobilisation de la réserve : <b>{{ ecartReserveTxt }}</b>.<br>
-            Sans le système de réserve, l'effort de trésorerie maximal serait de <b style="color:#A5433A">{{ creuxSansRITxt }}</b> au lieu de <b>{{ creuxTxt }}</b>.
-          </div>
-        </figure>
-
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:20px 0;align-items:stretch">
-          <figure style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:0">
-            <figcaption style="font-family:'Fraunces',serif;font-weight:600;font-size:16px">Décomposition de l'effort</figcaption>
-            <div style="font-size:12.5px;color:#5C6157;margin:2px 0 8px">Ce que la réserve retire à la facture.</div>
-            {{ chartWaterfall }}
-            <div style="font-size:12.5px;color:#5C6157;margin-top:8px;border-top:1px dotted #DDD9CE;padding-top:8px">La réserve mobilisée par l'arrachage amortit l'investissement : il ne reste que l'<b style="color:#4C7A57">effort net</b> à financer.</div>
-          </figure>
-          <figure style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:0">
-            <figcaption style="font-family:'Fraunces',serif;font-weight:600;font-size:16px">Les trois voies à {{ horizonTxt }}</figcaption>
-            <div style="font-size:12.5px;color:#5C6157;margin:2px 0 8px">Trésorerie nette cumulée en fin de période — {{ vueLabel }}.</div>
-            {{ chartCompare }}
-            <div style="font-size:12.5px;color:#5C6157;margin-top:8px;border-top:1px dotted #DDD9CE;padding-top:8px">Comparaison directe des points d'arrivée. À lire avec le stock de réserve ci-dessous : un cumul flatteur peut cacher une réserve asséchée.</div>
-            <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;margin-top:10px;border-top:1px dotted #DDD9CE;padding-top:8px">
-              <span>Annuité équivalente — Arrachage : <b style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ annuiteArrTxt }}</b></span>
-              <span>Complantation : <b style="font-family:'JetBrains Mono',monospace;color:#4C7A57">{{ annuiteComplTxt }}</b></span>
-              <span>Statu quo : <b style="font-family:'JetBrains Mono',monospace;color:#9A9E97">{{ annuiteSQTxt }}</b></span>
-            </div>
-            <div style="font-size:11px;color:#5C6157;margin-top:3px">moyenne annuelle sur l'horizon — permet de comparer 10 et 25 ans entre eux</div>
-          </figure>
-        </div>
-
-        <figure style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
           <figcaption style="font-family:'Fraunces',serif;font-weight:600;font-size:16px">Stock de réserve individuelle</figcaption>
           <div style="font-size:12.5px;color:#5C6157;margin:2px 0 12px;max-width:74ch">En kg/ha de surface productive. Un cumul flatteur peut cacher une réserve asséchée. Plafond 10 000 kg/ha.</div>
-          {{ chartStock }}
-          <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:12.5px;margin-top:10px">
-            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#A97F26;display:inline-block"></span>arrachage-replantation</span>
-            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#4C7A57;display:inline-block"></span>complantation</span>
-            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#9A9E97;display:inline-block"></span>statu quo</span>
-          </div>
+          <button onClick="{{ toggleStockChart }}" style="font-size:12.5px;padding:7px 14px;border:1px solid #DDD9CE;background:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
+            <span>Afficher la trajectoire</span>
+            <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ stockChartChevron }}</span>
+          </button>
+          <sc-if value="{{ stockChartOuvert }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:12px">
+              {{ chartStock }}
+              <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:12.5px;margin-top:10px">
+                <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#A97F26;display:inline-block"></span>arrachage-replantation</span>
+                <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#4C7A57;display:inline-block"></span>complantation</span>
+                <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#9A9E97;display:inline-block"></span>statu quo</span>
+              </div>
+            </div>
+          </sc-if>
           <div style="margin-top:12px;border-top:1px dotted #DDD9CE;padding-top:12px">
             <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">
               <span style="font-size:13px;font-weight:600">Réserve débloquée par l'arrachage</span>
@@ -663,7 +761,26 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
               </sc-for>
             </div>
           </div>
-          <div style="font-size:12.5px;color:#5C6157;margin-top:10px;border-top:1px dotted #DDD9CE;padding-top:8px">L'arrachage puise dans la réserve puis la reconstitue ; le statu quo la maintient. Le point bas mesure votre exposition à une petite récolte pendant le renouvellement.</div>
+          <div style="font-size:12.5px;color:#5C6157;margin-top:10px;border-top:1px dotted #DDD9CE;padding-top:8px">L'arrachage puise dans la réserve puis la reconstitue ; le statu quo la maintient. Chaque kg de réserve mobilisé est un coussin de sécurité entamé d'autant, pas un gain net.</div>
+        </figure>
+
+        <figure style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
+          <figcaption style="font-family:'Fraunces',serif;font-weight:600;font-size:16px">Trajectoire d'âge moyen du vignoble</figcaption>
+          <div style="font-size:12.5px;color:#5C6157;margin:2px 0 12px;max-width:74ch">Âge moyen de l'exploitation (parcelle désignée + reste), en années, sur l'horizon. Pendant le repos du sol, la parcelle sort du calcul : aucun rajeunissement affiché avant qu'une vigne ne soit effectivement replantée.</div>
+          <button onClick="{{ toggleAgeChart }}" style="font-size:12.5px;padding:7px 14px;border:1px solid #DDD9CE;background:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
+            <span>Afficher la trajectoire</span>
+            <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ ageChartChevron }}</span>
+          </button>
+          <sc-if value="{{ ageChartOuvert }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:12px">
+              {{ chartAge }}
+              <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:12.5px;margin-top:10px">
+                <sc-for list="{{ ageLegendItems }}" as="li" hint-placeholder-count="3">
+                  <span style="display:inline-flex;align-items:center;gap:6px">{{ li.swatch }}{{ li.label }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
         </figure>
 
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:16px;overflow:hidden">
@@ -722,7 +839,7 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
           </sc-if>
         </div>
 
-        <p style="font-size:12px;color:#5C6157;max-width:78ch;margin-top:24px;border-top:1px solid #DDD9CE;padding-top:14px;line-height:1.6"><b>Limites assumées de la v1.1</b> — mono-parcelle ; prix unique ; faire-valoir simplifié ; hypothèses à caler (pénalité VSL, montée en charge, survie complantation) ; coût de stockage de la réserve négligé. Règles AOC (CDC homologué le 31/07/2025) : rang ≤ 2,00 m, pied 0,70–1,50 m, somme ≤ 3,00 m ; irrigation interdite ; Voltis ≤ 5 %. Sortie arrachage 9 000 kg/ha (× 3 classique / × 5 sanitaire), plafond 10 000. Stock RI terminal = actif contraint, jamais monétisé.</p>
+        <p style="font-size:12px;color:#5C6157;max-width:78ch;margin-top:24px;border-top:1px solid #DDD9CE;padding-top:14px;line-height:1.6">Simulation pédagogique construite sur vos seules saisies — hypothèses, sources et formule de chaque chiffre : fiche imprimable ci-dessus (« 🖨 Imprimer la fiche »).</p>
 
         <div class="print-sheet">
           <h2 style="font-family:'Fraunces',serif;font-size:20px;margin:0 0 4px">Fiche d'hypothèses et de résultats — OAD Renouvellement du vignoble</h2>
@@ -756,7 +873,7 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
               <th style="text-align:left">Formule</th>
             </tr></thead>
             <tbody>
-              <sc-for list="{{ printKpiRows }}" as="pk" hint-placeholder-count="7">
+              <sc-for list="{{ printKpiRows }}" as="pk" hint-placeholder-count="8">
                 <tr>
                   <td>{{ pk.lib }}</td>
                   <td style="text-align:right;font-family:'JetBrains Mono',monospace">{{ pk.val }}</td>
@@ -867,29 +984,60 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
+// Jeu de données d'exemple, en cache mémoire (chantier 1 — registre
+// parcellaire). Ne vient d'aucun import : préchargé pour tester le mode
+// "registre" avant que l'écran d'import de fichier ne soit branché. idu
+// fictifs, format des colonnes réel (commune Cuis, num_civc 1425).
+const REGISTRE_EXEMPLE_CSV = `idu;commune;num_civc;mode_explo;cepage;anneeplant;surface_ss_parcelle;productivite_moyenne;taux_manquant;enroulement;court_noue;situation
+510200000C1237;Cuis;1425;;CHARDONNAY B;2019;0,05;12000;5;0;0;Plantée
+510200000C1255;Cuis;1425;;CHARDONNAY B;2010;0,12;12000;5;0;0;Plantée
+510200000C1516;Cuis;1425;;CHARDONNAY B;2010;0,04;12000;5;0;0;Plantée
+510200000C1517;Cuis;1425;;CHARDONNAY B;2010;0,00;12000;5;0;0;Plantée
+510200000Z0068;Cuis;1425;;MEUNIER N;1954;0,21;12000;5;0;0;Arrachée
+510200000Z0068;Cuis;1425;;CHARDONNAY B;1951;0,14;12000;5;0;0;Plantée
+510200000Z0068;Cuis;1425;;CHARDONNAY B;1954;0,24;12000;5;0;0;Plantée
+510200000Z0068;Cuis;1425;;CHARDONNAY B;2006;0,02;12000;5;0;0;Plantée
+510200000Z0069;Cuis;1425;;MEUNIER N;1951;0,13;12000;5;0;0;Arrachée
+510200000Z0069;Cuis;1425;;CHARDONNAY B;1951;0,24;12000;5;0;0;Plantée
+510200000Z0157;Cuis;1425;;MEUNIER N;1954;0,13;12000;5;0;0;Arrachée
+510200000Z0157;Cuis;1425;;CHARDONNAY B;1954;0,18;12000;5;0;0;Plantée`;
+
 class Component extends DCLogic {
   constructor(props) {
     super(props);
+    // Registre parcellaire (chantier 1) — préchargé en mémoire comme jeu
+    // d'exemple, jamais persisté (pas de localStorage). `sourceParcellaire`
+    // bascule surfTot/ageMoy/surfParc/ageParc/manquants/cepage entre saisie
+    // manuelle et dérivation du registre — une seule source active à la fois.
+    const registreRows = this.parseRegistreCSV(REGISTRE_EXEMPLE_CSV);
+    const iduPlanteesInit = [...new Set(registreRows.filter(r => r.situation === 'plantee').map(r => r.idu))];
+
     this.state = {
-      step: 0, vueFV: '1', palisManuel: false, moExterne: true,
+      step: 0, vueFV: '1', palisManuel: false, protectionManuel: false, moExterne: true,
       aideOuverte: false, detailOuvert: false, magOuvert: false,
+      effortNetOuvert: false, stockChartOuvert: false, ageChartOuvert: false,
       voletProdOuvert: false, voletProdOverrides: {},
       voletReposOuvert: false, voletReposOverrides: {}, voletReposCourtNoue: false,
       voletPlantierOuvert: false, voletPlantierOverrides: {},
       oadReady: typeof window !== 'undefined' && !!window.OAD,
+      sourceParcellaire: 'manuel',
+      registreRows,
+      parcelleIdu: iduPlanteesInit[0] || null,
+      parcelleLignesExclues: {},
       v: {
         surfTot: 10, ageMoy: 38, riPct: 75, volco: 9000, prixKg: 7,
+        campagne: new Date().getFullYear(),
         ageParc: 55, manquants: 15, rendEstime: 10500, declinSQ: 1,
         regime: 'propriete', loyerHa: 3000, partRecolte: 33, partCouts: 33,
         geoL: 100, geoW: 100, ecartRang: 1, ecartPied: 1.10,
         materiel: 'vinifera', porteGreffe: '41 B', irrigation: '0', ramp: '0.3,0.6,1',
         cepage: 'Pinot noir', calcaireActif: 18, profondeurSol: '30-60', drainageSol: 'drainant',
         typeTaille: 'guyot', nbFils: 4, espPiquet: 6,
-        motif: 'classique', coutArrachageHa: 4500, coutPrepaHa: 3500, coutPlant: 1.8,
-        coutPalissageHa: 12000, coutIrrigHa: 5000, penaliteVSL: 15, survie: 50,
+        motif: 'classique', coutArrachageHa: 22500, coutPlant: 2.10,
+        coutPalissageHa: 12000, coutProtectionHa: 10000, coutIrrigHa: 5000, penaliteVSL: 15, survie: 50,
         entreeProd: 7, coutEntreplant: 4.5,
-        coutSurfaceProdHaAn: 0, coutRdtParKg: 0, tauxHoraire: 17,
-        coutReposHaAn: 0, coutPlantierHaAn: 0, fracFormation: 0.35,
+        coutSurfaceProdHaAn: 11400, coutRdtParKg: 1.52, tauxHoraire: 17,
+        coutReposHaAn: 0, coutPlantierHaAn: 8000, fracFormation: 0.35,
         sequence: 'aucune', horizon: '10'
       }
     };
@@ -901,6 +1049,7 @@ class Component extends DCLogic {
           const v = { ...s.v, [k]: val };
           let extra = {};
           if (k === 'coutPalissageHa') extra.palisManuel = true;
+          if (k === 'coutProtectionHa') extra.protectionManuel = true;
           if (k === 'typeTaille' && window.OAD) v.nbFils = window.OAD.FILS_PAR_TAILLE[val] || 4;
           return { v, ...extra };
         });
@@ -922,8 +1071,14 @@ class Component extends DCLogic {
       { id: 'sousSolage',     lib: 'Sous-solage léger',                     hHa: 0, intrantEuroHa: 0, src: 'à caler — dire d\'expert coop' },
       { id: 'devitalisation', lib: 'Dévitalisation court-noué (optionnel)', hHa: 0, intrantEuroHa: 0, src: 'à caler — dire d\'expert coop' },
     ];
+    // chantier P8 : 'protection' recentré sur la seule MAIN D'ŒUVRE de
+    // surveillance/relève de la protection du jeune plant (charge annuelle,
+    // volet plantier) — l'ACHAT du tuteur + cache-plant (matière, ponctuel)
+    // est désormais un poste dédié en investissement (coutProtectionHa,
+    // OAD.coutProtectionPlant), pour éviter que cette ligne "à caler" ne
+    // soit un jour remplie avec un prix matériel déjà compté ailleurs.
     this.REF_PLANTIER = [
-      { id: 'protection',    lib: 'Protection des jeunes plants',     hHa: 0, intrantEuroHa: 0, src: 'à caler — dire d\'expert coop' },
+      { id: 'protection',    lib: "Surveillance / relève de la protection (MO)", hHa: 0, intrantEuroHa: 0, src: 'à caler — dire d\'expert coop — hors achat tuteur/cache-plant, voir investissement ponctuel' },
       { id: 'entretienPal',  lib: 'Entretien du palissage posé',      hHa: 0, intrantEuroHa: 0, src: 'à caler — dire d\'expert coop' },
       { id: 'remplacement',  lib: 'Remplacement des reprises ratées', hHa: 0, intrantEuroHa: 0, src: 'à caler — dire d\'expert coop' },
     ];
@@ -958,6 +1113,56 @@ class Component extends DCLogic {
       vsl: eR >= 1.5, aoc: { rang: eR <= 2.0, pied: eP >= 0.7 && eP <= 1.5, somme: (eR + eP) <= 3.0 } };
   }
 
+  // Parseur du registre parcellaire — format d'export connu : CSV ';',
+  // décimales à la virgule (fr-FR), BOM UTF-8 éventuel en tête de fichier.
+  // Colonnes lues par nom d'en-tête (robuste à un réordonnancement des
+  // colonnes) ; situation normalisée en 'plantee'/'arrachee' (accents et
+  // casse neutralisés) pour ne pas dépendre de l'encodage du fichier.
+  parseRegistreCSV(texte) {
+    const nettoye = String(texte || '').replace(/^﻿/, '').trim();
+    const lignes = nettoye.split(/\r?\n/).filter(l => l.trim().length);
+    if (!lignes.length) return [];
+    const entete = lignes[0].split(';').map(h => h.trim().toLowerCase());
+    const col = (nom) => entete.indexOf(nom);
+    const iIdu = col('idu'), iCommune = col('commune'), iNumCivc = col('num_civc'),
+      iModeExplo = col('mode_explo'), iCepage = col('cepage'), iAnnee = col('anneeplant'),
+      iSurface = col('surface_ss_parcelle'), iProd = col('productivite_moyenne'),
+      iManquant = col('taux_manquant'), iEnroulement = col('enroulement'),
+      iCourtNoue = col('court_noue'), iSituation = col('situation');
+    const nombre = (s) => { const n = parseFloat(String(s ?? '0').trim().replace(',', '.')); return isNaN(n) ? 0 : n; };
+    const normaliser = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    return lignes.slice(1).map((ligne, i) => {
+      const c = ligne.split(';');
+      return {
+        _id: i,
+        idu: (c[iIdu] || '').trim(),
+        commune: (c[iCommune] || '').trim(),
+        numCivc: (c[iNumCivc] || '').trim(),
+        modeExplo: (c[iModeExplo] || '').trim(),
+        cepage: (c[iCepage] || '').trim(),
+        anneePlant: nombre(c[iAnnee]),
+        surface: nombre(c[iSurface]),
+        productiviteMoyenne: nombre(c[iProd]),
+        tauxManquant: nombre(c[iManquant]),
+        enroulement: nombre(c[iEnroulement]),
+        courtNoue: nombre(c[iCourtNoue]),
+        situation: normaliser(c[iSituation]) === 'arrachee' ? 'arrachee' : 'plantee'
+      };
+    });
+  }
+
+  // Les codes ampélographiques du registre (ex. "CHARDONNAY B", "MEUNIER N")
+  // ne correspondent pas aux 3 libellés du sélecteur cépage (Pinot noir /
+  // Meunier / Chardonnay, utilisés pour la fiche clones §15) — reprojection
+  // informative uniquement, sans effet sur le calcul économique.
+  cepageAffichage(codeRegistre) {
+    const c = String(codeRegistre || '').toUpperCase();
+    if (c.includes('CHARDONNAY')) return 'Chardonnay';
+    if (c.includes('MEUNIER')) return 'Meunier';
+    if (c.includes('PINOT')) return 'Pinot noir';
+    return codeRegistre || 'Pinot noir';
+  }
+
   chart(series, opt) {
     const e = React.createElement;
     const W = 760, H = 300, mL = 78, mR = 16, mT = 16, mB = 40;
@@ -986,6 +1191,16 @@ class Component extends DCLogic {
     if (opt.xTitle) ch.push(e('text', { key: 'xt', x: (mL + W - mR) / 2, y: H - 4, textAnchor: 'middle', fontSize: 10.5, fill: '#5C6157' }, opt.xTitle));
     if (opt.yTitle) ch.push(e('text', { key: 'yt', transform: `translate(16,${(mT + H - mB) / 2}) rotate(-90)`, textAnchor: 'middle', fontSize: 10.5, fill: '#5C6157' }, opt.yTitle));
     series.forEach((s, i) => ch.push(e('path', { key: 'p' + i, d: path(s.pts), fill: 'none', stroke: s.c, strokeWidth: s.w, strokeDasharray: s.dash, strokeLinejoin: 'round' })));
+    // Marqueurs de forme par série (accessibilité vision dichromate — ne pas
+    // reposer sur la seule couleur) : opt-in via s.marker ('circle'|'square'|
+    // 'triangle'), tracés à chaque point t. Séries existantes sans s.marker
+    // inchangées (ex. chartStock).
+    const markerShape = (shape, key, cx, cy, r, fill) => {
+      if (shape === 'square') return e('rect', { key, x: cx - r, y: cy - r, width: 2 * r, height: 2 * r, fill });
+      if (shape === 'triangle') return e('polygon', { key, points: `${cx},${cy - r * 1.15} ${cx - r},${cy + r * 0.85} ${cx + r},${cy + r * 0.85}`, fill });
+      return e('circle', { key, cx, cy, r, fill });
+    };
+    series.forEach((s, i) => { if (s.marker) for (let t = 0; t <= n; t++) ch.push(markerShape(s.marker, 'm' + i + '-' + t, X(t), Y(s.pts[t]), 3, s.c)); });
     (opt.annot || []).forEach((a, i) => {
       const x = X(a.t), y = Y(a.serie[a.t]);
       ch.push(e('circle', { key: 'a' + i, cx: x, cy: y, r: 4, fill: a.c }));
@@ -995,46 +1210,17 @@ class Component extends DCLogic {
     return e('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', style: { width: '100%', height: 'auto', display: 'block' } }, ch);
   }
 
-  waterfall(invest, reserve, effort) {
+  // Vignette de légende (trait + marqueur de forme) — même logique que les
+  // marqueurs de chart(), pour une légende qui ne repose pas sur la seule
+  // couleur (accessibilité vision dichromate).
+  legendSwatch(c, dash, marker) {
     const e = React.createElement;
-    const W = 300, H = 214, mT = 30, mB = 44, base = H - mB;
-    const maxV = Math.max(invest, reserve, 1);
-    const Y = val => base - (base - mT) * (val / maxV);
-    const couv = invest > 0 ? Math.round(Math.min(reserve / invest, 9.99) * 100) : 0;
-    const cols = [
-      { x: 22, w: 66, c: '#20291F', label: 'Investissement', sub: 'brut', val: invest },
-      { x: 117, w: 66, c: '#A97F26', label: 'Réserve', sub: couv >= 100 ? 'couvre ' + couv + ' %' : couv + ' % couvert', val: reserve },
-      { x: 212, w: 66, c: '#4C7A57', label: 'Effort net', sub: effort <= 0 ? 'rien à financer' : 'à financer', val: effort }
-    ];
-    const ch = [ e('line', { key: 'z', x1: 12, x2: W - 12, y1: base, y2: base, stroke: '#20291F', strokeWidth: 1 }) ];
-    cols.forEach((c, i) => {
-      const yTop = Y(c.val);
-      ch.push(e('rect', { key: 'r' + i, x: c.x, width: c.w, y: yTop, height: Math.max(2, base - yTop), fill: c.c, rx: 2 }));
-      ch.push(e('text', { key: 't' + i, x: c.x + c.w / 2, y: yTop - 7, textAnchor: 'middle', fontSize: 11.5, fontWeight: 600, fill: c.c, fontFamily: 'JetBrains Mono' }, this.fmtE0(c.val).replace(' €', '')));
-      ch.push(e('text', { key: 'l' + i, x: c.x + c.w / 2, y: base + 16, textAnchor: 'middle', fontSize: 10.5, fill: '#20291F' }, c.label));
-      ch.push(e('text', { key: 's' + i, x: c.x + c.w / 2, y: base + 29, textAnchor: 'middle', fontSize: 9.5, fill: '#9A9E97' }, c.sub));
-    });
-    return e('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', style: { width: '100%', height: 'auto', display: 'block' } }, ch);
-  }
-
-  compareBars(items, fmt) {
-    const e = React.createElement;
-    const W = 430, H = 176, mL = 130, mR = 66, mT = 10, mB = 8;
-    const vals = items.map(i => i.val);
-    let minV = Math.min(0, ...vals), maxV = Math.max(0, ...vals);
-    const rng = (maxV - minV) || 1;
-    const X = val => mL + (W - mL - mR) * (val - minV) / rng;
-    const rowH = (H - mT - mB) / items.length;
-    const ch = [ e('line', { key: 'z', x1: X(0), x2: X(0), y1: mT, y2: H - mB, stroke: '#20291F', strokeWidth: 1 }) ];
-    items.forEach((it, i) => {
-      const cy = mT + rowH * i + rowH / 2;
-      const bh = Math.min(26, rowH - 12);
-      const x0 = X(0), x1 = X(it.val);
-      ch.push(e('rect', { key: 'b' + i, x: Math.min(x0, x1), width: Math.max(2, Math.abs(x1 - x0)), y: cy - bh / 2, height: bh, fill: it.c, rx: 3 }));
-      ch.push(e('text', { key: 'lb' + i, x: mL - 10, y: cy + 4, textAnchor: 'end', fontSize: 11.5, fill: '#20291F' }, it.label));
-      ch.push(e('text', { key: 'vl' + i, x: it.val >= 0 ? x1 + 6 : x1 - 6, y: cy + 4, textAnchor: it.val >= 0 ? 'start' : 'end', fontSize: 11, fontWeight: 600, fill: it.c, fontFamily: 'JetBrains Mono' }, fmt(it.val).replace(' €', '')));
-    });
-    return e('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', style: { width: '100%', height: 'auto', display: 'block' } }, ch);
+    const w = 22, h = 12, cy = h / 2, cx = w / 2;
+    const ch = [e('line', { key: 'l', x1: 0, x2: w, y1: cy, y2: cy, stroke: c, strokeWidth: 2.4, strokeDasharray: dash })];
+    if (marker === 'square') ch.push(e('rect', { key: 'm', x: cx - 3, y: cy - 3, width: 6, height: 6, fill: c }));
+    else if (marker === 'triangle') ch.push(e('polygon', { key: 'm', points: `${cx},${cy - 3.4} ${cx - 3},${cy + 2.6} ${cx + 3},${cy + 2.6}`, fill: c }));
+    else ch.push(e('circle', { key: 'm', cx, cy, r: 3, fill: c }));
+    return e('svg', { width: w, height: h, viewBox: `0 0 ${w} ${h}` }, ch);
   }
 
   renderVals() {
@@ -1065,29 +1251,63 @@ class Component extends DCLogic {
     if (OAD) cp = OAD.coutPalissage(g, null, { espacementPiquet: +v.espPiquet || 6, nbFils: +v.nbFils || 4 });
     const coutPalisEffectif = s.palisManuel || !cp ? (+v.coutPalissageHa || 0) : Math.round(cp.totalHa);
 
+    // protection du jeune plant dérivée (tuteur + cache-plant, chantier P8) —
+    // même mécanique de préremplissage opt-in que le palissage ci-dessus,
+    // mais poste séparé (ne dépend que de la densité, pas de la géométrie du rang).
+    let cprot = null;
+    if (OAD) cprot = OAD.coutProtectionPlant(g.densite);
+    const coutProtectionEffectif = s.protectionManuel || !cprot ? (+v.coutProtectionHa || 0) : Math.round(cprot.totalHa);
+
+    // Registre parcellaire (chantier 1) — bascule manuel/registre, une seule
+    // source active à la fois. surfTot/ageMoy viennent de l'agrégat de tout
+    // le registre ; surfParc/ageParc/manquants/cepage viennent de la
+    // sélection multi-lignes de la parcelle désignée (lignes Plantée d'un
+    // même idu, pondérées par surface). La géométrie (g) garde son rôle sur
+    // densité/palissage/AOC — voir README, journal d'arbitrages du chantier.
+    const modeRegistre = s.sourceParcellaire === 'registre';
+    const campagne = +v.campagne || new Date().getFullYear();
+    const registreRows = s.registreRows || [];
+    const agregExploitation = OAD ? OAD.agregerRegistreExploitation(registreRows, campagne) : { surfTot: 0, ageMoy: 0 };
+    const iduDisponibles = [...new Set(registreRows.filter(r => r.situation === 'plantee').map(r => r.idu))];
+    const lignesParcelleCandidates = registreRows.filter(r => r.idu === s.parcelleIdu && r.situation === 'plantee');
+    const lignesParcelleRetenues = lignesParcelleCandidates.filter(r => !s.parcelleLignesExclues[r._id]);
+    const agregParcelle = OAD ? OAD.agregerRegistreParcelle(lignesParcelleRetenues, campagne)
+      : { surfParc: 0, ageParc: 0, tauxManquant: 0, cepage: null, cepageMixte: false };
+    const surfParcResolu = modeRegistre ? agregParcelle.surfParc : g.surf;
+    // Nombre de pieds affiché : en mode manuel, comptage exact du rectangle
+    // (nbRangs × piedsRang, inchangé) ; en mode registre, la géométrie ne
+    // pilote plus que la densité (pieds/ha) — le nombre absolu de pieds doit
+    // donc être recalculé sur la vraie surface de la parcelle (registre),
+    // exactement comme nbPlants dans construireScenarios (moteur-oad.js).
+    const piedsAffiches = modeRegistre ? Math.round(g.densite * surfParcResolu) : g.pieds;
+
     const inp = {
       geo: g, sanitaire,
-      surfTot: +v.surfTot || 1, surfParc: g.surf,
-      ageMoy: +v.ageMoy || 0, ageParc: +v.ageParc || 0,
+      surfTot: modeRegistre ? agregExploitation.surfTot : (+v.surfTot || 1), surfParc: surfParcResolu,
+      ageMoy: modeRegistre ? agregExploitation.ageMoy : (+v.ageMoy || 0),
+      ageParc: modeRegistre ? agregParcelle.ageParc : (+v.ageParc || 0),
       repos: sanitaire ? 3 : 1, nbSortie: sanitaire ? 5 : 3, volSortieArr: 9000,
       plafond: 10000, volco: +v.volco || 0, rendMean: m,
       reserveInit: 10000 * (+v.riPct || 0) / 100, horizon: +v.horizon || 10,
       ramp: String(v.ramp).split(',').map(Number), rendYearFn,
       rendFactorProjet: fDens,
-      rendEstime: +v.rendEstime || 0, manquants: (+v.manquants || 0) / 100,
+      rendEstime: +v.rendEstime || 0,
+      manquants: modeRegistre ? (agregParcelle.tauxManquant / 100) : ((+v.manquants || 0) / 100),
       declinSQ: (+v.declinSQ || 0) / 100, densite: g.densite,
-      coutArrachageHa: +v.coutArrachageHa || 0, coutPrepaHa: +v.coutPrepaHa || 0,
+      coutArrachageHa: +v.coutArrachageHa || 0,
       coutPlant: +v.coutPlant || 0, coutPalissageHa: coutPalisEffectif,
+      coutProtectionHa: coutProtectionEffectif,
       irrigation: v.irrigation === '1', coutIrrigHa: +v.coutIrrigHa || 0,
       coutEntreplant: +v.coutEntreplant || 0, survie: Math.max(0.01, (+v.survie || 50) / 100),
       entreeProd: +v.entreeProd || 7, prixKg: +v.prixKg || 0,
       coutSurfaceProdHaAn: +v.coutSurfaceProdHaAn || 0, coutRdtParKg: +v.coutRdtParKg || 0,
       coutReposHaAn: +v.coutReposHaAn || 0, coutPlantierHaAn: +v.coutPlantierHaAn || 0,
       tauxHoraire: +v.tauxHoraire || 0,
-      // chantier 5 : loyerAn porte sur la surface de la PARCELLE (g.surf), pas sur
-      // toute l'exploitation — le régime de faire-valoir de l'étape 2 ne s'applique
-      // qu'aux flux attribuables à la parcelle (voir OAD.repartir, README §10).
-      fv: { regime: v.regime, loyerAn: (+v.loyerHa || 0) * g.surf,
+      // chantier 5 : loyerAn porte sur la surface de la PARCELLE (surfParcResolu :
+      // g.surf en mode manuel, agrégat registre en mode registre — chantier 1),
+      // pas sur toute l'exploitation — le régime de faire-valoir de l'étape 2 ne
+      // s'applique qu'aux flux attribuables à la parcelle (voir OAD.repartir, README §10).
+      fv: { regime: v.regime, loyerAn: (+v.loyerHa || 0) * surfParcResolu,
         partRecolte: (+v.partRecolte || 0) / 100, partCouts: (+v.partCouts || 0) / 100 }
     };
 
@@ -1174,8 +1394,8 @@ class Component extends DCLogic {
       riKgTxt: this.fmtKg(inp.reserveInit),
       syDens: this.fmtKg(g.densite) + ' pieds/ha',
       syRangs: String(g.nbRangs),
-      syPieds: this.fmtKg(g.pieds) + ' pieds',
-      sySurf: g.surf.toFixed(3) + ' ha',
+      syPieds: this.fmtKg(piedsAffiches) + ' pieds',
+      sySurf: this.fmtHa(surfParcResolu) + ' ha',
       syMode: g.vsl ? 'Vigne semi-large (VSL)' : 'Traditionnelle',
       aideOuverte: s.aideOuverte, toggleAide: () => this.setState(st => ({ aideOuverte: !st.aideOuverte })),
       aideChevron: s.aideOuverte ? '−' : '+',
@@ -1183,6 +1403,12 @@ class Component extends DCLogic {
       detailChevron: s.detailOuvert ? '−' : '+',
       magOuvert: s.magOuvert, toggleMaG: () => this.setState(st => ({ magOuvert: !st.magOuvert })),
       magChevron: s.magOuvert ? '−' : '+',
+      effortNetOuvert: s.effortNetOuvert, toggleEffortNet: () => this.setState(st => ({ effortNetOuvert: !st.effortNetOuvert })),
+      effortNetChevron: s.effortNetOuvert ? '−' : '+',
+      stockChartOuvert: s.stockChartOuvert, toggleStockChart: () => this.setState(st => ({ stockChartOuvert: !st.stockChartOuvert })),
+      stockChartChevron: s.stockChartOuvert ? '−' : '+',
+      ageChartOuvert: s.ageChartOuvert, toggleAgeChart: () => this.setState(st => ({ ageChartOuvert: !st.ageChartOuvert })),
+      ageChartChevron: s.ageChartOuvert ? '−' : '+',
       voletProdOuvert: s.voletProdOuvert, toggleVoletProd: () => this.setState(st => ({ voletProdOuvert: !st.voletProdOuvert })),
       voletProdChevron: s.voletProdOuvert ? '−' : '+',
       voletProdLignes,
@@ -1200,6 +1426,9 @@ class Component extends DCLogic {
       reportPalis: () => this.setState({ palisManuel: false }),
       coutPalissageAffiche: coutPalisEffectif,
       palisBadge: s.palisManuel ? '· édité à la main' : '· prérempli depuis la géométrie',
+      reportProtection: () => this.setState({ protectionManuel: false }),
+      coutProtectionAffiche: coutProtectionEffectif,
+      protectionBadge: s.protectionManuel ? '· édité à la main' : '· prérempli depuis la densité',
       vue1: () => this.setState({ vueFV: '1' }), vueExp: () => this.setState({ vueFV: 'exp' }), vueProp: () => this.setState({ vueFV: 'prop' }),
       vueBg1: s.vueFV === '1' ? '#20291F' : '#fff', vueFg1: s.vueFV === '1' ? '#FAF9F5' : '#20291F',
       vueBgExp: s.vueFV === 'exp' ? '#20291F' : '#fff', vueFgExp: s.vueFV === 'exp' ? '#FAF9F5' : '#20291F',
@@ -1219,14 +1448,14 @@ class Component extends DCLogic {
     out.voletReposTotalTxt = nf(voletReposTotalEuroHa, 0) + ' €/ha';
     out.voletPlantierTotalTxt = nf(voletPlantierTotalEuroHa, 0) + ' €/ha';
     out.printInpRows = [
-      { lib: "Surface totale de l'exploitation", val: nf(inp.surfTot, 2), unite: 'ha', origine: 'Saisi' },
-      { lib: 'Âge moyen du vignoble', val: nf(+v.ageMoy || 0, 0), unite: 'ans', origine: 'Saisi' },
+      { lib: "Surface totale de l'exploitation", val: nf(inp.surfTot, 2), unite: 'ha', origine: modeRegistre ? 'Dérivé du registre — somme de toutes les lignes (Plantée + Arrachée)' : 'Saisi' },
+      { lib: 'Âge moyen du vignoble', val: nf(inp.ageMoy, 0), unite: 'ans', origine: modeRegistre ? `Dérivé du registre — moyenne pondérée par surface, lignes Plantée uniquement, campagne ${campagne}` : 'Saisi' },
       { lib: 'Volume commercialisable (VolCo)', val: nf(inp.volco, 0), unite: 'kg/ha', origine: 'Saisi' },
       { lib: 'Prix du raisin', val: nf(inp.prixKg, 2), unite: '€/kg', origine: 'Saisi' },
       { lib: 'Réserve individuelle initiale (saisie)', val: nf(+v.riPct || 0, 0), unite: '% du plafond', origine: 'Saisi' },
       { lib: 'Réserve individuelle initiale', val: nf(inp.reserveInit, 0), unite: 'kg/ha', origine: 'Dérivé — plafond câblé en dur (10 000) × réserve saisie / 100' },
-      { lib: 'Âge de la parcelle', val: nf(+v.ageParc || 0, 0), unite: 'ans', origine: 'Saisi' },
-      { lib: 'Pieds manquants', val: nf(inp.manquants * 100, 1), unite: '%', origine: 'Saisi' },
+      { lib: 'Âge de la parcelle', val: nf(inp.ageParc, 0), unite: 'ans', origine: modeRegistre ? `Dérivé du registre — moyenne pondérée par surface de la sélection (idu ${s.parcelleIdu}), campagne ${campagne}` : 'Saisi' },
+      { lib: 'Pieds manquants', val: nf(inp.manquants * 100, 1), unite: '%', origine: modeRegistre ? 'Dérivé du registre — moyenne pondérée par surface de la sélection' : 'Saisi' },
       { lib: 'Rendement estimé de la parcelle', val: nf(inp.rendEstime, 0), unite: 'kg/ha', origine: 'Saisi' },
       { lib: 'Déclin annuel en statu quo', val: nf(inp.declinSQ * 100, 2), unite: '%/an', origine: 'Saisi' },
       { lib: 'Régime de faire-valoir', val: v.regime, unite: '—', origine: 'Saisi' },
@@ -1239,9 +1468,9 @@ class Component extends DCLogic {
       { lib: 'Écart entre rangs', val: nf(+v.ecartRang || 0, 2), unite: 'm', origine: 'Saisi' },
       { lib: 'Écart entre pieds', val: nf(+v.ecartPied || 0, 2), unite: 'm', origine: 'Saisi' },
       { lib: 'Densité de plantation', val: nf(g.densite, 0), unite: 'pieds/ha', origine: 'Dérivé de la géométrie — 10 000 / (écart rang × écart pied)' },
-      { lib: 'Surface réelle de la parcelle', val: nf(g.surf, 4), unite: 'ha', origine: 'Dérivé de la géométrie — longueur × largeur / 10 000' },
+      { lib: 'Surface réelle de la parcelle', val: nf(inp.surfParc, 4), unite: 'ha', origine: modeRegistre ? `Dérivé du registre — somme des lignes retenues (idu ${s.parcelleIdu})` : 'Dérivé de la géométrie — longueur × largeur / 10 000' },
       { lib: 'Nombre de rangs', val: nf(g.nbRangs, 0), unite: '—', origine: 'Dérivé de la géométrie' },
-      { lib: 'Nombre de pieds à planter', val: nf(g.pieds, 0), unite: 'pieds', origine: 'Dérivé de la géométrie' },
+      { lib: 'Nombre de pieds à planter', val: nf(piedsAffiches, 0), unite: 'pieds', origine: modeRegistre ? 'Dérivé — densité de la géométrie × surface du registre' : 'Dérivé de la géométrie' },
       { lib: 'Conduite semi-large (VSL)', val: oui(g.vsl), unite: '—', origine: 'Dérivé de la géométrie — écart rang ≥ 1,50 m' },
       { lib: 'Matériel végétal', val: v.materiel, unite: '—', origine: 'Saisi' },
       { lib: 'Porte-greffe', val: v.porteGreffe, unite: '—', origine: 'Saisi — information, hors calcul économique' },
@@ -1255,24 +1484,57 @@ class Component extends DCLogic {
       { lib: "Volume de sortie de réserve à l'arrachage", val: nf(inp.volSortieArr, 0), unite: 'kg/ha/an', origine: 'CÂBLÉ EN DUR — 9 000, non éditable' },
       { lib: 'Plafond de la réserve individuelle', val: nf(inp.plafond, 0), unite: 'kg/ha', origine: 'CÂBLÉ EN DUR — 10 000, non éditable' },
       { lib: 'Rendement moyen régional de référence', val: nf(inp.rendMean, 1), unite: 'kg/ha', origine: 'CÂBLÉ EN DUR — 12 296,6, non éditable' },
-      { lib: "Coût d'arrachage", val: nf(inp.coutArrachageHa, 0), unite: '€/ha', origine: 'Saisi' },
-      { lib: 'Préparation du sol', val: nf(inp.coutPrepaHa, 0), unite: '€/ha', origine: 'Saisi' },
+      { lib: "Coût d'arrachage (tout compris — MHCS)", val: nf(inp.coutArrachageHa, 0), unite: '€/ha', origine: 'Saisi' },
       { lib: 'Plant (matériel végétal)', val: nf(inp.coutPlant, 2), unite: '€/pied', origine: 'Saisi' },
-      { lib: 'Palissage', val: nf(inp.coutPalissageHa, 0), unite: '€/ha', origine: s.palisManuel ? 'Saisi — édité à la main' : 'Dérivé de la géométrie — devis LutEnVi 2025' },
+      { lib: 'Palissage', val: nf(inp.coutPalissageHa, 0), unite: '€/ha', origine: s.palisManuel ? 'Saisi — édité à la main' : 'Dérivé de la géométrie — relevé fournisseur [date à préciser] + gripple/MO LutEnVi 2025' },
+      { lib: 'Protection du jeune plant (tuteur + cache-plant)', val: nf(inp.coutProtectionHa, 0), unite: '€/ha', origine: s.protectionManuel ? 'Saisi — édité à la main' : 'Dérivé de la densité — relevé fournisseur [date à préciser] ; non appliqué à la complantation, coutEntreplant supposé l\'inclure déjà' },
       { lib: 'Ferti-irrigation (si oui)', val: nf(inp.coutIrrigHa, 0), unite: '€/ha', origine: 'Saisi' },
       { lib: 'Survie des entreplants', val: nf(inp.survie * 100, 1), unite: '%', origine: 'Saisi' },
       { lib: 'Entrée en production (entreplants)', val: nf(inp.entreeProd, 0), unite: 'années', origine: 'Saisi' },
       { lib: 'Coût par entreplant', val: nf(inp.coutEntreplant, 2), unite: '€/pied', origine: 'Saisi' },
-      { lib: 'Charge liée à la surface (production)', val: nf(inp.coutSurfaceProdHaAn, 0), unite: '€/ha/an', origine: 'Saisi — défaut 0, ou repris du détail par opération' },
-      { lib: 'Charge liée au rendement', val: nf(inp.coutRdtParKg, 2), unite: '€/kg', origine: 'Saisi — défaut 0' },
-      { lib: 'Charge de transition — repos', val: nf(inp.coutReposHaAn, 0), unite: '€/ha/an', origine: 'Saisi — défaut 0, ou repris du détail par opération (repos)' },
-      { lib: 'Charge de transition — plantier', val: nf(inp.coutPlantierHaAn, 0), unite: '€/ha/an', origine: 'Saisi — défaut 0, ou repris du détail par opération (plantier)' },
+      { lib: 'Charge liée à la surface (production)', val: nf(inp.coutSurfaceProdHaAn, 0), unite: '€/ha/an', origine: 'Cerfrance 2024 (charges de structure hors charges locatives, amortissement retiré) — 15 300 − 3 900, ou repris du détail par opération' },
+      { lib: 'Charge liée au rendement', val: nf(inp.coutRdtParKg, 2), unite: '€/kg', origine: 'Cerfrance 2024 (charges proportionnelles ÷ rendement de référence 10 000 kg/ha)' },
+      { lib: 'Charge de transition — repos', val: nf(inp.coutReposHaAn, 0), unite: '€/ha/an', origine: 'Saisi — défaut 0 (assumé), ou repris du détail par opération (repos)' },
+      { lib: 'Charge de transition — plantier', val: nf(inp.coutPlantierHaAn, 0), unite: '€/ha/an', origine: 'MHCS (taille de formation + remplacement des plants morts), ou repris du détail par opération (plantier)' },
       { lib: 'Fraction de formation (plantier)', val: nf(fracFormation, 2), unite: 'ratio', origine: 'Saisi — défaut 0,35, applique le volet production à la ligne "taille de formation"' },
       { lib: 'Taux horaire chargé (volet 1)', val: nf(+v.tauxHoraire || 0, 2), unite: '€/h', origine: 'Saisi — défaut SMIC 2026 chargé ≈ 17' },
       { lib: 'Test de résistance — séquence', val: v.sequence, unite: '—', origine: 'Saisi' },
       { lib: 'Choc de rendement en test de résistance', val: nf(EC, 0), unite: 'kg/ha', origine: 'CÂBLÉ EN DUR — 3 440, non éditable' },
       { lib: 'Horizon de simulation', val: nf(inp.horizon, 0), unite: 'ans', origine: 'Saisi' }
     ];
+
+    // Registre parcellaire (chantier 1) — bascule de mode, table de synthèse
+    // exploitation et sélecteur de la parcelle désignée (idu + sous-lignes).
+    // Import en mémoire uniquement : rien n'est persisté (pas de localStorage),
+    // le registre est reperdu à chaque rechargement de page.
+    out.modeRegistre = modeRegistre;
+    out.setSourceManuel = () => this.setState({ sourceParcellaire: 'manuel' });
+    out.setSourceRegistre = () => this.setState({ sourceParcellaire: 'registre' });
+    out.srcBgManuel = !modeRegistre ? '#20291F' : '#fff'; out.srcFgManuel = !modeRegistre ? '#FAF9F5' : '#20291F';
+    out.srcBgRegistre = modeRegistre ? '#20291F' : '#fff'; out.srcFgRegistre = modeRegistre ? '#FAF9F5' : '#20291F';
+    out.registreVide = registreRows.length === 0;
+    out.registreNbLignes = registreRows.length;
+    out.registreSurfTotTxt = this.fmtHa(agregExploitation.surfTot) + ' ha';
+    out.registreAgeMoyTxt = nf(agregExploitation.ageMoy, 1) + ' ans';
+    out.registreLignesTable = registreRows.map(r => ({
+      idu: r.idu, commune: r.commune, cepage: r.cepage, anneePlant: r.anneePlant,
+      age: campagne - r.anneePlant, surfaceTxt: this.fmtHa(r.surface),
+      situationTxt: r.situation === 'arrachee' ? 'Arrachée' : 'Plantée',
+      situationFg: r.situation === 'arrachee' ? '#A5433A' : '#4C7A57'
+    }));
+    out.iduOptions = iduDisponibles.map(idu => ({ value: idu }));
+    out.parcelleIdu = s.parcelleIdu;
+    out.onParcelleIdu = (e) => this.setState({ parcelleIdu: e.target.value, parcelleLignesExclues: {} });
+    out.parcelleLignesTable = lignesParcelleCandidates.map(r => ({
+      id: r._id, cepage: r.cepage, anneePlant: r.anneePlant, age: campagne - r.anneePlant,
+      surfaceTxt: this.fmtHa(r.surface),
+      coche: !s.parcelleLignesExclues[r._id],
+      toggle: () => this.setState(st => ({ parcelleLignesExclues: { ...st.parcelleLignesExclues, [r._id]: !st.parcelleLignesExclues[r._id] } }))
+    }));
+    out.surfParcRegistreTxt = this.fmtHa(agregParcelle.surfParc) + ' ha';
+    out.ageParcRegistreTxt = nf(agregParcelle.ageParc, 1) + ' ans';
+    out.manquantsRegistreTxt = nf(agregParcelle.tauxManquant, 1) + ' %';
+    out.cepageMixteTxt = out.cepageMixteAlerte ? '⚠ sélection à cépages mixtes — cépage dominant affiché, informatif uniquement' : '';
 
     // AOC
     const aocOK = g.aoc.rang && g.aoc.pied && g.aoc.somme;
@@ -1298,10 +1560,15 @@ class Component extends DCLogic {
     if (v.irrigation === '1') conseqs.push({ titre: '⚠ Irrigation', detail: 'interdite en AOC Champagne (CDC)' });
     out.conseqs = conseqs;
 
-    // clones + precon
-    const cl = this.CLONES[v.cepage] || [];
+    // clones + precon — en mode registre, le cépage vient de la parcelle
+    // sélectionnée (reprojeté sur les 3 libellés du sélecteur, purement
+    // informatif — voir cepageAffichage()) ; sinon, le sélecteur manuel.
+    const cepageEffectif = modeRegistre ? this.cepageAffichage(agregParcelle.cepage) : v.cepage;
+    const cl = this.CLONES[cepageEffectif] || [];
+    out.cepageEffectif = cepageEffectif;
+    out.cepageMixteAlerte = modeRegistre && agregParcelle.cepageMixte;
     out.clonesList = cl.map(c => ({ num: c[0], note: c[1] }));
-    out.clonesTitre = `${cl.length} clones diffusés — ${v.cepage} (Guide 2025, p. 42-44)`;
+    out.clonesTitre = `${cl.length} clones diffusés — ${cepageEffectif} (Guide 2025, p. 42-44)`;
     if (OAD) {
       const r = OAD.preconPorteGreffe(+v.calcaireActif, v.profondeurSol, v.drainageSol);
       if (r.match === 'incomplet') { out.preconPg = '—'; out.preconMsg = 'Renseignez le calcaire actif et la profondeur.'; out.preconBg = '#E3EDE5'; }
@@ -1317,8 +1584,13 @@ class Component extends DCLogic {
     if (cp) {
       out.palisLignes = cp.lignes.map(l => ({ lib: l[0], qte: Math.round(l[1]).toLocaleString('fr-FR'), tot: this.fmtE0(l[3]) }));
       out.palisTotalHa = this.fmtE0(cp.totalHa);
-      out.palisDetailTxt = `soit ${this.fmtE(cp.totalParcelle)} sur ${g.surf.toFixed(3)} ha · piquets tous les ${v.espPiquet} m · ${v.nbFils} fils/rang`;
+      out.palisDetailTxt = `soit ${this.fmtE(coutPalisEffectif * surfParcResolu)} sur ${this.fmtHa(surfParcResolu)} ha · piquets tous les ${v.espPiquet} m · ${v.nbFils} fils/rang`;
     } else { out.palisLignes = []; out.palisTotalHa = '—'; out.palisDetailTxt = ''; }
+
+    // protection du jeune plant — détail (chantier P8)
+    if (cprot) {
+      out.protectionDetailTxt = `tuteur ${this.fmtE(cprot.tuteurHa)}/ha + cache-plant ${this.fmtE(cprot.cachePlantHa)}/ha à ${nf(g.densite, 0)} pieds/ha · soit ${this.fmtE(coutProtectionEffectif * surfParcResolu)} sur ${this.fmtHa(surfParcResolu)} ha`;
+    } else { out.protectionDetailTxt = ''; }
 
     // fv hint — chantier 5 : le régime ne s'applique qu'aux flux de la parcelle
     out.fvHint = v.regime === 'propriete' ? '100 % exploitant'
@@ -1326,15 +1598,13 @@ class Component extends DCLogic {
       : `${v.partRecolte} % récolte / ${v.partCouts} % coûts au propriétaire (flux de la parcelle uniquement)`;
 
     // moteur
-    out.erreurSurface = (g.surf > inp.surfTot + 1e-9)
-      ? `La parcelle (${this.fmtHa(g.surf)} ha) dépasse la surface d'exploitation (${this.fmtHa(inp.surfTot)} ha) — corrigez l'une des deux valeurs.`
+    out.erreurSurface = (inp.surfParc > inp.surfTot + 1e-9)
+      ? `La parcelle (${this.fmtHa(inp.surfParc)} ha) dépasse la surface d'exploitation (${this.fmtHa(inp.surfTot)} ha) — corrigez l'une des deux valeurs.`
       : '';
     if (!OAD || out.erreurSurface) {
       Object.assign(out, { investTxt: '…', reserveReelleTxt: '…', reserveTheoTxt: '…', effortNetTxt: '…',
-        creuxTxt: '…', creuxT: '…', stockMinTxt: '…', stockMinC: '#A97F26', tMin: '…',
-        kpis: [], chartTreso: null, chartStock: null, detailRows: [], magRows: [], lectureTreso: '',
-        ecartReserveTxt: '…', creuxSansRITxt: '…',
-        annuiteArrTxt: '…', annuiteComplTxt: '…', annuiteSQTxt: '…',
+        creuxTxt: '…', creuxT: '…', creuxAbsTxt: '…', creuxAbsT: '…', stockMinTxt: '…', stockMinC: '#A97F26', tMin: '…',
+        kpisFinance: [], kpiEffortNet: null, kpisPhysique: [], chartStock: null, chartAge: null, ageLegendItems: [], detailRows: [], magRows: [], lectureTreso: '',
         syntheseCouvTxt: '…', syntheseCouvSuffixTxt: '', syntheseAbsorptionTxt: '',
         syntheseStockLeadTxt: '…', syntheseStockTailTxt: '…', syntheseHorizonTxt: '…',
         printKpiRows: [], printDetailArr: [], printDetailCompl: [], printDetailSQ: [] });
@@ -1350,16 +1620,26 @@ class Component extends DCLogic {
     const arr = cum(serieRep(sc.arrachage));
     const compl = cum(serieRep(sc.complantation));
     const sq = cum(serieRep(sc.statuquo));
-    const arrSansRI = cum(sc.arrachage.eur.map(row => {
-      if (s.vueFV === '1') return row.cashSansRI;
-      const p = OAD.repartir({ ...row, cashRI: 0 }, inp.fv);
-      return s.vueFV === 'exp' ? p.exp : p.prop;
-    }));
-
     let creux = { v: Infinity, t: 0 };
     arr.forEach((val, t) => { const d = val - sq[t]; if (d < creux.v) creux = { v: d, t }; });
-    let creuxSansRI = { v: Infinity, t: 0 };
-    arrSansRI.forEach((val, t) => { const d = val - sq[t]; if (d < creuxSansRI.v) creuxSansRI = { v: d, t }; });
+    // Point bas de trésorerie ABSOLU de la PARCELLE seule (pas relatif au statu quo,
+    // pas noyé dans le reste de l'exploitation) — répond à « combien cette opération
+    // me coûte-t-elle à financer, et quand ». Isoler la parcelle est nécessaire : sur
+    // `arr` (trésorerie de toute l'exploitation), le revenu du reste du domaine masque
+    // presque toujours l'effort propre à l'opération (vérifié en test P6 : `arr` peut
+    // rester positif toute la période sur une exploitation où la parcelle est petite,
+    // alors que la parcelle seule, elle, creuse). Réutilise `OAD.repartir()` tel quel
+    // (aucune logique nouvelle dans moteur-oad.js) en neutralisant le flux du reste
+    // (venteRaisinReste/coutsReste à 0) — même procédé que `cashRI:0` employé plus haut
+    // dans le code pour simuler « sans réserve ».
+    const serieRepParcelle = (scn) => scn.eur.map(row => {
+      if (s.vueFV === '1') return row.venteRaisinParcelle + row.cashRI - row.coutsParcelle;
+      const p = OAD.repartir({ ...row, venteRaisinReste: 0, coutsReste: 0 }, inp.fv);
+      return s.vueFV === 'exp' ? p.exp : p.prop;
+    });
+    const arrParcelle = cum(serieRepParcelle(sc.arrachage));
+    let creuxAbs = { v: Infinity, t: 0 };
+    arrParcelle.forEach((val, t) => { if (val < creuxAbs.v) creuxAbs = { v: val, t }; });
     const invest = sc.arrachage.investissement;
     const reserveReelle = sc.arrachage.eur.reduce((acc, r) => acc + r.cashRI, 0);
     const reserveTheo = inp.volSortieArr * inp.surfParc * inp.nbSortie * inp.prixKg;
@@ -1367,8 +1647,14 @@ class Component extends DCLogic {
     const effortNet = Math.max(0, invest - reserveReelle);
     const stockMin = Math.min(...sc.arrachage.kg.map(r => r.stockHa));
     const tMin = sc.arrachage.kg.find(r => r.stockHa === stockMin).t;
-    const ageApres = (inp.ageMoy * inp.surfTot - inp.ageParc * inp.surfParc) / inp.surfTot;
-    const gainAge = inp.ageMoy - ageApres;
+    // Trajectoire d'âge du vignoble (chantier P7) — remplace l'ancien KPI
+    // ponctuel ageApres/gainAge (instantané, comptait la parcelle à l'âge 0
+    // dès t=0 même pendant le repos du sol). Voir moteur-oad.js
+    // (trajectoireAge) pour le détail des conventions retenues : parcelle
+    // exclue num+dénom pendant le repos, redémarrage à 0 ancré sur `repos`
+    // (replantation physique), mix à deux générations pour la complantation.
+    const trajAge = OAD.trajectoireAge(inp);
+    const gainAgeHorizon = trajAge.statuquo[inp.horizon] - trajAge.arrachage[inp.horizon];
     const seuil = this.props.seuilReserve ?? 4000;
     const h = inp.horizon;
 
@@ -1401,15 +1687,21 @@ class Component extends DCLogic {
     out.effortNetTxt = this.fmtE0(effortNet);
     out.creuxTxt = this.fmtE0(creux.v);
     out.creuxT = String(creux.t);
+    out.creuxAbsTxt = this.fmtE0(creuxAbs.v);
+    out.creuxAbsT = String(creuxAbs.t);
     out.stockMinTxt = this.fmtKg(stockMin);
     out.stockMinC = stockMin < seuil ? '#A5433A' : '#4C7A57';
     out.tMin = String(tMin);
 
     // Synthèse rédigée (étape 5, bloc sombre) — texte assemblé selon les résultats,
     // jamais une conclusion fixe (voir CLAUDE.md : les conclusions dépendent des chiffres).
-    if (couv >= 0.8) { out.syntheseCouvTxt = "couvre l'essentiel de l'investissement de"; out.syntheseCouvSuffixTxt = ''; }
-    else if (couv >= 0.3) { out.syntheseCouvTxt = "amortit une partie de l'investissement de"; out.syntheseCouvSuffixTxt = ''; }
-    else { out.syntheseCouvTxt = "couvre peu l'investissement de"; out.syntheseCouvSuffixTxt = " — l'essentiel reste à financer"; }
+    // Vocabulaire « mobilise » (chantier P6, point 3) : la réserve n'est pas un
+    // financement extérieur, c'est la vente anticipée d'un stock déjà détenu — le
+    // verbe « couvrir » laissait entendre qu'un tiers payait.
+    if (couv >= 1) { out.syntheseCouvTxt = "mobilise la totalité de l'investissement de"; out.syntheseCouvSuffixTxt = `, avec ${this.fmtE0(reserveReelle - invest)} mobilisés au-delà`; }
+    else if (couv >= 0.8) { out.syntheseCouvTxt = "mobilise l'essentiel de l'investissement de"; out.syntheseCouvSuffixTxt = ''; }
+    else if (couv >= 0.3) { out.syntheseCouvTxt = "mobilise une partie de l'investissement de"; out.syntheseCouvSuffixTxt = ''; }
+    else { out.syntheseCouvTxt = "mobilise peu l'investissement de"; out.syntheseCouvSuffixTxt = " — l'essentiel reste à financer"; }
 
     if (stockMin < seuil) {
       out.syntheseStockLeadTxt = 'Vigilance : votre coussin de sécurité descend à';
@@ -1436,31 +1728,27 @@ class Component extends DCLogic {
       out.syntheseHorizonTxt = `À ${out.horizonTxt}, l'arrachage-replantation devance le statu quo en trésorerie cumulée, de ${this.fmtE0(arr[h] - sq[h])}.`;
     }
 
-    out.kpis = [
+    // Famille 1 — décision financière (€), toujours visible. Le taux de couverture
+    // sort du % au-delà de 100 % (point 2 du chantier P6) : illisible et trompeur en
+    // "353 %", reformulé en € mobilisés au-delà de l'investissement.
+    const couvDet = couv >= 1
+      ? `mobilise l'investissement en totalité · +${this.fmtE0(reserveReelle - invest)} mobilisés au-delà · ${this.fmtE0(reserveTheo)} théoriques`
+      : `mobilise ${Math.round(couv * 100)} % de l'investissement · ${this.fmtE0(reserveTheo)} théoriques`;
+    out.kpisFinance = [
       { c: '#9A9E97', vc: '#20291F', lib: 'Investissement brut', val: this.fmtE0(invest), det: 'arrachage + installation, hors entretien' },
-      { c: '#A97F26', vc: '#20291F', lib: 'Amortisseur de réserve', val: this.fmtE0(reserveReelle), det: `réellement mobilisé · ${this.fmtE0(reserveTheo)} théoriques · ${Math.round(couv * 100)} % de l'investissement` },
-      { c: '#4C7A57', vc: '#20291F', lib: 'Effort net après réserve', val: this.fmtE0(effortNet), det: 'investissement − réserve = coût réel de décision' },
-      { c: '#A5433A', vc: '#A5433A', lib: 'Tension max de trésorerie', val: this.fmtE0(creux.v), det: `besoin maximal d'absorption, année ${creux.t} — pas le coût total` },
-      { c: '#A97F26', vc: '#20291F', lib: 'Réserve min en transition', val: this.fmtKg(stockMin) + ' kg/ha', det: `année ${tMin} · ${stockMin < seuil ? '⚠ sous ' + this.fmtKg(seuil) + ' — coussin réduit' : 'coussin suffisant'}` },
-      { c: '#9A9E97', vc: '#20291F', lib: 'Effet technique', val: '−' + gainAge.toFixed(1) + ' an' + (gainAge >= 2 ? 's' : ''), det: `âge moyen ${inp.ageMoy} → ${ageApres.toFixed(1)} ans` }
+      { c: '#A97F26', vc: '#20291F', lib: 'Amortisseur de réserve', val: this.fmtE0(reserveReelle), det: couvDet },
+      { c: '#A5433A', vc: '#A5433A', lib: 'Point bas de trésorerie', val: this.fmtE0(creuxAbs.v), det: `trésorerie cumulée de la parcelle seule, année ${creuxAbs.t} — hors reste de l'exploitation, ce qu'il faut être en mesure de financer au plus bas` }
     ];
-    if (chargesActives) out.kpis.splice(3, 0, { c: '#4C7A57', vc: '#20291F', lib: 'Charges évitées en transition', val: this.fmtE0(chargesEvitees), det: 'dérivé, déjà reflété dans les courbes' });
+    // « Effort net après réserve » repliable (arbitrage P6) : conservé tel quel,
+    // juste replié par défaut derrière un disclosure — pas supprimé.
+    out.kpiEffortNet = { c: '#4C7A57', vc: '#20291F', lib: 'Effort net après réserve', val: this.fmtE0(effortNet), det: 'investissement − réserve = coût réel de décision' };
 
-    out.vueLabel = s.vueFV === '1' ? 'ensemble' : s.vueFV === 'exp' ? 'part exploitant' : 'part propriétaire';
-    out.chartWaterfall = this.waterfall(invest, reserveReelle, effortNet);
-    out.chartCompare = this.compareBars([
-      { label: 'Arrachage-replantation', val: arr[h], c: '#A97F26' },
-      { label: 'Complantation', val: compl[h], c: '#4C7A57' },
-      { label: 'Statu quo', val: sq[h], c: '#9A9E97' }
-    ], x => this.fmtE0(x));
-
-    // Annuité équivalente = cumul_t=h / h — moyenne simple, PAS d'actualisation
-    // dans cette version (pas de taux retenu) : sert uniquement à comparer un
-    // horizon 10 ans et un horizon 25 ans sur une base commune (€/an).
-    out.annuiteArrTxt = this.fmtE0(arr[h] / h) + '/an';
-    out.annuiteComplTxt = this.fmtE0(compl[h] / h) + '/an';
-    out.annuiteSQTxt = this.fmtE0(sq[h] / h) + '/an';
-
+    // Famille 2 — effets physiques, non monétisés. Chaque effet porte sa contrepartie
+    // dans la même phrase (arbitrage P6 : jamais un gain énoncé seul).
+    out.kpisPhysique = [
+      { c: '#A97F26', vc: '#20291F', lib: 'Réserve min en transition', val: this.fmtKg(stockMin) + ' kg/ha', det: `année ${tMin} · ${stockMin < seuil ? '⚠ sous ' + this.fmtKg(seuil) + ' — coussin de sécurité entamé' : 'coussin suffisant, réserve mobilisée puis reconstituée'}` },
+      { c: '#9A9E97', vc: '#20291F', lib: `Écart d'âge à ${inp.horizon} ans`, val: '−' + nf(gainAgeHorizon, 1) + ' an' + (gainAgeHorizon >= 2 ? 's' : ''), det: `âge moyen du vignoble à ${inp.horizon} ans : ${nf(trajAge.statuquo[inp.horizon], 1)} ans en statu quo → ${nf(trajAge.arrachage[inp.horizon], 1)} ans en arrachage — un vignoble plus jeune, mais un rendement à reconstruire durant la transition (voir trajectoire ci-dessous)` }
+    ];
 
     out.chartStock = this.chart([
       { pts: sc.statuquo.kg.map(r => r.stockHa), c: '#9A9E97', w: 2 },
@@ -1470,15 +1758,23 @@ class Component extends DCLogic {
       annot: [{ serie: sc.arrachage.kg.map(r => r.stockHa), t: tMin, label: this.fmtKg(stockMin), c: '#A97F26' }],
       yTitle: 'kg/ha', xTitle: 'année' });
 
-    out.chartTreso = this.chart([
-      { pts: sq, c: '#9A9E97', w: 2 },
-      { pts: compl, c: '#4C7A57', w: 2 },
-      { pts: arr, c: '#A97F26', w: 2.6 },
-      { pts: arrSansRI, c: '#A97F26', w: 1.6, dash: '4 3' }
-    ], { fmt: x => this.fmtE0(x), yTitle: '€ cumulés', xTitle: 'année',
-      annot: [{ serie: arr, t: creux.t, label: this.fmtE0(creux.v), c: '#A97F26' }] });
-    out.ecartReserveTxt = this.fmtE0(arr[h] - arrSansRI[h]);
-    out.creuxSansRITxt = this.fmtE0(creuxSansRI.v);
+    // Trajectoire d'âge du vignoble (chantier P7) — symétrique du graphique
+    // de stock de réserve ci-dessus. Marqueurs de forme + traits distincts
+    // (pas seulement la couleur, voir chart()) pour rester lisible en
+    // vision dichromate.
+    out.chartAge = this.chart([
+      { pts: trajAge.statuquo, c: '#9A9E97', w: 2, marker: 'circle' },
+      { pts: trajAge.complantation, c: '#4C7A57', w: 2, dash: '6 3', marker: 'square' },
+      { pts: trajAge.arrachage, c: '#A97F26', w: 2.6, dash: '2 3', marker: 'triangle' }
+    ], { fmt: x => nf(x, 1), y0: 0,
+      annot: [{ serie: trajAge.arrachage, t: inp.horizon, label: '−' + nf(gainAgeHorizon, 1) + ' an' + (gainAgeHorizon >= 2 ? 's' : ''), c: '#A97F26' }],
+      yTitle: 'âge moyen (ans)', xTitle: 'année' });
+    // Légende à trait+marqueur (pas seulement couleur), même ordre que les séries ci-dessus.
+    out.ageLegendItems = [
+      { label: 'arrachage-replantation', swatch: this.legendSwatch('#A97F26', '2 3', 'triangle') },
+      { label: 'complantation', swatch: this.legendSwatch('#4C7A57', '6 3', 'square') },
+      { label: 'statu quo', swatch: this.legendSwatch('#9A9E97', undefined, 'circle') }
+    ];
 
     const sorties = sc.arrachage.kg.filter(r => r.sortieArr > 0.5);
     out.sortieAnnees = sorties.map(r => ({ t: String(r.t), kg: this.fmtKg(r.sortieArr), eur: this.fmtE0(r.sortieArr * inp.prixKg) }));
@@ -1500,8 +1796,9 @@ class Component extends DCLogic {
     out.printDetailCompl = buildDetailRows(sc.complantation.kg, sc.complantation.eur);
     out.printDetailSQ = buildDetailRows(sc.statuquo.kg, sc.statuquo.eur);
 
-    // Fiche d'audit imprimable — les 7 KPI (y compris "charges évitées", masqué à
-    // l'écran quand les charges sont nulles mais toujours calculé) avec leur formule.
+    // Fiche d'audit imprimable — 8 KPI avec leur formule, y compris ceux repliés ou
+    // retirés de l'écran par le chantier P6 (Tension max vs statu quo, Charges
+    // évitées) : la fiche reste exhaustive même quand l'écran s'allège.
     out.printKpiRows = [
       { lib: 'Investissement brut', val: this.fmtE0(invest),
         formule: "S_parcelle × coûtArrachageHa (an. 0) + S_parcelle × (coûtPrepaHa + densité × coûtPlant + coûtPalissageHa + irrigation × coûtIrrigHa) (an. repos)" },
@@ -1509,14 +1806,16 @@ class Component extends DCLogic {
         formule: 'Σₜ cashRIₜ = Σₜ sortieArrₜ × prixKg, scénario arrachage' },
       { lib: 'Effort net après réserve', val: this.fmtE0(effortNet),
         formule: 'max(0, investissement brut − réserve réellement mobilisée)' },
-      { lib: 'Tension max de trésorerie', val: `${this.fmtE0(creux.v)} (année ${creux.t})`,
-        formule: 'minₜ (cumulArrachageₜ − cumulStatuQuoₜ), sur la vue faire-valoir affichée' },
+      { lib: 'Point bas de trésorerie', val: `${this.fmtE0(creuxAbs.v)} (année ${creuxAbs.t})`,
+        formule: "minₜ cumulParcelleₜ = minₜ Σ(venteRaisinParcelle + cashRI − coutsParcelle), sur la vue faire-valoir affichée — parcelle seule, hors reste de l'exploitation, absolu (pas relatif au statu quo)" },
+      { lib: 'Tension max vs statu quo', val: `${this.fmtE0(creux.v)} (année ${creux.t})`,
+        formule: 'minₜ (cumulArrachageₜ − cumulStatuQuoₜ), sur la vue faire-valoir affichée — retiré de l\'écran (P6), conservé ici' },
       { lib: 'Réserve min en transition', val: `${this.fmtKg(stockMin)} kg/ha (année ${tMin})`,
         formule: `minₜ stockHaₜ (scénario arrachage) ; seuil d'alerte câblé en dur = ${this.fmtKg(seuil)} kg/ha` },
-      { lib: 'Effet technique (rajeunissement)', val: '−' + gainAge.toFixed(1) + ' an' + (gainAge >= 2 ? 's' : ''),
-        formule: 'âgeMoyen − (âgeMoyen × surfTot − âgeParcelle × surfParcelle) / surfTot' },
-      { lib: 'Charges évitées en transition', val: this.fmtE0(chargesEvitees) + (chargesActives ? '' : ' (affiché à l’écran seulement si charges > 0)'),
-        formule: 'Σ_{t<returnYear} max(0, chargesStatuQuoₜ − chargesArrachageₜ), returnYear = 3 (câblé en dur) + repos' }
+      { lib: `Écart d'âge à ${inp.horizon} ans (trajectoire, chantier P7)`, val: '−' + nf(gainAgeHorizon, 1) + ' an' + (gainAgeHorizon >= 2 ? 's' : ''),
+        formule: "OAD.trajectoireAge(inp) : parcelle exclue du numérateur ET du dénominateur pendant le repos (t < repos, option B — même règle que les lignes \"Arrachée\" du registre) ; redémarre à l'âge 0 à t = repos (replantation physique, pas l'entrée en production) ; complantation = mix pondéré (1−manquants)×(âgeParcelle+t) + manquants×t" },
+      { lib: 'Charges évitées en transition', val: this.fmtE0(chargesEvitees) + (chargesActives ? '' : ' (charges à 0 dans vos saisies)'),
+        formule: 'Σ_{t<returnYear} max(0, chargesStatuQuoₜ − chargesArrachageₜ), returnYear = 3 (câblé en dur) + repos — retiré de l\'écran (P6), conservé ici' }
     ];
 
     return out;

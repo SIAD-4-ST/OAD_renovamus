@@ -6,7 +6,29 @@
       "Bash(node --check /tmp/_dc_script_check.js)",
       "Bash(node --check 'C:\\\\Users\\\\ghoudard\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-ghoudard-OneDrive---COMITE-INTERPROFESSIONNEL-DU-VIN-DE-CHAMPAGNE-01-Projets-Transverses-2026-10-renouvellement-vignoble-02-Outils-et-livrables-OAD-Renovamus-OAD-renovamus\\\\1d801789-97be-452c-b1f0-0302fce670dd\\\\scratchpad/_dc_script_check.js')",
       "Bash(echo \"SYNTAX OK\")",
-      "Bash(python -c \"import http.server\")"
+      "Bash(python -c \"import http.server\")",
+      "Bash(grep -n \"replace\\(/\\\\^\" index.html)",
+      "Bash(xxd)",
+      "Bash(node -e \"require.resolve\\('playwright'\\)\")",
+      "Bash(where.exe msedge.exe)",
+      "Bash(where.exe chrome.exe)",
+      "Bash('/c/Program Files \\(x86\\)/Microsoft/Edge/Application/msedge.exe' --version)",
+      "Bash(mkdir -p /tmp/edge-profile)",
+      "Bash('/c/Program Files \\(x86\\)/Microsoft/Edge/Application/msedge.exe' --headless=new --disable-gpu --no-sandbox --remote-debugging-port=9333 --user-data-dir=/tmp/edge-profile --no-first-run about:blank)",
+      "Bash(sleep 2)",
+      "Bash(curl -s http://localhost:9333/json/version)",
+      "Bash(node -e \"require.resolve\\('chrome-remote-interface'\\)\")",
+      "Bash(mkdir -p /c/Users/ghoudard/AppData/Local/Temp/claude/c--Users-ghoudard-OneDrive---COMITE-INTERPROFESSIONNEL-DU-VIN-DE-CHAMPAGNE-01-Projets-Transverses-2026-10-renouvellement-vignoble-02-Outils-et-livrables-OAD-Renovamus-OAD-renovamus/6f3bc529-9eae-4d23-a72e-39ba66d34f97/scratchpad/cdp-test)",
+      "Bash(cd /c/Users/ghoudard/AppData/Local/Temp/claude/c--Users-ghoudard-OneDrive---COMITE-INTERPROFESSIONNEL-DU-VIN-DE-CHAMPAGNE-01-Projets-Transverses-2026-10-renouvellement-vignoble-02-Outils-et-livrables-OAD-Renovamus-OAD-renovamus/6f3bc529-9eae-4d23-a72e-39ba66d34f97/scratchpad/cdp-test)",
+      "Bash(node test.js)",
+      "Bash(taskkill //F //IM msedge.exe)",
+      "Bash(taskkill //F //PID 24384)",
+      "Bash(curl -sf http://127.0.0.1:8934/index.html -o /dev/null)",
+      "Bash(powershell -NoProfile -Command \"Stop-Process -Id 25132 -Force\")",
+      "Bash(rm -rf \"/c/Users/ghoudard/AppData/Local/Temp/oadtest\")"
+    ],
+    "additionalDirectories": [
+      "C:\\tmp\\cdp-test"
     ]
   }
 }

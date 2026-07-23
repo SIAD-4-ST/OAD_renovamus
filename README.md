@@ -31,6 +31,7 @@ en continu dans la colonne de droite.
 12. [Assemblage des scénarios — `construireScenarios`](#12-assemblage-des-scénarios--construirescenarios)
 13. [Manque à gagner — `manqueAGagner`](#13-manque-à-gagner--manqueagagner)
 14. [Palissage dérivé de la géométrie — `coutPalissage`](#14-palissage-dérivé-de-la-géométrie--coutpalissage)
+    - [14bis. Protection du jeune plant — `coutProtectionPlant`](#14bis-protection-du-jeune-plant--coutprotectionplant)
 15. [Arbre de décision porte-greffe — `preconPorteGreffe`](#15-arbre-de-décision-porte-greffe--preconportegreffe)
 16. [Géométrie de plantation — `geometrie()`](#16-géométrie-de-plantation--geometrie)
 17. [KPI et synthèse](#17-kpi-et-synthèse)
@@ -55,10 +56,11 @@ lui-même **React, ReactDOM et Babel** depuis `unpkg.com` avant de pouvoir
 afficher quoi que ce soit (voir [§3](#3-comment-tourne-la-page--le-format-dc--x-dc)).
 Sans réseau, l'écran reste blanc.
 
-Il n'y a actuellement **aucune suite de tests automatisés** dans le
-dépôt (voir [§20](#20-pour-aller-plus-loin)) : toute modification du moteur
-de calcul (`moteur-oad.js`) doit être vérifiée manuellement, en comparant
-quelques cas connus avant/après.
+Une suite de tests de parité couvre `moteur-oad.js` (`tests/parite.test.js`,
+64 tests à ce jour) : `node tests/parite.test.js`, sans dépendance (`assert`
+natif de Node). Elle fige le comportement observé des formules — voir
+l'en-tête du fichier — et doit être lancée avant **et** après toute
+modification du moteur de calcul (voir CLAUDE.md).
 
 ## 2. Architecture des 3 fichiers
 
@@ -159,7 +161,7 @@ renseigné.
 | 2 | **La parcelle que vous désignez** | Âge, taux de pieds manquants, rendement estimé, déclin en statu quo, régime de faire-valoir (propriété / fermage / métayage) et ses paramètres. |
 | 3 | **Votre projet de replantation** | Géométrie (longueur, largeur, écarts) avec contrôle en direct du cahier des charges AOC ; matériel végétal et conduite (porte-greffe, irrigation, montée en charge) avec fiche conseil ; aide au choix du matériel végétal (dépliable, purement informative) ; dimensionnement du palissage dérivé de la géométrie. |
 | 4 | **Coûts et charges** | Investissement ponctuel (arrachage, préparation, plant, palissage, irrigation, pénalité VSL), paramètres de la complantation (survie, entrée en production, coût par entreplant), charges d'entretien récurrentes (nulles par défaut). |
-| 5 | **Résultats** | Synthèse rédigée, sélecteur de vue (Ensemble / Part exploitant / Part propriétaire) et de test de résistance climatique, 6 KPI, 3 graphiques (décomposition de l'effort, comparaison à 10 ans, stock de réserve), détail annuel dépliable, tableau du manque à gagner. |
+| 5 | **Résultats** | Synthèse rédigée, sélecteur de vue (Ensemble / Part exploitant / Part propriétaire) et de test de résistance climatique, KPI en 2 familles typographiquement distinctes — décision financière (€) et effets physiques non monétisés (voir §17) —, encadré main d'œuvre économisée, graphique de stock de réserve (replié par défaut), détail annuel dépliable, tableau du manque à gagner. |
 
 La colonne de droite (`<aside>`, « Synthèse en continu ») est visible à
 **toutes** les étapes : elle reprend un sous-ensemble des mêmes résultats
@@ -184,7 +186,7 @@ this.on[xxx](e)  →  setState({ v: { ...v, [xxx]: e.target.value } })   data-dc
 inp = { geo, surfTot, surfParc:g.surf, ageMoy, ageParc, repos, nbSortie,
         volSortieArr, plafond, volco, rendMean, reserveInit, horizon, ramp,
         rendYearFn, rendFactorProjet, rendEstime, manquants, declinSQ,
-        densite, coutArrachageHa, coutPrepaHa, coutPlant, coutPalissageHa,
+        densite, coutArrachageHa, coutPlant, coutPalissageHa,
         irrigation, coutIrrigHa, coutEntreplant, survie, entreeProd, prixKg,
         coutSurfaceProdHaAn, coutRdtParKg, coutReposHaAn, coutPlantierHaAn,
         tauxHoraire, fv:{regime,loyerAn,…} }
@@ -198,7 +200,8 @@ sc = { arrachage:     { kg:[…11 lignes t=0..10], eur:[…], investissement },
    ├─► OAD.manqueAGagner(...)         → tableau « manque à gagner »
    ├─► OAD.chargesEntretien(...)      → KPI « charges évitées en transition »
    ├─► OAD.moEconomisee(...)          → encadré « main d'œuvre économisée » (h/ha, jamais dans cashNet — §11)
-   └─► KPI directs (invest, reserveReelle, stockMin, ageApres…)
+   ├─► OAD.trajectoireAge(inp)        → trajectoire d'âge du vignoble, 3 scénarios (§17, chantier P7)
+   └─► KPI directs (invest, reserveReelle, stockMin…)
    │
    ▼  `out = { …tous les textes, couleurs, handlers, éléments <svg> React… }`
 return out    // consommé par le template <x-dc> au prochain rendu
@@ -280,28 +283,30 @@ dérivée de la géométrie »).
 | champ | unité | défaut | utilisé pour |
 |---|---|---|---|
 | `motif` | classique\|sanitaire | classique | commute `repos`/`nbSortie` (§7) |
-| `coutArrachageHa` | €/ha | 4500 | coût de l'arrachage, année 0 |
-| `coutPrepaHa` | €/ha | 3500 | préparation du sol, année `repos` |
-| `coutPlant` | €/pied | 1.8 | plant, année `repos` (× densité) |
-| `coutPalissageHa` | €/ha | 12000 (prérempli) | palissage, année `repos` |
+| `coutArrachageHa` | €/ha | 22500 | coût d'arrachage **tout compris** (arrachage + évacuation des souches + amendement calcaire + préparation du sol), année 0 — source MHCS, voir journal d'arbitrages §12 |
+| `coutPlant` | €/pied | 2.10 | plant, année `repos` (× densité) — source MHCS |
+| `coutPalissageHa` | €/ha | 12000 (prérempli ≈13116-14577 selon relevé) | palissage, année `repos` — voir §14 |
+| `coutProtectionHa` | €/ha | 10000 (prérempli, chantier P8) | protection du jeune plant (tuteur + cache-plant), année `repos` — poste séparé du palissage, voir journal d'arbitrages §12 |
 | `coutIrrigHa` | €/ha | 5000 | irrigation, année `repos`, si activée |
 | `penaliteVSL` | % | 15 | pénalité de rendement si conduite semi-large (`ecartRang ≥ 1.5`) |
 | `survie` | % | 50 | taux de survie des entreplants |
 | `entreeProd` | années | 7 | début de montée en charge des entreplants |
-| `coutEntreplant` | €/pied | 4.5 | coût des entreplants, année 0 |
+| `coutEntreplant` | €/pied | 4.5 | coût des entreplants, année 0 — supposé inclure déjà tuteur + cache-plant de l'entreplant, hypothèse non vérifiée (voir §12) |
 
 ### Étape 4 — Coûts et charges (suite) : charges d'entretien récurrentes
 
 Modèle à 3 volets (§11, refonte détaillée dans le journal d'arbitrages qui
-suit), **nulles par défaut** pour préserver la parité avec le classeur de
-référence tant qu'elles ne sont pas calées :
+suit). Depuis le **chantier 2** (calibration Cerfrance/MHCS), trois des
+quatre taux sont calés par défaut sur une source professionnelle — seul
+`coutReposHaAn` reste nul (assumé, à recaler séparément, hors périmètre de
+ce chantier) :
 
-| champ | unité | défaut | rôle |
-|---|---|---|---|
-| `coutSurfaceProdHaAn` | €/ha/an | 0 | vigne mature en production — et taux permanent du « reste » de l'exploitation |
-| `coutRdtParKg` | €/kg | 0 | vendange, transport, prestations récolte — proportionnel aux kg récoltés |
-| `coutReposHaAn` | €/ha/an | 0 | jachère après arrachage (`t < repos`) |
-| `coutPlantierHaAn` | €/ha/an | 0 | jeune vigne en formation (`repos ≤ t < repos+rampYears`) |
+| champ | unité | défaut | rôle | source |
+|---|---|---|---|---|
+| `coutSurfaceProdHaAn` | €/ha/an | 11400 | vigne mature en production — et taux permanent du « reste » de l'exploitation | Cerfrance 2024 — charges de structure hors charges locatives (15 300 €/ha), amortissement (3 900 €/ha) retiré en totalité, voir §11 |
+| `coutRdtParKg` | €/kg | 1.52 | vendange, transport, prestations récolte — proportionnel aux kg récoltés | Cerfrance 2024 — charges proportionnelles (~15 200 €/ha) ÷ rendement de référence 10 000 kg/ha |
+| `coutReposHaAn` | €/ha/an | 0 | jachère après arrachage (`t < repos`) | assumé — à caler (hors périmètre du chantier 2) |
+| `coutPlantierHaAn` | €/ha/an | 8000 | jeune vigne en formation (`repos ≤ t < repos+rampYears`) | MHCS — taille de formation + remplacement des plants morts |
 | `tauxHoraire` | €/h | 17 (SMIC 2026 chargé) | conversion h → € dans les détails par opération ci-dessous |
 | `fracFormation` | ratio | 0,35 | applique le volet production à la ligne « taille de formation » du volet plantier |
 
@@ -533,8 +538,11 @@ deux derniers cas, chaque point de la série trésorerie passe par
 Sans elles, **ne rien faire n'a aucun coût** dans le modèle, ce qui biaise
 systématiquement la comparaison en faveur du statu quo. Modèle à **3
 volets** (`moteur-oad.js:127`, refonte détaillée dans le journal
-d'arbitrages ci-dessous), neutre par défaut (les trois taux à `0`), et
-**décomposé parcelle / reste** depuis le chantier 5 :
+d'arbitrages ci-dessous), **décomposé parcelle / reste** depuis le
+chantier 5. Depuis le **chantier 2** (F8 ci-dessous), `coutSurfaceProdHaAn`
+et `coutRdtParKg` sont calés par défaut sur Cerfrance 2024, et
+`coutPlantierHaAn` sur MHCS ; seul `coutReposHaAn` reste neutre (`0`,
+assumé) :
 
 - **Charge de surface**, déclinée en **trois taux exclusifs dans le
   temps** pour le scénario arrachage : `coutReposHaAn` (jachère),
@@ -588,11 +596,18 @@ rognage — manuel ; sol, ferti-irrigation, traitements — mécanisé) à
 partir du référentiel `REF_OPS_MANUEL`/`REF_OPS_MECANISE`. Ce détail
 n'alimente **jamais** `inp` tant que l'utilisateur n'a pas cliqué « ↻
 Reprendre cette estimation » (`index.html`, boutons `reprendreVoletProd` /
-`reprendreVoletRepos` / `reprendreVoletPlantier`) : `coutSurfaceProdHaAn`,
-`coutReposHaAn` et `coutPlantierHaAn` restent à `0` tant qu'on ne clique
-pas dessus. Opt-in strict : les snapshots de parité (§1, totaux `610349` /
-`52954`) restent inchangés tant qu'aucun de ces trois champs n'a été
-repris.
+`reprendreVoletRepos` / `reprendreVoletPlantier`) : le détail par
+opération lui-même reste nul (postes « à caler ») tant qu'on ne clique pas
+dessus, et cliquer écrase le champ avec le total du détail. Ceci est
+indépendant de la valeur par défaut du champ : depuis le chantier 2 (F8),
+`coutSurfaceProdHaAn` et `coutPlantierHaAn` partent déjà d'un défaut calé
+(Cerfrance/MHCS), que le bouton « Reprendre » permet de remplacer par une
+estimation plus fine si l'utilisateur le souhaite — il ne les active pas
+depuis zéro. `coutReposHaAn` reste à `0` par défaut (assumé, hors
+périmètre du chantier 2). Les snapshots de parité (§1, totaux `610349` /
+`52954`) sont écrits en dur avec les 4 taux de charge à `0`
+(`INP_A`, `tests/parite.test.js`) : ils restent inchangés par construction,
+indépendamment des défauts de l'UI.
 
 **F5 / F5a — volet transition en deux sous-phases absolues (repos /
 plantier).** Remplace `coefRepos` et l'hypothèse « établissement = charge
@@ -651,6 +666,59 @@ mécanisés (sol, ferti-irrigation, traitements — `REF_OPS_MECANISE`,
 données coopératives réelles** : nuls par défaut, badgés « à caler — dire
 d'expert coop » dans l'UI.
 
+**F8 — chantier 2 : calibration Cerfrance/MHCS, charges de structure et
+charges proportionnelles.** Avant ce chantier, `coutSurfaceProdHaAn` et
+`coutRdtParKg` valaient `0` par défaut : le statu quo était gratuit et
+biaisait toute la comparaison. Source retenue : Cerfrance, « Évolution du
+coût de production du raisin sur 10 ans », exercice 2024, **hors charges
+locatives** (cohérent avec le modèle : le fermage/métayage est déjà traité
+par `repartir()`, §10 — inclure le loyer dans le taux de surface aurait
+doublé `fv.loyerAn`). Décomposition Cerfrance : coût de production total
+30 503 €/ha = charges proportionnelles (~15 200 €/ha, à 10 000 kg/ha de
+référence, dont 75 % vendange/prestations) + charges de structure
+(~15 300 €/ha).
+
+*Risque de double-compte identifié avant calibration* : les charges de
+structure Cerfrance **incluent** ~3 900 €/ha d'amortissements
+(15 200 + 15 300 ≈ 30 500 ≈ le total : l'amortissement est un sous-poste
+de la structure, pas un poste additif). Le modèle compte déjà
+l'investissement de plantation en flux ponctuel (`invArr`, §12) : assigner
+15 300 €/ha tel quel à `coutSurfaceProdHaAn` aurait compté une partie de la
+plantation deux fois — une fois en `invArr`, une fois amortie dans la
+charge annuelle de structure.
+
+*Option retenue — retrait total de l'amortissement* : `coutSurfaceProdHaAn
+= 15 300 − 3 900 = 11 400 €/ha/an`, seule option sourcée sans hypothèse
+supplémentaire. Deux autres options ont été écartées faute de donnée :
+isoler la seule part « plantation » du poste amortissement (nécessiterait
+une source détaillant sa composition matériel/bâtiments/pressoir/plantation,
+non disponible) ; ou dériver une annuité de plantation à partir de
+l'investissement saisi par l'utilisateur ÷ une durée d'amortissement
+(nécessiterait de choisir et sourcer cette durée — non retenue pour ce
+chantier). Conséquence assumée : le taux retiré **la totalité** de
+l'amortissement, pas seulement la part plantation — `coutSurfaceProdHaAn`
+sous-estime donc légèrement le vrai coût de structure hors plantation
+(matériel, bâtiments, pressoir — jamais captés ailleurs dans le modèle).
+Ce biais est **symétrique** : le même taux s'applique à la parcelle et au
+« reste » de l'exploitation, dans les 3 scénarios (voir test §9,
+`tests/parite.test.js`) — il affecte donc les niveaux absolus de cashNet,
+jamais les écarts inter-scénarios.
+
+`coutRdtParKg = 1,52 €/kg` (= 15 200 / 10 000) est repris intégralement,
+sans isoler les ~25 % non-vendange (probablement engrais/phyto, qui
+suivraient plutôt une logique €/ha qu'€/kg) : simplification assumée pour
+ce chantier, qui introduit un biais mineur (sur/sous-estimation selon les
+années de rendement) mais reste symétrique sur les 3 scénarios. Aucun
+retraitement n'est nécessaire pour le décalage entre le rendement de
+référence Cerfrance (10 000 kg/ha) et `rendMean` (12 296,6 kg/ha) : les
+taux `€/ha/an` sont indépendants du rendement par construction, et le taux
+`€/kg` s'applique à la récolte réellement simulée (`recolteParcelle`/
+`recolteReste`), pas à un forfait — voir §11 pour la formule.
+
+`coutPlantierHaAn = 8 000 €/ha/an` (source MHCS, taille de formation +
+remplacement des plants morts) et `coutReposHaAn = 0` (assumé, à recaler
+séparément) sont hors périmètre de ce chantier.
+
 ## 12. Assemblage des scénarios — `construireScenarios`
 
 Point d'entrée principal du moteur (`moteur-oad.js:111`), appelé une fois
@@ -660,10 +728,110 @@ la couche `€`.
 
 **Investissement ponctuel arrachage** (`invArr`, indexé par année) :
 ```
-invArr[0]     = surfParc × coutArrachageHa                                    // année de l'arrachage
-invArr[repos] += surfParc × (coutPrepaHa + densite·coutPlant + coutPalissageHa
+invArr[0]     = surfParc × coutArrachageHa                                    // année de l'arrachage — tout compris (voir journal ci-dessous)
+invArr[repos] += surfParc × (densite·coutPlant + coutPalissageHa
+                              + coutProtectionHa                              // chantier P8, voir journal ci-dessous
                               + (irrigation ? coutIrrigHa : 0))                // replantation
 ```
+
+### Journal d'arbitrages — chantier P8 : palissage détaillé par élément et protection du jeune plant
+
+Chantier déclenché par un relevé de prix fournisseur par élément (amarre,
+piquet, fiche de tête en L galva, kit bout de route, crochet piquet inox,
+fil, tuteur en U galva, cache-plant), à brancher sur `coutPalissage()`
+(§14) et sur un nouveau poste dédié.
+
+**Garde-fou 1 — anti-double-compte, deux risques identifiés et tranchés.**
+1. Tuteur en U et cache-plant ne sont pas du palissage (structure du
+   rang) mais de la **protection individuelle du pied** — poste séparé
+   (`coutProtectionHa`, fonction `OAD.coutProtectionPlant(densite)`),
+   plutôt que fondu dans `coutPalissageHa`, pour deux raisons : (a) il ne
+   dépend que de la densité, pas de la géométrie du rang (espacement
+   piquets, nb fils) ; (b) le fondre dans le palissage aurait cassé la
+   symétrie avec la complantation (le palissage n'est jamais appliqué à
+   `invCompl` — voir §12 ci-dessus — alors qu'un entreplant a, physiquement,
+   autant besoin d'un tuteur qu'un pied replanté en arrachage).
+2. En creusant l'UI existante, la ligne `REF_PLANTIER[0]` du détail par
+   opération « plantier » (`index.html`) portait déjà le libellé
+   *« Protection des jeunes plants »* — nulle par défaut, « à caler »,
+   alimentant `coutPlantierHaAn` (charge **annuelle récurrente** MHCS,
+   taille de formation + remplacement des plants morts, §11). Risque non
+   anticipé au lancement du chantier : un futur remplissage de cette ligne
+   « à caler » avec un prix matériel aurait doublé le nouvel achat
+   ponctuel. Résolu en recentrant son libellé sur la seule **main d'œuvre**
+   de surveillance/relève (`"Surveillance / relève de la protection (MO)"`,
+   avec renvoi explicite vers le nouveau poste d'investissement), sans
+   toucher à son comportement (toujours 0 par défaut, opt-in).
+
+**Garde-fou 2 — symétrie avec la complantation, arbitrage explicite.**
+`coutProtectionHa` n'est volontairement **pas** appliqué à `invCompl` : le
+champ `coutEntreplant` (prix d'achat par pied, saisi librement) est posé
+comme incluant déjà la protection de l'entreplant. C'est une **hypothèse
+à vérifier par l'utilisateur auprès de sa source** — pas un fait établi
+par ce chantier — d'où l'avertissement explicite affiché sous le champ
+« Coût par entreplant » dans l'UI. Si l'hypothèse s'avère fausse pour une
+source donnée, l'entreplant est sous-évalué de `tuteurU + cachePlant`
+(≈ 1,25 €/pied avec les prix ci-dessous) par rapport à l'arrachage.
+
+**Chiffrage de l'écart** (géométrie par défaut UI : 200×15 m, écarts
+1,10×1,10 → densite = 8 264 pieds/ha, surf = 0,30 ha) :
+- Modèle palissage seul, ancien (6 lignes, LutEnVi 2025) : ≈ 13 116 €/ha.
+- Modèle palissage seul, nouveau (8 lignes, relevé fournisseur + gripple/MO
+  LutEnVi conservés) : ≈ 14 577 €/ha.
+- Protection seule (tuteur + cache-plant) à cette densité : ≈ 10 330 €/ha.
+- **Total palissage + protection : ≈ 24 900 €/ha**, contre 12 000 €/ha pour
+  l'ancienne valeur par défaut de `coutPalissageHa` seule — sous-estimation
+  d'un facteur ≈ 2, portée presque intégralement par l'absence historique
+  de tuteur/cache-plant, pas par la révision des prix de palissage
+  eux-mêmes (qui ne bouge que de ≈ +11 %).
+
+**Provenance — instantané non daté.** Les 8 prix du relevé fournisseur
+(amarre, piquet, fiche de tête, kit bout de route, crochet, fil, tuteur,
+cache-plant) sont ceux communiqués par l'utilisateur au lancement du
+chantier ; **la date exacte du relevé et le nom du fournisseur restent à
+préciser** avant tout usage réel (prix acier volatils — voir `PRIX_PALISSAGE`
+et `PRIX_PROTECTION_PLANT`, `moteur-oad.js`). Gripple et MO pose piquet
+restent sur le classeur LutEnVi 2025, faute d'équivalent dans le nouveau
+relevé (prix matière uniquement, pas de main d'œuvre ni de tendeur).
+
+**Hypothèses de mapping à confirmer** (non tranchées faute de repère dans
+le relevé, voir commentaire `coutPalissage()`, `moteur-oad.js`) : le
+« piquet » du relevé (3,80 €, « selon espacement ») est traité comme
+piquet **intermédiaire** uniquement — la tête de rang est couverte par la
+fiche de tête + le kit bout de route, qui remplacent l'ancien « piquet de
+tête » LutEnVi ; le « crochet piquet inox » (1 par piquet) est appliqué
+sur cette même base (piquets intermédiaires uniquement).
+
+### Journal d'arbitrages — chantier P3 : recalage MHCS et suppression de `coutPrepaHa`
+
+Avant ce chantier, l'investissement de replantation distinguait deux lignes
+saisies séparément : `coutArrachageHa` (4 500 €/ha, année 0) et `coutPrepaHa`
+(3 500 €/ha, préparation du sol, année `repos`) — décomposition héritée du
+classeur LutEnVi 2025. Source retenue depuis ce chantier : **MHCS**, dont le
+prix d'arrachage (22 500 €/ha) est un **forfait tout compris** — arrachage,
+évacuation des souches, amendement calcaire **et préparation du sol** — non
+décomposable en sous-lignes. Maintenir `coutPrepaHa` en parallèle aurait donc
+compté la préparation du sol une fois dans `coutArrachageHa` (MHCS, implicite)
+et une fois dans `coutPrepaHa` (LutEnVi, explicite) : double emploi.
+
+*Option retenue — suppression complète du champ* (plutôt que le geler à 0,
+grisé, avec un libellé « inclus dans le coût d'arrachage ») : la fusion MHCS
+n'est pas un choix de présentation réversible que la coopérative pourrait un
+jour redéfaire — la source ne permet pas d'isoler à nouveau un prix de
+préparation du sol distinct. Un champ gelé aurait donné l'illusion contraire
+et serait resté à l'écran en continu, contre le principe de sobriété de
+saisie. La décomposition LutEnVi 2025 reste consultable dans l'historique
+git (et dans ce journal) si elle doit resservir de repère de comparaison.
+
+`coutPlant` recalé à 2,10 €/pied (MHCS), contre 1,80 €/pied (LutEnVi) avant
+ce chantier — même logique de source unique que ci-dessus, sans changement
+de périmètre (toujours un coût par pied, année `repos`, × `densite`).
+
+`invArr[repos]` ne porte donc plus que `densite·coutPlant + coutPalissageHa
++ (irrigation ? coutIrrigHa : 0)` ; `invArr[0] = surfParc × coutArrachageHa`
+absorbe désormais la préparation du sol. Le calendrier d'engagement (t=0
+puis t=`repos`) est inchangé, pour les deux motifs d'arrachage (classique,
+`repos=1` ; sanitaire, `repos=3`).
 
 **Investissement ponctuel complantation** (`invCompl`) :
 ```
@@ -716,42 +884,78 @@ charge.
 
 ## 14. Palissage dérivé de la géométrie — `coutPalissage`
 
-`coutPalissage(geo, prix, opt)` (`moteur-oad.js:185`) dérive un coût de
-palissage à l'hectare à partir de la géométrie de plantation, sur la base
-des prix unitaires du classeur **LutEnVi 2025** (feuille « Coût hectare
-d'installation »). Il **préremplit** `coutPalissageHa` (champ éditable)
-tant que l'utilisateur ne l'a pas modifié à la main.
+`coutPalissage(geo, prix, opt)` (`moteur-oad.js`) dérive un coût de
+palissage à l'hectare à partir de la géométrie de plantation. Depuis le
+**chantier P8**, les prix sont de source **mixte** : un relevé fournisseur
+par élément (piquet, fiche de tête, kit bout de route, amarre, crochet,
+fil) complété par deux prix conservés du classeur **LutEnVi 2025** feuille
+« Coût hectare d'installation » (gripple, MO pose piquet — sans équivalent
+dans le nouveau relevé, qui ne porte que sur la matière). Il **préremplit**
+`coutPalissageHa` (champ éditable) tant que l'utilisateur ne l'a pas
+modifié à la main. Un poste **distinct**, `coutProtectionHa` (tuteur +
+cache-plant, `coutProtectionPlant()`), couvre la protection du jeune plant
+— voir §12, journal d'arbitrages chantier P8, pour l'anti-double-compte.
 
 ```
 espacement  = espPiquet ?? 6 m                              // choix éditable — repère LutEnVi ≈ 4,3 m
 nbFils      = nbFils ?? FILS_PAR_TAILLE[typeTaille] ?? 4     // guyot/cordon/arcure simple = 4, arcure double = 5
 
 interParRang = max(0, round(Lrang/espacement) − 1)
-nbInter      = nbRangs × interParRang         // piquets intermédiaires
-nbTete       = 2 × nbRangs                    // piquets de tête
-nbAmarre     = 2 × nbRangs
+nbInter      = nbRangs × interParRang         // piquets intermédiaires — base du "piquet" et du "crochet" du relevé
+nbTete       = 2 × nbRangs                    // fiche de tête + kit bout de route + amarre : 2 par rang chacun
 mlFils       = nbFils × nbRangs × Lrang       // mètres linéaires de fil, tous fils confondus
 nbGripple    = nbFils × nbRangs
-nbPiquets    = nbInter + nbTete
+nbPiquets    = nbInter + nbTete                // base MO pose : tout poteau planté
 
-totalParcelle = Σ (quantité × prix unitaire) sur les 6 lignes
+totalParcelle = Σ (quantité × prix unitaire) sur les 8 lignes
 totalHa       = totalParcelle / surf
 ```
 
-**Prix unitaires** (`PRIX_PALISSAGE_LUTENVI`, `moteur-oad.js:172`) :
+**Prix unitaires** (`PRIX_PALISSAGE`, `moteur-oad.js`) :
 
 | poste | prix | source |
 |---|---|---|
-| piquet intermédiaire | 3,99 €/piquet | LutEnVi 2025 |
-| piquet de tête | 6,00 €/piquet | LutEnVi 2025 |
-| amarre | 2,64 €/amarre | LutEnVi 2025 |
-| fil (par fil, au mètre linéaire) | 0,132 €/m | LutEnVi (0,528 €/m pour 4 fils groupés ÷ 4) |
-| gripple | 1,826 €/gripple | LutEnVi 2025 |
-| MO pose piquet | 1,318 €/piquet posé | dérivé LutEnVi (2 864,56 €/ha ÷ 2 174 piquets/ha) |
+| piquet intermédiaire | 3,80 €/piquet | relevé fournisseur [date à préciser] |
+| fiche de tête en L galva | 5,98 €, 2/rang | relevé fournisseur [date à préciser] |
+| kit bout de route | 3,88 €, 2/rang | relevé fournisseur [date à préciser] |
+| amarre 1200 | 7,32 €, 2/rang | relevé fournisseur [date à préciser] |
+| crochet piquet inox | 0,26 €, 1/piquet intermédiaire | relevé fournisseur [date à préciser] |
+| fil (par fil, au mètre linéaire) | 0,15 €/m | relevé fournisseur [date à préciser] |
+| gripple | 1,826 €/gripple | LutEnVi 2025 (conservé, pas d'équivalent dans le relevé) |
+| MO pose piquet | 1,318 €/piquet posé | LutEnVi 2025, dérivé (2 864,56 €/ha ÷ 2 174 piquets/ha) |
 
 ⚠ Avec l'espacement par défaut (6 m), le nombre de piquets intermédiaires
 est **~30 % plus faible** que le repère implicite LutEnVi (~1 piquet tous
 les 4 pieds, soit ≈ 4,3 m) — divergence assumée et affichée dans l'UI.
+
+**Mapping du relevé — hypothèses à confirmer** (voir journal §12) : le
+« piquet » (3,80 €) est traité comme piquet intermédiaire uniquement (la
+tête de rang est couverte par fiche de tête + kit bout de route) ; le
+« crochet piquet inox » est appliqué sur cette même base (intermédiaires
+uniquement, pas la tête). À corriger si le relevé source précise
+autrement la répartition.
+
+## 14bis. Protection du jeune plant — `coutProtectionPlant`
+
+`coutProtectionPlant(densite, prix)` (`moteur-oad.js`, chantier P8) dérive
+un coût de protection du jeune plant (tuteur en U galvanisé + cache-plant)
+à l'hectare, à partir de la seule densité de plantation — **indépendant**
+de la géométrie du rang (espacement, nb fils), à la différence du
+palissage ci-dessus :
+```
+totalHa = densite × (tuteurU + cachePlant)
+```
+**Prix unitaires** (`PRIX_PROTECTION_PLANT`, `moteur-oad.js`) : tuteur en U
+galva 0,77 €/pied, cache-plant 0,48 €/pied — relevé fournisseur [date à
+préciser], même instantané que `PRIX_PALISSAGE` ci-dessus.
+
+Préremplit `coutProtectionHa` (champ éditable, UI étape 4) tant que
+l'utilisateur ne l'a pas modifié à la main — même mécanique opt-in que
+`coutPalissageHa`. Appliqué **uniquement** au scénario arrachage
+(`invArr[repos]`, §12), jamais à la complantation : voir le journal
+d'arbitrages du chantier P8 (§12) pour les deux garde-fous
+anti-double-compte (recentrage de `REF_PLANTIER[0]` sur la main d'œuvre
+seule ; hypothèse que `coutEntreplant` inclut déjà la protection).
 
 ## 15. Arbre de décision porte-greffe — `preconPorteGreffe`
 
@@ -797,30 +1001,84 @@ homologué le 31/07/2025 (rang ≤ 2,00 m, pied 0,70–1,50 m, somme ≤ 3,00 m)
 
 ## 17. KPI et synthèse
 
-Tous calculés dans `renderVals()` (`index.html:765`), après
-`OAD.construireScenarios(inp)` :
+Tous calculés dans `renderVals()` (`index.html`), après
+`OAD.construireScenarios(inp)`. Depuis le **chantier P6** (refonte de
+l'écran 5), l'écran sépare deux familles typographiquement distinctes,
+jamais mélangées dans une même grille de cartes — `out.kpisFinance` /
+`out.kpiEffortNet` (blanc, décision € ) et `out.kpisPhysique` (fond
+teinté, effets physiques non monétisés) :
 
-| KPI | formule | groupe |
+| KPI | formule | famille (écran) |
 |---|---|---|
-| Investissement brut | `invest = sc.arrachage.investissement` | Financement |
-| Amortisseur de réserve | `reserveReelle = Σ sc.arrachage.eur[t].cashRI` | Financement |
-| — dont % de couverture | `couv = reserveReelle / invest` | Financement |
-| — théorique | `reserveTheo = volSortieArr × surfParc × nbSortie × prixKg` | Financement |
-| Effort net après réserve | `effortNet = max(0, invest − reserveReelle)` | Financement |
-| Charges évitées en transition | `Σ_{t=0}^{returnYear−1} max(0, chSQ.parcelle[t] − chArr.parcelle[t])`, avec `returnYear = 3+repos` — affiché seulement si l'un des quatre taux (`coutSurfaceProdHaAn`, `coutRdtParKg`, `coutReposHaAn`, `coutPlantierHaAn`) est `>0` (`chargesActives`) | Exploitation |
-| Tension maximale de trésorerie | `creux = min_t (arr_cum[t] − sq_cum[t])`, où `arr_cum`/`sq_cum` sont les séries cumulées selon la vue faire-valoir active | Risque |
-| Réserve minimale en transition | `stockMin = min_t sc.arrachage.kg[t].stockHa`, alerte si `< 4000` kg/ha (`seuilReserve`) | Risque |
-| Effet technique du renouvellement | `ageApres = (ageMoy·surfTot − ageParc·surfParc)/surfTot` ; `gainAge = ageMoy − ageApres` | Risque |
+| Investissement brut | `invest = sc.arrachage.investissement` | Financière — toujours visible |
+| Amortisseur de réserve | `reserveReelle = Σ sc.arrachage.eur[t].cashRI` ; libellé « mobilise X % de l'investissement » sous 100 %, reformulé en € au-delà (jamais de `%` > 100 affiché) | Financière — toujours visible |
+| — théorique | `reserveTheo = volSortieArr × surfParc × nbSortie × prixKg` | (détail du KPI ci-dessus) |
+| Point bas de trésorerie | `creuxAbs = min_t arrParcelle_cum[t]`, avec `arrParcelle[t] = venteRaisinParcelle[t] + cashRI[t] − coutsParcelle[t]` (vue « Ensemble ») réparti via `OAD.repartir()` en neutralisant le flux du reste (`venteRaisinReste`/`coutsReste` à 0) pour les vues Part exploitant/propriétaire — trésorerie cumulée **absolue de la parcelle seule** (pas relative au statu quo, pas noyée dans le revenu du reste de l'exploitation), sur la vue faire-valoir active | Financière — toujours visible |
+| Effort net après réserve | `effortNet = max(0, invest − reserveReelle)` | Financière — repliée par défaut (`state.effortNetOuvert`) |
+| Réserve minimale en transition | `stockMin = min_t sc.arrachage.kg[t].stockHa`, alerte si `< 4000` kg/ha (`seuilReserve`) | Physique — toujours visible |
+| Écart d'âge à l'horizon | `trajAge = OAD.trajectoireAge(inp)` ; `gainAgeHorizon = trajAge.statuquo[horizon] − trajAge.arrachage[horizon]` ; contrepartie énoncée dans la même phrase (« rendement à reconstruire durant la transition ») ; détail complet en trajectoire dans le graphique associé (§18) | Physique — toujours visible |
 
-`chargesEntretien` renvoie `{ parcelle, reste }` (§11) : le KPI ne lit que
-`.parcelle`, qui seule porte l'écart de phase (repos/plantier/production)
-propre au scénario arrachage — `.reste` est identique aux deux scénarios
-comparés et s'annulerait dans la différence de toute façon.
+`chargesEntretien` renvoie `{ parcelle, reste }` (§11) : les KPI dérivés
+de charges ne lisent que `.parcelle`, qui seule porte l'écart de phase
+(repos/plantier/production) propre au scénario arrachage — `.reste` est
+identique aux deux scénarios comparés et s'annulerait dans la différence
+de toute façon.
 
-Séparé de ce tableau, un encadré dédié (non listé ici, jamais dans
-`out.kpis`) affiche l'indicateur physique « main d'œuvre économisée »
-(F6/F7, voir le journal d'arbitrages en §11) — volontairement hors grille
-KPI puisqu'il n'est pas un montant financier.
+**Retirés de l'écran par le chantier P6** (toujours calculés, conservés
+dans `out.printKpiRows` pour la fiche imprimable — voir plus bas) :
+« Tension maximale de trésorerie » (`creux = min_t (arr_cum[t] − sq_cum[t])`,
+la version *relative* au statu quo — remplacée à l'écran par le « Point
+bas de trésorerie » *absolu* ci-dessus, qui répond directement à « combien
+dois-je être en mesure de financer, et quand ») et « Charges évitées en
+transition » (`Σ_{t=0}^{returnYear−1} max(0, chSQ.parcelle[t] −
+chArr.parcelle[t])`, `returnYear = 3+repos`).
+
+Séparé de ces grilles, un encadré dédié (jamais dans `out.kpisFinance` ni
+`out.kpisPhysique`) affiche l'indicateur physique « main d'œuvre
+économisée » (F6/F7, voir le journal d'arbitrages en §11) — volontairement
+hors grille KPI puisqu'il n'est pas un montant financier ; sa phrase
+énonce désormais explicitement la contrepartie (« une heure non
+travaillée … est aussi une heure de vendange en moins »).
+
+### Journal d'arbitrages — chantier P7 : trajectoire d'âge du vignoble
+
+Remplace le KPI ponctuel `ageApres`/`gainAge` (instantané : comptait la
+parcelle à l'âge 0 dès `t=0`, y compris pendant le repos du sol où aucune
+vigne n'est encore en terre — le rajeunissement était donc affiché avant
+d'être acquis) par `OAD.trajectoireAge(inp)` (`moteur-oad.js`), une
+trajectoire de l'âge moyen de l'exploitation sur l'horizon, pour les 3
+scénarios — symétrique du graphique de stock de réserve (§18).
+
+Trois conventions tranchées avant codage :
+- **Pendant le repos (arrachage, `t < repos`)** : la parcelle sort du
+  numérateur **et** du dénominateur (option B) — même règle que
+  `agregerRegistreExploitation` pour les lignes « Arrachée » du registre
+  (chantier 1, §6) : une parcelle sans vigne en terre n'a pas d'âge de
+  vigne. Rejeté : la compter à l'âge 0 dès `t=0` (convention de l'ancien
+  KPI, flatteuse) ou la garder à l'écran avec un âge nul non distingué.
+- **Redémarrage à l'âge 0 ancré sur `repos`** (replantation physique, date
+  de `invArr[repos]`), pas sur `returnYear` (3+repos, entrée en production
+  dans le modèle kg) : cet indicateur est un capital **physique**,
+  volontairement découplé de la capacité de production — l'ancrer sur
+  `returnYear` réintroduirait un biais productif dans un indicateur pensé
+  pour en être indépendant.
+- **Complantation** : mix pondéré à deux générations de pieds sur la même
+  parcelle — `(1−manquants)` de la surface continue de vieillir
+  normalement (`ageParc+t`), `manquants` repart à l'âge `t` (entreplants
+  plantés à `t=0`).
+
+Le « reste de l'exploitation » (hors parcelle) vieillit de +1 an/an, à
+l'identique dans les 3 scénarios (le temps passe pareil partout, principe
+de symétrie du projet) — ce terme s'annule dans les écarts inter-scénarios
+mais garde des niveaux affichés physiquement justes.
+
+Propriété structurelle qui en découle, vérifiée par les tests
+(`tests/parite.test.js`, section 10) : l'écart d'âge avec le statu quo
+reste **plat** pendant le repos (les deux vieillissent au même rythme tant
+que rien n'est replanté), fait un **saut net** à la replantation (`t =
+repos`), puis reste **plat** indéfiniment — à la différence de la
+trésorerie, l'écart d'âge, une fois acquis, ne se referme jamais
+spontanément.
 
 `serieRep(scn)` choisit, selon le bouton actif (**Ensemble / Part
 exploitant / Part propriétaire**), soit `row.cashNet` directement, soit
@@ -841,24 +1099,69 @@ par défaut tant que la page est ouverte seule.
 Pas de librairie de graphiques : chaque figure est un `<svg>` construit à
 la main avec `React.createElement('svg', …)`, méthode par méthode :
 
-- **`chart(series, opt)`** (`index.html:652`) — courbes multi-séries avec
-  grille, ligne de référence en pointillé (ex. plafond 10 000 kg/ha) et
-  annotations ponctuelles. Utilisé pour le graphique de stock de réserve
-  (`chartStock`).
-- **`waterfall(invest, reserve, effort)`** (`index.html:689`) — graphique
-  en cascade à 3 colonnes (Investissement → Réserve → Effort net),
-  utilisé pour « Décomposition de l'effort ».
-- **`compareBars(items, fmt)`** (`index.html:711`) — barres horizontales
-  comparant un point d'arrivée par scénario, utilisé pour « Les trois
-  voies à 10 ans » (`chartCompare`).
-- **`annualBars(rows)`** (`index.html:731`) — barres empilées année par
-  année (cash net vs cash sans réserve). **Définie mais non appelée** dans
-  `renderVals()` actuellement : code mort laissé par une itération
-  précédente de la maquette, à nettoyer ou à rebrancher selon le besoin.
+- **`chart(series, opt)`** — courbes multi-séries avec grille, ligne de
+  référence en pointillé (ex. plafond 10 000 kg/ha) et annotations
+  ponctuelles. Utilisé pour le graphique de stock de réserve
+  (`chartStock`), replié par défaut à l'écran depuis le chantier P6
+  (`state.stockChartOuvert`), et pour la trajectoire d'âge du vignoble
+  (`chartAge`, chantier P7, replié par défaut — `state.ageChartOuvert`).
+  Depuis P7, chaque série peut porter un `marker` (`'circle'`|`'square'`|
+  `'triangle'`, tracé à chaque point `t`) en plus de `dash`
+  (`strokeDasharray`, déjà présent mais inutilisé avant P7) : accessibilité
+  vision dichromate — ne jamais distinguer des séries par la seule
+  couleur. `chartStock` n'a volontairement pas été rétrofité (hors
+  périmètre de P7) ; la légende associée à un `chart()` accessible se
+  construit via `legendSwatch(c, dash, marker)`, jamais en HTML/SVG brut
+  dans le template `<x-dc>` (cohérent avec le reste des graphiques,
+  entièrement construits en script).
+- **`annualBars(rows)`** — barres empilées année par année (cash net vs
+  cash sans réserve). **Définie mais non appelée** dans `renderVals()`
+  actuellement : code mort laissé par une itération précédente de la
+  maquette, à nettoyer ou à rebrancher selon le besoin.
+
+**Retirés par le chantier P6** (méthodes supprimées, plus de trace dans
+`index.html`) : `waterfall(invest, reserve, effort)` — graphique en
+cascade « Décomposition de l'effort » — et `compareBars(items, fmt)` —
+barres horizontales « Les trois voies à 10 ans », avec la ligne des
+annuités équivalentes qui l'accompagnait. Le graphique « Trajectoire de
+trésorerie cumulée » (courbes `chartTreso`, avec et sans mobilisation de
+la réserve) et son encadré « pourquoi la réserve est décisive » ont
+également été retirés de l'écran. Ces trois figures n'existent plus que
+dans l'historique git ; rien de leur logique ne subsiste ailleurs — les
+chiffres qu'elles portaient (investissement, réserve, effort net, écart
+final avec/sans réserve) restent lisibles via les KPI et, pour le détail
+formule par formule, via la fiche imprimable (`out.printKpiRows`, §17).
 
 ## 19. Limites, hypothèses et paramètres cachés
 
 - **Mono-parcelle, prix unique.** Pas de distinction cépage/cru/millésime.
+- **Aucune valeur terminale d'actif.** Le stock de réserve individuelle en
+  fin d'horizon (`stockFin`/`stockHa`) et l'écart d'âge du vignoble
+  (`trajectoireAge`) sont des actifs physiques contraints, jamais
+  convertis en €, y compris à l'horizon : `coucheEuro` ne reçoit même pas
+  ces champs en entrée (garde-fou vérifié par `tests/parite.test.js` §12)
+  et `trajectoireAge` ne prend aucun paramètre monétaire (`prixKg` sans
+  effet sur son résultat, même test). Un vignoble rajeuni ou une réserve
+  reconstituée à l'année 10 ne sont donc jamais comptés comme un gain
+  patrimonial dans les KPI financiers — cohérent avec le principe
+  anti-double-compte du projet, mais à garder en tête pour toute lecture
+  « valeur nette du patrimoine ».
+- **Aucune actualisation.** Les flux de trésorerie (`cashNet`, `investissement`,
+  cumuls) sont sommés bruts sur l'horizon (10 ou 25 ans), sans taux
+  d'actualisation ni VAN : un euro à l'année 10 pèse, dans les KPI,
+  exactement comme un euro à l'année 0. Choix de simplicité pour un outil
+  de sensibilisation (§0) ; à corriger si l'outil devait un jour servir de
+  base à une décision d'investissement chiffrée.
+- **Prix du raisin unique, sans distinction cépage/cru/millésime** (rappel
+  du point ci-dessus, qui a aussi une composante temporelle : `prixKg` est
+  supposé constant sur tout l'horizon, sans inflation ni cycle de marché).
+- **Valeurs réglementaires figées, à revérifier à chaque campagne.**
+  `volSortieArr = 9000` kg/ha (sortie de réserve à l'arrachage) et
+  `plafond = 10000` kg/ha (plafond de réserve individuelle) sont des seuils
+  fixés par le cahier des charges AOC/CIVC de la campagne en cours, pas des
+  constantes physiques : ils **peuvent changer d'une campagne à l'autre** et
+  doivent être revérifiés avant tout usage, au même titre que le volume
+  commercialisable (`v.volco`, déjà un champ de saisie éditable, lui).
 - **Paramètres fixés en dur dans `renderVals()`, non éditables dans
   l'UI :** `volSortieArr = 9000` kg/ha, `plafond = 10000` kg/ha,
   `rendMean = 12296.6` kg/ha (moyenne régionale), `horizon = 10` ans
@@ -871,14 +1174,22 @@ la main avec `React.createElement('svg', …)`, méthode par méthode :
   hypothèses à caler : pénalité VSL (`penaliteVSL`), montée en charge
   (`ramp`), survie et délai de complantation (`survie`, `entreeProd`).
 - **Coût de stockage de la réserve négligé.**
-- **Charges d'entretien récurrentes nulles par défaut** — tant qu'elles ne
-  sont pas calées (`coutSurfaceProdHaAn`, `coutRdtParKg`, `coutReposHaAn`,
-  `coutPlantierHaAn`), le statu quo reste gratuit dans le modèle et la
-  comparaison est optimiste pour le statu quo. Le référentiel manuel
-  (`REF_OPS_MANUEL`, barème Avenant 217) est un **plancher** de tarif de
-  tâche, pas une moyenne de temps réel ; les postes mécanisés et les coûts
-  repos/plantier sont, eux, entièrement à caler sur données coop (voir le
-  journal d'arbitrages, §11).
+- **Relevé de prix palissage/protection (chantier P8) non daté** :
+  `PRIX_PALISSAGE` et `PRIX_PROTECTION_PLANT` (`moteur-oad.js`) reprennent
+  des prix fournisseur communiqués par l'utilisateur sans date de relevé ni
+  nom de fournisseur précisés — à compléter avant tout usage réel (prix
+  acier volatils). Hypothèse non vérifiée que `coutEntreplant` inclut déjà
+  la protection de l'entreplant (voir §12, journal P8).
+- **Charges d'entretien récurrentes** : depuis le chantier 2 (§11, F8),
+  `coutSurfaceProdHaAn` (11 400 €/ha/an) et `coutRdtParKg` (1,52 €/kg) sont
+  calés sur Cerfrance 2024, `coutPlantierHaAn` (8 000 €/ha/an) sur MHCS.
+  Seul `coutReposHaAn` reste nul (assumé, à caler séparément) — sur cette
+  seule fenêtre (jachère après arrachage), le statu quo garde un léger biais
+  optimiste résiduel. Le référentiel manuel (`REF_OPS_MANUEL`, barème
+  Avenant 217) est un **plancher** de tarif de tâche, pas une moyenne de
+  temps réel ; les postes mécanisés du détail par opération restent,
+  eux, entièrement à caler sur données coop (voir le journal
+  d'arbitrages, §11).
 - **Porte-greffe, clones, fiche conseil** : purement informatifs, n'entrent
   jamais dans `inp` ni dans le calcul.
 - **Règles AOC modélisées** : écartement rang ≤ 2,00 m, pied 0,70–1,50 m,
@@ -888,17 +1199,25 @@ la main avec `React.createElement('svg', …)`, méthode par méthode :
 - **Dépendance réseau** : `support.js` charge React/ReactDOM/Babel depuis
   `unpkg.com`, et `index.html` charge les polices depuis Google Fonts. Sans
   connexion Internet au premier chargement, la page reste blanche.
-- **Aucun test automatisé** dans le dépôt actuel (voir §20).
+- **Classeur Excel de portage : maquette jetable, ne fait pas foi.** Le
+  classeur Excel qui a servi de support initial au chiffrage de ce chantier
+  (distinct des classeurs sources cités en provenance des valeurs, ex.
+  LutEnVi 2025, §12/§14) est une maquette de travail jetable : il n'est **pas**
+  maintenu en parallèle de ce dépôt et ne doit **jamais** être utilisé comme
+  référence pour auditer un chiffre affiché à l'écran. `moteur-oad.js` et
+  `tests/parite.test.js` (formules + snapshots figés) font seuls foi.
 
 ## 20. Pour aller plus loin
 
 Idées de suite, non entamées à ce jour :
 
-- **Réintroduire une suite de tests** sur `moteur-oad.js` (il est pur et
-  s'exporte via `module.exports`, donc testable avec `node` sans aucune
-  dépendance) — au minimum, figer quelques cas de parité avec le classeur
-  de référence pour détecter toute régression de formule.
 - **Nettoyer ou rebrancher `annualBars`** (§18), actuellement mort.
 - **Décider du sort de `this.props.horizon` / `this.props.seuilReserve`**
   (§17) : les exposer dans l'UI, ou les documenter comme un point
   d'intégration pour un site hôte qui embarquerait ce composant.
+- **Seuil de bascule sur le niveau de réserve individuelle** : indiquer, à
+  partir de quel niveau de RI actuel (`v.riPct`) un projet donné devient
+  absorbable sans tension de trésorerie excessive — le seul endroit où
+  l'outil pourrait guider sans devenir prescriptif. Non entamé.
+- **Analyse de sensibilité / tornade** sur les paramètres à caler
+  (`penaliteVSL`, `ramp`, `survie`, `entreeProd`, charges…). Non entamée.
