@@ -1026,6 +1026,129 @@ test('cohérence : surfHa × 10000 / largeurEquivalente(surfHa, L) === L (la lar
 });
 
 // ----------------------------------------------------------------------
+// Section 14 — Régimes de travail de l'arrachage (chantier B5, bloc 4 de
+// l'écran 5 : « ne pas surpromettre »). La note de cadrage demande de
+// montrer que la parcelle renouvelée « reste entretenue mais représente
+// un travail moins important » — vrai pendant le repos, douteux sur le
+// plantier (taille de formation, protection, remplacement des manquants,
+// désherbage : du vrai travail), le seul poste franchement économisé
+// étant la vendange. regimesTravailArrachage segmente donc l'horizon en
+// 3 fenêtres (repos/plantier/production) au lieu d'un message agrégé —
+// voir moteur-oad.js.
+// ----------------------------------------------------------------------
+
+section("14. Régimes de travail de l'arrachage (chantier B5, bloc 4)");
+
+const HPROD_A = OAD.REF_OPS_MANUEL.reduce((s, o) => s + o.h1000 * INP_A.densite / 1000, 0);
+
+test("3 fenêtres renvoyées, dans l'ordre repos → plantier → production, sans trou ni chevauchement", () => {
+  const reg = OAD.regimesTravailArrachage(SC_BASE.arrachage.kg, SC_BASE.statuquo.kg, INP_A);
+  assert.strictEqual(reg.length, 3);
+  assert.deepStrictEqual(reg.map(r => r.id), ['repos', 'plantier', 'production']);
+  const total = reg.reduce((s, r) => s + r.nbAnnees, 0);
+  assertClose(total, INP_A.horizon + 1, 1e-9, 'la somme des 3 fenêtres doit couvrir t=0..horizon exactement une fois chacune');
+});
+
+test('INP_A (repos=1, rampYears=3) : bornes exactes — repos=1 an, plantier=3 ans, production=7 ans', () => {
+  const reg = OAD.regimesTravailArrachage(SC_BASE.arrachage.kg, SC_BASE.statuquo.kg, INP_A);
+  assertClose(reg[0].nbAnnees, 1, 1e-9, 'repos : t=0 seulement');
+  assertClose(reg[1].nbAnnees, 3, 1e-9, 'plantier : t=1,2,3');
+  assertClose(reg[2].nbAnnees, 7, 1e-9, 'production : t=4..10');
+});
+
+test('repos : aucune heure manuelle travaillée, aucune vendange (pas de vigne en terre)', () => {
+  const reg = OAD.regimesTravailArrachage(SC_BASE.arrachage.kg, SC_BASE.statuquo.kg, INP_A);
+  const repos = reg[0];
+  assertClose(repos.heuresHaAn, 0, 1e-9);
+  assert.strictEqual(repos.vendangeActive, false);
+  assertClose(repos.heuresHaAnRef, HPROD_A, 1e-6, 'la référence statu quo, elle, continue de travailler la surface équivalente');
+});
+
+test('plantier (INP_A : returnYear = repos+rampYears = 4, coïncidence) : hProd × fracFormation, pas encore de vendange', () => {
+  const reg = OAD.regimesTravailArrachage(SC_BASE.arrachage.kg, SC_BASE.statuquo.kg, INP_A);
+  const plantier = reg[1];
+  assertClose(plantier.heuresHaAn, HPROD_A * 0.35, 1e-6, 'fracFormation par défaut = 0.35');
+  assert.strictEqual(plantier.vendangeActive, false, "avec INP_A, la vigne entre en production (t=4) exactement à la fin de la fenêtre plantier");
+  assertClose(plantier.heuresHaAnRef, HPROD_A, 1e-6);
+});
+
+test("production : aucune économie de main d'œuvre résiduelle (heuresHaAn === heuresHaAnRef), vendange active", () => {
+  const reg = OAD.regimesTravailArrachage(SC_BASE.arrachage.kg, SC_BASE.statuquo.kg, INP_A);
+  const production = reg[2];
+  assertClose(production.heuresHaAn, HPROD_A, 1e-6);
+  assertClose(production.heuresHaAn, production.heuresHaAnRef, 1e-9, 'une fois mature, la parcelle redemande exactement le même travail manuel que le statu quo');
+  assert.strictEqual(production.vendangeActive, true);
+});
+
+test('rampYears > 3 (montée en charge allongée) : la vendange peut démarrer avant la fin de la fenêtre plantier', () => {
+  // repos=1, rampYears=4 (ex. anneePleineProd=6) : returnYear = 3+1 = 4 < repos+rampYears = 5,
+  // donc la dernière année de "plantier" (t=4) a déjà une récolte non nulle — la fenêtre
+  // plantier n'a pas de garantie structurelle "vendange nulle", contrairement à INP_A.
+  const inp = { ...INP_A, ramp: [0.25, 0.5, 0.75, 1], rampYears: 4 };
+  const sc = OAD.construireScenarios(inp);
+  const reg = OAD.regimesTravailArrachage(sc.arrachage.kg, sc.statuquo.kg, inp);
+  assertClose(reg[1].nbAnnees, 4, 1e-9);
+  assert.strictEqual(reg[1].vendangeActive, true, 'la fenêtre plantier chevauche le début de la production réelle');
+});
+
+test('rampYears minimal (=1) : la fenêtre plantier se referme avant returnYear, jamais de vendange', () => {
+  // repos=1, rampYears=1 : plantier = [1,2), returnYear = 4 > 2 : aucune récolte sur la fenêtre ;
+  // la production démarre (charge) dès t=2 mais la récolte réelle (returnYear=4) suit plus tard.
+  const inp = { ...INP_A, ramp: [1], rampYears: 1 };
+  const sc = OAD.construireScenarios(inp);
+  const reg = OAD.regimesTravailArrachage(sc.arrachage.kg, sc.statuquo.kg, inp);
+  assert.strictEqual(reg[1].vendangeActive, false);
+  assert.strictEqual(reg[2].vendangeActive, true, "la vendange démarre bien dans la fenêtre production (t≥repos+rampYears=2), même si returnYear=4 la retarde encore un peu");
+});
+
+test('fracFormation=0 (hypothèse extrême) : aucun travail affiché en plantier, sans erreur', () => {
+  const reg = OAD.regimesTravailArrachage(SC_BASE.arrachage.kg, SC_BASE.statuquo.kg, INP_A, OAD.REF_OPS_MANUEL, 0);
+  assertClose(reg[1].heuresHaAn, 0, 1e-9);
+});
+
+test('fracFormation=1 (hypothèse extrême) : le plantier redevient identique à la référence statu quo', () => {
+  const reg = OAD.regimesTravailArrachage(SC_BASE.arrachage.kg, SC_BASE.statuquo.kg, INP_A, OAD.REF_OPS_MANUEL, 1);
+  assertClose(reg[1].heuresHaAn, reg[1].heuresHaAnRef, 1e-9);
+});
+
+test("repos=3 (INP_B_SANITAIRE) : la fenêtre repos s'élargit d'autant, le plantier démarre à t=3", () => {
+  const sc = OAD.construireScenarios(INP_B_SANITAIRE);
+  const reg = OAD.regimesTravailArrachage(sc.arrachage.kg, sc.statuquo.kg, INP_B_SANITAIRE);
+  assertClose(reg[0].nbAnnees, 3, 1e-9);
+  assert.strictEqual(reg[1].id, 'plantier');
+});
+
+test('horizon très court (horizon=0) : aucune division par zéro, fenêtres au-delà de l\'horizon nulles', () => {
+  const inp = { ...INP_A, horizon: 0 };
+  const sc = OAD.construireScenarios(inp);
+  const reg = OAD.regimesTravailArrachage(sc.arrachage.kg, sc.statuquo.kg, inp);
+  assertClose(reg[0].nbAnnees, 1, 1e-9, 'repos couvre t=0, seule année de l\'horizon');
+  assertClose(reg[1].nbAnnees, 0, 1e-9);
+  assertClose(reg[2].nbAnnees, 0, 1e-9);
+  reg.forEach(r => {
+    assert.ok(isFinite(r.heuresHaAn), `${r.id}.heuresHaAn non fini`);
+    assert.ok(isFinite(r.heuresHaAnRef), `${r.id}.heuresHaAnRef non fini`);
+  });
+});
+
+test("regimesTravailArrachage ne mute pas les lignes kg qu'on lui passe (lecture seule)", () => {
+  const sc = OAD.construireScenarios(INP_A);
+  const avantArr = JSON.parse(JSON.stringify(sc.arrachage.kg));
+  const avantSQ = JSON.parse(JSON.stringify(sc.statuquo.kg));
+  OAD.regimesTravailArrachage(sc.arrachage.kg, sc.statuquo.kg, INP_A);
+  assert.deepStrictEqual(sc.arrachage.kg, avantArr, 'sc.arrachage.kg a été modifié');
+  assert.deepStrictEqual(sc.statuquo.kg, avantSQ, 'sc.statuquo.kg a été modifié');
+});
+
+test("cohérence transverse : Σ heuresHaAn × nbAnnees sur les 3 fenêtres === Σ heuresManuellesParAnnee('arrachage') brut sur tout l'horizon", () => {
+  const reg = OAD.regimesTravailArrachage(SC_BASE.arrachage.kg, SC_BASE.statuquo.kg, INP_A);
+  const sommeFenetres = reg.reduce((s, r) => s + r.heuresHaAn * r.nbAnnees, 0);
+  const hArrBrut = OAD.heuresManuellesParAnnee('arrachage', SC_BASE.arrachage.kg, INP_A);
+  const sommeBrute = hArrBrut.reduce((s, h) => s + h, 0);
+  assertClose(sommeFenetres, sommeBrute, 1e-6, 'aucune année ne doit être comptée deux fois ni omise entre les 3 fenêtres');
+});
+
+// ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------
 

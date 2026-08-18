@@ -688,6 +688,58 @@ function moEconomisee(scArr, scSQ, inp, tauxHoraire, opsManuel = REF_OPS_MANUEL,
   return { heuresHa, euroIndicatifHa: heuresHa * tauxHoraire }; // € indicatif, JAMAIS dans la trésorerie
 }
 
+/* =====================================================================
+   Régimes de travail de l'arrachage — chantier B5, bloc 4 pédagogique
+   de l'écran 5 (« ne pas surpromettre »). La note de cadrage demande de
+   montrer que la parcelle renouvelée « reste entretenue mais représente
+   un travail moins important » — vrai pendant le REPOS, douteux sur le
+   PLANTIER (taille de formation, protection, remplacement des manquants,
+   désherbage : du vrai travail, pas une économie), le seul poste où
+   l'économie est franche étant la vendange. Segmenter en 3 fenêtres
+   calendaires plutôt que d'agréger en un message unique est donc une
+   décision métier — elle vit ici, pas dans index.html.
+
+   Bornes identiques à celles de chargesEntretien (repos, repos+rampYears)
+   pour ne pas introduire une deuxième découpe du calendrier qui
+   diverge silencieusement de celle déjà utilisée pour les charges. Pour
+   chaque fenêtre, moyenne heuresManuellesParAnnee (arrachage vs la MÊME
+   fenêtre en référence statu quo, pour donner le repère "à quoi ça
+   correspondrait si on ne touchait à rien") et signale si une récolte
+   de la parcelle a lieu sur la fenêtre (vendangeActive) — la fenêtre
+   "plantier" peut chevaucher le début de la production réelle
+   (returnYear = 3+repos) selon la valeur de rampYears : ce n'est pas
+   toujours vrai que "plantier ⇒ pas de vendange", d'où un calcul
+   explicite plutôt qu'une hypothèse câblée en dur.
+   ===================================================================== */
+function regimesTravailArrachage(scArr, scSQ, inp, opsManuel = REF_OPS_MANUEL, fracFormation = 0.35) {
+  const rampYears = inp.rampYears ?? (inp.ramp ? inp.ramp.length : 3);
+  const hArr = heuresManuellesParAnnee('arrachage', scArr, inp, opsManuel, fracFormation);
+  const hRef = heuresManuellesParAnnee('statuquo', scSQ, inp, opsManuel, fracFormation);
+  const bornes = [
+    { id: 'repos', lib: 'Repos du sol', debut: 0, fin: inp.repos },
+    { id: 'plantier', lib: 'Jeune vigne en formation', debut: inp.repos, fin: inp.repos + rampYears },
+    { id: 'production', lib: 'Vigne mature en production', debut: inp.repos + rampYears, fin: inp.horizon + 1 }
+  ];
+  const plafond = inp.horizon + 1;
+  return bornes.map(b => {
+    const debut = Math.max(0, Math.min(b.debut, plafond));
+    const fin = Math.max(debut, Math.min(b.fin, plafond));
+    const nbAnnees = fin - debut;
+    let heuresArrSomme = 0, heuresRefSomme = 0, recolteSomme = 0;
+    for (let t = debut; t < fin; t++) {
+      heuresArrSomme += hArr[t];
+      heuresRefSomme += hRef[t];
+      recolteSomme += scArr[t].recolteParcelle;
+    }
+    return {
+      id: b.id, lib: b.lib, nbAnnees,
+      heuresHaAn: nbAnnees > 0 ? heuresArrSomme / nbAnnees : 0,
+      heuresHaAnRef: nbAnnees > 0 ? heuresRefSomme / nbAnnees : 0,
+      vendangeActive: recolteSomme > 1e-9
+    };
+  });
+}
+
 // Chantier A2 — uniformisation de l'arrachage (décision CIVC de juillet 2026,
 // NON ENCORE PUBLIÉE à ce jour). Le motif classique/sanitaire disparaît : le
 // vigneron choisit librement une durée de repos du sol de 1, 2 ou 3 ans, qui
@@ -723,7 +775,7 @@ if (typeof module !== 'undefined') module.exports =
     chargesEntretien, coutPalissage, PRIX_PALISSAGE, FILS_PAR_TAILLE, largeurEquivalente,
     coutProtectionPlant, PRIX_PROTECTION_PLANT, preconPorteGreffe,
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
-    proposerVoletProduction, heuresManuellesParAnnee, moEconomisee,
+    proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique };
 if (typeof window !== 'undefined') window.OAD =
@@ -731,7 +783,7 @@ if (typeof window !== 'undefined') window.OAD =
     chargesEntretien, coutPalissage, PRIX_PALISSAGE, FILS_PAR_TAILLE, largeurEquivalente,
     coutProtectionPlant, PRIX_PROTECTION_PLANT, preconPorteGreffe,
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
-    proposerVoletProduction, heuresManuellesParAnnee, moEconomisee,
+    proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique };
 
