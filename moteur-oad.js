@@ -205,9 +205,18 @@ function construireScenarios(inp) {
   const FACTEUR_RECUP_ENTREPLANT = 0.8;
   const gainComblement = inp.manquants * inp.rendMean * FACTEUR_RECUP_ENTREPLANT;
   const rendCible = inp.rendEstime + gainComblement;
+  // Chantier A3 : le champ UI qui alimentait inp.entreeProd (« Entrée en
+  // production », panneau Complantation) a été renommé/repurposé pour piloter
+  // la rampe de l'arrachage (v.anneePleineProd, OAD.rampeLineaire — voir plus
+  // bas) ; index.html n'alimente donc plus inp.entreeProd. Défaut historique
+  // (7 ans, ex-valeur par défaut du champ) conservé ici pour ne pas modifier
+  // silencieusement ce calcul interne — la complantation reste calculée mais
+  // non exposée dans l'interface (chantier A1). Voir README, journal
+  // d'arbitrages « chantier A3 ».
+  const entreeProdCompl = inp.entreeProd ?? 7;
   const rendParcCompl = (t, rendY) => {
     const ratio = inp.rendEstime / inp.rendMean, ratioCible = rendCible / inp.rendMean;
-    const prog = t >= inp.entreeProd ? Math.min(1, (t - inp.entreeProd + 1) / 3) : 0;
+    const prog = t >= entreeProdCompl ? Math.min(1, (t - entreeProdCompl + 1) / 3) : 0;
     return rendY * (ratio + (ratioCible - ratio) * prog);
   };
   const scCompl = simulerReserveKg({ ...base, scenario: 'complantation', rendParcFn: rendParcCompl });
@@ -226,10 +235,27 @@ function construireScenarios(inp) {
 
   const eco = (cParcelle, cReste) => ({ prixKg: inp.prixKg,
     coutsParcelleParAnnee: cParcelle, coutsResteParAnnee: cReste });
+
+  // Chantier A1 (note de cadrage du 24/07/2026) — suppression d'INTERFACE des
+  // scénarios statu quo / complantation, PAS de calcul : voir README, journal
+  // d'arbitrages « chantier A1 ». `reference` est l'ex-`statuquo`, conservé en
+  // interne comme contre-factuel nécessaire aux différentiels de l'écran 5
+  // (ex. « moins de travail/charges qu'une parcelle en production ») — il ne
+  // doit JAMAIS être affiché comme un scénario au même titre qu'`arrachage`.
+  const scenarioReference = { kg: scSQ, eur: coucheEuro(scSQ, eco(coutsSQParcelle, ceSQ.reste)), investissement: 0 };
   return {
-    arrachage:     { kg: scArr,   eur: coucheEuro(scArr,   eco(coutsArrParcelle,  ceArr.reste)),  investissement: somme(invArr) },
-    complantation: { kg: scCompl, eur: coucheEuro(scCompl, eco(coutsCompParcelle, ceComp.reste)), investissement: somme(invCompl) },
-    statuquo:      { kg: scSQ,    eur: coucheEuro(scSQ,    eco(coutsSQParcelle,   ceSQ.reste)),    investissement: 0 }
+    arrachage: { kg: scArr, eur: coucheEuro(scArr, eco(coutsArrParcelle, ceArr.reste)), investissement: somme(invArr) },
+    // RÉFÉRENCE INTERNE — non affichable comme scénario, voir commentaire ci-dessus.
+    reference: scenarioReference,
+    // Alias de compatibilité vers `reference` (même objet) : conserve la clé
+    // historique `statuquo` pour ne pas casser le code et les tests existants
+    // qui la lisent encore. Chantier A1, 24/07/2026.
+    statuquo: scenarioReference,
+    // @deprecated chantier A1 (note de cadrage du 24/07/2026) — la complantation
+    // n'est plus un scénario exposé dans l'interface, cf. README journal
+    // d'arbitrages « chantier A1 ». Calcul conservé pour compatibilité ; ne pas
+    // lire cette clé dans du code nouveau.
+    complantation: { kg: scCompl, eur: coucheEuro(scCompl, eco(coutsCompParcelle, ceComp.reste)), investissement: somme(invCompl) }
   };
 }
 
@@ -387,7 +413,8 @@ const PRIX_PALISSAGE = {
 };
 // Nb de fils/rang par type de taille — hypothèse à confirmer (non figée par le guide).
 const FILS_PAR_TAILLE = {
-  guyot: 4, cordon: 4, arcure_simple: 4, arcure_double: 5
+  guyot: 4, cordon: 4, arcure_simple: 4, arcure_double: 5,
+  chablis: 5 // chantier A5 — valeur communiquée par l'utilisateur (pas de référentiel documentaire fourni, à sourcer si besoin)
 };
 
 /* =====================================================================
@@ -402,11 +429,61 @@ function largeurEquivalente(surfHa, longueurM) {
   return surfHa * 10000 / longueurM;
 }
 
+/* =====================================================================
+   Géométrie agronomique — chantier A4. La longueur/largeur déclarées
+   disparaissent : le vigneron saisit surface + écartement rangs + nombre
+   de rangs + écartement pieds ; la longueur de rang est DÉDUITE (usage
+   d'affichage seul, jamais réinjectée en saisie). Déplace vers le moteur
+   une logique qui vivait jusqu'ici dans index.html (entorse à CLAUDE.md).
+
+   Comptage des pieds : AGRONOMIQUE et lui seul (densité × surface,
+   densité arrondie AVANT multiplication par la surface — continuité avec
+   l'existant : 1,10 × 1,10 m → 8 264 pieds/ha). À ne JAMAIS confondre avec
+   le comptage géométrique (nbRangs, L) que continue de lire coutPalissage()
+   ci-dessous (piquets/fils) : les deux comptages ne coïncident pas
+   exactement, ce n'est pas un bug — voir README, journal d'arbitrages
+   « chantier A4 ».
+
+   Aucun seuil de plausibilité sur la longueur de rang déduite (ni haut ni
+   bas) : non arbitré à ce jour, volontairement absent d'ici.
+   ===================================================================== */
+function geometrieAgronomique(surf, eR, eP, nbRangs) {
+  const densite = Math.round(10000 / (eR * eP)); // arrondi AVANT multiplication par la surface
+  const L = (nbRangs > 0 && eR > 0) ? (surf * 10000) / (nbRangs * eR) : 0; // longueur de rang déduite — affichage seul
+  const W = nbRangs * eR; // largeur du bloc déduite — auxiliaire d'affichage
+  const pieds = Math.round(densite * surf); // comptage AGRONOMIQUE — seul comptage de pieds à planter
+  // chantier B4 : le détecteur `vsl` (ex eR >= 1.5) et la pénalité de rendement
+  // associée sont retirés de l'interface — voir README, journal « chantier B4 ».
+  // Le hook `rendFactorProjet` de simulerReserveKg (§7) reste actif dans le
+  // moteur, simplement plus alimenté depuis l'UI (vaut 1 par défaut).
+  return {
+    surf, eR, eP, nbRangs, densite, L, W, pieds,
+    aoc: { rang: eR <= 2.0, pied: eP >= 0.7 && eP <= 1.5, somme: (eR + eP) <= 3.0 }
+  };
+}
+
+/* Chantier A5 — catégorisation OBLIGATOIRE / OPTIONNEL des 8 lignes de
+   palissage (règle métier, cf. README journal d'arbitrages « chantier A5 »).
+   OBLIGATOIRES (piquets de tête, interpiquets, fils, et leurs accessoires
+   structurellement indissociables — crochets, gripple, MO pose) : toujours
+   comptées, jamais décochables. OPTIONNELS : « Kits bout de route »
+   (= « kits de route / kits Boudrout » de la note de cadrage — même
+   nomenclature que PRIX_PALISSAGE, reprise telle quelle, voir README pour
+   le signalement de l'ambiguïté plutôt qu'un tranchage). « Écarteurs » et
+   « autres », cités par la note de cadrage comme catégories optionnelles,
+   n'ont pas d'équivalent parmi ces 8 lignes — aucun prix n'est inventé
+   pour eux, catégories vides tant qu'une source ne les documente pas.
+   Prix et quantités des 8 lignes INCHANGÉS par ce chantier. */
 function coutPalissage(geo, prix, opt) {
   prix = Object.assign({}, PRIX_PALISSAGE, prix || {});
   opt = opt || {};
   const espacement = opt.espacementPiquet ?? 6;                 // m — choix B, éditable
   const nbFils = opt.nbFils ?? FILS_PAR_TAILLE[opt.typeTaille] ?? 4; // choix C
+  // ids des lignes OPTIONNELLES décochées par l'appelant (index.html, via les
+  // cases à cocher de l'UI) — vide par défaut : comportement historique
+  // inchangé (toutes les lignes comptées) tant que rien n'est explicitement
+  // exclu. Les lignes OBLIGATOIRES ignorent cette liste, quel qu'en soit le contenu.
+  const optionnelsExclus = new Set(opt.optionnelsExclus || []);
   const nbRangs = geo.nbRangs, Lrang = geo.L, surf = geo.surf;
 
   const interParRang = Math.max(0, Math.round(Lrang / espacement) - 1);
@@ -416,17 +493,22 @@ function coutPalissage(geo, prix, opt) {
   const nbGripple = nbFils * nbRangs;
   const nbPiquets = nbInter + nbTete; // base MO pose : tout poteau planté, tête ou intermédiaire
 
-  const lignes = [
-    ['Piquets intermédiaires',    nbInter,  prix.piquet,       nbInter  * prix.piquet],
-    ['Fiches de tête en L galva', nbTete,   prix.ficheTete,    nbTete   * prix.ficheTete],
-    ['Kits bout de route',        nbTete,   prix.kitBoutRoute, nbTete   * prix.kitBoutRoute],
-    ['Amarres',                   nbTete,   prix.amarre,       nbTete   * prix.amarre],
-    ['Crochets piquet inox',      nbInter,  prix.crochet,      nbInter  * prix.crochet],
-    ['Fils (ml)',                 mlFils,   prix.filML,        mlFils   * prix.filML],
-    ['Gripple',                   nbGripple, prix.gripple,     nbGripple * prix.gripple],
-    ['MO pose piquets',           nbPiquets, prix.moPosePiquet, nbPiquets * prix.moPosePiquet]
+  const lignesDef = [
+    { id: 'piquetInter',  lib: 'Piquets intermédiaires',    qte: nbInter,   prixUnite: prix.piquet,       categorie: 'obligatoire' },
+    { id: 'ficheTete',    lib: 'Fiches de tête en L galva', qte: nbTete,    prixUnite: prix.ficheTete,    categorie: 'obligatoire' },
+    { id: 'kitBoutRoute', lib: 'Kits bout de route',        qte: nbTete,    prixUnite: prix.kitBoutRoute, categorie: 'optionnel' },
+    { id: 'amarre',       lib: 'Amarres',                   qte: nbTete,    prixUnite: prix.amarre,       categorie: 'obligatoire' },
+    { id: 'crochet',      lib: 'Crochets piquet inox',      qte: nbInter,   prixUnite: prix.crochet,      categorie: 'obligatoire' },
+    { id: 'filML',        lib: 'Fils (ml)',                 qte: mlFils,    prixUnite: prix.filML,        categorie: 'obligatoire' },
+    { id: 'gripple',      lib: 'Gripple',                   qte: nbGripple, prixUnite: prix.gripple,      categorie: 'obligatoire' },
+    { id: 'moPosePiquet', lib: 'MO pose piquets',           qte: nbPiquets, prixUnite: prix.moPosePiquet, categorie: 'obligatoire' }
   ];
-  const totalParcelle = lignes.reduce((s, l) => s + l[3], 0);
+  const lignes = lignesDef.map(l => ({
+    ...l,
+    total: l.qte * l.prixUnite,
+    inclus: l.categorie === 'obligatoire' || !optionnelsExclus.has(l.id)
+  }));
+  const totalParcelle = lignes.filter(l => l.inclus).reduce((s, l) => s + l.total, 0);
   const totalHa = surf > 0 ? totalParcelle / surf : 0;
   return { lignes, totalParcelle, totalHa, espacement, nbFils,
            nbInter, nbTete, mlFils, nbGripple };
@@ -606,19 +688,51 @@ function moEconomisee(scArr, scSQ, inp, tauxHoraire, opsManuel = REF_OPS_MANUEL,
   return { heuresHa, euroIndicatifHa: heuresHa * tauxHoraire }; // € indicatif, JAMAIS dans la trésorerie
 }
 
+// Chantier A2 — uniformisation de l'arrachage (décision CIVC de juillet 2026,
+// NON ENCORE PUBLIÉE à ce jour). Le motif classique/sanitaire disparaît : le
+// vigneron choisit librement une durée de repos du sol de 1, 2 ou 3 ans, qui
+// détermine mécaniquement le nombre de déblocages de réserve. Voir README,
+// journal d'arbitrages « chantier A2 ». Statut réglementaire à rappeler côté
+// UI tant que la décision CIVC n'est pas publiée.
+const VOL_SORTIE_ARRACHAGE = 9000; // kg/ha/an, inchangé depuis avant ce chantier — voir README §19
+const NB_SORTIE_PAR_REPOS = { 1: 3, 2: 4, 3: 5 }; // repos (ans) -> nb d'années de déblocage
+function nbSortiePourRepos(repos) {
+  const nbSortie = NB_SORTIE_PAR_REPOS[repos];
+  if (nbSortie === undefined) {
+    throw new Error(`nbSortiePourRepos: durée de repos non prévue (${repos}) — attendu 1, 2 ou 3 ans`);
+  }
+  return nbSortie;
+}
+
+// Chantier A3 — remplace les paliers de montée en charge (sélecteur 30/60/100 %
+// ou 50/80/100 %) par une rampe linéaire dérivée d'une seule saisie : l'année
+// de pleine production, comptée depuis la plantation. L'année 3 est l'entrée
+// en production (3e feuille), qui coïncide avec le premier millésime sans
+// déblocage de réserve (`returnYear = 3 + repos`, §7) — c'est donc la borne
+// basse de `anneePleineProd`. Voir README, journal d'arbitrages « chantier A3 ».
+function rampeLineaire(anneePleineProd) {
+  if (!(anneePleineProd >= 3)) {
+    throw new Error(`rampeLineaire: anneePleineProd doit être ≥ 3 (reçu ${anneePleineProd})`);
+  }
+  const n = anneePleineProd - 2; // nombre de paliers annuels depuis l'entrée en production (année 3)
+  return Array.from({ length: n }, (_, i) => (i + 1) / n);
+}
+
 if (typeof module !== 'undefined') module.exports =
   { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
     chargesEntretien, coutPalissage, PRIX_PALISSAGE, FILS_PAR_TAILLE, largeurEquivalente,
     coutProtectionPlant, PRIX_PROTECTION_PLANT, preconPorteGreffe,
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee,
-    ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge };
+    ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
+    nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique };
 if (typeof window !== 'undefined') window.OAD =
   { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
     chargesEntretien, coutPalissage, PRIX_PALISSAGE, FILS_PAR_TAILLE, largeurEquivalente,
     coutProtectionPlant, PRIX_PROTECTION_PLANT, preconPorteGreffe,
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee,
-    ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge };
+    ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
+    nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique };
 
 }

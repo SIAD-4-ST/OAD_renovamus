@@ -26,6 +26,8 @@ en continu dans la colonne de droite.
 6. [Glossaire des champs de saisie](#6-glossaire-des-champs-de-saisie)
     - [6bis. Le registre parcellaire — un mode de saisie alternatif](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif)
 7. [Le moteur kg — `simulerReserveKg`](#7-le-moteur-kg--simulerreservekg)
+    - [7bis. Journal d'arbitrages — chantier A2 : uniformisation de l'arrachage](#7bis-journal-darbitrages--chantier-a2--uniformisation-de-larrachage)
+    - [7ter. Journal d'arbitrages — chantier A3 : remplacement des paliers de montée en charge](#7ter-journal-darbitrages--chantier-a3--remplacement-des-paliers-de-montée-en-charge)
 8. [Ce qui distingue les 3 scénarios](#8-ce-qui-distingue-les-3-scénarios)
 9. [La couche € — `coucheEuro`](#9-la-couche--coucheeuro)
 10. [Faire-valoir — `repartir`](#10-faire-valoir--repartir)
@@ -35,7 +37,7 @@ en continu dans la colonne de droite.
 14. [Palissage dérivé de la géométrie — `coutPalissage`](#14-palissage-dérivé-de-la-géométrie--coutpalissage)
     - [14bis. Protection du jeune plant — `coutProtectionPlant`](#14bis-protection-du-jeune-plant--coutprotectionplant)
 15. [Arbre de décision porte-greffe — `preconPorteGreffe`](#15-arbre-de-décision-porte-greffe--preconportegreffe)
-16. [Géométrie de plantation — `geometrie()`](#16-géométrie-de-plantation--geometrie)
+16. [Géométrie de plantation — `OAD.geometrieAgronomique()`](#16-géométrie-de-plantation--oadgeometrieagronomique)
 17. [KPI et synthèse](#17-kpi-et-synthèse)
 18. [Graphiques SVG faits main](#18-graphiques-svg-faits-main)
 19. [Limites, hypothèses et paramètres cachés](#19-limites-hypothèses-et-paramètres-cachés)
@@ -159,16 +161,18 @@ renseigné.
 
 | # | Étape | Contenu |
 |---|---|---|
-| 1 | **Votre exploitation** | Surface totale, âge moyen du vignoble, VolCo, prix du raisin, réserve individuelle actuelle (curseur en % du plafond). Ce sont les repères globaux, dénominateurs de toute la comparaison. Saisie manuelle par défaut, ou bascule vers un **registre parcellaire** (jeu d'exemple préchargé, en mémoire de session uniquement, aucun import de fichier pour l'instant) qui dérive surface totale et âge moyen d'un tableau de parcelles — voir [§6bis](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif). |
-| 2 | **La parcelle que vous désignez** | Âge, taux de pieds manquants, rendement estimé, déclin en statu quo, régime de faire-valoir (propriété / fermage / métayage) et ses paramètres. En mode registre, un sélecteur d'`idu` et des cases à cocher par ligne désignent la parcelle et en dérivent âge et taux de manquants (§6bis). |
-| 3 | **Votre projet de replantation** | Géométrie (longueur, largeur, écarts) avec contrôle en direct du cahier des charges AOC ; matériel végétal et conduite (porte-greffe, irrigation, montée en charge) avec fiche conseil ; aide au choix du matériel végétal (dépliable, purement informative) ; dimensionnement du palissage dérivé de la géométrie. En mode registre, la largeur n'est plus saisie : elle est dérivée de la surface du registre ÷ la longueur saisie (« largeur équivalente », §16) ; un message bloquant remplace les indicateurs si la longueur est vide. |
-| 4 | **Coûts et charges** | Investissement ponctuel (arrachage, préparation, plant, palissage, protection du jeune plant, irrigation, pénalité VSL), paramètres de la complantation (survie, entrée en production, coût par entreplant), charges d'entretien récurrentes (calées par défaut sur Cerfrance/MHCS pour 3 des 4 taux — voir §11). |
+| 1 | **Votre exploitation** | Surface totale, âge moyen du vignoble, VolCo, prix du raisin, réserve individuelle actuelle (curseur en % du plafond) ; **charges de production à l'hectare** (charge liée à la surface, coût de la vendange, détail par opération heures manuelles/mécanisées — chantier B1, déplacées depuis l'écran « Coûts et charges », paramètres de référence de l'exploitation réutilisés à l'écran 5, voir §11 F9). Ce sont les repères globaux, dénominateurs de toute la comparaison. Saisie manuelle par défaut, ou bascule vers un **registre parcellaire** (jeu d'exemple préchargé, en mémoire de session uniquement, aucun import de fichier pour l'instant) qui dérive surface totale et âge moyen d'un tableau de parcelles — voir [§6bis](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif). |
+| 2 | **La parcelle que vous désignez** | **Géométrie de la parcelle en tête d'écran** (chantier B2, déplacée depuis l'écran 3) : surface arrachée, écart entre rangs, nombre de rangs, écart entre pieds — seuls champs saisis ; longueur de rang déduite, densité, pieds à planter et badge de conformité AOC en sont affichés, jamais saisis (§16). Puis âge, taux de pieds manquants, rendement estimé, déclin en statu quo, régime de faire-valoir (propriété / fermage / métayage) et ses paramètres. En mode registre, un sélecteur d'`idu` et des cases à cocher par ligne désignent la parcelle et en dérivent surface, âge et taux de manquants (§6bis). |
+| 3 | **Votre projet de replantation** | **Deux blocs seulement (chantier B3)** : (1) simulateur d'aide au choix du matériel végétal (cépage/calcaire/profondeur/drainage, arbre porte-greffe, table clones — dépliable, purement informatif), positionné juste avant la sélection définitive matériel végétal/porte-greffe qu'il éclaire, avec fiche conseil (dont l'avertissement 161-49 C) ; (2) palissage et conduite — mode de conduite (dont Chablis, chantier A5), année de pleine production (chantier A3, §7bis), équipements de palissage dérivés de la géométrie de l'écran 2 (postes obligatoires toujours comptés, poste optionnel décochable — chantier A5, §14). Ni le sélecteur d'irrigation ni la pénalité VSL n'apparaissent ici (irrigation déplacée à l'écran 4, VSL retirée de l'interface — chantier B4). Un message bloquant remplace les indicateurs de palissage si la géométrie est incomplète (surface ou nombre de rangs nul). |
+| 4 | **Coûts et charges** | **Deux blocs seulement (chantier B4)** : BLOC A « Investissements liés à la parcelle arrachée puis replantée » — prestations d'arrachage et préparation, matériel végétal et sa protection, matériel de palissage, options de coût à l'installation (dont l'irrigation, déplacée depuis l'écran 3), et la complantation (survie, coût par entreplant — l'entrée en production n'est plus éditable depuis le chantier A3, fixée à 7 ans, voir §7bis) ; BLOC B « Entretien en deux temps » — B.1 entretien de la parcelle au repos, B.2 entretien du plantier (chantier B1 a déplacé le volet « production », permanent, à l'écran 1 — voir §11 F9, non dupliqué ici). Aucun champ VSL. |
 | 5 | **Résultats** | Synthèse rédigée, sélecteur d'horizon (10 ou 25 ans), sélecteur de vue (Ensemble / Part exploitant / Part propriétaire), de test de résistance climatique et de mode main d'œuvre (Prestataire / Familiale — affichage seul, §11 F7), KPI en 2 familles typographiquement distinctes — décision financière (€) et effets physiques non monétisés (voir §17) —, encadré main d'œuvre économisée, graphiques de stock de réserve et de trajectoire d'âge (repliés par défaut), détail annuel dépliable, tableau du manque à gagner, et une fiche imprimable regroupant hypothèses, KPI (avec formule) et détail annuel des 3 scénarios (bouton « Imprimer », `window.print()`). |
 
 La colonne de droite (`<aside>`, « Synthèse en continu ») est visible à
-**toutes** les étapes : elle reprend un sous-ensemble des mêmes résultats
-(surface, densité, pieds à planter, conformité AOC, investissement,
-réserve mobilisée, effort net, tension de trésorerie, réserve minimale) et
+**partir de l'écran 3** (retirée des écrans 1 et 2 — chantiers B1 puis B2 :
+`sc-if value="{{ syntheseVisible }}"`, `syntheseVisible = step > 1`) : elle
+reprend un sous-ensemble des mêmes résultats (surface, densité, pieds à
+planter, conformité AOC, investissement, réserve mobilisée, effort net,
+tension de trésorerie, réserve minimale) et
 propose un raccourci direct vers l'étape 5.
 
 ## 5. Le flux de données, de la frappe au résultat
@@ -181,17 +185,19 @@ this.on[xxx](e)  →  setState({ v: { ...v, [xxx]: e.target.value } })   data-dc
    │
    ▼  React re-render  →  renderVals() ré-exécuté EN ENTIER
    │
-   ├─ geometrie(v, surfImposee)           → g   (densité, rangs, surface, conformité AOC ;
-   │                                            surfImposee = surface du registre en mode
-   │                                            registre, sinon null — §16)
+   ├─ OAD.geometrieAgronomique(surf, eR, eP, nbRangs) → g  (densité, longueur de rang déduite,
+   │                                            conformité AOC ; surf = v.surfArr en mode
+   │                                            manuel, surface du registre en mode registre
+   │                                            — chantier A4, §16)
    ├─ OAD.coutPalissage(g, …)             → cp  (préremplit coutPalissageHa si non édité)
    │
    ▼  construction de `inp` (l'objet attendu par le moteur)
 inp = { geo, surfTot, surfParc:g.surf, ageMoy, ageParc, repos, nbSortie,
-        volSortieArr, plafond, volco, rendMean, reserveInit, horizon, ramp,
+        volSortieArr, plafond, volco, rendMean, reserveInit, horizon,
+        ramp, rampYears,                          // OAD.rampeLineaire(anneePleineProd) — chantier A3, §7bis
         rendYearFn, rendFactorProjet, rendEstime, manquants, declinSQ,
         densite, coutArrachageHa, coutPlant, coutPalissageHa,
-        irrigation, coutIrrigHa, coutEntreplant, survie, entreeProd, prixKg,
+        irrigation, coutIrrigHa, coutEntreplant, survie, prixKg,
         coutSurfaceProdHaAn, coutRdtParKg, coutReposHaAn, coutPlantierHaAn,
         tauxHoraire, fv:{regime,loyerAn,…} }
    │
@@ -239,7 +245,44 @@ avec ces valeurs par défaut (constructeur du composant, `index.html`) :
 | `volco` | kg/ha | 9000 | volume commercialisable, fixé chaque année par le CIVC |
 | `prixKg` | €/kg | 7 | prix unique du raisin (v1 : pas de distinction cépage/cru) |
 
+**Charges de production à l'hectare** (§11 — chantier B1, déplacé depuis
+l'écran « Coûts et charges » : ce sont des paramètres de référence de
+l'exploitation, réutilisés à l'écran 5, pas des coûts spécifiques au
+projet de renouvellement) :
+
+| champ | unité | défaut | rôle | source |
+|---|---|---|---|---|
+| `coutSurfaceProdHaAn` | €/ha/an | 11400 | **charge liée à la surface**, vigne mature en production — et taux permanent du « reste » de l'exploitation | Cerfrance 2024 — charges de structure hors charges locatives (15 300 €/ha), amortissement (3 900 €/ha) retiré en totalité |
+| `coutRdtParKg` | €/kg | 1.52 | **coût de la vendange** (vendange, transport, prestations récolte) — proportionnel aux kg récoltés, donc exprimé en €/kg et non en €/ha | Cerfrance 2024 — charges proportionnelles (~15 200 €/ha) ÷ rendement de référence 10 000 kg/ha |
+| `tauxHoraire` | €/h | 17 (SMIC 2026 chargé) | conversion h → € dans le détail par opération ci-dessous |
+| **heures manuelles / mécanisées à l'hectare** | h/ha | dérivées, 0 par défaut pour le volet mécanisé | détail par opération dépliable (`REF_OPS_MANUEL`, `REF_OPS_MECANISE`, `OAD.proposerVoletProduction()`) — chaque ligne (manuelle ou mécanisée) reste éditable ; agrégats affichés séparément (`voletProdHeuresTxt` / `voletProdHeuresMecaTxt`), voir journal d'arbitrages « chantier B1 » (§11) |
+
+`coutSurfaceProdHaAn` peut être saisi directement ou **repris** d'un détail
+par opération dépliable (volet « production », mêmes manuel/mécanisé que
+ci-dessus), préremplissage opt-in décrit dans le journal d'arbitrages du
+§11 (F4). `coutReposHaAn`/`coutPlantierHaAn` (charge de transition
+propre à l'arrachage, pas un paramètre général de l'exploitation) restent
+à l'étape 4, voir plus bas.
+
 ### Étape 2 — La parcelle désignée
+
+**Géométrie** (→ objet `g`, `OAD.geometrieAgronomique()`, voir
+[§16](#16-géométrie-de-plantation--oadgeometrieagronomique) — chantier A4
+pour la formule, **chantier B2** pour son emplacement : bloc « Géométrie de
+la parcelle » **en tête** de l'écran 2, déplacé depuis l'écran 3) :
+
+| champ | unité | défaut | rôle |
+|---|---|---|---|
+| `surfArr` | ha | 1 | surface arrachée — pilote la géométrie (§16, chantier A4) ; ignoré en mode registre, où elle vient de la surface agrégée du registre (§6bis), affichée en lecture seule dans le même bloc |
+| `ecartRang` | m | 1 | écartement entre rangs — pilote densité et conformité AOC |
+| `nbRangs` | rangs | 100 | nombre de rangs — saisi (remplace la largeur déclarée), en mode registre comme en mode manuel |
+| `ecartPied` | m | 1.10 | écartement entre pieds — pilote densité et conformité AOC |
+
+Seuls ces 4 champs sont saisis dans le bloc géométrie ; longueur de rang,
+densité, pieds à planter et badge de conformité AOC en sont **déduits**,
+jamais saisis (§16). La longueur de rang n'est plus un champ depuis le
+chantier A4 : elle est déduite (surface ÷ (nbRangs × écart rang)), affichée
+à titre indicatif uniquement.
 
 | champ | unité | défaut | rôle |
 |---|---|---|---|
@@ -254,71 +297,88 @@ avec ces valeurs par défaut (constructeur du composant, `index.html`) :
 
 ### Étape 3 — Projet de replantation
 
-**Géométrie** (→ objet `g`, voir [§16](#16-géométrie-de-plantation--geometrie)) :
+Depuis le **chantier B2**, la géométrie de la parcelle n'est plus saisie
+ici : voir « Étape 2 » ci-dessus. Depuis le **chantier B3**, l'écran ne
+comporte plus que **deux blocs** (voir journal d'arbitrages, §15) :
+« Matériel végétal et aide au choix », puis « Palissage et conduite ». Le
+champ `irrigation` **n'est plus affiché ici** depuis le chantier B3 — voir
+« Étape 4 » ci-dessous, qui l'a récupéré au chantier **B4**. La pénalité
+VSL et son détecteur ont également été retirés (chantier B4, voir §11
+journal d'arbitrages) : ni champ de saisie, ni badge, dans aucun écran.
 
-| champ | unité | défaut |
-|---|---|---|
-| `geoL` (longueur) | m | 100 — jamais dérivé ni recalculé, dans aucun des deux modes (§16) |
-| `geoW` (largeur) | m | 100 — saisi en mode manuel ; en mode registre, ignoré et remplacé par la largeur équivalente dérivée de la surface du registre (§16) |
-| `ecartRang` | m | 1 |
-| `ecartPied` | m | 1.10 |
-
-**Matériel & conduite :**
+**Bloc 1 — Matériel végétal et aide au choix.** Le simulateur d'aide au
+choix (`cepage`, `calcaireActif`, `profondeurSol`, `drainageSol`, purement
+informatif, alimente `OAD.preconPorteGreffe()`, §15, **hors calcul
+économique**) précède désormais la sélection définitive, qu'il éclaire :
 
 | champ | défaut | rôle |
 |---|---|---|
 | `materiel` | vinifera | vinifera / Voltis — badge d'information réglementaire seulement, n'entre pas dans le calcul |
 | `porteGreffe` | 41 B | affichage pur, alimente la fiche conseil (`PG_INFO`), **hors calcul** |
-| `irrigation` | '0' (non) | active `coutIrrigHa` dans l'investissement ; déclenche un badge « interdite en AOC » |
-| `ramp` | `0.3,0.6,1` | montée en charge du rendement les 3 premières années après repos (§7) |
 
-**Aide au choix du matériel végétal** (`cepage`, `calcaireActif`,
-`profondeurSol`, `drainageSol`) : purement informatif, alimente
-`OAD.preconPorteGreffe()` (§15), **hors calcul économique**.
+**Bloc 2 — Palissage et conduite.**
+
+| champ | unité | défaut | rôle |
+|---|---|---|---|
+| `typeTaille` | — | guyot | mode de conduite (dont Chablis, chantier A5) — alimente `nbFils` par défaut et `OAD.coutPalissage()` |
+| `anneePleineProd` | années | 5 | année de pleine production, comptée depuis la plantation (l'année 3 est l'entrée en production, 3e feuille) ; alimente `inp.ramp` via `OAD.rampeLineaire()` — chantier A3, remplace le sélecteur de paliers 30/60/100 % (§7bis) |
 
 **Dimensionnement du palissage** (`typeTaille`, `nbFils`, `espPiquet`) :
 alimente `OAD.coutPalissage()` (§14), qui **préremplit** `coutPalissageHa`
 tant que l'utilisateur ne l'a pas édité à la main (drapeau
 `state.palisManuel`, remis à `false` par le bouton « ↻ Reprendre la valeur
-dérivée de la géométrie »).
+dérivée de la géométrie »). Depuis le **chantier A5**, chaque ligne du
+détail porte une catégorie obligatoire/optionnelle ; seules les lignes
+optionnelles sont décochables (§14).
 
-**Coûts (investissement ponctuel) :**
+### Étape 4 — Coûts et charges
 
-| champ | unité | défaut | utilisé pour |
+Depuis le **chantier B4**, l'écran ne comporte plus que **deux blocs**
+(voir journal d'arbitrages, §11) : BLOC A « Investissements liés à la
+parcelle arrachée puis replantée », BLOC B « Entretien en deux temps ». Le
+volet « production » (`coutSurfaceProdHaAn`, `coutRdtParKg`, `tauxHoraire`)
+n'apparaît **pas** ici : c'est un paramètre de référence de l'exploitation,
+déplacé à l'étape 1 par le chantier B1 (§11 F9) — sa réapparition ici
+casserait la règle « aucun poste compté deux fois entre écran 1 et écran 4 ».
+
+**BLOC A — Investissements** :
+
+| champ | unité | défaut | rôle |
 |---|---|---|---|
-| `motif` | classique\|sanitaire | classique | commute `repos`/`nbSortie` (§7) |
-| `coutArrachageHa` | €/ha | 22500 | coût d'arrachage **tout compris** (arrachage + évacuation des souches + amendement calcaire + préparation du sol), année 0 — source MHCS, voir journal d'arbitrages §12 |
-| `coutPlant` | €/pied | 2.10 | plant, année `repos` (× densité) — source MHCS |
-| `coutPalissageHa` | €/ha | 12000 (prérempli ≈13116-14577 selon relevé) | palissage, année `repos` — voir §14 |
-| `coutProtectionHa` | €/ha | 10000 (prérempli, chantier P8) | protection du jeune plant (tuteur + cache-plant), année `repos` — poste séparé du palissage, voir journal d'arbitrages §12 |
+| `repos` | 1\|2\|3 ans | 1 | durée de repos du sol choisie librement par le vigneron ; détermine `nbSortie` via `OAD.nbSortiePourRepos()` (§7) — chantier A2, décision CIVC de juillet 2026 non encore publiée |
+| `coutArrachageHa` | €/ha | 22500 | prestations d'arrachage **et** préparation de la parcelle, **tout compris** (arrachage + évacuation des souches + amendement calcaire + préparation du sol), année 0 — source MHCS, voir journal d'arbitrages §12 |
+| `coutPlant` | €/pied | 2.10 | matériel végétal à acheter (plant), année `repos` (× densité) — source MHCS |
+| `coutPalissageHa` | €/ha | 12000 (prérempli ≈13116-14577 selon relevé) | matériel de palissage à acheter, année `repos` — voir §14 |
+| `coutProtectionHa` | €/ha | 10000 (prérempli, chantier P8) | protection du matériel végétal à acheter (tuteur + cache-plant), année `repos` — poste séparé du palissage, voir journal d'arbitrages §12 |
+| `irrigation` | '0' (non) | active `coutIrrigHa` dans l'investissement — **déplacé depuis l'écran 3** (chantier B4, options de coût à l'installation) |
 | `coutIrrigHa` | €/ha | 5000 | irrigation, année `repos`, si activée |
-| `penaliteVSL` | % | 15 | pénalité de rendement si conduite semi-large (`ecartRang ≥ 1.5`) |
-| `survie` | % | 50 | taux de survie des entreplants |
-| `entreeProd` | années | 7 | début de montée en charge des entreplants |
-| `coutEntreplant` | €/pied | 4.5 | coût des entreplants, année 0 — supposé inclure déjà tuteur + cache-plant de l'entreplant, hypothèse non vérifiée (voir §12) |
+| `survie` | % | 50 | taux de survie des entreplants (complantation, non exposée à l'écran 5 depuis le chantier A1) |
+| `coutEntreplant` | €/pied | 4.5 | matériel végétal à acheter pour la complantation (coût par entreplant), année 0 — supposé inclure déjà tuteur + cache-plant, hypothèse non vérifiée (voir §12) |
 
-### Étape 4 — Coûts et charges (suite) : charges d'entretien récurrentes
+Le début de montée en charge des entreplants (ex-champ `entreeProd`, années,
+défaut 7) n'est plus un champ éditable depuis le **chantier A3** : le champ
+UI a été renommé et repurposé pour `anneePleineProd` (étape 3) ; la
+complantation, non exposée à l'écran des résultats depuis le chantier A1,
+garde son ancien défaut (7 ans) fixé en dur dans `moteur-oad.js` (voir §7bis).
 
-Modèle à 3 volets (§11, refonte détaillée dans le journal d'arbitrages qui
-suit). Depuis le **chantier 2** (calibration Cerfrance/MHCS), trois des
-quatre taux sont calés par défaut sur une source professionnelle — seul
-`coutReposHaAn` reste nul (assumé, à recaler séparément, hors périmètre de
-ce chantier) :
+**BLOC B — Entretien en deux temps** (modèle à 3 volets, §11 — le volet
+« production » vit à l'étape 1, voir plus haut) :
 
 | champ | unité | défaut | rôle | source |
 |---|---|---|---|---|
-| `coutSurfaceProdHaAn` | €/ha/an | 11400 | vigne mature en production — et taux permanent du « reste » de l'exploitation | Cerfrance 2024 — charges de structure hors charges locatives (15 300 €/ha), amortissement (3 900 €/ha) retiré en totalité, voir §11 |
-| `coutRdtParKg` | €/kg | 1.52 | vendange, transport, prestations récolte — proportionnel aux kg récoltés | Cerfrance 2024 — charges proportionnelles (~15 200 €/ha) ÷ rendement de référence 10 000 kg/ha |
-| `coutReposHaAn` | €/ha/an | 0 | jachère après arrachage (`t < repos`) | assumé — à caler (hors périmètre du chantier 2) |
-| `coutPlantierHaAn` | €/ha/an | 8000 | jeune vigne en formation (`repos ≤ t < repos+rampYears`) | MHCS — taille de formation + remplacement des plants morts |
-| `tauxHoraire` | €/h | 17 (SMIC 2026 chargé) | conversion h → € dans les détails par opération ci-dessous |
-| `fracFormation` | ratio | 0,35 | applique le volet production à la ligne « taille de formation » du volet plantier |
+| `coutReposHaAn` | €/ha/an | 0 | B.1 — entretien de la parcelle au repos (`t < repos`) | assumé — à caler (hors périmètre du chantier 2) |
+| `coutPlantierHaAn` | €/ha/an | 8000 | B.2 — entretien du plantier (`repos ≤ t < repos+rampYears`) | MHCS — taille de formation + remplacement des plants morts |
+| `fracFormation` | ratio | 0,35 | applique le volet production à la ligne « taille de formation » du volet B.2 |
 
-Chacun de ces trois taux de charge (`coutSurfaceProdHaAn`,
-`coutReposHaAn`, `coutPlantierHaAn`) peut être saisi directement ou
-**repris** d'un détail par opération dépliable (volets « production »,
-« repos », « plantier »), préremplissage opt-in décrit dans le journal
-d'arbitrages ci-dessous (F4).
+Depuis le **chantier 2** (calibration Cerfrance/MHCS), `coutPlantierHaAn`
+est calé sur une source professionnelle — seul `coutReposHaAn` reste nul
+(assumé, à recaler séparément, hors périmètre de ce chantier). Ces deux
+taux de charge peuvent être saisis directement ou **repris** d'un détail
+par opération dépliable (B.1 « repos », B.2 « plantier »), préremplissage
+opt-in décrit dans le journal d'arbitrages ci-dessous (F4, puis chantier
+B4 pour la liste d'options). `tauxHoraire` (SMIC 2026 chargé, 17 €/h) est
+saisi une seule fois, à l'étape 1 avec le volet « production » (§6), et
+réutilisé ici pour convertir h → € dans les volets B.1/B.2.
 
 ### Étape 5 — Résultats
 
@@ -377,14 +437,14 @@ substitue les 4 valeurs dérivées à celles de `state.v` : `inp.surfTot`,
 `inp.ageMoy`, `inp.ageParc`, `inp.manquants` (= `tauxManquant/100`)
 viennent du registre plutôt que des champs `v.surfTot`/`v.ageMoy`/
 `v.ageParc`/`v.manquants`. `agregParcelle.surfParc` cascade jusqu'à
-`fv.loyerAn = loyerHa × surfParcResolu` (§10). Depuis le chantier
-« réconciliation géométrie/registre » (§16), cette surface **passe
-par la géométrie** plutôt que de la court-circuiter :
-`geometrie(v, agregParcelle.surfParc)` reprend `surfImposee` telle
-quelle comme `g.surf` (donc `surfParcResolu = g.surf === agregParcelle.surfParc`,
-sans écart) et n'en dérive que la largeur équivalente — la densité, elle,
-continue de dépendre uniquement des écartements, indépendamment du mode
-actif.
+`fv.loyerAn = loyerHa × surfParcResolu` (§10) et, depuis le **chantier A4**
+(§16), jusqu'à la géométrie elle-même : `OAD.geometrieAgronomique(surf, …)`
+reçoit `agregParcelle.surfParc` comme `surf` (donc `surfParcResolu = g.surf
+=== agregParcelle.surfParc`, sans écart) et n'en dérive que la longueur de
+rang — la densité, elle, continue de dépendre uniquement des écartements,
+indépendamment du mode actif. (Avant le chantier A4, cette surface passait
+par une réconciliation « largeur équivalente » aujourd'hui obsolète, voir
+§16.)
 
 ## 7. Le moteur kg — `simulerReserveKg`
 
@@ -397,7 +457,10 @@ différents.
 Notations : `surfArr` = surface de la parcelle concernée (`surfParc`),
 `surfRest = surfTot − surfArr` = le reste de l'exploitation (non concerné
 par l'opération, produit toujours à `rendMean`), `fProjet =
-rendFactorProjet` = pénalité de rendement du projet (VSL…).
+rendFactorProjet` = pénalité de rendement du projet — hook générique du
+moteur (`?? 1`, §7bis/moteur-oad.js:13), non alimenté par l'UI depuis le
+**chantier B4** (vaut 1 en pratique ; portait la pénalité VSL avant ce
+chantier, voir §11 journal « chantier B4 »).
 
 **Étape 1 — rendement de l'année :**
 ```
@@ -410,7 +473,7 @@ rendY = rendYearFn(t)  si fourni (test de résistance, étape 5)
 - **`arrachage`** — la parcelle sort totalement de production pendant le
   repos, puis revient progressivement :
   ```
-  returnYear = 3 + repos                    // 4 (classique) ou 6 (sanitaire)
+  returnYear = 3 + repos                    // repos = 1, 2 ou 3 ans (choix libre, chantier A2)
   jeune      = t ≥ returnYear
   f          = ramp[t − returnYear]  si jeune et dans la table ramp, sinon 1
   surfProd        = surfRest + (jeune ? surfArr : 0)
@@ -418,8 +481,9 @@ rendY = rendYearFn(t)  si fourni (test de résistance, étape 5)
   recolteParcelle = jeune ? rendY·f·fProjet·surfArr : 0
   recolte         = recolteReste + recolteParcelle
   ```
-  Le facteur projet (`fProjet`, pénalité VSL/matériel) ne s'applique **qu'au
-  bloc replanté**, jamais au reste de l'exploitation.
+  Le facteur projet (`fProjet`, hook `rendFactorProjet`) ne s'applique
+  **qu'au bloc replanté**, jamais au reste de l'exploitation — vaut 1 en
+  pratique depuis que l'UI ne l'alimente plus (chantier B4).
 
 - **`complantation` / `statuquo`** — la parcelle reste en production toute
   la période, mais avec un rendement propre `rendParcFn(t, rendY)` :
@@ -472,9 +536,10 @@ sortieArr = min(volSortieArr × surfArr, max(0, stockDebut − sortieInsuff))
             si scenario='arrachage' et 1 ≤ t ≤ nbSortie
           = 0  sinon
 ```
-`volSortieArr = 9000 kg/ha` et `plafond = 10000 kg/ha` sont fixés en dur
-dans `renderVals()` (non éditables dans l'UI — voir §19).
-`nbSortie = 3` (motif classique) ou `5` (motif sanitaire).
+`plafond = 10000 kg/ha` est fixé en dur dans `renderVals()` (non éditable
+dans l'UI — voir §19). Depuis le **chantier A2** (§7bis), `volSortieArr` et
+`nbSortie` viennent du moteur (`OAD.VOL_SORTIE_ARRACHAGE`,
+`OAD.nbSortiePourRepos(repos)`) plutôt que d'être câblés dans `index.html`.
 
 **Étape 8 — stock de fin d'année et ratio à l'hectare :**
 ```
@@ -487,12 +552,85 @@ recolteParcelle, recolteReste, volcoVendu: min(recolte,volco)+sortieInsuff,
 volcoCible: volco, mise, deficit, sortieInsuff, sortieArr, stockDebut,
 stockFin, stockHa}`.
 
+### 7bis. Journal d'arbitrages — chantier A2 : uniformisation de l'arrachage
+
+**Décision.** Décision CIVC de juillet 2026 (**non encore publiée** à ce
+jour — mention de statut réglementaire affichée dans l'UI tant qu'elle ne
+l'est pas). Le motif d'arrachage classique/sanitaire, qui commutait un
+booléen entre deux couples `(repos, nbSortie)` figés (1 an/3 déblocages ou
+3 ans/5 déblocages), disparaît. Le vigneron choisit désormais librement une
+durée de repos du sol de **1, 2 ou 3 ans** (`v.repos`, étape 4), qui
+détermine mécaniquement le nombre de déblocages de réserve : 1→3, 2→4, 3→5,
+toujours à `VOL_SORTIE_ARRACHAGE = 9000` kg/ha (inchangé).
+
+**Où vit la règle.** Conformément à la contrainte du projet (toute logique
+métier dans `moteur-oad.js`, jamais dans `index.html`), la table
+1/3-2/4-3/5 est encodée une seule fois dans le moteur :
+`NB_SORTIE_PAR_REPOS = {1:3, 2:4, 3:5}` et la fonction
+`nbSortiePourRepos(repos)` qui la lit (lève une erreur si `repos` n'est pas
+1, 2 ou 3). `VOL_SORTIE_ARRACHAGE` (9000 kg/ha, valeur inchangée) est
+également exposé comme constante du moteur plutôt que câblé en dur dans
+`renderVals()`. `index.html` ne fait plus qu'appeler
+`OAD.nbSortiePourRepos(v.repos)` et lire `OAD.VOL_SORTIE_ARRACHAGE` — il ne
+recode aucune règle.
+
+**Ce qui ne change pas.** La distinction sanitaire ne disparaît pas
+entièrement : elle change de **statut**, passant de règle réglementaire
+(qui commutait `repos`/`nbSortie`) à **poste de coût optionnel** dans le
+détail par opération du volet « repos » (case à cocher « Inclure la
+dévitalisation court-noué », `voletReposCourtNoue` / `REF_REPOS`, §11) —
+ce mécanisme, indépendant du motif, n'est pas touché par ce chantier.
+`returnYear = 3 + repos` (§7, étape 2) reste une formule générale, valable
+pour les trois durées de repos sans modification.
+
+### 7ter. Journal d'arbitrages — chantier A3 : remplacement des paliers de montée en charge
+
+**Décision.** Le sélecteur « Montée en charge jeunes vignes » (3 profils
+câblés en dur : 30·60·100 %, 50·80·100 %, immédiate) disparaît. Le vigneron
+ne saisit plus qu'une seule donnée, `v.anneePleineProd` : l'année de pleine
+production, comptée depuis la plantation. Identité de calendrier respectée :
+l'année 3 est l'entrée en production (3e feuille), qui coïncide exactement
+avec `returnYear = 3 + repos` (premier millésime sans déblocage de réserve,
+§7) — c'est la borne basse imposée au champ (min 3, max 12).
+
+**Où vit la règle.** `OAD.rampeLineaire(anneePleineProd)` (`moteur-oad.js`)
+porte seule la formule : `n = anneePleineProd − 2` paliers annuels depuis
+l'entrée en production, chacun valant `(i+1)/n` (progression linéaire,
+`i` de 0 à `n−1`) ; lève une erreur si `anneePleineProd < 3`.
+`index.html` appelle cette fonction et assigne son résultat à `inp.ramp`
+(consommé par `simulerReserveKg` comme avant, §7) et à `inp.rampYears`
+(sa longueur) — il ne recode aucune progression. Exemples : `anneePleineProd
+= 3` → `[1]` (pleine production immédiate) ; `= 6` → `[0,25 · 0,5 · 0,75 · 1]`
+soit 25 % · 50 % · 75 % · 100 %, affiché en clair à côté du champ.
+
+**Point de vigilance — `rampYears`.** `chargesEntretien` et `moEconomisee`
+(`moteur-oad.js`, §11) lisent `inp.rampYears ?? (inp.ramp ? inp.ramp.length
+: 3)` pour délimiter la fenêtre « plantier » (charge de transition,
+`coutPlantierHaAn`). Comme `inp.ramp` reste alimenté (même clé qu'avant ce
+chantier), ce repli aurait techniquement suffi, mais `index.html` alimente
+désormais `inp.rampYears` explicitement (`= rampeProfil.length`) pour ne pas
+dépendre implicitement de ce repli.
+
+**Champ renommé et repurposé — effet de bord sur la complantation.** Le
+champ UI `v.entreeProd` (panneau « Complantation (entreplants) », borne
+min 3/max 12 — d'où la réutilisation des mêmes bornes ici) portait en
+réalité un rôle **différent et sans rapport** : le début, à âge fixe, de la
+montée en charge des entreplants dans `rendParcCompl` (§8), une formule à
+elle indépendante de `repos`. Ce champ est renommé/repurposé en
+`v.anneePleineProd` pour l'arrachage ; `index.html` n'alimente donc plus
+`inp.entreeProd`. Pour ne pas modifier silencieusement ce calcul interne,
+`moteur-oad.js` retombe sur le défaut historique du champ
+(`inp.entreeProd ?? 7`, voir §8) — la complantation continue d'être
+calculée à l'identique de son défaut d'avant ce chantier, mais n'est plus
+éditable : acceptable tant qu'elle reste hors interface (chantier A1) ; à
+revoir si un chantier futur la réexpose à l'écran.
+
 ## 8. Ce qui distingue les 3 scénarios
 
 | | `arrachage` | `complantation` | `statuquo` |
 |---|---|---|---|
 | Surface productive | `surfRest`, puis `surfTot` après `returnYear` | toujours `surfTot` | toujours `surfTot` |
-| Rendement de la parcelle | `rendMean·f·fProjet` une fois relancée | `rendParcCompl(t, rendY)` — monte de `rendEstime` vers un rendement cible qui suppose les manquants comblés à 100 % (pondérés par un facteur de récupération), à partir de `entreeProd` | `rendParcSQ(t, rendY) = rendY·(rendEstime/rendMean)·(1−declinSQ)ᵗ` |
+| Rendement de la parcelle | `rendMean·f·fProjet` une fois relancée | `rendParcCompl(t, rendY)` — monte de `rendEstime` vers un rendement cible qui suppose les manquants comblés à 100 % (pondérés par un facteur de récupération), à partir de `entreeProdCompl` (7 ans, fixé en dur depuis le chantier A3, §7ter — plus alimenté par l'UI) | `rendParcSQ(t, rendY) = rendY·(rendEstime/rendMean)·(1−declinSQ)ᵗ` |
 | Sortie de réserve « arrachage » | oui, années 1 à `nbSortie` | non | non |
 | Investissement ponctuel | arrachage (t=0) + replantation (t=repos) | entreplants (t=0), ajustés du taux de survie | aucun |
 | Repos / interruption | oui (`repos` années) | non | non |
@@ -513,14 +651,20 @@ gainComblement = manquants · rendMean · facteurRecup      // facteurRecup = 0.
 rendCible    = rendEstime + gainComblement
 ratio        = rendEstime / rendMean
 ratioCible   = rendCible / rendMean
-prog(t)      = 0                              si t < entreeProd
-             = min(1, (t − entreeProd + 1)/3)  sinon   // montée linéaire sur 3 ans
+prog(t)      = 0                              si t < entreeProdCompl
+             = min(1, (t − entreeProdCompl + 1)/3)  sinon   // montée linéaire sur 3 ans
 rendParcCompl(t, rendY) = rendY · (ratio + (ratioCible − ratio) · prog(t))
 ```
 Modèle rejeté — « on plante une fois » : coût sans ÷ `survie` (pas de
 réachat des pieds morts) et rendement pondéré par `survie` (ex-formule).
 Rejeté car incohérent avec le champ « Coût par entreplant » de l'UI, dont
 le calcul présuppose déjà un réachat implicite compensant la mortalité.
+
+Depuis le **chantier A3** (§7bis), `entreeProdCompl = inp.entreeProd ?? 7` :
+`index.html` n'alimente plus `inp.entreeProd` (le champ UI qui le portait a
+été renommé/repurposé pour l'arrachage), le moteur retombe donc sur le
+défaut historique du champ (7 ans) — formule et sortie inchangées tant que
+la complantation reste hors interface (chantier A1).
 
 ## 9. La couche € — `coucheEuro`
 
@@ -782,6 +926,131 @@ taux `€/ha/an` sont indépendants du rendement par construction, et le taux
 remplacement des plants morts) et `coutReposHaAn = 0` (assumé, à recaler
 séparément) sont hors périmètre de ce chantier.
 
+**F9 — chantier B1 : remontée des charges de production à l'écran 1.** Le
+bloc « production » (`coutSurfaceProdHaAn`, `coutRdtParKg`, détail par
+opération manuel/mécanisé, `tauxHoraire`) correspond en réalité aux coûts
+de production opérationnels à l'hectare de **l'exploitation** — un
+paramètre de référence, pas une donnée du projet de renouvellement.
+Déplacé de l'écran 4 (« Coûts et charges ») vers l'écran 1 (« Votre
+exploitation »), sans toucher au modèle à 3 volets ci-dessus : seule la
+localisation des champs de **saisie** change, la fonction `chargesEntretien`
+et sa lecture de `inp.coutSurfaceProdHaAn`/`inp.coutRdtParKg` sont
+inchangées (`state.v` est un objet plat, indépendant de l'étape affichée —
+`renderVals()` recalcule tout à chaque rendu quelle que soit l'étape
+active, §5). `coutReposHaAn`/`coutPlantierHaAn` (charge de transition,
+propre au calendrier d'arrachage `repos`) restent à l'écran 4.
+
+*Inventaire avant création — champs demandés par la note de cadrage vs.
+existant.* Quatre champs demandés : heures de travail manuel/ha, heures de
+travail mécanisé/ha, charge liée à la surface/ha, coût de la vendange/ha.
+**Aucun champ nouveau n'a été créé** — les quatre couvraient déjà de
+l'existant :
+- *Charge liée à la surface* → `coutSurfaceProdHaAn` (réutilisé tel quel).
+- *Coût de la vendange* → `coutRdtParKg` (réutilisé tel quel). Nuance
+  signalée plutôt que masquée : ce champ est exprimé en **€/kg**
+  (proportionnel à la récolte réellement simulée), pas en €/ha comme le
+  demande littéralement la note de cadrage — c'est la seule ligne du modèle
+  qui porte le concept « coût de la vendange », et la reformuler en €/ha
+  aurait exigé soit un nouveau champ non branché au calcul, soit une
+  modification du modèle (interdite par ce chantier). Le champ garde son
+  unité native ; le libellé UI dit « Coût de la vendange » sans prétendre à
+  un €/ha qu'il n'est pas.
+- *Heures manuel/ha* et *heures mécanisé/ha* → déjà **saisissables**,
+  ligne par ligne, dans le détail par opération existant
+  (`REF_OPS_MANUEL`/`REF_OPS_MECANISE`, `OAD.proposerVoletProduction()`,
+  `state.voletProdOverrides`) : chaque opération manuelle ou mécanisée a
+  son propre h/ha éditable (opt-in, défauts Avenant 217 pour le manuel,
+  `0`/« à sourcer » pour le mécanisé — inchangés). Seul ajout : un agrégat
+  d'affichage `voletProdHeuresMecaniseHa` (heures mécanisées totales),
+  calculé par un simple `filter().reduce()` sur la sortie déjà existante de
+  `proposerVoletProduction()` (`index.html`, aucune formule nouvelle côté
+  moteur) — symétrique de `voletProdHeuresManuellesHa`, qui existait déjà
+  avant ce chantier.
+
+**Chaînage vérifié vers l'écran 5.** `coutSurfaceProdHaAn`/`coutRdtParKg`
+alimentent `inp` exactement comme avant (`index.html`, construction de
+`inp`, inchangée) → `OAD.construireScenarios(inp)` → `chargesEntretien()` →
+KPI « Charges évitées en transition » / différentiel statu quo affiché à
+l'écran 5. Aucune étape de ce chaînage ne dépend de l'étape UI active.
+
+### Journal d'arbitrages — chantier B4 : écran 4 restructuré en deux blocs
+
+**Décision.** L'écran 4 passe de 3 cartes (« Investissement ponctuel »,
+« Complantation », « Charge de transition ») à exactement **2 blocs** :
+**BLOC A** « Investissements liés à la parcelle arrachée puis replantée »
+(fusionne l'ancien « Investissement ponctuel » et « Complantation » —
+matériel de palissage, matériel végétal, protection du matériel végétal,
+prestations d'arrachage/préparation, options de coût à l'installation, et
+la complantation, elle-même un investissement en matériel végétal) et
+**BLOC B** « Entretien en deux temps » (ex-« Charge de transition »,
+renommé, contenu inchangé : B.1 repos, B.2 plantier). Pur réagencement
+d'`index.html` ; `moteur-oad.js` n'est touché que pour retirer le
+détecteur `vsl` (voir plus bas), aucune formule de coût n'est modifiée.
+
+**Irrigation relocalisée, chantier B3 refermé.** Le sélecteur « Ferti-
+irrigation du plantier » (`v.irrigation`), retiré de l'écran 3 au chantier
+B3 sans nouveau domicile, rejoint le BLOC A, sous-section « Options de coût
+à l'installation », aux côtés du coût `coutIrrigHa` déjà présent ici. Champ
+et calcul strictement inchangés (`inp.irrigation` construit exactement
+comme avant) — seul l'emplacement dans l'UI change.
+
+**VSL retirée de l'interface, hook moteur conservé.** Le champ `penaliteVSL`
+(saisie) et le badge dérivé (`g.vsl`, « VSL »/« Traditionnelle », conseil
+de diamètre de fil porteur) disparaissent intégralement de l'UI :
+- `v.penaliteVSL` retiré de `state.v` ; `fDens` (passé à `inp.rendFactorProjet`)
+  est désormais câblé en dur à `1` dans `renderVals()` (`index.html`),
+  au lieu de `g.vsl ? (1 − penal) : 1`.
+- `geometrieAgronomique()` (`moteur-oad.js`) ne renvoie plus de champ `vsl`
+  (ex `eR ≥ 1.5`) — code mort une fois la pénalité retirée de l'UI, retiré
+  par la même occasion (déjà signalé comme candidat par le chantier A4).
+  Testé avant/après (`node tests/parite.test.js`, aucune référence à `.vsl`
+  dans les tests) : 70 ok, 0 FAIL, inchangé.
+- **`rendFactorProjet` n'est PAS retiré du moteur.** `simulerReserveKg`
+  (§7, `moteur-oad.js:13`) continue de lire `p.rendFactorProjet ?? 1` — un
+  hook générique, indépendant de la VSL par construction, que d'autres
+  chantiers pourraient réutiliser (ex. une pénalité Voltis). Seul l'appel
+  depuis `index.html` cesse de l'alimenter avec autre chose que `1`.
+  Vérifié manuellement : appeler `simulerReserveKg` avec
+  `rendFactorProjet: 0.8` continue de pondérer `recolteParcelle` comme
+  avant — le hook reste actif.
+- Résidus retirés en cascade, tous strictement dérivés de `g.vsl`/`penaliteVSL`
+  et donc devenus orphelins : le badge « Conduite » (`syMode`) de l'écran 2,
+  les entrées « VSL »/« Traditionnelle » et « Fil porteur » de l'encart
+  conséquences (écran 3), les deux lignes correspondantes de la fiche
+  imprimable (`printInpRows`).
+- Le contrôle de conformité AOC (`aoc.rang/pied/somme`, rang ≤ 2,00 m) est
+  **conservé sans modification** : structurellement indépendant de `vsl`
+  dans `geometrieAgronomique()`, comme le confirmait déjà le chantier A4.
+
+**« Entretien du paysage ».** Recherché dans `index.html`/`moteur-oad.js` :
+**aucun champ existant** ne porte ce nom ou ce libellé — rien à retirer.
+
+**B.1/B.2 — options d'entretien alignées sur la note de cadrage.**
+`REF_REPOS` (`index.html`) gagne une ligne « Tontes » (absente
+jusqu'ici) et relabellise « Couvert végétal » → « Couverture végétale
+(naturelle ou semée) », « Désherbage » → « Désherbage mécanique », pour
+correspondre explicitement à la liste attendue (couverture végétale,
+tontes, désherbage mécanique, dévitalisation, sous-solage) ; toutes les
+nouvelles lignes restent à `0`, « à caler — dire d'expert coop », comme
+leurs voisines — aucune valeur n'est inventée. `REF_PLANTIER` gagne une
+ligne « Désherbage » (absente jusqu'ici, même défaut nul) et relabellise
+« Remplacement des reprises ratées » → « Remplacement des plants morts » ;
+« Taille de formation » existait déjà comme ligne dérivée dynamique
+(fraction du volet production, chantier F4/F5) — non dupliquée. Les lignes
+« Surveillance / relève de la protection (MO) » et « Entretien du
+palissage posé », non citées par la note de cadrage, sont **conservées**
+plutôt que retirées : la première existe spécifiquement pour l'anti-
+double-compte du chantier P8 (§12) et sa suppression aurait rouvert ce
+risque sans instruction explicite en ce sens.
+
+**Discipline anti-double-comptage vérifiée.** L'encart d'avertissement en
+tête du BLOC B (« Ne pas inclure l'installation… ») est resté **strictement
+identique, caractère pour caractère**, à sa version d'avant ce chantier.
+Les tests §11 vérifiant que `coutProtectionHa` s'ajoute à l'investissement
+exactement à `t = repos` (jamais `t = 0`) n'ont pas été touchés par ce
+chantier et continuent de passer sans modification — la restructuration de
+l'écran ne déplace aucune formule, seulement des champs de saisie.
+
 ## 12. Assemblage des scénarios — `construireScenarios`
 
 Point d'entrée principal du moteur (`moteur-oad.js:152`), appelé une fois
@@ -895,8 +1164,9 @@ de périmètre (toujours un coût par pied, année `repos`, × `densite`).
 `invArr[repos]` ne porte donc plus que `densite·coutPlant + coutPalissageHa
 + (irrigation ? coutIrrigHa : 0)` ; `invArr[0] = surfParc × coutArrachageHa`
 absorbe désormais la préparation du sol. Le calendrier d'engagement (t=0
-puis t=`repos`) est inchangé, pour les deux motifs d'arrachage (classique,
-`repos=1` ; sanitaire, `repos=3`).
+puis t=`repos`) est inchangé, pour les deux motifs d'arrachage alors en
+vigueur (classique, `repos=1` ; sanitaire, `repos=3`) — motif depuis
+remplacé par un choix libre de `repos` (1/2/3 ans), voir §7bis, chantier A2.
 
 **Investissement ponctuel complantation** (`invCompl`) :
 ```
@@ -925,16 +1195,52 @@ coutsSQParcelle   =            ceSQ.parcelle     ,  coutsSQReste   = ceSQ.reste
 (`⊕` = fusion additive année par année.) Ces quatre maps par scénario
 alimentent `coucheEuro` (§9) via `eco(coutsParcelle, coutsReste)`.
 
-**Sortie :**
+**Sortie** (depuis le **chantier A1**, voir journal d'arbitrages ci-dessous —
+renommage + qualification, aucun changement de calcul) :
 ```
-{ arrachage:     { kg, eur, investissement: Σ invArr  },   // hors entretien
-  complantation: { kg, eur, investissement: Σ invCompl},
-  statuquo:      { kg, eur, investissement: 0          } }
+{ arrachage:     { kg, eur, investissement: Σ invArr  },   // scénario exposé
+  reference:     { kg, eur, investissement: 0          },  // ex-statuquo — RÉFÉRENCE INTERNE, non affichable
+  statuquo:      { … même objet que `reference` … },        // alias de compatibilité (tests, code existant)
+  complantation: { kg, eur, investissement: Σ invCompl} }   // @deprecated chantier A1 — calcul conservé, plus exposé
 ```
 `investissement` est volontairement **hors charges d'entretien** : c'est
 la base du KPI « Effort net après réserve » (§17), qui répond à « combien
 dois-je financer pour l'opération elle-même », indépendamment de charges
 d'exploitation récurrentes qui existeraient de toute façon.
+
+### Journal d'arbitrages — chantier A1 : recentrage sur un scénario unique
+
+**Décision (24/07/2026).** La note de cadrage du 24/07/2026 supprime les
+scénarios « statu quo » et « complantation » de l'**interface** — seul
+`arrachage` reste un scénario affichable à l'utilisateur. Arbitrage explicite :
+suppression d'interface, **pas** de suppression de calcul.
+
+**Motif — le statu quo reste un contre-factuel nécessaire.** L'écran 5 énonce
+des comparaisons (« la parcelle renouvelée représente moins de travail et de
+charges qu'une parcelle en production ») : une comparaison suppose un terme de
+référence. Sans le statu quo calculé en interne, ces différentiels — KPI
+« Écart d'âge à l'horizon » (§17), encadré « Main d'œuvre économisée » (§11,
+F6/F7), tableau « Manque à gagner » (§13) — n'auraient plus de contre-factuel
+à comparer. Le statu quo devient donc une **référence de calcul interne**,
+jamais un scénario proposé au choix de l'utilisateur.
+
+**Ce chantier (A1) ne fait que renommer et qualifier.** Dans l'objet retourné
+par `construireScenarios` (`moteur-oad.js`) :
+- `reference` — nouvelle clé, ex-`statuquo`, commentée « RÉFÉRENCE INTERNE —
+  non affichable comme scénario ».
+- `statuquo` — **alias de compatibilité**, pointe vers le même objet que
+  `reference` (pas une copie), pour ne pas casser le code et les tests
+  existants qui lisent encore cette clé.
+- `complantation` — conservée, commentée `@deprecated` avec la date et le
+  motif (note de cadrage du 24/07/2026) ; son calcul (`scCompl`, `invCompl`,
+  `rendParcCompl`, §8) n'est touché nulle part.
+- `arrachage` — inchangé.
+
+Aucune formule, aucun paramètre par défaut, aucune valeur de test n'a changé :
+`git diff` de ce chantier ne montre que le renommage, l'alias et les
+commentaires ci-dessus. La suppression effective de la complantation et du
+statu quo de l'écran (template `<x-dc>`, sélecteurs, graphiques, tableaux
+comparatifs) est un chantier ultérieur, hors périmètre d'A1.
 
 ## 13. Manque à gagner — `manqueAGagner`
 
@@ -963,7 +1269,7 @@ cache-plant, `coutProtectionPlant()`), couvre la protection du jeune plant
 
 ```
 espacement  = espPiquet ?? 6 m                              // choix éditable — repère LutEnVi ≈ 4,3 m
-nbFils      = nbFils ?? FILS_PAR_TAILLE[typeTaille] ?? 4     // guyot/cordon/arcure simple = 4, arcure double = 5
+nbFils      = nbFils ?? FILS_PAR_TAILLE[typeTaille] ?? 4     // guyot/cordon/arcure simple = 4, arcure double/chablis = 5
 
 interParRang = max(0, round(Lrang/espacement) − 1)
 nbInter      = nbRangs × interParRang         // piquets intermédiaires — base du "piquet" et du "crochet" du relevé
@@ -972,22 +1278,29 @@ mlFils       = nbFils × nbRangs × Lrang       // mètres linéaires de fil, to
 nbGripple    = nbFils × nbRangs
 nbPiquets    = nbInter + nbTete                // base MO pose : tout poteau planté
 
-totalParcelle = Σ (quantité × prix unitaire) sur les 8 lignes
+totalParcelle = Σ (quantité × prix unitaire) sur les lignes INCLUSES        // chantier A5, voir journal ci-dessous
 totalHa       = totalParcelle / surf
 ```
 
-**Prix unitaires** (`PRIX_PALISSAGE`, `moteur-oad.js`) :
+**Prix unitaires et catégorie** (`PRIX_PALISSAGE`, `moteur-oad.js` — depuis
+le **chantier A5**, chaque ligne porte un attribut `categorie`,
+`obligatoire` ou `optionnel`, voir journal ci-dessous) :
 
-| poste | prix | source |
-|---|---|---|
-| piquet intermédiaire | 3,80 €/piquet | relevé fournisseur [date à préciser] |
-| fiche de tête en L galva | 5,98 €, 2/rang | relevé fournisseur [date à préciser] |
-| kit bout de route | 3,88 €, 2/rang | relevé fournisseur [date à préciser] |
-| amarre 1200 | 7,32 €, 2/rang | relevé fournisseur [date à préciser] |
-| crochet piquet inox | 0,26 €, 1/piquet intermédiaire | relevé fournisseur [date à préciser] |
-| fil (par fil, au mètre linéaire) | 0,15 €/m | relevé fournisseur [date à préciser] |
-| gripple | 1,826 €/gripple | LutEnVi 2025 (conservé, pas d'équivalent dans le relevé) |
-| MO pose piquet | 1,318 €/piquet posé | LutEnVi 2025, dérivé (2 864,56 €/ha ÷ 2 174 piquets/ha) |
+| poste | prix | catégorie | source |
+|---|---|---|---|
+| piquet intermédiaire | 3,80 €/piquet | obligatoire | relevé fournisseur [date à préciser] |
+| fiche de tête en L galva | 5,98 €, 2/rang | obligatoire | relevé fournisseur [date à préciser] |
+| kit bout de route | 3,88 €, 2/rang | **optionnel** | relevé fournisseur [date à préciser] |
+| amarre 1200 | 7,32 €, 2/rang | obligatoire | relevé fournisseur [date à préciser] |
+| crochet piquet inox | 0,26 €, 1/piquet intermédiaire | obligatoire | relevé fournisseur [date à préciser] |
+| fil (par fil, au mètre linéaire) | 0,15 €/m | obligatoire | relevé fournisseur [date à préciser] |
+| gripple | 1,826 €/gripple | obligatoire | LutEnVi 2025 (conservé, pas d'équivalent dans le relevé) |
+| MO pose piquet | 1,318 €/piquet posé | obligatoire | LutEnVi 2025, dérivé (2 864,56 €/ha ÷ 2 174 piquets/ha) |
+
+Prix et quantités des 8 lignes **inchangés** par le chantier A5 — seule une
+catégorie et une case à cocher (pour les lignes optionnelles) ont été
+ajoutées ; voir journal ci-dessous pour l'argumentaire et les zones
+d'incertitude signalées plutôt que tranchées.
 
 ⚠ Avec l'espacement par défaut (6 m), le nombre de piquets intermédiaires
 est **~30 % plus faible** que le repère implicite LutEnVi (~1 piquet tous
@@ -999,6 +1312,71 @@ tête de rang est couverte par fiche de tête + kit bout de route) ; le
 « crochet piquet inox » est appliqué sur cette même base (intermédiaires
 uniquement, pas la tête). À corriger si le relevé source précise
 autrement la répartition.
+
+**Fils par type de taille** (`FILS_PAR_TAILLE`, `moteur-oad.js`) :
+
+| taille | fils | source |
+|---|---|---|
+| guyot / cordon / arcure simple | 4 | hypothèse à confirmer (non figée par le guide) |
+| arcure double | 5 | hypothèse à confirmer (non figée par le guide) |
+| chablis | 5 | **chantier A5 — valeur communiquée par l'utilisateur, pas de référentiel documentaire fourni ; à sourcer si besoin** |
+
+### Journal d'arbitrages — chantier A5 : modes de conduite et équipements de palissage
+
+**Décision — catégorisation obligatoire/optionnel.** Les 8 lignes de
+`coutPalissage` sont désormais réparties en deux catégories, portées par un
+attribut `categorie` sur chaque ligne (`'obligatoire'` ou `'optionnel'`),
+sans changement de prix ni de quantité. Seules les lignes **obligatoires**
+sont toujours comptées ; les lignes **optionnelles** peuvent être
+décochées dans l'UI (`opt.optionnelsExclus`, tableau d'ids côté
+`OAD.coutPalissage`, vide par défaut — comportement historique inchangé
+tant que l'appelant ne fournit pas explicitement cette liste).
+
+**Mapping retenu, et deux catégories signalées sans équivalent.** La note
+de cadrage cite « piquets de tête, fils, interpiquets » comme obligatoires
+(→ `ficheTete`, `filML`, `piquetInter`) et « écarteurs, kits de route /
+kits Boudrout, autres » comme optionnels. Seul un des trois exemples
+optionnels a un équivalent parmi les 8 lignes existantes : **« kits de
+route / kits Boudrout » = la ligne `kitBoutRoute` (« Kits bout de route »)
+déjà présente dans `PRIX_PALISSAGE`** — signalé plutôt que tranché,
+conformément à la consigne du chantier : les deux graphies désignent très
+vraisemblablement le même article (« Boudrout » lit comme une variante
+phonétique/de transcription de « bout de route »), mais ceci n'a pas été
+confirmé auprès d'une source ; **aucune nouvelle nomenclature n'a été
+créée**, la ligne garde son libellé `PRIX_PALISSAGE` existant. « Écarteurs »
+et « autres » **n'ont pas d'équivalent** parmi les 8 lignes actuelles —
+aucune ligne n'a été inventée ou requalifiée pour les représenter ; ce
+sont des catégories vides tant qu'une source ne les documente pas.
+
+**Les 4 lignes restantes (Amarres, Crochets piquet inox, Gripple, MO pose
+piquets) ne sont nommées dans aucun des deux exemples de la note de
+cadrage** — classées `obligatoire` par jugement structurel (nécessaires au
+fonctionnement physique du palissage : l'amarre ancre la tension du fil de
+tête, le crochet retient le fil sur le piquet intermédiaire, le gripple
+joint/tend le fil, la MO de pose est indissociable des piquets eux-mêmes
+qui sont, eux, obligatoires). Choix documenté ici pour audit, pas un fait
+établi par une source externe.
+
+**Pourquoi `totalHa ≈ 14 577 €/ha` (section 11 des tests) reste inchangé
+sans aucune modification des tests.** Le paramètre `opt.optionnelsExclus`
+est **additif et opt-in** : par défaut (absent ou vide), aucune ligne
+n'est exclue, obligatoire ou optionnelle — le total est donc identique à
+celui d'avant ce chantier. Les tests figés (`tests/parite.test.js`, §11)
+appellent `OAD.coutPalissage(GEO_TEST, null, {espacementPiquet:6, nbFils:4})`
+sans ce paramètre : ils continuent, sans modification, de recevoir les 8
+lignes et le total ≈ 14 577 €/ha. Décocher `kitBoutRoute` dans l'UI (le
+seul cas testé manuellement, voir sanity-check en session) réduit le total
+d'environ 336 €/ha sur la géométrie de référence — la baisse attendue,
+puisque exclure une ligne à prix non nul ne peut pas laisser le total
+inchangé.
+
+**Taille Chablis.** Ajoutée au sélecteur « Type de taille » (`v.typeTaille`,
+option `chablis`) et à `FILS_PAR_TAILLE` (5 fils). Le nombre de fils n'a
+pas été fourni par une source documentaire : **valeur communiquée
+directement par l'utilisateur** lors de ce chantier, sans référentiel
+cité — à sourcer si une justification écrite est nécessaire plus tard.
+Sélectionner cette taille modifie `mlFils`/`nbGripple` (comptés au fil) et
+donc le total, exactement comme arcure double (même nombre de fils).
 
 ## 14bis. Protection du jeune plant — `coutProtectionPlant`
 
@@ -1043,41 +1421,182 @@ porte-greffes envisageables et des renvois d'avertissement (ex. `161-49 C`
 « Porte-greffes envisageables » et la fiche `PG_INFO` (statique, dans le
 composant) de l'étape 3 ; **n'entre jamais dans `inp`**.
 
-## 16. Géométrie de plantation — `geometrie()`
+**Table clones** (`this.CLONES`, `index.html`, statique) : liste par
+cépage (Pinot noir / Meunier / Chardonnay) des clones diffusés et d'une
+note de comportement, sourcée Guide pratique 2025 p. 42-44. Colonnes
+**Rendement / Degré / Botrytis** volontairement **vides** (chantier B3) :
+aucune valeur n'est disponible dans le Guide pour ces critères à ce
+niveau de détail — plutôt que de les omettre silencieusement ou d'inventer
+un chiffre, elles restent affichées en colonnes vides avec une note
+renvoyant vers les données CIVC ou plantgrape.fr. Purement informatif,
+**n'entre jamais dans `inp`**, comme le reste de l'aide au choix.
 
-Calculée côté composant (méthode `geometrie(v, surfImposee)`,
-`index.html:1136`), à partir de `geoL`, `geoW`, `ecartRang`, `ecartPied`,
-et d'un second argument optionnel `surfImposee` (ha).
+### Journal d'arbitrages — chantier B3 : écran 3 réduit à deux blocs
 
-**Mode manuel** (`surfImposee` absent) — comportement historique, inchangé :
-```
-densite  = round(10000 / (eR × eP))              // pieds/ha
-W        = geoW                                   // saisi
-nbRangs  = max(1, floor(W / eR))
-piedsRang= max(1, floor(L / eP))
-surf     = round(L × W / 10000, 4)                // ha, 4 décimales — pilote inp.surfParc
-pieds    = nbRangs × piedsRang
-```
+**Décision.** L'écran 3 passe de 3 cartes (« Matériel et conduite »,
+« Aide au choix » repliable, « Dimensionnement du palissage ») à
+exactement **2 blocs** : « Matériel végétal et aide au choix » (le
+simulateur d'aide — cépage/calcaire/profondeur/drainage, arbre
+`preconPorteGreffe`, table clones — précède désormais la sélection
+définitive `materiel`/`porteGreffe` qu'il éclaire, au lieu de la suivre) et
+« Palissage et conduite » (mode de conduite `typeTaille`, dont Chablis —
+chantier A5 —, année de pleine production, équipements de palissage
+obligatoires/optionnels — chantier A5). Pur réagencement d'`index.html` :
+aucune formule de `moteur-oad.js` n'est touchée.
 
-**Mode registre** (`surfImposee > 0`, chantier "réconciliation
-géométrie/registre") — la surface directrice est désormais celle du
-registre parcellaire (`agregParcelle.surfParc`), pas le rectangle saisi :
-```
-densite  = round(10000 / (eR × eP))              // pieds/ha, inchangé
-W        = OAD.largeurEquivalente(surfImposee, L) // dérivée, PAS geoW
-nbRangs  = max(1, floor(W / eR))                  // même formule, plancher conservateur
-piedsRang= max(1, floor(L / eP))
-surf     = surfImposee                            // EXACTEMENT — jamais recalculé depuis L×W
-pieds    = nbRangs × piedsRang
-```
-`L` (la longueur de rang saisie) n'est **jamais** corrigée ni recalculée,
-dans aucun des deux modes — voir journal d'arbitrages ci-dessous pour la
-justification. Dans les deux modes, `vsl = eR ≥ 1.5` déclenche la
-pénalité de rendement (`penaliteVSL`) et le conseil de diamètre de fil
-porteur ; `aoc.*` alimente le bandeau de conformité au cahier des charges
-homologué le 31/07/2025 (rang ≤ 2,00 m, pied 0,70–1,50 m, somme ≤ 3,00 m).
+**Irrigation retirée de l'écran, pas de l'état.** Le sélecteur « Ferti-
+irrigation du plantier » (`v.irrigation`) disparaît de l'écran 3. Ni
+`state.v.irrigation` (toujours défini, défaut `'0'`) ni `inp.irrigation`
+(toujours construit à partir de `v.irrigation`, §12) ne sont touchés — la
+valeur reste ce qu'elle était à la dernière saisie, simplement plus
+modifiable tant qu'un chantier B4 ne l'aura pas replacée à l'écran 4
+(options de coût à l'installation). Le badge de conséquence « ⚠ Irrigation
+… interdite en AOC » (`conseqs`, alimenté par `v.irrigation === '1'`) reste
+affiché dans le bloc 1 en attendant.
 
-### Journal d'arbitrages — réconciliation géométrie/registre (option A)
+**Badge porte-greffe et table clones conservés intégralement.** La fiche
+`PG_INFO` (dont l'avertissement `161-49 C` : dépérissements signalés
+depuis 2008, déconseillé) reste attachée à la sélection définitive du
+porte-greffe, dans le bloc 1. La table clones (Guide 2025 p. 42-44)
+n'est ni tronquée ni recalée : colonnes Rendement/Degré/Botrytis ajoutées
+vides (voir plus haut), aucune valeur comblée.
+
+## 16. Géométrie de plantation — `OAD.geometrieAgronomique()`
+
+**Depuis le chantier A4** (voir journal d'arbitrages ci-dessous), la
+géométrie n'est plus pilotée par une longueur et une largeur déclarées.
+Calculée dans le moteur (`geometrieAgronomique(surf, eR, eP, nbRangs)`,
+`moteur-oad.js`), à partir de quatre grandeurs : `surf` (ha — `v.surfArr`
+en mode manuel, surface du registre en mode registre), `eR`/`eP`
+(écartements, saisis) et `nbRangs` (nombre de rangs, saisi). La longueur de
+rang `L` est **déduite**, jamais saisie :
+```
+densite = round(10000 / (eR × eP))          // pieds/ha, arrondi AVANT multiplication par la surface
+L       = (nbRangs × eR) > 0 ? surf × 10000 / (nbRangs × eR) : 0   // longueur de rang — AFFICHAGE SEUL
+W       = nbRangs × eR                       // largeur du bloc — auxiliaire d'affichage, dérivée
+pieds   = round(densite × surf)              // comptage AGRONOMIQUE — seul comptage de pieds à planter
+vsl     = eR ≥ 1.5
+aoc     = { rang: eR ≤ 2.0, pied: 0.7 ≤ eP ≤ 1.5, somme: eR+eP ≤ 3.0 }
+```
+Un seul couple d'écartements et une seule géométrie pour tout le lot
+renouvelé (mode agrégé) : en mode registre, `surf` = la surface déjà
+agrégée par `agregerRegistreParcelle` (somme des lignes retenues, §6bis),
+`nbRangs` reste saisi comme en mode manuel — aucune gestion parcelle par
+parcelle. **Aucun seuil de plausibilité n'est arbitré sur `L`** (ni haut ni
+bas) : une longueur de rang dérivée absurde (trop courte, trop longue) ne
+déclenche aucun avertissement — faiblesse connue, documentée mais non
+corrigée par ce chantier (voir journal ci-dessous et
+`tests/parite.test.js`).
+
+**Deux comptages de pieds distincts, à ne jamais confondre :**
+- **Pieds à planter** = `densite × surf` (comptage **agronomique**) → alimente le matériel végétal (`nbPlants`, coût du plant).
+- **Piquets / fils** = dérivés de `nbRangs`, `L` et de l'espacement (comptage **géométrique**) → alimente uniquement `OAD.coutPalissage()` (§14), qui continue de lire `geo.nbRangs`/`geo.L`/`geo.surf` sans modification.
+
+Ces deux comptages ne coïncident pas exactement (le premier ignore la forme
+réelle du rang, le second en dépend) et ce n'est **pas un bug** — voir
+journal d'arbitrages ci-dessous. Dans les deux modes, `aoc.*` alimente le
+bandeau de conformité au cahier des charges homologué le 31/07/2025
+(rang ≤ 2,00 m, pied 0,70–1,50 m, somme ≤ 3,00 m). Depuis le **chantier
+B4**, `geometrieAgronomique()` ne renvoie plus de détecteur `vsl` (ex
+`eR ≥ 1.5`) : la pénalité de rendement associée et le conseil de diamètre
+de fil porteur qu'il déclenchait ont été retirés de l'interface — voir
+§19 et le journal d'arbitrages « chantier B4 » (§11).
+
+### Journal d'arbitrages — chantier A4 : refonte de la géométrie de parcelle
+
+**Décision.** La géométrie n'est plus pilotée par une largeur et une
+longueur déclarées (`v.geoL`/`v.geoW`, supprimés). Le vigneron saisit
+désormais : surface arrachée (`v.surfArr`, ha, nouveau champ étape 2),
+écartement entre rangs, **nombre de rangs** (`v.nbRangs`, nouveau champ,
+remplace la largeur saisie) et écartement entre pieds. La longueur de rang
+est déduite, affichée mais jamais saisie.
+
+**Où vit la règle.** `OAD.geometrieAgronomique()` (`moteur-oad.js`) porte
+seule la formule ; `index.html` ne fait plus qu'appeler cette fonction et
+afficher ses résultats — c'est un déplacement de logique métier du HTML
+vers le moteur (l'ancienne méthode `geometrie()` d'`index.html` était une
+entorse à la règle CLAUDE.md « toute logique métier va exclusivement dans
+`moteur-oad.js` »).
+
+**Comptage des pieds : agronomique et lui seul.** Avant ce chantier, le
+nombre de pieds affiché différait selon le mode (rectangle géométrique
+`nbRangs × piedsRang` en mode manuel, `densite × surf` en mode registre —
+voir l'ancien journal ci-dessous, §16). Ce chantier tranche : le comptage
+est désormais **toujours** `densite × surf` (agronomique), dans les deux
+modes — le comptage géométrique (`nbRangs`, `L`) ne sert plus qu'au
+palissage.
+
+**Incompatibilité signalée, non corrigée silencieusement — `largeurEquivalente`
+et la réconciliation géométrie/registre (§16, journal ci-dessous)
+deviennent obsolètes.** La fonction `OAD.largeurEquivalente(surfHa, L)`
+(`moteur-oad.js`) n'est **pas modifiée** par ce chantier, conformément à la
+consigne — elle reste exportée, fonctionnelle, et ses tests dédiés
+(`tests/parite.test.js`, §13) continuent de passer, puisqu'ils l'appellent
+directement. Mais son **unique raison d'être** — dériver une largeur à
+partir d'une longueur de rang *saisie* (`v.geoL`) et de la surface du
+registre — n'a plus de sens dans le nouveau modèle : `v.geoL` n'existe
+plus, la longueur est désormais déduite (jamais saisie) dans les deux
+modes, via `geometrieAgronomique()`. Conséquence : `index.html` n'appelle
+plus `largeurEquivalente()` nulle part — la fonction devient du code mort
+du point de vue de l'interface (toujours vivante, testée et correcte côté
+moteur, simplement plus jamais invoquée). Le mode registre lui-même
+continue de fonctionner (`surf` = surface agrégée du registre, injectée
+dans `geometrieAgronomique()` exactement comme `v.surfArr` en mode manuel)
+mais **par un mécanisme différent** de celui documenté dans l'ancien
+journal ci-dessous (qui reste comme trace historique de la décision
+« option A », remplacée ici) — à réévaluer si un chantier futur a besoin
+de ce que `largeurEquivalente()` calculait spécifiquement.
+
+**Multi-parcelles — mode agrégé, pas de gestion parcelle par parcelle.**
+Une seule géométrie (un seul couple d'écartements, un seul `nbRangs`) pour
+tout le lot renouvelé, y compris en mode registre multi-lignes : la
+surface est la somme des surfaces arrachées (déjà le comportement
+d'`agregerRegistreParcelle`, §6bis, inchangé), le nombre de rangs est le
+total saisi pour le lot. Aucune structure de données par sous-parcelle
+n'a été introduite.
+
+**Faiblesse connue, non traitée — aucun seuil de plausibilité sur `L`.**
+Ni ce chantier ni les précédents n'arbitrent de borne haute ou basse sur la
+longueur de rang déduite : une combinaison surface/nbRangs/écart rang
+incohérente (ex. très peu de rangs sur une grande surface) produit une
+longueur de rang déduite déraisonnable, sans avertissement. Documenté et
+laissé tel quel — `tests/parite.test.js` (§14) fige cette absence de garde-fou.
+
+### Journal d'arbitrages — chantier B2 : géométrie et paramètres de plantation à l'écran 2
+
+**Décision.** Le bloc « Géométrie de la parcelle » (formule inchangée
+depuis le chantier A4 ci-dessus) est déplacé de l'écran 3 (« Votre projet
+de replantation ») vers la **tête** de l'écran 2 (« La parcelle que vous
+désignez »), avant même le sélecteur de parcelle du registre. Pur
+déplacement d'UI : `moteur-oad.js` n'est pas touché, `OAD.geometrieAgronomique()`
+continue de porter seule la formule. Préalable vérifié avant d'entamer ce
+chantier : A4 était déjà commité et `geometrieAgronomique` déjà câblée
+(sinon ce chantier se serait arrêté, comme demandé).
+
+**Consolidation des 4 champs de saisie.** `surfArr` (surface arrachée,
+ajoutée à l'écran 2 par le chantier B1) vivait jusqu'ici dans la grille
+âge/manquants, séparée des écartements/nombre de rangs restés à l'écran 3.
+Les quatre champs — surface arrachée, écart entre rangs, nombre de rangs,
+écart entre pieds — sont désormais réunis dans le même bloc « Géométrie de
+la parcelle », en tête d'écran, conformément à l'objectif « rien d'autre »
+: aucun autre champ saisi n'y figure. Longueur de rang déduite, densité,
+pieds à planter et badge de conformité AOC restent des valeurs affichées,
+jamais saisies — inchangé depuis A4, simplement redisposé dans le nouvel
+emplacement.
+
+**Badge AOC conservé tel quel.** Il ne dépend que des écartements
+(`eR ≤ 2,00 m`, `eP` entre 0,70 et 1,50 m, `eR+eP ≤ 3,00 m`,
+`geometrieAgronomique()`) — aucune dépendance à la VSL ni à quoi que ce
+soit qui aurait pu bouger avec le déplacement. Reste pertinent et
+inchangé.
+
+**Bloc synthèse retiré de l'écran 2.** Après le chantier B1 (retrait sur
+l'écran 1), `syntheseVisible` (`index.html`, dérivé de `s.step`) passe de
+`step > 0` à `step > 1` : la colonne de droite (`<aside>`) n'apparaît plus
+qu'à partir de l'écran 3, où elle redevient pertinente (la géométrie et la
+parcelle sont déjà renseignées).
+
+### Journal d'arbitrages — réconciliation géométrie/registre (option A, historique — remplacé par le chantier A4 ci-dessus)
 
 **Constat de départ.** En mode registre, `renderVals()` pilotait déjà
 `inp.surfParc` (et donc `nbPlants`, `piedsAffiches`) depuis le registre
@@ -1318,18 +1837,25 @@ formule par formule, via la fiche imprimable (`out.printKpiRows`, §17).
   constantes physiques : ils **peuvent changer d'une campagne à l'autre** et
   doivent être revérifiés avant tout usage, au même titre que le volume
   commercialisable (`v.volco`, déjà un champ de saisie éditable, lui).
-- **Paramètres fixés en dur dans `renderVals()`, non éditables dans
-  l'UI :** `volSortieArr = 9000` kg/ha, `plafond = 10000` kg/ha,
-  `rendMean = 12296.6` kg/ha (moyenne régionale). `horizon` (10 ou 25 ans),
-  lui, **est** éditable (sélecteur étape 5) — seule `seuilReserve` reste une
+- **Paramètres fixés en dur, non éditables dans l'UI :** `plafond = 10000`
+  kg/ha (`renderVals()`), `rendMean = 12296.6` kg/ha (moyenne régionale,
+  `renderVals()`). `volSortieArr` (9000 kg/ha) est, depuis le **chantier
+  A2**, une constante du moteur (`OAD.VOL_SORTIE_ARRACHAGE`) plutôt que
+  câblée dans `renderVals()` — non éditable dans l'UI pour autant. `horizon`
+  (10 ou 25 ans), lui, **est** éditable (sélecteur étape 5) — seule `seuilReserve` reste une
   prop cachée non exposée (§17). Le facteur écart-type régional
   (`EC = 3440` kg/ha) est câblé directement dans `renderVals()`.
 - **Faire-valoir simplifié** : fermage = loyer fixe (souvent indexé
   kg/bouteilles en réalité) ; métayage = parts éditables mais fixes dans le
   temps ; les contrats réels varient davantage.
 - **Rendement des leviers branché sur le VolCo** mais paramétré par des
-  hypothèses à caler : pénalité VSL (`penaliteVSL`), montée en charge
-  (`ramp`), survie et délai de complantation (`survie`, `entreeProd`).
+  hypothèses à caler : montée en charge de l'arrachage (`anneePleineProd`
+  → `ramp`, chantier A3, §7ter), survie des entreplants (`survie`) et délai
+  de leur montée en charge (`entreeProdCompl`, 7 ans fixé en dur depuis le
+  chantier A3, complantation non exposée). `rendFactorProjet` (hook générique
+  de `simulerReserveKg`, §7) reste actif dans le moteur mais n'est plus
+  alimenté par l'UI depuis le chantier B4 (pénalité VSL retirée de
+  l'interface, §11, journal d'arbitrages « chantier B4 ») — vaut 1 en pratique.
 - **Coût de stockage de la réserve négligé.**
 - **Relevé de prix palissage/protection (chantier P8) non daté** :
   `PRIX_PALISSAGE` et `PRIX_PROTECTION_PLANT` (`moteur-oad.js`) reprennent
@@ -1378,4 +1904,4 @@ Idées de suite, non entamées à ce jour :
   absorbable sans tension de trésorerie excessive — le seul endroit où
   l'outil pourrait guider sans devenir prescriptif. Non entamé.
 - **Analyse de sensibilité / tornade** sur les paramètres à caler
-  (`penaliteVSL`, `ramp`, `survie`, `entreeProd`, charges…). Non entamée.
+  (`anneePleineProd`, `survie`, charges…). Non entamée.
