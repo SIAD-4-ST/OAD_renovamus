@@ -1,12 +1,22 @@
 # OAD Renouvellement du vignoble — Parcours guidé
 
-Simulateur pédagogique qui compare, sur une parcelle champenoise, **trois
-trajectoires sur un horizon de 10 ou 25 ans** (au choix, étape 5) :
-arrachage-replantation, complantation (entreplants) et statu quo (ne rien
-faire). L'utilisateur avance dans un
-**parcours guidé en 5 étapes** (Exploitation → Parcelle → Plantation →
-Coûts → Résultats) ; à chaque étape, une synthèse chiffrée se met à jour
-en continu dans la colonne de droite.
+Simulateur pédagogique qui chiffre, sur une parcelle champenoise et sur un
+horizon de 10 ou 25 ans (au choix, étape 5), **l'impact d'un
+arrachage-replantation sur l'exploitation** : investissement, mobilisation
+de la réserve individuelle, charges de transition, main d'œuvre et
+rajeunissement du vignoble. Ce n'est plus un comparateur de trajectoires :
+depuis la note de cadrage du 24/07/2026 (voir §12bis, journal
+d'arbitrages), le statu quo (ne rien faire) reste calculé en interne comme
+**contre-factuel silencieux** — il alimente chaque différentiel affiché
+(manque à gagner, écart d'âge, charges évitées…) mais n'est plus un
+scénario que l'utilisateur peut choisir de regarder à l'écran ; la
+complantation reste calculée pour compatibilité (`@deprecated`) mais n'est
+elle non plus jamais affichée. Ce repositionnement a une conséquence
+explicite à garder en tête en le lisant : l'outil ne documente plus ce que
+coûte l'immobilisme, seulement ce que change l'action (§12bis, décision 2).
+L'utilisateur avance dans un **parcours guidé en 5 étapes** (Exploitation →
+Parcelle → Plantation → Coûts → Résultats) ; à chaque étape, une synthèse
+chiffrée se met à jour en continu dans la colonne de droite.
 
 > Ce document explique, du premier coup d'œil à la dernière formule,
 > **comment le fichier est construit, comment il tourne dans le
@@ -33,6 +43,7 @@ en continu dans la colonne de droite.
 10. [Faire-valoir — `repartir`](#10-faire-valoir--repartir)
 11. [Charges d'entretien récurrentes — `chargesEntretien`](#11-charges-dentretien-récurrentes--chargesentretien)
 12. [Assemblage des scénarios — `construireScenarios`](#12-assemblage-des-scénarios--construirescenarios)
+    - [12bis. Journal d'arbitrages consolidé — note de cadrage du 24/07/2026](#12bis-journal-darbitrages-consolidé--note-de-cadrage-du-24072026)
 13. [Manque à gagner — `manqueAGagner`](#13-manque-à-gagner--manqueagagner)
 14. [Palissage dérivé de la géométrie — `coutPalissage`](#14-palissage-dérivé-de-la-géométrie--coutpalissage)
     - [14bis. Protection du jeune plant — `coutProtectionPlant`](#14bis-protection-du-jeune-plant--coutprotectionplant)
@@ -42,6 +53,7 @@ en continu dans la colonne de droite.
 18. [Graphiques SVG faits main](#18-graphiques-svg-faits-main)
 19. [Limites, hypothèses et paramètres cachés](#19-limites-hypothèses-et-paramètres-cachés)
 20. [Pour aller plus loin](#20-pour-aller-plus-loin)
+21. [Recette humaine — contrôles non automatisables](#21-recette-humaine--contrôles-non-automatisables)
 
 ---
 
@@ -61,10 +73,14 @@ afficher quoi que ce soit (voir [§3](#3-comment-tourne-la-page--le-format-dc--x
 Sans réseau, l'écran reste blanc.
 
 Une suite de tests de parité couvre `moteur-oad.js` (`tests/parite.test.js`,
-64 tests à ce jour) : `node tests/parite.test.js`, sans dépendance (`assert`
+97 tests à ce jour) : `node tests/parite.test.js`, sans dépendance (`assert`
 natif de Node). Elle fige le comportement observé des formules — voir
 l'en-tête du fichier — et doit être lancée avant **et** après toute
-modification du moteur de calcul (voir CLAUDE.md).
+modification du moteur de calcul (voir CLAUDE.md). La section 15
+(« Parcours de recette métier », chantier C3) traduit en tests les
+parcours automatisables de la note de cadrage ; les contrôles qui
+demandent un œil humain (lisibilité de l'écran 5) sont listés séparément,
+non simulés par un test factice — voir [§21](#21-recette-humaine--contrôles-non-automatisables).
 
 ## 2. Architecture des 3 fichiers
 
@@ -161,11 +177,11 @@ renseigné.
 
 | # | Étape | Contenu |
 |---|---|---|
-| 1 | **Votre exploitation** | Surface totale, âge moyen du vignoble, VolCo, prix du raisin, réserve individuelle actuelle (curseur en % du plafond) ; **charges de production à l'hectare** (charge liée à la surface, coût de la vendange, détail par opération heures manuelles/mécanisées — chantier B1, déplacées depuis l'écran « Coûts et charges », paramètres de référence de l'exploitation réutilisés à l'écran 5, voir §11 F9). Ce sont les repères globaux, dénominateurs de toute la comparaison. Saisie manuelle par défaut, ou bascule vers un **registre parcellaire** (jeu d'exemple préchargé, en mémoire de session uniquement, aucun import de fichier pour l'instant) qui dérive surface totale et âge moyen d'un tableau de parcelles — voir [§6bis](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif). |
+| 1 | **Votre exploitation** | Surface totale, âge moyen du vignoble, VolCo, prix du raisin, réserve individuelle actuelle (curseur en % du plafond) ; **charges de production à l'hectare** (charge liée à la surface, coût de la vendange, détail par opération heures manuelles/mécanisées — chantier B1, déplacées depuis l'écran « Coûts et charges », paramètres de référence de l'exploitation réutilisés à l'écran 5, voir §11 F9). Ce sont les repères globaux, dénominateurs de tout le calcul d'impact. Saisie manuelle par défaut, ou bascule vers un **registre parcellaire** (jeu d'exemple préchargé, en mémoire de session uniquement, aucun import de fichier pour l'instant) qui dérive surface totale et âge moyen d'un tableau de parcelles — voir [§6bis](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif). |
 | 2 | **La parcelle que vous désignez** | **Géométrie de la parcelle en tête d'écran** (chantier B2, déplacée depuis l'écran 3) : surface arrachée, écart entre rangs, nombre de rangs, écart entre pieds — seuls champs saisis ; longueur de rang déduite, densité, pieds à planter et badge de conformité AOC en sont affichés, jamais saisis (§16). Puis âge, taux de pieds manquants, rendement estimé, déclin en statu quo, régime de faire-valoir (propriété / fermage / métayage) et ses paramètres. En mode registre, un sélecteur d'`idu` et des cases à cocher par ligne désignent la parcelle et en dérivent surface, âge et taux de manquants (§6bis). |
 | 3 | **Votre projet de replantation** | **Deux blocs seulement (chantier B3)** : (1) simulateur d'aide au choix du matériel végétal (cépage/calcaire/profondeur/drainage, arbre porte-greffe, table clones — dépliable, purement informatif), positionné juste avant la sélection définitive matériel végétal/porte-greffe qu'il éclaire, avec fiche conseil (dont l'avertissement 161-49 C) ; (2) palissage et conduite — mode de conduite (dont Chablis, chantier A5), année de pleine production (chantier A3, §7bis), équipements de palissage dérivés de la géométrie de l'écran 2 (postes obligatoires toujours comptés, poste optionnel décochable — chantier A5, §14). Ni le sélecteur d'irrigation ni la pénalité VSL n'apparaissent ici (irrigation déplacée à l'écran 4, VSL retirée de l'interface — chantier B4). Un message bloquant remplace les indicateurs de palissage si la géométrie est incomplète (surface ou nombre de rangs nul). |
 | 4 | **Coûts et charges** | **Deux blocs seulement (chantier B4)** : BLOC A « Investissements liés à la parcelle arrachée puis replantée » — prestations d'arrachage et préparation, matériel végétal et sa protection, matériel de palissage, options de coût à l'installation (dont l'irrigation, déplacée depuis l'écran 3), et la complantation (survie, coût par entreplant — l'entrée en production n'est plus éditable depuis le chantier A3, fixée à 7 ans, voir §7bis) ; BLOC B « Entretien en deux temps » — B.1 entretien de la parcelle au repos, B.2 entretien du plantier (chantier B1 a déplacé le volet « production », permanent, à l'écran 1 — voir §11 F9, non dupliqué ici). Aucun champ VSL. |
-| 5 | **Résultats** | Synthèse rédigée, sélecteur d'horizon (10 ou 25 ans), sélecteur de vue (Ensemble / Part exploitant / Part propriétaire), de test de résistance climatique et de mode main d'œuvre (Prestataire / Familiale — affichage seul, §11 F7), KPI en 2 familles typographiquement distinctes — décision financière (€) et effets physiques non monétisés (voir §17) —, encadré main d'œuvre économisée, graphiques de stock de réserve et de trajectoire d'âge (repliés par défaut), détail annuel dépliable, tableau du manque à gagner, et une fiche imprimable regroupant hypothèses, KPI (avec formule) et détail annuel des 3 scénarios (bouton « Imprimer », `window.print()`). |
+| 5 | **Résultats** | Synthèse rédigée autour du **seul scénario arrachage-replantation** (§12bis, décision 1 : le statu quo n'est plus un scénario que l'utilisateur choisit de regarder, seulement le contre-factuel silencieux de chaque différentiel affiché) — sélecteur d'horizon (10 ou 25 ans), sélecteur de vue (Ensemble / Part exploitant / Part propriétaire), de test de résistance climatique et de mode main d'œuvre (Prestataire / Familiale — affichage seul, §11 F7), KPI en 2 familles typographiquement distinctes — décision financière (€) et effets physiques non monétisés (voir §17) —, encadré main d'œuvre économisée, graphiques de stock de réserve et de trajectoire d'âge (repliés par défaut), détail annuel dépliable du scénario arrachage, tableau du manque à gagner (dérivé vs statu quo, jamais soustrait au calcul), et une fiche imprimable regroupant hypothèses, KPI (avec formule) et détail annuel complet des 3 scénarios calculés en interne — conservé à des fins d'audit, voir §17 (bouton « Imprimer », `window.print()`). |
 
 La colonne de droite (`<aside>`, « Synthèse en continu ») est visible à
 **partir de l'écran 3** (retirée des écrans 1 et 2 — chantiers B1 puis B2 :
@@ -233,7 +249,12 @@ de problème de fluidité en pratique.
 ## 6. Glossaire des champs de saisie
 
 Toutes les valeurs saisies vivent dans un seul objet, `state.v`, initialisé
-avec ces valeurs par défaut (constructeur du composant, `index.html`) :
+avec ces valeurs par défaut (constructeur du composant, `index.html`). Un
+repère de lecture avant la table : plusieurs champs ci-dessous (`declinSQ`,
+`survie`, `coutEntreplant`…) n'alimentent que le statu quo ou la
+complantation, calculés en interne comme contre-factuels (§12bis, décision
+1) — leur valeur influence les KPI de l'écran 5 par différence, jamais un
+scénario affiché à part entière. C'est signalé champ par champ ci-dessous.
 
 ### Étape 1 — Votre exploitation
 
@@ -603,6 +624,20 @@ l'entrée en production, chacun valant `(i+1)/n` (progression linéaire,
 = 3` → `[1]` (pleine production immédiate) ; `= 6` → `[0,25 · 0,5 · 0,75 · 1]`
 soit 25 % · 50 % · 75 % · 100 %, affiché en clair à côté du champ.
 
+**LIMITE ASSUMÉE — arbitrage A (échelons uniformes) contre l'arbitrage C
+(ancrage agronomique).** Ce chantier retient une rampe **uniforme** :
+`n = anneePleineProd − 2` échelons égaux, quel que soit `n`. L'arbitrage
+écarté (« C », ancrage agronomique) aurait fait dépendre la forme de la
+courbe de l'âge réel de la vigne (progression non linéaire type
+3e/4e/5e feuille), indépendamment de `n`. Conséquence directe, à
+documenter noir sur blanc pour ne pas être découverte en recette et prise
+pour un bug : **le rendement de 3e feuille (premier point de la rampe,
+`ramp[0] = 1/n`) devient fonction de l'année de pleine production saisie,
+pas de l'âge de la vigne** — pour une vigne physiquement identique en 3e
+feuille, `ramp[0]` vaut 50 % si `anneePleineProd = 4` (`n=2`) mais environ
+16,7 % si `anneePleineProd = 8` (`n=6`, `1/6`). Testé explicitement en
+section 15 de `tests/parite.test.js` (chantier C3). Voir §12bis, décision 3.
+
 **Point de vigilance — `rampYears`.** `chargesEntretien` et `moEconomisee`
 (`moteur-oad.js`, §11) lisent `inp.rampYears ?? (inp.ramp ? inp.ramp.length
 : 3)` pour délimiter la fenêtre « plantier » (charge de transition,
@@ -626,6 +661,16 @@ calculée à l'identique de son défaut d'avant ce chantier, mais n'est plus
 revoir si un chantier futur la réexpose à l'écran.
 
 ## 8. Ce qui distingue les 3 scénarios
+
+**Lecture après le chantier A1 (24/07/2026, §12bis) : `moteur-oad.js` calcule
+toujours 3 scénarios, mais un seul est un scénario au sens de l'interface.**
+`arrachage` est le seul exposé à l'écran 5. `statuquo` (alias `reference`)
+est le contre-factuel interne de tous les différentiels affichés (manque à
+gagner, écart d'âge, charges évitées…) — il n'est jamais montré comme un
+choix parmi d'autres. `complantation` est conservée pour compatibilité
+(`@deprecated`), hors interface depuis le chantier A1. Le tableau ci-dessous
+documente les 3 formules telles qu'elles vivent dans le moteur, pas 3
+scénarios que l'utilisateur pourrait sélectionner.
 
 | | `arrachage` | `complantation` | `statuquo` |
 |---|---|---|---|
@@ -1242,6 +1287,70 @@ commentaires ci-dessus. La suppression effective de la complantation et du
 statu quo de l'écran (template `<x-dc>`, sélecteurs, graphiques, tableaux
 comparatifs) est un chantier ultérieur, hors périmètre d'A1.
 
+### 12bis. Journal d'arbitrages consolidé — note de cadrage du 24/07/2026
+
+La note de cadrage du 24/07/2026 regroupe plusieurs décisions déjà
+détaillées, chantier par chantier, dans les sections ci-dessus. Cette
+entrée les indexe à un seul endroit, datées, pour la traçabilité de la
+note elle-même — elle ne remplace aucun des journaux détaillés existants
+(voir consigne « ne pas supprimer l'historique »).
+
+**1. Contre-factuel silencieux.** Le statu quo est conservé en référence
+interne (`sc.statuquo`/`sc.reference`, `moteur-oad.js`) ; son exposition à
+l'écran est supprimée. Motif : les différentiels de l'écran 5 (manque à
+gagner, écart d'âge, charges évitées, main d'œuvre économisée) sont des
+**comparaisons** — elles ont structurellement besoin d'un terme de
+référence, mais ce terme n'a pas besoin d'être lui-même un scénario que
+l'utilisateur consulte séparément. Détail complet : journal « chantier A1 »
+ci-dessus.
+
+**2. Repositionnement assumé — OAD devient un simulateur d'impact.**
+Conséquence directe de la décision 1 : l'outil ne compare plus « ne rien
+faire » à « agir », il chiffre uniquement ce que change l'arrachage-
+replantation. Conséquence explicite à ne pas perdre de vue en le lisant :
+**l'outil ne documente plus le coût de l'immobilisme** — un utilisateur qui
+chercherait à l'écran 5 « combien me coûte le statu quo en valeur absolue »
+ne trouvera que des différentiels (ce que l'arrachage change), jamais un
+chiffre de statu quo affiché en tant que tel.
+
+**3. Montée en charge — arbitrage A (échelons uniformes) retenu contre
+l'arbitrage C (ancrage agronomique).** Détail, formule et **limite assumée
+documentée noir sur blanc** (rendement de 3e feuille = 50 % si N=4, ≈16,7 %
+si N=8, pour une vigne identique) : voir §7ter, journal « chantier A3 ».
+
+**4. Comptage agronomique des pieds, distinct du comptage géométrique du
+palissage.** `densite × surf` (agronomique, matériel végétal) et
+`nbRangs`/`L`/espacement (géométrique, piquets et fils) ne coïncident pas
+exactement — assumé, pas un bug. Détail : §16, journal « chantier A4 ».
+
+**5. Multi-parcelles agrégé (arbitrage B) et sa limite.** Un seul couple
+d'écartements et un seul `nbRangs` pour tout le lot renouvelé, y compris en
+mode registre multi-lignes — donc un seul verdict de conformité AOC pour un
+lot potentiellement hétérogène (une sous-parcelle non conforme peut être
+noyée dans un agrégat jugé conforme). Détail : §16.
+
+**6. Retrait de la VSL de l'interface.** Champ `penaliteVSL` et badge
+associé supprimés de l'UI ; le hook générique `rendFactorProjet` de
+`simulerReserveKg` (§7) et le contrôle de conformité AOC (`aoc.*`,
+structurellement indépendant de la VSL) sont conservés intacts dans le
+moteur. Détail : §11, journal « chantier B4 ».
+
+**7. Règle repos/déblocages — décision CIVC de juillet 2026, NON PUBLIÉE à
+la date d'écriture.** `NB_SORTIE_PAR_REPOS = {1:3, 2:4, 3:5}`
+(`moteur-oad.js`, chantier A2) encode une règle dont la source
+réglementaire n'est, à ce jour, pas publiée — voir §7bis. **Point de
+vigilance signalé ici plutôt que masqué** : au moment d'écrire cette
+entrée, `moteur-oad.js` (lignes 743-748) ne porte qu'une mise en garde
+générale (« décision CIVC de juillet 2026, NON ENCORE PUBLIÉE ») et
+**aucune liste explicite de quatre points de vérification** — malgré la
+consigne du chantier C2 qui en présupposait l'existence. À vérifier une
+fois la décision CIVC publiée : durée(s) de repos effectivement retenue(s)
+(1/2/3 ans, ou une liste différente), correspondance exacte
+repos→nb de déblocages, `VOL_SORTIE_ARRACHAGE` (9 000 kg/ha, inchangé
+depuis avant ce chantier) toujours en vigueur, et devenir du motif
+classique/sanitaire (définitivement aboli ou simplement recatégorisé, voir
+§7bis).
+
 ## 13. Manque à gagner — `manqueAGagner`
 
 Indicateur **dérivé**, jamais réinjecté dans le calcul (tableau dépliable
@@ -1475,14 +1584,22 @@ densite = round(10000 / (eR × eP))          // pieds/ha, arrondi AVANT multipli
 L       = (nbRangs × eR) > 0 ? surf × 10000 / (nbRangs × eR) : 0   // longueur de rang — AFFICHAGE SEUL
 W       = nbRangs × eR                       // largeur du bloc — auxiliaire d'affichage, dérivée
 pieds   = round(densite × surf)              // comptage AGRONOMIQUE — seul comptage de pieds à planter
-vsl     = eR ≥ 1.5
 aoc     = { rang: eR ≤ 2.0, pied: 0.7 ≤ eP ≤ 1.5, somme: eR+eP ≤ 3.0 }
 ```
+(Le détecteur `vsl`, ex `eR ≥ 1.5`, n'apparaît plus dans cette formule
+depuis le chantier B4 — voir §12bis, décision 6, et le journal d'arbitrages
+« chantier B4 » au §11.)
+
 Un seul couple d'écartements et une seule géométrie pour tout le lot
-renouvelé (mode agrégé) : en mode registre, `surf` = la surface déjà
-agrégée par `agregerRegistreParcelle` (somme des lignes retenues, §6bis),
-`nbRangs` reste saisi comme en mode manuel — aucune gestion parcelle par
-parcelle. **Aucun seuil de plausibilité n'est arbitré sur `L`** (ni haut ni
+renouvelé (**mode agrégé — arbitrage B**, §12bis décision 5) : en mode
+registre, `surf` = la surface déjà agrégée par `agregerRegistreParcelle`
+(somme des lignes retenues, §6bis), `nbRangs` reste saisi comme en mode
+manuel — aucune gestion parcelle par parcelle. **Limite assumée de
+l'arbitrage B** : un lot agrégé multi-`idu` hétérogène (écartements réels
+différents d'une sous-parcelle à l'autre) reçoit malgré tout un seul couple
+d'écartements saisi et donc un seul verdict de conformité AOC — le badge ne
+distingue pas une sous-parcelle non conforme noyée dans un agrégat
+conforme. **Aucun seuil de plausibilité n'est arbitré sur `L`** (ni haut ni
 bas) : une longueur de rang dérivée absurde (trop courte, trop longue) ne
 déclenche aucun avertissement — faiblesse connue, documentée mais non
 corrigée par ce chantier (voir journal ci-dessous et
@@ -1494,7 +1611,7 @@ corrigée par ce chantier (voir journal ci-dessous et
 
 Ces deux comptages ne coïncident pas exactement (le premier ignore la forme
 réelle du rang, le second en dépend) et ce n'est **pas un bug** — voir
-journal d'arbitrages ci-dessous. Dans les deux modes, `aoc.*` alimente le
+§12bis (décision 4) et le journal d'arbitrages ci-dessous. Dans les deux modes, `aoc.*` alimente le
 bandeau de conformité au cahier des charges homologué le 31/07/2025
 (rang ≤ 2,00 m, pied 0,70–1,50 m, somme ≤ 3,00 m). Depuis le **chantier
 B4**, `geometrieAgronomique()` ne renvoie plus de détecteur `vsl` (ex
@@ -1666,7 +1783,11 @@ pour l'agrégat reste une approximation.
 ## 17. KPI et synthèse
 
 Tous calculés dans `renderVals()` (`index.html`), après
-`OAD.construireScenarios(inp)`. Depuis le **chantier P6** (refonte de
+`OAD.construireScenarios(inp)`. Tous les KPI ci-dessous décrivent l'**impact
+du scénario arrachage** — `sc.statuquo`/`sc.reference` n'y apparaît que
+comme terme de comparaison à l'intérieur d'une formule (contre-factuel
+silencieux, §12bis décision 1), jamais comme un second scénario à
+consulter séparément à l'écran. Depuis le **chantier P6** (refonte de
 l'écran 5), l'écran sépare deux familles typographiquement distinctes,
 jamais mélangées dans une même grille de cartes — `out.kpisFinance` /
 `out.kpiEffortNet` (blanc, décision € ) et `out.kpisPhysique` (fond
@@ -1905,3 +2026,32 @@ Idées de suite, non entamées à ce jour :
   l'outil pourrait guider sans devenir prescriptif. Non entamé.
 - **Analyse de sensibilité / tornade** sur les paramètres à caler
   (`anneePleineProd`, `survie`, charges…). Non entamée.
+
+## 21. Recette humaine — contrôles non automatisables
+
+La note de cadrage du chantier C3 propose six parcours de recette ; les
+six sont automatisables et couverts par `tests/parite.test.js` (section
+15, « Parcours de recette métier »). Un septième point de contrôle,
+proposé par la même note, ne l'est pas : la **lisibilité de l'écran 5**
+relève d'un jugement humain (clarté d'un texte, cohérence visuelle d'un
+graphique, absence de chevauchement) qu'un test automatisé ne peut que
+simuler artificiellement — écrire un test factice sur ce point donnerait
+une fausse impression de couverture. À vérifier manuellement, à chaque
+changement touchant l'écran 5 :
+
+- Le bandeau d'en-tête, les légendes de graphiques (stock de réserve,
+  trajectoire d'âge) et le tableau « Manque à gagner » ne doivent annoncer
+  ou afficher que ce qui est réellement exposé à l'utilisateur — pas de
+  courbe, colonne ou légende résiduelle d'un scénario non sélectionnable
+  (voir chantier C1, audit des résidus de la refonte).
+- Les libellés de KPI restent compréhensibles sans lire le code : un
+  utilisateur qui n'a jamais ouvert `moteur-oad.js` doit pouvoir relier
+  chaque chiffre affiché à sa formule via la fiche imprimable, sans
+  ambiguïté sur ce qui est un résultat du scénario arrachage et ce qui est
+  un repère de comparaison interne (statu quo).
+- Aucun chevauchement ni troncature de texte sur les tailles d'écran
+  courantes (desktop standard, fenêtre réduite) — l'outil n'a pas de
+  breakpoint mobile dédié à ce jour.
+- La fiche imprimable (`window.print()`) reste lisible en A4 : titres de
+  section, tableaux non coupés en plein milieu d'une ligne, pas de couleur
+  illisible une fois imprimée en noir et blanc.

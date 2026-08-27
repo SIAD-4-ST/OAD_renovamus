@@ -33,7 +33,7 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
   <header style="border-bottom:3px solid #20291F;background:#FAF9F5;position:sticky;top:0;z-index:50">
     <div style="max-width:1360px;margin:0 auto;padding:14px 28px;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap">
       <div style="font-family:'Fraunces',serif;font-weight:650;font-size:20px;line-height:1.1">Renouvellement du vignoble</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#A97F26;letter-spacing:0.08em">SIMULATEUR · ARRACHAGE · COMPLANTATION · STATU QUO</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#A97F26;letter-spacing:0.08em">SIMULATEUR · IMPACT ARRACHAGE-REPLANTATION</div>
       <div style="margin-left:auto;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;border:1px solid #A97F26;color:#A97F26;padding:3px 9px;border-radius:2px">Sensibilisation — hypothèses à caler</div>
     </div>
   </header>
@@ -310,12 +310,12 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
           <div style="display:flex;flex-direction:column;gap:5px">
             <label style="font-size:13px;font-weight:600">Rendement estimé de la parcelle</label>
             <div style="display:flex;align-items:center;gap:8px"><input type="number" step="100" min="0" value="{{ v.rendEstime }}" onInput="{{ on.rendEstime }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">kg/ha</span></div>
-            <span style="font-size:11.5px;color:#A5433A">votre estimation — sert au statu quo et à la complantation</span>
+            <span style="font-size:11.5px;color:#A5433A">votre estimation — alimente aussi la référence interne de calcul (jamais un scénario affiché à part)</span>
           </div>
           <div style="display:flex;flex-direction:column;gap:5px">
-            <label style="font-size:13px;font-weight:600">Déclin annuel en statu quo</label>
+            <label style="font-size:13px;font-weight:600">Déclin annuel si rien n'est fait</label>
             <div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.1" min="0" max="10" value="{{ v.declinSQ }}" onInput="{{ on.declinSQ }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">%/an</span></div>
-            <span style="font-size:11.5px;color:#A5433A">défaut indicatif (1 %/an) — à ajuster à la parcelle, à caler sur vos données âge-rendement ou la littérature</span>
+            <span style="font-size:11.5px;color:#A5433A">défaut indicatif (1 %/an) — à ajuster à la parcelle ; sert uniquement à la référence interne de comparaison, jamais affichée en tant que scénario</span>
           </div>
         </div>
         <h3 style="font-family:'Fraunces',serif;font-size:17px;margin:28px 0 12px">Faire-valoir de la parcelle</h3>
@@ -558,7 +558,7 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
               <div style="display:flex;align-items:center;gap:8px"><input type="number" step="250" value="{{ coutProtectionAffiche }}" onInput="{{ on.coutProtectionHa }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/ha</span></div>
               <button onClick="{{ reportProtection }}" style="align-self:start;font-size:12px;padding:5px 10px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre la valeur dérivée de la densité</button>
               <span style="font-size:11.5px;color:#5C6157">{{ protectionDetailTxt }}</span>
-              <span style="font-size:11.5px;color:#A5433A">distinct du palissage (structure du rang) et de la charge « plantier » (MO uniquement) ; non appliqué à la complantation — voir « Coût par entreplant » ci-dessous</span>
+              <span style="font-size:11.5px;color:#A5433A">distinct du palissage (structure du rang) et de la charge « plantier » (MO uniquement) ; ne s'applique qu'à l'arrachage</span>
             </div>
           </div>
           <div style="margin-top:18px;padding-top:14px;border-top:1px dotted #DDD9CE">
@@ -574,21 +574,6 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
               <div style="display:flex;flex-direction:column;gap:5px">
                 <label style="font-size:13px;font-weight:600">Ferti-irrigation (si oui)</label>
                 <div style="display:flex;align-items:center;gap:8px"><input type="number" step="500" value="{{ v.coutIrrigHa }}" onInput="{{ on.coutIrrigHa }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/ha</span></div>
-              </div>
-            </div>
-          </div>
-          <div style="margin-top:18px;padding-top:14px;border-top:1px dotted #DDD9CE">
-            <div style="font-size:13px;font-weight:600;margin-bottom:4px">Complantation (entreplants)</div>
-            <div style="font-size:11.5px;color:#5C6157;margin-bottom:10px">scénario non affiché à l'écran 5, chantier A1 — l'entrée en production des entreplants n'est plus un champ éditable, elle reste fixée à sa valeur historique (7 ans)</div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px">
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <label style="font-size:13px;font-weight:600">Survie des entreplants</label>
-                <div style="display:flex;align-items:center;gap:8px"><input type="number" step="5" min="10" max="100" value="{{ v.survie }}" onInput="{{ on.survie }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">%</span></div>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <label style="font-size:13px;font-weight:600">Matériel végétal à acheter (coût par entreplant)</label>
-                <div style="display:flex;align-items:center;gap:8px"><input type="number" step="0.5" value="{{ v.coutEntreplant }}" onInput="{{ on.coutEntreplant }}" style="width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="font-size:12.5px;color:#5C6157;flex:none">€/pied</span></div>
-                <span style="font-size:11.5px;color:#A5433A">supposé inclure tuteur + cache-plant de l'entreplant (à vérifier auprès de votre source) — sinon, ce prix sous-estime l'entreplant du même écart que « Protection du matériel végétal » ci-dessus</span>
               </div>
             </div>
           </div>
@@ -815,11 +800,6 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
             <sc-if value="{{ stockChartOuvert }}" hint-placeholder-val="{{ false }}">
               <div style="margin-top:12px">
                 {{ chartStock }}
-                <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:12.5px;margin-top:10px">
-                  <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#A97F26;display:inline-block"></span>arrachage-replantation</span>
-                  <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#4C7A57;display:inline-block"></span>complantation</span>
-                  <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:3px;background:#9A9E97;display:inline-block"></span>statu quo</span>
-                </div>
               </div>
             </sc-if>
             <div style="font-size:11.5px;color:#5C6157;margin-top:6px">En kg/ha de surface productive. Un cumul flatteur peut cacher une réserve asséchée. Plafond 10 000 kg/ha.</div>
@@ -959,16 +939,12 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
           </button>
           <sc-if value="{{ magOuvert }}" hint-placeholder-val="{{ false }}">
             <div style="padding:0 20px 18px">
-              <div style="display:grid;grid-template-columns:56px 1fr 1fr 1fr;font-size:12.5px;max-width:560px">
+              <div style="display:grid;grid-template-columns:56px 1fr;font-size:12.5px;max-width:220px">
                 <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE">t</div>
                 <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE;text-align:right">Arrachage</div>
-                <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE;text-align:right">Complantation</div>
-                <div style="font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE;text-align:right">Statu quo</div>
                 <sc-for list="{{ magRows }}" as="m" hint-placeholder-count="4">
                   <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;font-family:'JetBrains Mono',monospace">{{ m.t }}</div>
                   <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace">{{ m.arr }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace">{{ m.compl }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;text-align:right;color:#9A9E97;font-family:'JetBrains Mono',monospace">0 €</div>
                 </sc-for>
               </div>
             </div>
@@ -1028,42 +1004,6 @@ input:focus,select:focus{outline:2px solid #A97F26;outline-offset:1px}
             </tr></thead>
             <tbody>
               <sc-for list="{{ printDetailArr }}" as="r" hint-placeholder-count="4">
-                <tr>
-                  <td>{{ r.t }}</td><td style="text-align:right">{{ r.surfProd }}</td><td style="text-align:right">{{ r.recolte }}</td>
-                  <td style="text-align:right">{{ r.volcoVendu }}</td><td style="text-align:right">{{ r.mise }}</td><td style="text-align:right">{{ r.sortieInsuff }}</td>
-                  <td style="text-align:right">{{ r.sortieArr }}</td><td style="text-align:right">{{ r.stockHa }}</td><td style="text-align:right">{{ r.cashNet }}</td>
-                </tr>
-              </sc-for>
-            </tbody>
-          </table>
-
-          <h3 style="font-size:15px;margin:16px 0 8px">3bis. Détail annuel — scénario Complantation</h3>
-          <table>
-            <thead><tr>
-              <th style="text-align:left">t</th><th style="text-align:right">Surf. prod (ha)</th><th style="text-align:right">Récolte (kg)</th>
-              <th style="text-align:right">VolCo vendu (kg)</th><th style="text-align:right">Mise rés. (kg)</th><th style="text-align:right">Sortie insuff. (kg)</th>
-              <th style="text-align:right">Sortie arr. (kg)</th><th style="text-align:right">Stock (kg/ha)</th><th style="text-align:right">Cash net (€)</th>
-            </tr></thead>
-            <tbody>
-              <sc-for list="{{ printDetailCompl }}" as="r" hint-placeholder-count="4">
-                <tr>
-                  <td>{{ r.t }}</td><td style="text-align:right">{{ r.surfProd }}</td><td style="text-align:right">{{ r.recolte }}</td>
-                  <td style="text-align:right">{{ r.volcoVendu }}</td><td style="text-align:right">{{ r.mise }}</td><td style="text-align:right">{{ r.sortieInsuff }}</td>
-                  <td style="text-align:right">{{ r.sortieArr }}</td><td style="text-align:right">{{ r.stockHa }}</td><td style="text-align:right">{{ r.cashNet }}</td>
-                </tr>
-              </sc-for>
-            </tbody>
-          </table>
-
-          <h3 style="font-size:15px;margin:16px 0 8px">3ter. Détail annuel — scénario Statu quo</h3>
-          <table>
-            <thead><tr>
-              <th style="text-align:left">t</th><th style="text-align:right">Surf. prod (ha)</th><th style="text-align:right">Récolte (kg)</th>
-              <th style="text-align:right">VolCo vendu (kg)</th><th style="text-align:right">Mise rés. (kg)</th><th style="text-align:right">Sortie insuff. (kg)</th>
-              <th style="text-align:right">Sortie arr. (kg)</th><th style="text-align:right">Stock (kg/ha)</th><th style="text-align:right">Cash net (€)</th>
-            </tr></thead>
-            <tbody>
-              <sc-for list="{{ printDetailSQ }}" as="r" hint-placeholder-count="4">
                 <tr>
                   <td>{{ r.t }}</td><td style="text-align:right">{{ r.surfProd }}</td><td style="text-align:right">{{ r.recolte }}</td>
                   <td style="text-align:right">{{ r.volcoVendu }}</td><td style="text-align:right">{{ r.mise }}</td><td style="text-align:right">{{ r.sortieInsuff }}</td>
@@ -1163,7 +1103,6 @@ class Component extends DCLogic {
       voletProdOuvert: false, voletProdOverrides: {},
       voletReposOuvert: false, voletReposOverrides: {}, voletReposCourtNoue: false,
       voletPlantierOuvert: false, voletPlantierOverrides: {},
-      oadReady: typeof window !== 'undefined' && !!window.OAD,
       sourceParcellaire: 'manuel',
       registreRows,
       parcelleIdu: iduPlanteesInit[0] || null,
@@ -1250,15 +1189,6 @@ class Component extends DCLogic {
       'Chardonnay': [['76','Régulier, précoce'],['95','Régulier, plus vigoureux que le clone 76'],['75','Production irrégulière, grappes plus lâches'],['121','RAS'],['96','Régulier, précoce, vins plus acides'],['78','Peu expressif en surproduction'],['131','Régulier, vins plus acides'],['124','Plus tardif, meilleure remise à fruit en cas de gel de printemps'],['132','Précoce'],['118','Vins dilués en surproduction'],['130','Vins dilués en surproduction']]
     };
   }
-
-  componentDidMount() {
-    if (!window.OAD) {
-      this._t = setInterval(() => {
-        if (window.OAD) { clearInterval(this._t); this.setState({ oadReady: true }); }
-      }, 80);
-    }
-  }
-  componentWillUnmount() { if (this._t) clearInterval(this._t); }
 
   fmtE0(v) { return (v < 0 ? '−' : '') + Math.abs(Math.round(v / 100) * 100).toLocaleString('fr-FR') + ' €'; }
   fmtE(v) { return (v < 0 ? '−' : '') + Math.abs(Math.round(v)).toLocaleString('fr-FR') + ' €'; }
@@ -1864,7 +1794,7 @@ class Component extends DCLogic {
         chartStock: null, chartAge: null, ageLegendItems: [], detailRows: [], magRows: [], lectureTreso: '',
         syntheseCouvTxt: '…', syntheseCouvSuffixTxt: '', syntheseAbsorptionTxt: '',
         syntheseStockLeadTxt: '…', syntheseStockTailTxt: '…', syntheseHorizonTxt: '…',
-        printKpiRows: [], printDetailArr: [], printDetailCompl: [], printDetailSQ: [] });
+        printKpiRows: [], printDetailArr: [] });
       return out;
     }
     const sc = OAD.construireScenarios(inp);
@@ -2051,9 +1981,10 @@ class Component extends DCLogic {
     // le rappel avant/après sans commentaire normatif.
     out.kpiEcartAge = { lib: `Écart d'âge à ${inp.horizon} ans`, val: '−' + nf(gainAgeHorizon, 1) + ' an' + (gainAgeHorizon >= 2 ? 's' : ''), det: `âge moyen du vignoble à ${inp.horizon} ans : ${nf(trajAge.statuquo[inp.horizon], 1)} ans en statu quo → ${nf(trajAge.arrachage[inp.horizon], 1)} ans en arrachage — un vignoble plus jeune, mais un rendement à reconstruire durant la transition (voir trajectoire ci-dessous)` };
 
+    // chantier C1 — seul le scénario arrachage est affichable (§12bis décision 1) :
+    // plus de courbe statu quo ni complantation sur le stock de réserve, qui n'a pas
+    // de KPI de comparaison associé (contrairement à la trajectoire d'âge ci-dessous).
     out.chartStock = this.chart([
-      { pts: sc.statuquo.kg.map(r => r.stockHa), c: '#9A9E97', w: 2 },
-      { pts: sc.complantation.kg.map(r => r.stockHa), c: '#4C7A57', w: 2 },
       { pts: sc.arrachage.kg.map(r => r.stockHa), c: '#A97F26', w: 2.6 }
     ], { fmt: x => this.fmtKg(x), y0: 0, ref: { v: 10000, label: 'plafond 10 000' },
       annot: [{ serie: sc.arrachage.kg.map(r => r.stockHa), t: tMin, label: this.fmtKg(stockMin), c: '#A97F26' }],
@@ -2062,10 +1993,12 @@ class Component extends DCLogic {
     // Trajectoire d'âge du vignoble (chantier P7) — symétrique du graphique
     // de stock de réserve ci-dessus. Marqueurs de forme + traits distincts
     // (pas seulement la couleur, voir chart()) pour rester lisible en
-    // vision dichromate.
+    // vision dichromate. Chantier C1 : la complantation (@deprecated, hors
+    // interface) est retirée ; le statu quo, lui, reste affiché — c'est le
+    // contre-factuel dont dépend directement le KPI « Écart d'âge » ci-dessus
+    // (§12bis décision 1 : contre-factuel silencieux, pas absent).
     out.chartAge = this.chart([
       { pts: trajAge.statuquo, c: '#9A9E97', w: 2, marker: 'circle' },
-      { pts: trajAge.complantation, c: '#4C7A57', w: 2, dash: '6 3', marker: 'square' },
       { pts: trajAge.arrachage, c: '#A97F26', w: 2.6, dash: '2 3', marker: 'triangle' }
     ], { fmt: x => nf(x, 1), y0: 0,
       annot: [{ serie: trajAge.arrachage, t: inp.horizon, label: '−' + nf(gainAgeHorizon, 1) + ' an' + (gainAgeHorizon >= 2 ? 's' : ''), c: '#A97F26' }],
@@ -2073,8 +2006,7 @@ class Component extends DCLogic {
     // Légende à trait+marqueur (pas seulement couleur), même ordre que les séries ci-dessus.
     out.ageLegendItems = [
       { label: 'arrachage-replantation', swatch: this.legendSwatch('#A97F26', '2 3', 'triangle') },
-      { label: 'complantation', swatch: this.legendSwatch('#4C7A57', '6 3', 'square') },
-      { label: 'statu quo', swatch: this.legendSwatch('#9A9E97', undefined, 'circle') }
+      { label: 'statu quo (référence)', swatch: this.legendSwatch('#9A9E97', undefined, 'circle') }
     ];
 
     const sorties = sc.arrachage.kg.filter(r => r.sortieArr > 0.5);
@@ -2088,14 +2020,16 @@ class Component extends DCLogic {
       stockHa: this.fmtKg(r.stockHa), cashNet: this.fmtE(eurRows[i].cashNet)
     }));
     out.detailRows = buildDetailRows(sc.arrachage.kg, sc.arrachage.eur);
+    // chantier C1 — colonne « Complantation » retirée (scénario @deprecated, hors
+    // interface) ; la colonne « Statu quo » l'était déjà codée en dur à 0 € (elle se
+    // compare à elle-même par construction) plutôt que réellement calculée.
     const magA = OAD.manqueAGagner(sc.arrachage, sc.statuquo, inp.prixKg);
-    const magC = OAD.manqueAGagner(sc.complantation, sc.statuquo, inp.prixKg);
-    out.magRows = magA.map((val, i) => ({ t: String(i), arr: this.fmtE(val), compl: this.fmtE(magC[i]) }));
+    out.magRows = magA.map((val, i) => ({ t: String(i), arr: this.fmtE(val) }));
 
-    // Fiche d'audit imprimable — détail annuel des 3 scénarios (pas seulement l'arrachage)
+    // Fiche d'audit imprimable — détail annuel du seul scénario arrachage
+    // (chantier C1 : complantation et statu quo retirés de la fiche, alignée sur
+    // ce qui est effectivement affiché à l'écran — §12bis décision 1).
     out.printDetailArr = out.detailRows;
-    out.printDetailCompl = buildDetailRows(sc.complantation.kg, sc.complantation.eur);
-    out.printDetailSQ = buildDetailRows(sc.statuquo.kg, sc.statuquo.eur);
 
     // Fiche d'audit imprimable — 8 KPI avec leur formule, y compris ceux repliés ou
     // retirés de l'écran par le chantier P6 (Tension max vs statu quo, Charges

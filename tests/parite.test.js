@@ -64,17 +64,20 @@ function assertClose(actual, expected, eps, msg) {
 //
 // Les `inp` ci-dessous sont écrits en dur : ce sont exactement les champs
 // que `construireScenarios`/`simulerReserveKg`/`chargesEntretien` lisent
-// (voir moteur-oad.js). Le cas (a) reprend les valeurs par défaut de l'UI
-// (constructeur `index.html:582-599`) après dérivation par `geometrie(v)`
-// et `coutPalissage(g, ...)` (index.html:642-650 et 788-791) :
-//   - geoL=200, geoW=15, ecartRang=1.10, ecartPied=1.10
+// (voir moteur-oad.js). Le cas (a) a été calé, à l'origine, sur les valeurs
+// par défaut de l'UI d'ALORS, avant que le chantier A4 ne remplace la
+// géométrie « longueur × largeur déclarées » (ancienne fonction interne
+// `geometrie(v)` d'index.html, retirée depuis) par `OAD.geometrieAgronomique()`
+// (voir README §16) :
+//   - geoL=200, geoW=15 (géométrie pré-A4), ecartRang=1.10, ecartPied=1.10
 //     → densite = round(10000/(1.10×1.10)) = 8264 pieds/ha
 //     → surf = 200×15/10000 = 0.3 ha  → surfParc
-//   - coutPalissageHa n'est PAS le défaut affiché (12000) mais la valeur
-//     préremplie depuis la géométrie tant que `palisManuel` est faux
-//     (état initial) : OAD.coutPalissage(g, null, {espacementPiquet:6,
-//     nbFils:4}).totalHa arrondi = 13116 €/ha. C'est le comportement réel
-//     de renderVals() au premier rendu, pas une approximation.
+//   - coutPalissageHa n'était pas le défaut affiché à l'époque (12000) mais la
+//     valeur préremplie depuis la géométrie : OAD.coutPalissage(g, null,
+//     {espacementPiquet:6, nbFils:4}).totalHa arrondi = 13116 €/ha.
+//   Ce snapshot fige un comportement observé à un instant donné : il n'a pas
+//   besoin de refléter les défauts UI actuels pour rester valide comme test
+//   de non-régression du moteur.
 // ----------------------------------------------------------------------
 
 const INP_A = {
@@ -123,12 +126,14 @@ const INP_A = {
   fv: { regime: 'propriete', loyerAn: 3000, partRecolte: 0.33, partCouts: 0.33 }
 };
 
-// (b) motif sanitaire : repos passe à 3, nbSortie à 5 (index.html:797).
+// (b) repos=3 ans (borne haute du choix libre 1/2/3 ans, chantier A2 — le
+// motif classique/sanitaire qui figeait autrefois ce couple repos/nbSortie
+// a disparu, voir README §7bis) : repos passe à 3, nbSortie à 5.
 // declinSQ explicité à 0 (chantier 4) pour rester stable indépendamment du
 // défaut UI de (a) — ce cas ne teste pas le déclin statu quo.
-const INP_B_SANITAIRE = { ...INP_A, repos: 3, nbSortie: 5, declinSQ: 0 };
+const INP_B_REPOS3 = { ...INP_A, repos: 3, nbSortie: 5, declinSQ: 0 };
 
-// (c) stress climatique "creux34" (étape 5, index.html:785) : années 3 et 4
+// (c) stress climatique "creux34" (étape 5, test de résistance climatique) : années 3 et 4
 // forcées à rendMean - EC = 12296.6 - 3440 = 8856.6 kg/ha, sur les 3 scénarios.
 // declinSQ explicité à 0 (chantier 4), pour la même raison que (b).
 const RENDMEAN = 12296.6, EC = 3440;
@@ -1146,6 +1151,120 @@ test("cohérence transverse : Σ heuresHaAn × nbAnnees sur les 3 fenêtres === 
   const hArrBrut = OAD.heuresManuellesParAnnee('arrachage', SC_BASE.arrachage.kg, INP_A);
   const sommeBrute = hArrBrut.reduce((s, h) => s + h, 0);
   assertClose(sommeFenetres, sommeBrute, 1e-6, 'aucune année ne doit être comptée deux fois ni omise entre les 3 fenêtres');
+});
+
+// ----------------------------------------------------------------------
+// Section 15 — Parcours de recette métier (note de cadrage, chantier C3)
+//
+// Traduit en tests les parcours automatisables de la note de cadrage
+// (repos/déblocages, taille Chablis, équipements de palissage, montée en
+// charge). Les contrôles de lisibilité de l'écran 5 relèvent de la recette
+// humaine — voir README §20 pour la liste séparée, non automatisée ici.
+// ----------------------------------------------------------------------
+
+section('15. Parcours de recette métier');
+
+test('repos=1 an : le moteur associe exactement 3 déblocages de réserve, à 9 000 kg/ha × surfArr chacun', () => {
+  assert.strictEqual(OAD.nbSortiePourRepos(1), 3);
+  const inp = { ...INP_A, declinSQ: 0, repos: 1, nbSortie: OAD.nbSortiePourRepos(1) };
+  const sc = OAD.construireScenarios(inp);
+  const sorties = sc.arrachage.kg.filter(r => r.sortieArr > 0).map(r => r.t);
+  assert.deepStrictEqual(sorties, [1, 2, 3], 'déblocages aux années 1 à nbSortie, jamais avant ni après');
+  sorties.forEach(t => assertClose(sc.arrachage.kg[t].sortieArr, OAD.VOL_SORTIE_ARRACHAGE * inp.surfParc, 1e-6, `t=${t}`));
+});
+
+test('repos=1 an : aucune sortie « arrachage » à t=0 (avant la replantation) ni au-delà de nbSortie', () => {
+  const inp = { ...INP_A, declinSQ: 0, repos: 1, nbSortie: OAD.nbSortiePourRepos(1) };
+  const sc = OAD.construireScenarios(inp);
+  assertClose(sc.arrachage.kg[0].sortieArr, 0, 1e-9, 't=0 : arrachage lui-même, avant tout déblocage');
+  for (let t = 4; t <= inp.horizon; t++) assertClose(sc.arrachage.kg[t].sortieArr, 0, 1e-9, `t=${t}`);
+});
+
+test('repos=2 ans : le moteur associe exactement 4 déblocages de réserve, aux années 1 à 4', () => {
+  assert.strictEqual(OAD.nbSortiePourRepos(2), 4);
+  const inp = { ...INP_A, declinSQ: 0, repos: 2, nbSortie: OAD.nbSortiePourRepos(2) };
+  const sc = OAD.construireScenarios(inp);
+  const sorties = sc.arrachage.kg.filter(r => r.sortieArr > 0).map(r => r.t);
+  assert.deepStrictEqual(sorties, [1, 2, 3, 4]);
+});
+
+test('repos=2 ans : la réserve minimale mobilisée est plus basse qu\'avec repos=1 an (4 déblocages > 3), jamais négative', () => {
+  const inp1 = { ...INP_A, declinSQ: 0, repos: 1, nbSortie: OAD.nbSortiePourRepos(1) };
+  const inp2 = { ...INP_A, declinSQ: 0, repos: 2, nbSortie: OAD.nbSortiePourRepos(2) };
+  const sc1 = OAD.construireScenarios(inp1), sc2 = OAD.construireScenarios(inp2);
+  const min1 = Math.min(...sc1.arrachage.kg.map(r => r.stockHa));
+  const min2 = Math.min(...sc2.arrachage.kg.map(r => r.stockHa));
+  assert.ok(min2 < min1, `repos=2 doit mobiliser davantage la réserve que repos=1 (min2=${min2}, min1=${min1})`);
+  sc2.arrachage.kg.forEach(r => assert.ok(r.stockFin >= 0, `t=${r.t} : stock négatif`));
+});
+
+test('repos=2 ans : la réserve totale mobilisée sur les 4 déblocages vaut exactement nbSortie × 9 000 kg/ha × surfArr', () => {
+  const inp = { ...INP_A, declinSQ: 0, repos: 2, nbSortie: OAD.nbSortiePourRepos(2) };
+  const sc = OAD.construireScenarios(inp);
+  const totalMobilise = sc.arrachage.kg.reduce((s, r) => s + r.sortieArr, 0);
+  assertClose(totalMobilise, inp.nbSortie * OAD.VOL_SORTIE_ARRACHAGE * inp.surfParc, 1e-6);
+});
+
+test('repos=3 ans : le moteur associe exactement 5 déblocages de réserve, aux années 1 à 5', () => {
+  assert.strictEqual(OAD.nbSortiePourRepos(3), 5);
+  const inp = { ...INP_A, declinSQ: 0, repos: 3, nbSortie: OAD.nbSortiePourRepos(3) };
+  const sc = OAD.construireScenarios(inp);
+  const sorties = sc.arrachage.kg.filter(r => r.sortieArr > 0).map(r => r.t);
+  assert.deepStrictEqual(sorties, [1, 2, 3, 4, 5]);
+});
+
+test('durée de repos hors 1/2/3 ans : nbSortiePourRepos refuse explicitement plutôt que de deviner un nombre de déblocages', () => {
+  assert.throws(() => OAD.nbSortiePourRepos(4), /repos non prévue/);
+  assert.throws(() => OAD.nbSortiePourRepos(0), /repos non prévue/);
+});
+
+test('taille Chablis : 5 fils par rang, comme l\'arcure double (valeur communiquée par l\'utilisateur, non sourcée — chantier A5)', () => {
+  assert.strictEqual(OAD.FILS_PAR_TAILLE.chablis, 5);
+});
+
+test('taille Chablis : le nombre de fils dérivé se répercute sur le métrage de fil et le nombre de gripples du palissage', () => {
+  const cpGuyot = OAD.coutPalissage(GEO_TEST, null, { espacementPiquet: 6, typeTaille: 'guyot' });
+  const cpChablis = OAD.coutPalissage(GEO_TEST, null, { espacementPiquet: 6, typeTaille: 'chablis' });
+  assert.strictEqual(cpChablis.nbFils, 5);
+  assertClose(cpChablis.mlFils, cpGuyot.mlFils * 5 / 4, 1e-6);
+  assertClose(cpChablis.nbGripple, cpGuyot.nbGripple * 5 / 4, 1e-6);
+  assert.ok(cpChablis.totalHa > cpGuyot.totalHa, 'un fil de plus par rang renchérit forcément le total');
+});
+
+test('équipements obligatoires (piquets, fiches de tête, amarres, crochets, fils, gripple, MO pose) : toujours comptés, ignorent la liste d\'exclusion', () => {
+  const idsObligatoires = ['piquetInter', 'ficheTete', 'amarre', 'crochet', 'filML', 'gripple', 'moPosePiquet'];
+  const cp = OAD.coutPalissage(GEO_TEST, null, { espacementPiquet: 6, nbFils: 4, optionnelsExclus: idsObligatoires });
+  cp.lignes.filter(l => l.categorie === 'obligatoire').forEach(l => assert.strictEqual(l.inclus, true, l.id));
+});
+
+test('équipement optionnel décoché (kits bout de route) : exclu du total, pour exactement le montant de sa ligne', () => {
+  const cpTout = OAD.coutPalissage(GEO_TEST, null, { espacementPiquet: 6, nbFils: 4 });
+  const cpSansKit = OAD.coutPalissage(GEO_TEST, null, { espacementPiquet: 6, nbFils: 4, optionnelsExclus: ['kitBoutRoute'] });
+  const ligneKit = cpTout.lignes.find(l => l.id === 'kitBoutRoute');
+  assert.strictEqual(cpSansKit.lignes.find(l => l.id === 'kitBoutRoute').inclus, false);
+  assertClose(cpTout.totalParcelle - cpSansKit.totalParcelle, ligneKit.total, 1e-6);
+});
+
+test('le total du palissage (obligatoires + optionnels retenus) se répercute intégralement dans l\'investissement d\'arrachage, exactement à t=repos', () => {
+  const cp = OAD.coutPalissage(GEO_TEST, null, { espacementPiquet: 6, nbFils: 4 });
+  const coutPalissageHa = Math.round(cp.totalHa);
+  const scAvec = OAD.construireScenarios({ ...INP_A, coutPalissageHa });
+  const scSans = OAD.construireScenarios({ ...INP_A, coutPalissageHa: 0 });
+  const ecart = scAvec.arrachage.eur[INP_A.repos].coutsParcelle - scSans.arrachage.eur[INP_A.repos].coutsParcelle;
+  assertClose(ecart, INP_A.surfParc * coutPalissageHa, 1e-6);
+});
+
+test('rampeLineaire : montée linéaire correcte (N=4 et N=6 depuis l\'entrée en production), refuse une année de pleine production < 3', () => {
+  assert.deepStrictEqual(OAD.rampeLineaire(4), [0.5, 1]);
+  const r6 = OAD.rampeLineaire(6);
+  assertClose(r6[0], 0.25, 1e-9); assertClose(r6[1], 0.5, 1e-9);
+  assertClose(r6[2], 0.75, 1e-9); assertClose(r6[3], 1, 1e-9);
+  assert.throws(() => OAD.rampeLineaire(2), /≥ 3/);
+});
+
+test('LIMITE ASSUMÉE — le rendement de 3e feuille dépend de l\'année de pleine production saisie, pas de l\'âge de la vigne : 50 % pour N=4, ≈16,7 % pour N=8', () => {
+  assertClose(OAD.rampeLineaire(4)[0], 0.5, 1e-9, 'N=4 : la 3e feuille produit déjà la moitié du potentiel');
+  assertClose(OAD.rampeLineaire(8)[0], 1 / 6, 1e-9, 'N=8 : la même 3e feuille ne produit plus qu\'un sixième — même vigne, même âge, résultat différent selon la saisie');
 });
 
 // ----------------------------------------------------------------------
