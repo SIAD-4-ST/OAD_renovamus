@@ -653,26 +653,54 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                       <div style="font-size:12px;color:#5C6157">{{ preconMsg }}</div>
                     </div>
                   </div>
-                  <div style="border:1px solid #DDD9CE;border-radius:6px;padding:14px 16px;max-height:340px;overflow:auto">
-                    <div style="font-size:11.5px;color:#5C6157;margin-bottom:8px">{{ clonesTitre }}</div>
-                    <!-- Les colonnes Rendement / Degré / Botrytis du chantier B3 ont été
-                         retirées : elles n'étaient alimentées par aucune donnée (« — »
-                         en dur) et leurs 264 px de largeur fixe débordaient de la
-                         colonne de droite (~230 px), ce qui écrasait à zéro la colonne
-                         « Note » — les clones ne s'affichaient donc plus. Deux colonnes
-                         seulement, la seconde en minmax(0,1fr) pour ne jamais collapser. -->
-                    <div style="display:grid;grid-template-columns:46px minmax(0,1fr);gap:0;font-size:11px">
-                      <div style="text-transform:uppercase;color:#5C6157;padding:3px 4px;border-bottom:1px solid #DDD9CE">Clone</div>
-                      <div style="text-transform:uppercase;color:#5C6157;padding:3px 4px;border-bottom:1px solid #DDD9CE">Note</div>
-                      <sc-for list="{{ clonesList }}" as="cl" hint-placeholder-count="6">
-                        <div style="padding:5px 4px;border-bottom:1px dotted #DDD9CE;font-family:'JetBrains Mono',monospace;font-size:12px">{{ cl.num }}</div>
-                        <div style="padding:5px 4px;border-bottom:1px dotted #DDD9CE;font-size:12px;color:#5C6157;overflow-wrap:anywhere">{{ cl.note }}</div>
-                      </sc-for>
-                    </div>
-                    <div style="font-size:11px;color:#A5433A;margin-top:8px">Rendement / Degré / Botrytis non disponibles ici — consultez les données CIVC ou plantgrape.fr.</div>
-                  </div>
                 </div>
               </sc-if>
+            </div>
+
+            <!-- Table clones — prompt B7. Sortie de la colonne de droite du
+                 simulateur (~230 px, où elle était écrasée) pour occuper toute
+                 la largeur de la carte. Ordre FIXE par numéro de clone : la
+                 table n'est ni triable ni filtrable. Trier par production
+                 suggérerait un classement que les sources ne portent pas —
+                 l'échelle PlantGrape est qualitative, pas un rendement. -->
+            <div style="margin-top:16px;border:1px solid #DDD9CE;border-radius:8px;padding:14px 16px">
+              <div style="font-size:13px;font-weight:600;margin-bottom:2px">{{ clonesTitre }}</div>
+              <div style="font-size:11.5px;color:#5C6157;margin-bottom:10px;max-width:80ch">{{ clonesSourceTxt }}</div>
+              <div style="overflow-x:auto">
+                <div style="display:grid;grid-template-columns:52px 118px 118px 118px 130px 120px 104px minmax(220px,1fr);gap:0;font-size:11.5px;min-width:940px">
+                  <div class="th">Clone</div>
+                  <div class="th" title="Échelle qualitative PlantGrape (inférieur / moyen / supérieur). Ce n'est PAS un rendement en kg/ha, et cela n'entre dans aucun calcul de l'outil.">Niveau de production ⓘ</div>
+                  <div class="th">Richesse en sucre</div>
+                  <div class="th">Fertilité</div>
+                  <div class="th">{{ clonesColCondLabel }}</div>
+                  <div class="th" title="Donnée absente des sources retenues sur 37 des 42 clones. Elle n'est pas comblée : se reporter aux données CIVC ou à plantgrape.fr.">Sensibilité Botrytis ⓘ</div>
+                  <div class="th" title="Surface de multiplication en pépinière, en hectares. Indication de disponibilité, relevé national non daté — pas une garantie d'approvisionnement.">Disponibilité ⓘ</div>
+                  <div class="th">Remarque</div>
+                  <sc-for list="{{ clonesList }}" as="cl" hint-placeholder-count="8">
+                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;font-family:'JetBrains Mono',monospace;font-size:12.5px;display:flex;align-items:baseline;gap:5px">
+                      {{ cl.num }}<span title="{{ cl.origineTitre }}" style="font-size:9.5px;color:{{ cl.origineFg }};font-family:'JetBrains Mono',monospace">{{ cl.origineTxt }}</span>
+                    </div>
+                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157">{{ cl.production }}</div>
+                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157">{{ cl.sucre }}</div>
+                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157">{{ cl.fertilite }}</div>
+                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157">{{ cl.colCond }}</div>
+                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157">{{ cl.botrytis }}</div>
+                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157;font-family:'JetBrains Mono',monospace;font-size:11.5px">{{ cl.dispo }}</div>
+                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157;overflow-wrap:anywhere">
+                      <sc-if value="{{ cl.alerte }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:inline-block;background:#F3E0DD;color:#A5433A;border-radius:4px;padding:1px 6px;margin-right:5px;font-size:10.5px">⚠ {{ cl.alerteTxt }}</span>
+                      </sc-if>
+                      {{ cl.remarque }}
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="font-size:11px;color:#5C6157;margin-top:10px;line-height:1.5">
+                <b>Niveau de production</b> : échelle qualitative PlantGrape — ce n'est pas un rendement en kg/ha et cela n'entre dans aucun calcul.<br>
+                <b>Sensibilité Botrytis</b> : donnée absente des sources retenues sur 37 des 42 clones ; les cellules vides le restent. Se reporter aux données CIVC ou à plantgrape.fr.<br>
+                <b>Disponibilité</b> : surface de multiplication en hectares — indication de disponibilité en pépinière, relevé national non daté.<br>
+                <b>Origine</b> : <span style="font-family:'JetBrains Mono',monospace">G·P</span> Guide 2025 et PlantGrape · <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">G·P*</span> PlantGrape hors référence Champagne · <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">P</span> PlantGrape seul, absent du Guide.
+              </div>
             </div>
 
             <div style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px">
@@ -833,14 +861,23 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <div style="margin-top:18px;padding-top:14px;border-top:1px dotted #DDD9CE">
               <div style="font-size:13px;font-weight:600;margin-bottom:10px">Options de coût à l'installation</div>
               <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px">
+                <!-- Arrosage du plantier — prompt B7. Rétabli sous ce libellé, et
+                     non « ferti-irrigation » : ce dont il s'agit ici est l'arrosage
+                     du jeune plant. Le badge « interdite en AOC » est remplacé par
+                     un renvoi au cahier des charges, qui est la source à consulter.
+                     Ce champ ne porte volontairement AUCUN commentaire de
+                     provenance sur sa valeur (arbitrage du 01/09/2026) : c'est la
+                     seule dérogation du projet à la règle de sourçage — inutile
+                     d'en chercher une, ou d'en ajouter une. -->
                 <div class="field">
-                  <label class="lbl" for="f-irrigation">Ferti-irrigation du plantier</label>
+                  <label class="lbl" for="f-irrigation">Arrosage du plantier</label>
                   <select id="f-irrigation" value="{{ v.irrigation }}" onChange="{{ on.irrigation }}" class="sel">
                     <option value="0">Non</option><option value="1">Oui</option>
                   </select>
+                  <span class="hint">conditions et limites : cahier des charges de l'AOC Champagne, chapitre I (conditions de production)</span>
                 </div>
                 <div class="field">
-                  <label class="lbl" for="f-coutIrrigHa">Ferti-irrigation (si oui)</label>
+                  <label class="lbl" for="f-coutIrrigHa">Arrosage du plantier (si oui)</label>
                   <div class="row"><input id="f-coutIrrigHa" type="number" step="500" value="{{ v.coutIrrigHa }}" onInput="{{ on.coutIrrigHa }}" class="inp"><span class="unit">€/ha</span></div>
                 </div>
               </div>
@@ -1676,11 +1713,9 @@ class Component extends DCLogic {
       { id: 'entretienPal',  lib: 'Entretien du palissage posé',      hHa: 0, intrantEuroHa: 0, src: "à renseigner — dire d'expert (coopérative)" },
       { id: 'remplacement',  lib: 'Remplacement des plants morts',    hHa: 0, intrantEuroHa: 0, src: "à renseigner — dire d'expert (coopérative)" },
     ];
-    this.CLONES = {
-      'Pinot noir': [['115','Régulier, port moins retombant, production inférieure aux clones 927 et 779'],['927','Régulier, apte à la production de vin rouge'],['779','Régulier, apte à la production de vin rouge'],['792','RAS'],['872','RAS'],['870','RAS'],['521','Grappes plus petites mais plus nombreuses'],['386','Pellicule plus épaisse, baies moins colorées'],['743','Tendance à faire des fourches'],['871','RAS'],['375','RAS'],['292','RAS'],['666','Régulier'],['236','RAS'],['780','RAS'],['665','RAS'],['668','Vins dilués en cas de surproduction'],['389','Vins dilués en cas de surproduction'],['388','Vins dilués en cas de surproduction']],
-      'Meunier': [['977','Plus tardif, régulier'],['900','Mutations réverses plus fréquentes'],['817','Plus précoce, régulier'],['865','RAS'],['978','RAS'],['818','Plus précoce, régulier'],['924','RAS'],['864','Degré irrégulier'],['791','Plus précoce, régulier'],['925','RAS'],['983','Mutations réverses plus fréquentes']],
-      'Chardonnay': [['76','Régulier, précoce'],['95','Régulier, plus vigoureux que le clone 76'],['75','Production irrégulière, grappes plus lâches'],['121','RAS'],['96','Régulier, précoce, vins plus acides'],['78','Peu expressif en surproduction'],['131','Régulier, vins plus acides'],['124','Plus tardif, meilleure remise à fruit en cas de gel de printemps'],['132','Précoce'],['118','Vins dilués en surproduction'],['130','Vins dilués en surproduction']]
-    };
+    // this.CLONES (table statique, 3 cépages, 2 colonnes, notes du Guide seul)
+    // a été retirée au prompt B7 : la table de l'écran 3 est désormais alimentée
+    // par OAD.clonesParCepage(), référentiel sourcé du moteur (prompt A1).
   }
 
   fmtE0(v) { return (v < 0 ? '−' : '') + Math.abs(Math.round(v / 100) * 100).toLocaleString('fr-FR') + ' €'; }
@@ -2546,7 +2581,7 @@ class Component extends DCLogic {
       { lib: 'Nombre de pieds à planter', val: nf(piedsAffiches, 0), unite: 'pieds', origine: 'Dérivé — densité × surface (comptage agronomique) ; distinct du comptage rang par rang utilisé pour le palissage' },
       { lib: 'Matériel végétal', val: v.materiel, unite: '—', origine: 'Saisi' },
       { lib: 'Porte-greffe', val: v.porteGreffe, unite: '—', origine: 'Saisi — information, hors calcul économique' },
-      { lib: 'Ferti-irrigation du plantier', val: oui(inp.irrigation), unite: '—', origine: 'Saisi' },
+      { lib: 'Arrosage du plantier', val: oui(inp.irrigation), unite: '—', origine: 'Saisi' },
       { lib: 'Année de pleine production', val: nf(anneePleineProd, 0), unite: 'années', origine: 'Saisi — borne basse 3 (entrée en production, 3e feuille)' },
       { lib: 'Montée en charge jeunes vignes (ramp)', val: inp.ramp.map(x => nf(x, 2)).join(' · '), unite: 'ratio/an', origine: 'Dérivé — OAD.rampeLineaire(année de pleine production)' },
       { lib: 'Facteur rendement projet (rendFactorProjet)', val: nf(fDens, 3), unite: 'ratio', origine: 'CÂBLÉ EN DUR — 1, non éditable depuis l\'interface' },
@@ -2559,7 +2594,7 @@ class Component extends DCLogic {
       { lib: 'Plant (matériel végétal)', val: nf(inp.coutPlant, 2), unite: '€/pied', origine: 'Saisi' },
       { lib: 'Palissage', val: nf(inp.coutPalissageHa, 0), unite: '€/ha', origine: s.palisManuel ? 'Saisi — édité à la main' : 'Dérivé de la géométrie — relevé fournisseur [date à préciser] + gripple/MO LutEnVi 2025' },
       { lib: 'Protection du jeune plant (tuteur + cache-plant)', val: nf(inp.coutProtectionHa, 0), unite: '€/ha', origine: s.protectionManuel ? 'Saisi — édité à la main' : 'Dérivé de la densité — relevé fournisseur [date à préciser] ; non appliqué à la complantation, coutEntreplant supposé l\'inclure déjà' },
-      { lib: 'Ferti-irrigation (si oui)', val: nf(inp.coutIrrigHa, 0), unite: '€/ha', origine: 'Saisi' },
+      { lib: 'Arrosage du plantier (si oui)', val: nf(inp.coutIrrigHa, 0), unite: '€/ha', origine: 'Saisi' },
       { lib: 'Survie des entreplants', val: nf(inp.survie * 100, 1), unite: '%', origine: 'Saisi' },
       { lib: 'Coût par entreplant', val: nf(inp.coutEntreplant, 2), unite: '€/pied', origine: 'Saisi' },
       { lib: 'Charge liée à la surface (production)', val: nf(inp.coutSurfaceProdHaAn, 0), unite: '€/ha/an', origine: 'Cerfrance 2024 (charges de structure hors charges locatives, amortissement retiré) — 15 300 − 3 900, ou repris du détail par opération' },
@@ -2653,18 +2688,50 @@ class Component extends DCLogic {
     // (dépendaient du détecteur `vsl`, lui-même retiré de la géométrie)
     const conseqs = [];
     if (v.materiel === 'voltis') conseqs.push({ titre: 'Voltis (VIFA)', detail: '≤ 5 % encépagement · +10 % assemblage max · convention INAO/ODG' });
-    if (v.irrigation === '1') conseqs.push({ titre: '⚠ Irrigation', detail: 'interdite en AOC Champagne (CDC)' });
+    // prompt B7 — le badge « interdite en AOC » est remplacé par le renvoi au
+    // cahier des charges : c'est la source, et c'est elle qui fait foi.
+    if (v.irrigation === '1') conseqs.push({ titre: 'Arrosage du plantier', detail: "cahier des charges de l'AOC Champagne, chapitre I — conditions de production" });
     out.conseqs = conseqs;
 
     // clones + precon — en mode registre, le cépage vient de la parcelle
     // sélectionnée (reprojeté sur les 3 libellés du sélecteur, purement
     // informatif — voir cepageAffichage()) ; sinon, le sélecteur manuel.
     const cepageEffectif = modeRegistre ? this.cepageAffichage(agregParcelle.cepage) : v.cepage;
-    const cl = this.CLONES[cepageEffectif] || [];
+    const cl = OAD ? OAD.clonesParCepage(cepageEffectif) : [];
     out.cepageEffectif = cepageEffectif;
     out.cepageMixteAlerte = modeRegistre && agregParcelle.cepageMixte;
-    out.clonesList = cl.map(c => ({ num: c[0], note: c[1] }));
-    out.clonesTitre = `${cl.length} clones diffusés — ${cepageEffectif} (Guide 2025, p. 42-44)`;
+    // Table clones — prompt B7, alimentée par OAD.clonesParCepage() (prompt A1).
+    // Ordre fixe, croissant par numéro de clone : ni tri ni filtre côté UI.
+    // Aucune cellule vide n'est comblée — un tiret cadratin marque l'absence de
+    // donnée dans la source, il ne la remplace pas.
+    const vide = (x) => (x === undefined || x === null || x === '') ? '—' : x;
+    const estPinot = cepageEffectif === 'Pinot noir';
+    out.clonesColCondLabel = estPinot ? 'Typicité en Champagne' : 'Précocité';
+    out.clonesList = cl.map(c => {
+      const horsRef = c.sources.some(x => x.includes('hors réf.'));
+      const guide = c.sources.some(x => x.indexOf('Guide') === 0);
+      const partielle = horsRef || c.sources.length === 1;
+      const reverse = /mutations r[ée]verses/i.test(c.remarqueGuide + ' ' + c.remarquePlantGrape);
+      return {
+        num: c.clone,
+        production: vide(c.production), sucre: vide(c.sucre), fertilite: vide(c.fertilite),
+        colCond: vide(estPinot ? c.typiciteChampagne : c.precocite),
+        botrytis: vide(c.botrytis),
+        dispo: c.multiplicationHa ? nf(Number(c.multiplicationHa), 2) + ' ha' : '—',
+        remarque: c.remarqueGuide || c.remarquePlantGrape || '—',
+        origineTxt: guide ? (horsRef ? 'G·P*' : 'G·P') : 'P',
+        origineFg: partielle ? '#A97F26' : '#9A9E97',
+        origineTitre: 'Origine : ' + c.sources.join(' + '),
+        // Badge d'alerte au même traitement visuel que l'avertissement 161-49 C
+        // sur les porte-greffes (fond #F3E0DD, texte #A5433A, préfixe ⚠).
+        alerte: reverse,
+        alerteTxt: 'mutations réverses'
+      };
+    });
+    out.clonesTitre = `${cl.length} clones — ${cepageEffectif}`;
+    out.clonesSourceTxt = 'Union du Guide pratique Viticulture durable en Champagne 2025 (p. 42-44) '
+      + 'et de PlantGrape (INRAE / IFV / Institut Agro Montpellier). Relevé PlantGrape non daté, '
+      + 'à confirmer avant diffusion. Information seule : aucune de ces colonnes n’entre dans le calcul économique.';
     if (OAD) {
       const r = OAD.preconPorteGreffe(+v.calcaireActif, v.profondeurSol, v.drainageSol);
       if (r.match === 'incomplet') { out.preconPg = '—'; out.preconMsg = 'Renseignez le calcaire actif et la profondeur.'; out.preconBg = '#E3EDE5'; }
@@ -2728,7 +2795,7 @@ class Component extends DCLogic {
       { lib: 'Palissage', val: this.fmtE0(investPalissageMat), quand: `année ${inp.repos}`, note: out.palisBadge.replace(/^·\s*/, '') },
       { lib: 'Protection du jeune plant', val: this.fmtE0(investProtectionMat), quand: `année ${inp.repos}`, note: out.protectionBadge.replace(/^·\s*/, '') }
     ];
-    if (inp.irrigation) out.investLignes.push({ lib: 'Ferti-irrigation', val: this.fmtE0(investIrrigationMat), quand: `année ${inp.repos}`, note: '' });
+    if (inp.irrigation) out.investLignes.push({ lib: 'Arrosage du plantier', val: this.fmtE0(investIrrigationMat), quand: `année ${inp.repos}`, note: '' });
 
     // fv hint — chantier 5 : le régime ne s'applique qu'aux flux de la parcelle
     out.fvHint = v.regime === 'propriete' ? '100 % exploitant'
