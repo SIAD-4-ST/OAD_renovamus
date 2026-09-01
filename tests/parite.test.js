@@ -1351,7 +1351,7 @@ test('le référentiel n\'entre dans aucun calcul : construireScenarios ignore C
 });
 
 // ----------------------------------------------------------------------
-section('17. Constantes de campagne (prompt A2)');
+section('17. Constantes de campagne (prompt A2) et stress climatique (prompt A3)');
 // ----------------------------------------------------------------------
 
 test('les constantes de campagne sorties de renderVals() valent bien ce que la vue câblait : plafond 10 000, moyenne 12 296,6, écart-type 3 440', () => {
@@ -1371,6 +1371,18 @@ test('les KPI existants sont inchangés à VolCo identique — sortir les consta
   assert.deepStrictEqual(snapshotScenarios(OAD.construireScenarios(INP_A)), snapshotScenarios(SC_BASE));
   assert.strictEqual(INP_A.plafond, OAD.PLAFOND_RESERVE);
   assert.strictEqual(INP_A.rendMean, OAD.REND_MOYEN_REGIONAL);
+});
+
+test('stressEstDeficitaire — DÉFICITAIRE à VolCo 9 000 : la mauvaise vendange (8 856,6 kg/ha) manque 143 kg/ha, elle puise dans la réserve', () => {
+  assert.strictEqual(OAD.stressEstDeficitaire(9000), true);
+  assertClose(OAD.REND_MOYEN_REGIONAL - OAD.ECART_TYPE_REGIONAL - 9000, -143.4, 1e-9);
+});
+
+test('stressEstDeficitaire — EXCÉDENTAIRE à VolCo 8 800 : la MÊME mauvaise vendange dégage 57 kg/ha et abonde la réserve. Le scénario par défaut change de nature selon un champ que l\'utilisateur peut modifier (prompt A3)', () => {
+  assert.strictEqual(OAD.stressEstDeficitaire(8800), false);
+  assertClose(OAD.REND_MOYEN_REGIONAL - OAD.ECART_TYPE_REGIONAL - 8800, 56.6, 1e-9);
+  assert.notStrictEqual(OAD.stressEstDeficitaire(OAD.VOLCO_CAMPAGNE), OAD.stressEstDeficitaire(9000),
+    'le basculement se produit entre la campagne 2025 et la campagne 2026 — c\'est le point à documenter côté UI');
 });
 
 // ----------------------------------------------------------------------

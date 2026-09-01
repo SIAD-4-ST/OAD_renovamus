@@ -878,6 +878,27 @@ const ECART_TYPE_REGIONAL = 3440;     // kg/ha
 // au-dessus de VOL_SORTIE_ARRACHAGE : les deux constantes sont distinctes.
 const VOLCO_CAMPAGNE = 8800;          // kg/ha
 
+/* =====================================================================
+   Prompt A3 — interaction entre le test de résistance climatique et le VolCo.
+
+   Le test de résistance force le rendement d'une vendange à
+   REND_MOYEN_REGIONAL − ECART_TYPE_REGIONAL = 8 856,6 kg/ha. Ce que cette
+   « mauvaise année » produit dépend entièrement du VolCo en vigueur :
+
+     - VolCo 9 000 (campagne 2025) : 8 856,6 − 9 000 = −143,4 kg/ha,
+       la mauvaise vendange est DÉFICITAIRE, elle puise dans la réserve ;
+     - VolCo 8 800 (campagne 2026) : 8 856,6 − 8 800 = +56,6 kg/ha,
+       la même mauvaise vendange devient EXCÉDENTAIRE, elle abonde la réserve.
+
+   Autrement dit, le scénario par défaut de l'outil change de nature selon un
+   champ que l'utilisateur peut modifier, sans que rien ne le signale. Cette
+   fonction ne CHANGE pas ce comportement — `simulerReserveKg` est inchangé —
+   elle le rend visible et testable. Voir README §19.
+   ===================================================================== */
+function stressEstDeficitaire(volco) {
+  return (REND_MOYEN_REGIONAL - ECART_TYPE_REGIONAL) - volco < 0;
+}
+
 // Chantier A3 — remplace les paliers de montée en charge (sélecteur 30/60/100 %
 // ou 50/80/100 %) par une rampe linéaire dérivée d'une seule saisie : l'année
 // de pleine production, comptée depuis la plantation. L'année 3 est l'entrée
@@ -901,7 +922,8 @@ if (typeof module !== 'undefined') module.exports =
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
     CLONES_CHAMPAGNE, clonesParCepage,
-    PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE };
+    PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,
+    stressEstDeficitaire };
 if (typeof window !== 'undefined') window.OAD =
   { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
     chargesEntretien, coutPalissage, PRIX_PALISSAGE, FILS_PAR_TAILLE, largeurEquivalente,
