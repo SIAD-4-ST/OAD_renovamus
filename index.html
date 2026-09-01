@@ -2281,9 +2281,6 @@ class Component extends DCLogic {
     // désherbage, taille de formation, remplacement des plants morts (demandés), puis
     // protection/entretien palissage (conservés, anti-double-compte chantier P8).
     const fracFormation = Math.max(0, Math.min(1, +v.fracFormation || 0));
-    // prompt C1 — plus saisissable, mais toujours affiché : un coefficient qui
-    // pilote une ligne de coût ne doit pas devenir invisible en devenant fixe.
-    out.fracFormationTxt = nf(fracFormation, 2);
     const plantierRefs = [
       this.REF_PLANTIER[0], // désherbage
       { id: 'tailleFormation', lib: 'Taille de formation', hHa: voletProdHeuresManuellesHa * fracFormation,
@@ -2441,6 +2438,13 @@ class Component extends DCLogic {
     // moteur-oad.js, où elles portent leur provenance.
     const nf = (x, d = 2) => (typeof x !== 'number' || isNaN(x)) ? String(x) : x.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: d });
     const oui = b => b ? 'oui' : 'non';
+
+    // prompt C1 — plus saisissable, mais toujours affiché : un coefficient qui
+    // pilote une ligne de coût ne doit pas devenir invisible en devenant fixe.
+    // Placé ICI et pas à côté du calcul de `fracFormation` : `out` et `nf` sont
+    // déclarés en `const`/`let` plus bas dans renderVals, les toucher plus tôt
+    // lève un ReferenceError de zone morte temporelle au premier rendu.
+    out.fracFormationTxt = nf(fracFormation, 2);
 
     /* Chemin court — prompt B4 (arbitrage 11).
 
