@@ -220,7 +220,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           <div class="field">
             <label class="lbl" for="f-volco">Volume commercialisable (VolCo)</label>
             <div class="row"><input id="f-volco" type="number" step="100" min="0" value="{{ v.volco }}" onInput="{{ on.volco }}" class="inp"><span class="unit">kg/ha</span></div>
-            <span class="hint warn">fixé chaque année par le CIVC — à ajuster</span>
+            <span class="hint warn">Valeur annuelle : 8 800 kg/ha pour la campagne 2026 (décision du 22/07/2026). Elle est refixée à chaque campagne — vérifiez-la avant d'exploiter les résultats.</span>
           </div>
           <div class="field">
             <label class="lbl" for="f-prixKg">Prix du raisin</label>
@@ -809,6 +809,16 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         </sc-if>
         <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:26px;margin:4px 0 6px">Ce que représente votre projet, sur {{ horizonTxt }}</h2>
 
+        <!-- prompt B3 (arbitrage 8) — le test de résistance est actif PAR DÉFAUT.
+             Ce bandeau n'est pas repliable : le scénario climatique retenu change
+             la nature de tout ce qui est affiché dessous, l'utilisateur ne doit
+             jamais pouvoir le perdre de vue. Le bouton bascule en un clic vers
+             une trajectoire sans aléa, et inversement. -->
+        <div style="margin:12px 0 4px;padding:12px 16px;border-radius:8px;background:{{ aleaBandeauBg }};border:1px solid {{ aleaBandeauBd }};display:flex;gap:14px;align-items:baseline;flex-wrap:wrap">
+          <div style="font-size:13.5px;line-height:1.55;flex:1;min-width:280px;color:{{ aleaBandeauFg }}">{{ aleaBandeauTxt }} <span style="color:#5C6157">{{ aleaBandeauPrecision }}</span></div>
+          <button onClick="{{ basculerAlea }}" style="font-size:12.5px;padding:7px 13px;border:1px solid #20291F;background:#fff;border-radius:6px;cursor:pointer;color:#20291F;flex:none">{{ aleaBandeauBouton }}</button>
+        </div>
+
         <div style="margin:10px 0 4px">
           <button onClick="{{ imprimerFiche }}" style="font-size:13px;padding:9px 16px;border:1px solid #20291F;background:#fff;border-radius:6px;cursor:pointer;color:#20291F">🖨 Imprimer la fiche d'hypothèses et de résultats</button>
           <span style="font-size:11.5px;color:#5C6157;margin-left:10px">ouvre l'aperçu avant impression du navigateur — inclut une fiche d'audit exhaustive (hypothèses, KPI, détail des 3 scénarios)</span>
@@ -824,7 +834,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
              désormais étiquetés un par un, dans une grille, sous un titre qui
              annonce qu'ils ne modifient aucune de vos saisies. -->
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:16px 18px;margin:14px 0 20px">
-          <div style="font-size:12.5px;color:#5C6157;margin-bottom:12px">Ces quatre réglages changent <b>la façon de lire les résultats</b> ci-dessous — ils ne modifient aucune de vos saisies.</div>
+          <div style="font-size:12.5px;color:#5C6157;margin-bottom:12px">Ces réglages changent <b>la façon de lire les résultats</b> ci-dessous — ils ne modifient aucune de vos saisies.</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px 22px">
 
             <div class="field">
@@ -846,14 +856,10 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               <span class="hint">change la lecture des heures économisées, jamais la trésorerie</span>
             </div>
 
-            <div class="field">
-              <span class="lbl">Horizon de simulation</span>
-              <select value="{{ v.horizon }}" onChange="{{ on.horizon }}" class="sel" style="font-size:13px;padding:7px 10px">
-                <option value="10">10 ans</option>
-                <option value="25">25 ans</option>
-              </select>
-              <span class="hint">sur combien d'années les résultats sont calculés</span>
-            </div>
+            <!-- prompt B3 (arbitrage 6) — le sélecteur d'horizon 10/25 ans est
+                 retiré : l'horizon est figé à 10 ans. Le paramètre `horizon`
+                 reste entier dans moteur-oad.js et les tests de parité
+                 continuent de couvrir 25 ans — ne rien supprimer côté moteur. -->
 
             <div class="field">
               <span class="lbl">Test de résistance</span>
@@ -1324,7 +1330,15 @@ function fusionnerRegistre(defaut, restaure) {
 // Valeurs par défaut des saisies — sorties de `this.state` au prompt B1 pour
 // que « Effacer mes données » puisse y revenir sans dupliquer la liste.
 const V_DEFAUTS = {
-  surfTot: 10, ageMoy: 38, riPct: 75, volco: 9000, prixKg: 7,
+  surfTot: 10, ageMoy: 38, riPct: 75,
+  // prompt B3 — VolCo de la campagne 2026, décision du Bureau exécutif du
+  // Comité Champagne du 22/07/2026. Valeur ANNUELLE : elle doit être revue à
+  // chaque campagne. La constante de référence vit dans moteur-oad.js
+  // (OAD.VOLCO_CAMPAGNE) ; on la reprend ici en littéral parce que V_DEFAUTS
+  // est évalué au chargement du module, avant toute garantie que moteur-oad.js
+  // soit là. Les deux doivent rester d'accord — un test le vérifie.
+  volco: 8800,
+  prixKg: 7,
   campagne: new Date().getFullYear(),
   // chantier A4 : surfArr (ha) remplace la longueur/largeur déclarées
   // comme grandeur pilote de la géométrie — surfArr=1, nbRangs=100 (voir
@@ -1345,7 +1359,13 @@ const V_DEFAUTS = {
   anneePleineProd: 5, coutEntreplant: 4.5,
   coutSurfaceProdHaAn: 11400, coutRdtParKg: 1.52, tauxHoraire: 17,
   coutReposHaAn: 0, coutPlantierHaAn: 8000, fracFormation: 0.35,
-  sequence: 'aucune', horizon: '10'
+  // prompt B3 (arbitrage 8) — le test de résistance est actif par défaut, sur
+  // la variante à DEUX années déficitaires (années 3 et 4 de la transition).
+  sequence: 'creux34',
+  // `horizon` n'est plus lu depuis le prompt B3 : l'horizon est figé à 10 ans
+  // côté UI. La clé reste dans les défauts pour ne pas casser un instantané
+  // enregistré avant ce prompt ; le paramètre reste entier dans le moteur.
+  horizon: '10'
 };
 
 class Component extends DCLogic {
@@ -1814,7 +1834,11 @@ class Component extends DCLogic {
       nbSortie: OAD ? OAD.nbSortiePourRepos(reposChoisi) : reposChoisi + 2,
       volSortieArr: OAD ? OAD.VOL_SORTIE_ARRACHAGE : 9000,
       plafond: PLAFOND, volco: +v.volco || 0, rendMean: m,
-      reserveInit: PLAFOND * (+v.riPct || 0) / 100, horizon: +v.horizon || 10,
+      reserveInit: PLAFOND * (+v.riPct || 0) / 100,
+      // prompt B3 (arbitrage 6) — horizon figé à 10 ans côté interface. Le
+      // moteur, lui, accepte toujours n'importe quel horizon et les tests de
+      // parité continuent de couvrir 25 ans.
+      horizon: 10,
       ramp: rampeProfil, rampYears: rampeProfil.length, rendYearFn,
       rendFactorProjet: fDens,
       rendEstime: +v.rendEstime || 0,
@@ -2019,6 +2043,47 @@ class Component extends DCLogic {
     // moteur-oad.js, où elles portent leur provenance.
     const nf = (x, d = 2) => (typeof x !== 'number' || isNaN(x)) ? String(x) : x.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: d });
     const oui = b => b ? 'oui' : 'non';
+
+    // Bandeau climatique de l'écran 5 — prompt B3 (arbitrage 8).
+    //
+    // Le test de résistance force les mauvaises vendanges à
+    // REND_MOYEN_REGIONAL − ECART_TYPE_REGIONAL, soit 8 856,6 kg/ha. Ce que
+    // cette valeur PRODUIT dépend du VolCo saisi, et le sens du mot
+    // « déficitaire » bascule avec lui (prompt A3, OAD.stressEstDeficitaire) :
+    // sous VolCo 9 000 la mauvaise année puise dans la réserve, sous VolCo
+    // 8 800 elle l'abonde encore. Annoncer « deux vendanges déficitaires »
+    // sans dire par rapport à quoi serait faux la moitié du temps ; le bandeau
+    // porte donc une précision calculée sur le VolCo effectivement saisi.
+    const rendStress = m - EC;
+    const ecartStressVolco = rendStress - (+v.volco || 0);
+    const stressDeficitaire = OAD ? OAD.stressEstDeficitaire(+v.volco || 0) : ecartStressVolco < 0;
+    const nbAnneesStress = v.sequence === 'creux34' ? 2 : v.sequence === 'creux1' ? 1 : 0;
+    const rendStressTxt = nf(rendStress, 0) + ' kg/ha';
+    out.aleaActif = nbAnneesStress > 0;
+    out.aleaBandeauTxt = nbAnneesStress === 2
+      ? 'Ces résultats intègrent deux vendanges déficitaires à ' + rendStressTxt + '.'
+      : nbAnneesStress === 1
+        ? 'Ces résultats intègrent une vendange déficitaire à ' + rendStressTxt + ' en année 1.'
+        : 'Ces résultats sont calculés sur la moyenne régionale chaque année, sans aléa climatique.';
+    out.aleaBandeauPrecision = nbAnneesStress === 0
+      ? 'Aucune mauvaise vendange n’est simulée pendant la transition.'
+      : stressDeficitaire
+        ? 'Soit ' + nf(Math.abs(ecartStressVolco), 0) + ' kg/ha sous votre VolCo de '
+          + nf(+v.volco || 0, 0) + ' kg/ha : ces années-là puisent dans la réserve individuelle.'
+        : 'Attention : à votre VolCo de ' + nf(+v.volco || 0, 0) + ' kg/ha, ces vendanges restent '
+          + 'excédentaires de ' + nf(ecartStressVolco, 0) + ' kg/ha — elles abondent encore la '
+          + 'réserve au lieu de la vider. Le test est moins sévère qu’il n’en a l’air.';
+    out.aleaBandeauBouton = nbAnneesStress > 0
+      ? 'Voir sans aléa climatique' : 'Réintroduire deux vendanges déficitaires';
+    out.aleaBandeauBg = nbAnneesStress > 0 ? '#F1E6CC' : '#E3EDE5';
+    out.aleaBandeauBd = nbAnneesStress > 0 ? '#A97F26' : '#4C7A57';
+    out.aleaBandeauFg = '#20291F';
+    out.basculerAlea = () => this.setState(st => ({
+      v: { ...st.v, sequence: st.v.sequence === 'aucune' ? 'creux34' : 'aucune' }
+    }));
+    // Repris tel quel dans la fiche imprimable (prompt B3, point 5).
+    out.aleaFicheTxt = out.aleaBandeauTxt + ' ' + out.aleaBandeauPrecision;
+
     // Résumé affiché sur l'en-tête du volet « charges de production » replié :
     // les deux montants restent lisibles sans avoir à ouvrir le volet, pour que
     // le repli n'enterre pas une valeur que l'utilisateur doit pouvoir vérifier.
@@ -2077,9 +2142,13 @@ class Component extends DCLogic {
       { lib: 'Charge de transition — plantier', val: nf(inp.coutPlantierHaAn, 0), unite: '€/ha/an', origine: 'MHCS (taille de formation + remplacement des plants morts), ou repris du détail par opération (plantier)' },
       { lib: 'Fraction de formation (plantier)', val: nf(fracFormation, 2), unite: 'ratio', origine: 'Saisi — défaut 0,35, applique le volet production à la ligne "taille de formation"' },
       { lib: 'Taux horaire chargé (volet 1)', val: nf(+v.tauxHoraire || 0, 2), unite: '€/h', origine: 'Saisi — défaut SMIC 2026 chargé ≈ 17' },
-      { lib: 'Test de résistance — séquence', val: v.sequence, unite: '—', origine: 'Saisi' },
+      // prompt B3 — la fiche imprimable doit dire quel scénario climatique a
+      // produit les chiffres qu'elle présente : sans cela, deux fiches issues
+      // de saisies identiques mais de tests différents sont indiscernables.
+      { lib: 'Test de résistance — séquence', val: v.sequence, unite: '—', origine: 'Saisi — actif par défaut depuis l\'arbitrage du 01/09/2026 (deux vendanges déficitaires)' },
+      { lib: 'Scénario climatique retenu', val: out.aleaFicheTxt, unite: '—', origine: 'Dérivé — séquence saisie × VolCo saisi ; « déficitaire » s\'entend par rapport au VolCo, cf. OAD.stressEstDeficitaire' },
       { lib: 'Choc de rendement en test de résistance', val: nf(EC, 0), unite: 'kg/ha', origine: 'CÂBLÉ EN DUR — 3 440, non éditable' },
-      { lib: 'Horizon de simulation', val: nf(inp.horizon, 0), unite: 'ans', origine: 'Saisi' }
+      { lib: 'Horizon de simulation', val: nf(inp.horizon, 0), unite: 'ans', origine: 'FIGÉ À 10 ANS côté interface (arbitrage 6) — le moteur accepte tout horizon' }
     ];
 
     // Registre parcellaire (chantier 1) — bascule de mode, table de synthèse

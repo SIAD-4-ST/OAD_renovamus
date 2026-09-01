@@ -1386,6 +1386,40 @@ test('stressEstDeficitaire — EXCÉDENTAIRE à VolCo 8 800 : la MÊME mauvaise 
 });
 
 // ----------------------------------------------------------------------
+section('18. Cohérence interface / moteur (prompt B3)');
+// ----------------------------------------------------------------------
+// index.html n'est pas testable ici (ni DOM ni React), mais deux valeurs y sont
+// écrites en littéral tout en devant rester d'accord avec le moteur. On les
+// relit dans le texte du fichier : c'est grossier, mais c'est la seule chose
+// qui empêchera une mise à jour du VolCo de campagne d'oublier la moitié du
+// projet. Voir README §19.
+
+const INDEX_HTML = require('fs').readFileSync(
+  require('path').join(__dirname, '..', 'index.html'), 'utf8');
+
+test('le VolCo par défaut de l\'interface (V_DEFAUTS.volco) vaut bien OAD.VOLCO_CAMPAGNE — 8 800 kg/ha, campagne 2026', () => {
+  const m = INDEX_HTML.match(/\n\s*volco:\s*(\d+),/);
+  assert.ok(m, 'V_DEFAUTS.volco introuvable dans index.html');
+  assert.strictEqual(Number(m[1]), OAD.VOLCO_CAMPAGNE,
+    'le défaut de l\'UI et la constante du moteur ont divergé : mettre les deux à jour, ou dériver l\'un de l\'autre');
+});
+
+test('le test de résistance est actif PAR DÉFAUT dans l\'interface, sur la variante à deux années déficitaires (arbitrage 8)', () => {
+  assert.ok(/sequence:\s*'creux34'/.test(INDEX_HTML),
+    'V_DEFAUTS.sequence doit valoir creux34 — deux vendanges déficitaires par défaut');
+});
+
+test('l\'horizon est figé à 10 ans côté interface, mais le moteur accepte toujours 25 ans (arbitrage 6)', () => {
+  assert.ok(/horizon:\s*10,/.test(INDEX_HTML),
+    'inp.horizon doit être figé à 10 côté UI');
+  assert.ok(!/<option value="25">25 ans<\/option>/.test(INDEX_HTML),
+    'le sélecteur d\'horizon 10/25 doit avoir disparu de l\'interface');
+  // Le moteur, lui, n'a rien perdu : la section 3 couvre l'horizon 25 ans.
+  const sc25 = OAD.construireScenarios({ ...INP_A, horizon: 25 });
+  assert.strictEqual(sc25.arrachage.kg.length, 26, 'le moteur doit toujours savoir simuler 25 ans');
+});
+
+// ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------
 
