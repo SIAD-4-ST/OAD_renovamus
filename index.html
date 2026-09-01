@@ -84,6 +84,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
       <div style="font-family:'Fraunces',serif;font-weight:650;font-size:20px;line-height:1.1">Renouvellement du vignoble</div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#A97F26;letter-spacing:0.08em">SIMULATEUR · IMPACT ARRACHAGE-REPLANTATION</div>
       <button onClick="{{ toggleLexique }}" style="margin-left:auto;font-size:12.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:{{ lexiqueBg }};color:{{ lexiqueFg }}">{{ lexiqueLabel }}</button>
+      <!-- prompt B1 — les saisies sont désormais persistées localement ; il faut
+           donc un moyen visible et permanent de les reprendre à zéro. -->
+      <button onClick="{{ effacerDonnees }}" title="Remplace vos saisies et le registre par les valeurs d'exemple" style="font-size:12.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:#fff;color:#A5433A">Effacer mes données</button>
       <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;border:1px solid #A97F26;color:#A97F26;padding:3px 9px;border-radius:2px">Outil pédagogique — hypothèses à ajuster</div>
     </div>
     <!-- Lexique — accessible depuis n'importe quelle étape : les cinq mots de
@@ -148,7 +151,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                 <div><b>5 · Résultats</b><br><span style="color:#5C6157">trésorerie, réserve, âge du vignoble</span></div>
               </div>
               <p style="margin:0 0 8px"><b>Tous les champs sont déjà préremplis</b> avec des valeurs plausibles : vous pouvez aller directement aux résultats, puis revenir affiner ce qui compte pour vous. Le calcul se refait à chaque frappe, il n'y a rien à valider.</p>
-              <p style="margin:0"><b>Rien n'est enregistré ni envoyé.</b> Vos saisies restent dans votre navigateur et disparaissent au rechargement de la page. Le bouton <b>Lexique</b>, en haut à droite, définit les termes de métier employés dans l'outil.</p>
+              <p style="margin:0"><b>Vos saisies sont conservées sur cet ordinateur uniquement. Rien n'est envoyé.</b> Vous les retrouverez au prochain chargement de la page ; le bouton <b>Effacer mes données</b>, en haut à droite, les remplace par les valeurs d'exemple. Le bouton <b>Lexique</b>, à côté, définit les termes de métier employés dans l'outil.</p>
             </div>
           </sc-if>
         </div>
@@ -159,7 +162,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         </div>
 
         <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-bottom:18px;padding:10px 14px;border-radius:6px;background:#F1E6CC;font-size:12.5px;line-height:1.5">Le registre reste en mémoire de votre navigateur pour cette session — il n'est ni envoyé ni enregistré, et sera perdu au rechargement de la page. Jeu d'exemple préchargé ({{ registreNbLignes }} lignes) — l'import de votre propre fichier arrivera dans une prochaine version.</div>
+          <div style="margin-bottom:18px;padding:10px 14px;border-radius:6px;background:#F1E6CC;font-size:12.5px;line-height:1.5">Vos saisies sont conservées sur cet ordinateur uniquement. Rien n'est envoyé. Le registre ({{ registreNbLignes }} lignes) et les corrections que vous y apportez sont relus tels quels au prochain chargement.</div>
         </sc-if>
 
         <div class="grid">
@@ -1205,14 +1208,113 @@ const REGISTRE_EXEMPLE_CSV = `idu;commune;num_civc;mode_explo;cepage;anneeplant;
 510200000Z0157;Cuis;1425;;MEUNIER N;1954;0,13;12000;5;0;0;Arrachée
 510200000Z0157;Cuis;1425;;CHARDONNAY B;1954;0,18;12000;5;0;0;Plantée`;
 
+/* =====================================================================
+   Persistance locale — prompt B1.
+
+   Ce que l'outil enregistre : un INSTANTANÉ de `state.v` (toutes les saisies)
+   et de `state.registreRows` (le tableau du registre, avec les corrections
+   déjà appliquées). Pas un diff, pas un identifiant de ligne : au rechargement
+   on relit la table telle quelle, ce qui rend inutile toute clé stable de
+   ligne — et évite qu'une correction se raccroche à la mauvaise parcelle.
+
+   Ce que l'outil n'enregistre PAS : l'étape courante, les volets ouverts ou
+   repliés, la sélection de parcelle. Ce sont des états de navigation, pas des
+   données de l'utilisateur ; ils repartent à leur valeur d'accueil.
+
+   Où : `window.localStorage`, sur cet ordinateur et ce navigateur uniquement.
+   Aucun appel réseau, aucune donnée dans l'URL. Rien ne sort du navigateur.
+
+   La clé porte sa version (`oad-renovamus-v1`) : un instantané écrit par une
+   version antérieure du format est ignoré en silence et l'outil repart sur ses
+   valeurs par défaut, plutôt que de restaurer une forme qu'il ne sait plus lire.
+   ===================================================================== */
+const CLE_STOCKAGE = 'oad-renovamus-v1';
+const VERSION_STOCKAGE = 1;
+
+// Toute lecture/écriture passe par ces trois fonctions, et aucune ne lève :
+// `localStorage` peut être absent, plein, ou refusé (navigation privée stricte,
+// politique d'entreprise, cookies bloqués). Dans tous ces cas l'outil doit
+// continuer à fonctionner exactement comme avant ce prompt, sur les défauts.
+function lireInstantane() {
+  try {
+    const brut = window.localStorage.getItem(CLE_STOCKAGE);
+    if (!brut) return null;
+    const o = JSON.parse(brut);
+    if (!o || o.version !== VERSION_STOCKAGE) return null;
+    return o;
+  } catch (e) { return null; }
+}
+function ecrireInstantane(v, registreRows) {
+  try {
+    window.localStorage.setItem(CLE_STOCKAGE,
+      JSON.stringify({ version: VERSION_STOCKAGE, v, registreRows }));
+    return true;
+  } catch (e) { return false; }
+}
+function effacerInstantane() {
+  try { window.localStorage.removeItem(CLE_STOCKAGE); return true; } catch (e) { return false; }
+}
+
+// Ne réintègre que les clés connues des défauts : une clé disparue d'une
+// version à l'autre est ignorée, une clé ajoutée depuis garde son défaut.
+// Repli silencieux sur les défauts si l'instantané est illisible.
+function fusionnerV(defauts, restaure) {
+  if (!restaure || typeof restaure !== 'object') return { ...defauts };
+  const out = { ...defauts };
+  Object.keys(defauts).forEach(k => {
+    if (restaure[k] !== undefined && restaure[k] !== null) out[k] = restaure[k];
+  });
+  return out;
+}
+
+// Le registre est relu TEL QUEL. `_id` est réattribué par position, comme au
+// premier parsing : c'est un index de rendu, jamais une identité persistée.
+function fusionnerRegistre(defaut, restaure) {
+  if (!Array.isArray(restaure) || !restaure.length) return defaut;
+  const valide = restaure.every(r => r && typeof r === 'object'
+    && typeof r.idu === 'string' && typeof r.surface === 'number');
+  if (!valide) return defaut;
+  return restaure.map((r, i) => ({ ...r, _id: i }));
+}
+
+// Valeurs par défaut des saisies — sorties de `this.state` au prompt B1 pour
+// que « Effacer mes données » puisse y revenir sans dupliquer la liste.
+const V_DEFAUTS = {
+  surfTot: 10, ageMoy: 38, riPct: 75, volco: 9000, prixKg: 7,
+  campagne: new Date().getFullYear(),
+  // chantier A4 : surfArr (ha) remplace la longueur/largeur déclarées
+  // comme grandeur pilote de la géométrie — surfArr=1, nbRangs=100 (voir
+  // plus bas) reproduisent exactement la surface (1 ha) et le nombre de
+  // rangs de l'ancien défaut (longueur 100 m, largeur 100 m, écart rang 1 m).
+  surfArr: 1,
+  ageParc: 55, manquants: 15, rendEstime: 10500, declinSQ: 1,
+  regime: 'propriete', loyerHa: 3000, partRecolte: 33, partCouts: 33,
+  nbRangs: 100, ecartRang: 1, ecartPied: 1.10,
+  materiel: 'vinifera', porteGreffe: '41 B', irrigation: '0',
+  cepage: 'Pinot noir', calcaireActif: 18, profondeurSol: '30-60', drainageSol: 'drainant',
+  typeTaille: 'guyot', nbFils: 4, espPiquet: 6,
+  repos: '1', coutArrachageHa: 22500, coutPlant: 2.10,
+  coutPalissageHa: 12000, coutProtectionHa: 10000, coutIrrigHa: 5000, survie: 50,
+  // chantier A3 : remplace le sélecteur "ramp" (30/60/100 % ou 50/80/100 %,
+  // 3 paliers) par une seule saisie, l'année de pleine production ; défaut 5
+  // choisi pour redonner le même nombre de paliers (3) que l'ancien défaut.
+  anneePleineProd: 5, coutEntreplant: 4.5,
+  coutSurfaceProdHaAn: 11400, coutRdtParKg: 1.52, tauxHoraire: 17,
+  coutReposHaAn: 0, coutPlantierHaAn: 8000, fracFormation: 0.35,
+  sequence: 'aucune', horizon: '10'
+};
+
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    // Registre parcellaire (chantier 1) — préchargé en mémoire comme jeu
-    // d'exemple, jamais persisté (pas de localStorage). `sourceParcellaire`
-    // bascule surfTot/ageMoy/surfParc/ageParc/manquants/cepage entre saisie
-    // manuelle et dérivation du registre — une seule source active à la fois.
-    const registreRows = this.parseRegistreCSV(REGISTRE_EXEMPLE_CSV);
+    // Registre parcellaire (chantier 1) — jeu d'exemple préchargé, puis, depuis
+    // le prompt B1, écrasé par l'instantané local s'il en existe un lisible.
+    // `sourceParcellaire` bascule surfTot/ageMoy/surfParc/ageParc/manquants/
+    // cepage entre saisie manuelle et dérivation du registre — une seule source
+    // active à la fois.
+    const instantane = lireInstantane();
+    const registreRows = fusionnerRegistre(
+      this.parseRegistreCSV(REGISTRE_EXEMPLE_CSV), instantane && instantane.registreRows);
     const iduPlanteesInit = [...new Set(registreRows.filter(r => r.situation === 'plantee').map(r => r.idu))];
 
     this.state = {
@@ -1233,30 +1335,10 @@ class Component extends DCLogic {
       registreRows,
       parcelleIdu: iduPlanteesInit[0] || null,
       parcelleLignesExclues: {},
-      v: {
-        surfTot: 10, ageMoy: 38, riPct: 75, volco: 9000, prixKg: 7,
-        campagne: new Date().getFullYear(),
-        // chantier A4 : surfArr (ha) remplace la longueur/largeur déclarées
-        // comme grandeur pilote de la géométrie — surfArr=1, nbRangs=100 (voir
-        // plus bas) reproduisent exactement la surface (1 ha) et le nombre de
-        // rangs de l'ancien défaut (longueur 100 m, largeur 100 m, écart rang 1 m).
-        surfArr: 1,
-        ageParc: 55, manquants: 15, rendEstime: 10500, declinSQ: 1,
-        regime: 'propriete', loyerHa: 3000, partRecolte: 33, partCouts: 33,
-        nbRangs: 100, ecartRang: 1, ecartPied: 1.10,
-        materiel: 'vinifera', porteGreffe: '41 B', irrigation: '0',
-        cepage: 'Pinot noir', calcaireActif: 18, profondeurSol: '30-60', drainageSol: 'drainant',
-        typeTaille: 'guyot', nbFils: 4, espPiquet: 6,
-        repos: '1', coutArrachageHa: 22500, coutPlant: 2.10,
-        coutPalissageHa: 12000, coutProtectionHa: 10000, coutIrrigHa: 5000, survie: 50,
-        // chantier A3 : remplace le sélecteur "ramp" (30/60/100 % ou 50/80/100 %,
-        // 3 paliers) par une seule saisie, l'année de pleine production ; défaut 5
-        // choisi pour redonner le même nombre de paliers (3) que l'ancien défaut.
-        anneePleineProd: 5, coutEntreplant: 4.5,
-        coutSurfaceProdHaAn: 11400, coutRdtParKg: 1.52, tauxHoraire: 17,
-        coutReposHaAn: 0, coutPlantierHaAn: 8000, fracFormation: 0.35,
-        sequence: 'aucune', horizon: '10'
-      }
+      // prompt B1 — la restauration ne peut que remplacer des clés existantes
+      // de V_DEFAUTS : une saisie enregistrée par une version qui connaissait
+      // un champ disparu depuis est ignorée sans bruit.
+      v: fusionnerV(V_DEFAUTS, instantane && instantane.v)
     };
     this.on = {};
     Object.keys(this.state.v).forEach(k => {
@@ -1327,6 +1409,34 @@ class Component extends DCLogic {
   // Colonnes lues par nom d'en-tête (robuste à un réordonnancement des
   // colonnes) ; situation normalisée en 'plantee'/'arrachee' (accents et
   // casse neutralisés) pour ne pas dépendre de l'encodage du fichier.
+  // Persistance locale — prompt B1. Appelé après chaque rendu, donc après
+  // chaque frappe : on ne réécrit que si l'instantané a réellement changé, pour
+  // ne pas toucher au stockage à chaque re-rendu de navigation (ouverture d'un
+  // volet, changement d'étape) qui ne modifie aucune donnée.
+  componentDidUpdate() {
+    const instantane = JSON.stringify({ v: this.state.v, registreRows: this.state.registreRows });
+    if (instantane === this.__dernierInstantane) return;
+    this.__dernierInstantane = instantane;
+    ecrireInstantane(this.state.v, this.state.registreRows);
+  }
+
+  // Remet l'outil dans l'état d'une première visite : instantané effacé,
+  // valeurs d'exemple rechargées. `parcelleIdu` et `parcelleLignesExclues`
+  // sont indexés sur la position des lignes du registre — ils doivent repartir
+  // avec lui, sans quoi ils désigneraient des lignes qui n'existent plus.
+  reinitialiserDonnees() {
+    effacerInstantane();
+    this.__dernierInstantane = null;
+    const registreRows = this.parseRegistreCSV(REGISTRE_EXEMPLE_CSV);
+    const idus = [...new Set(registreRows.filter(r => r.situation === 'plantee').map(r => r.idu))];
+    this.setState({
+      v: { ...V_DEFAUTS },
+      registreRows,
+      parcelleIdu: idus[0] || null,
+      parcelleLignesExclues: {}
+    });
+  }
+
   parseRegistreCSV(texte) {
     const nettoye = String(texte || '').replace(/^﻿/, '').trim();
     const lignes = nettoye.split(/\r?\n/).filter(l => l.trim().length);
@@ -1691,6 +1801,16 @@ class Component extends DCLogic {
       introOuvert: s.introOuvert, toggleIntro: () => this.setState(st => ({ introOuvert: !st.introOuvert })),
       introChevron: s.introOuvert ? '−' : '+',
       lexiqueOuvert: s.lexiqueOuvert, toggleLexique: () => this.setState(st => ({ lexiqueOuvert: !st.lexiqueOuvert })),
+      // prompt B1 — effacement des données locales, confirmation préalable :
+      // l'action est irréversible et détruit des corrections de registre que
+      // l'utilisateur a pu saisir ligne à ligne.
+      effacerDonnees: () => {
+        const ok = window.confirm(
+          'Effacer les données enregistrées sur cet ordinateur ?\n\n'
+          + 'Vos saisies et les corrections apportées au registre seront remplacées '
+          + 'par les valeurs d’exemple. Cette action est irréversible.');
+        if (ok) this.reinitialiserDonnees();
+      },
       lexiqueLabel: s.lexiqueOuvert ? '✕ Fermer le lexique' : 'Lexique',
       lexiqueBg: s.lexiqueOuvert ? '#20291F' : '#fff',
       lexiqueFg: s.lexiqueOuvert ? '#FAF9F5' : '#20291F',

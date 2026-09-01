@@ -24,9 +24,18 @@ avant toute modification. Pour le détail complet, voir `README.md`
     dans `<script type="text/x-dc" data-dc-script">`, transpilé à la
     volée par Babel (chargé dynamiquement par `support.js`).
   - **Pas de JSX** (le composant utilise `React.createElement`, pas de
-    syntaxe `<Foo/>` dans le `<script>`), **pas de `<form>`**, **pas de
-    `localStorage`**. Respecter strictement cette syntaxe existante ;
-    ne pas réintroduire de HTML/JS "classique" dans ce fichier.
+    syntaxe `<Foo/>` dans le `<script>`), **pas de `<form>`**.
+    Respecter strictement cette syntaxe existante ; ne pas réintroduire
+    de HTML/JS "classique" dans ce fichier.
+
+- **`localStorage` est AUTORISÉ** (arbitrage du 01/09/2026, prompt B1) —
+  l'ancienne contrainte « pas de `localStorage` » est levée. La
+  persistance locale couvre `state.v` et `state.registreRows`, sous la
+  clé versionnée `oad-renovamus-v1`, sous forme d'**instantané** (jamais
+  un diff, jamais un identifiant de ligne). **Ne pas la supprimer en
+  croyant réparer une violation** : c'est une décision, pas un oubli.
+  Ce qui reste interdit, et le restera : tout appel réseau, et toute
+  donnée placée dans l'URL. Rien ne sort jamais du navigateur.
 
 - **`moteur-oad.js` est pur : sans DOM, sans état.** Uniquement des
   fonctions de calcul, exposées à la fois via `module.exports` (Node,
