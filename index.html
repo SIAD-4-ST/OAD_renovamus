@@ -49,6 +49,12 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
 /* --- en-têtes de tableaux en grille ----------------------------------- */
 .th{font-size:10.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE}
+/* Cellule éditable du registre (prompt B2). Le fond légèrement plus clair et
+   le liseré au survol distinguent ce qui est corrigeable de ce qui est lu
+   depuis le fichier : idu, commune et cépage restent non modifiables. */
+.cell{width:100%;padding:3px 5px;border:1px solid transparent;border-radius:4px;background:#FCFBF7;font-family:'JetBrains Mono',monospace;font-size:12px;color:#20291F}
+.cell:hover{border-color:#DDD9CE}
+.cell:focus{outline:none;border-color:#A97F26;background:#fff}
 .th.wide{padding:5px 8px}
 .th.r{text-align:right}
 
@@ -158,11 +164,29 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
         <div style="display:flex;gap:8px;margin-bottom:18px">
           <button onClick="{{ setSourceManuel }}" style="padding:8px 14px;border:1px solid #20291F;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:{{ srcBgManuel }};color:{{ srcFgManuel }}">Saisie manuelle</button>
-          <button onClick="{{ setSourceRegistre }}" style="padding:8px 14px;border:1px solid #20291F;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:{{ srcBgRegistre }};color:{{ srcFgRegistre }}">Registre parcellaire</button>
+          <button onClick="{{ setSourceRegistre }}" style="padding:8px 14px;border:1px solid #20291F;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:{{ srcBgRegistre }};color:{{ srcFgRegistre }}">{{ registreOngletLabel }}</button>
         </div>
 
         <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
           <div style="margin-bottom:18px;padding:10px 14px;border-radius:6px;background:#F1E6CC;font-size:12.5px;line-height:1.5">Vos saisies sont conservées sur cet ordinateur uniquement. Rien n'est envoyé. Le registre ({{ registreNbLignes }} lignes) et les corrections que vous y apportez sont relus tels quels au prochain chargement.</div>
+
+          <!-- Import du registre réel — prompt B2. Le fichier est lu par le
+               navigateur (FileReader) et n'est jamais transmis : pas d'envoi,
+               pas d'URL. Champ de fichier natif et visible, plutôt qu'un input
+               masqué derrière un faux bouton — il reste ainsi utilisable au
+               clavier avec un focus visible. -->
+          <div style="margin-bottom:18px;padding:14px 16px;border:1px solid #DDD9CE;border-radius:8px;background:#fff">
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px">Importer mon registre</div>
+            <div style="font-size:12px;color:#5C6157;line-height:1.5;margin-bottom:10px">Export du portail CIVC, au format CSV séparé par des points-virgules. Le fichier est lu sur cet ordinateur : rien n'est envoyé.</div>
+            <input type="file" accept=".csv,text/csv" onChange="{{ onFichierRegistre }}" style="font-size:12.5px;max-width:100%">
+            <div style="font-size:11.5px;color:#5C6157;margin-top:8px">Colonnes attendues : {{ colonnesAttenduesTxt }}</div>
+            <sc-if value="{{ importErreur }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:#F7E9E7;border:1px solid #A5433A;color:#A5433A;font-size:12.5px;line-height:1.5">{{ importErreurTxt }}</div>
+            </sc-if>
+            <sc-if value="{{ importOk }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:#E3EDE5;border:1px solid #4C7A57;color:#2F5B3C;font-size:12.5px;line-height:1.5">{{ importOkTxt }}</div>
+            </sc-if>
+          </div>
         </sc-if>
 
         <div class="grid">
@@ -282,23 +306,31 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
         <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
           <div style="margin-top:22px;background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;overflow-x:auto">
-            <h3 style="font-family:'Fraunces',serif;font-size:15px;margin:0 0 12px">Registre parcellaire ({{ registreNbLignes }} lignes)</h3>
-            <div style="display:grid;grid-template-columns:repeat(7,minmax(90px,1fr));gap:0;font-size:12.5px;min-width:640px">
+            <h3 style="font-family:'Fraunces',serif;font-size:15px;margin:0 0 4px">{{ registreTitre }} ({{ registreNbLignes }} lignes)</h3>
+            <!-- Édition des cellules — prompt B2 (arbitrage 2). Seules les quatre
+                 colonnes qui pilotent le calcul sont saisissables ; idu, commune
+                 et cépage restent en lecture, ce sont les identifiants du
+                 fichier. Ni ajout, ni suppression, ni exclusion de lignes ici :
+                 l'exclusion de lignes est un mécanisme de l'écran 2, inchangé. -->
+            <div style="font-size:11.5px;color:#5C6157;margin:0 0 12px;line-height:1.45">Les colonnes <b>Planté</b>, <b>Surface</b>, <b>Manquants</b> et <b>Situation</b> sont corrigeables directement dans le tableau ; l'âge en est déduit. Vos corrections sont conservées sur cet ordinateur.</div>
+            <div style="display:grid;grid-template-columns:repeat(8,minmax(88px,1fr));gap:0;font-size:12.5px;min-width:760px">
               <div class="th wide">idu</div>
               <div class="th wide">Commune</div>
               <div class="th wide">Cépage</div>
               <div class="th wide">Planté</div>
               <div class="th wide">Âge</div>
               <div class="th wide">Surface</div>
+              <div class="th wide">Manquants</div>
               <div class="th wide">Situation</div>
               <sc-for list="{{ registreLignesTable }}" as="r" hint-placeholder-count="3">
                 <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC;font-family:'JetBrains Mono',monospace">{{ r.idu }}</div>
                 <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.commune }}</div>
                 <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.cepage }}</div>
-                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.anneePlant }}</div>
+                <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="number" step="1" value="{{ r.anneePlant }}" onInput="{{ r.onAnneePlant }}" class="cell" aria-label="Année de plantation"></div>
                 <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.age }}</div>
-                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.surfaceTxt }} ha</div>
-                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC;color:{{ r.situationFg }}">{{ r.situationTxt }}</div>
+                <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="number" step="0.01" min="0" value="{{ r.surface }}" onInput="{{ r.onSurface }}" class="cell" aria-label="Surface en hectares"></div>
+                <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="number" step="1" min="0" max="100" value="{{ r.tauxManquant }}" onInput="{{ r.onTauxManquant }}" class="cell" aria-label="Taux de pieds manquants en pourcent"></div>
+                <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><select value="{{ r.situation }}" onChange="{{ r.onSituation }}" class="cell" aria-label="Situation de la parcelle"><option value="plantee">Plantée</option><option value="arrachee">Arrachée</option></select></div>
               </sc-for>
             </div>
           </div>
@@ -1228,6 +1260,15 @@ const REGISTRE_EXEMPLE_CSV = `idu;commune;num_civc;mode_explo;cepage;anneeplant;
    version antérieure du format est ignoré en silence et l'outil repart sur ses
    valeurs par défaut, plutôt que de restaurer une forme qu'il ne sait plus lire.
    ===================================================================== */
+// Colonnes de l'export du portail CIVC — liste confirmée le 01/09/2026
+// (prompt B2). `parseRegistreCSV` résout les colonnes par leur en-tête et se
+// moque donc de leur ordre ; ce qu'il ne sait pas faire, c'est constater
+// qu'une colonne manque — il produirait alors des zéros silencieux. D'où ce
+// contrôle explicite avant tout remplacement de la table.
+const COLONNES_CIVC = ['idu', 'commune', 'num_civc', 'mode_explo', 'cepage', 'anneeplant',
+  'surface_ss_parcelle', 'productivite_moyenne', 'taux_manquant', 'enroulement',
+  'court_noue', 'situation'];
+
 const CLE_STOCKAGE = 'oad-renovamus-v1';
 const VERSION_STOCKAGE = 1;
 
@@ -1244,10 +1285,10 @@ function lireInstantane() {
     return o;
   } catch (e) { return null; }
 }
-function ecrireInstantane(v, registreRows) {
+function ecrireInstantane(v, registreRows, registreImporte) {
   try {
     window.localStorage.setItem(CLE_STOCKAGE,
-      JSON.stringify({ version: VERSION_STOCKAGE, v, registreRows }));
+      JSON.stringify({ version: VERSION_STOCKAGE, v, registreRows, registreImporte }));
     return true;
   } catch (e) { return false; }
 }
@@ -1271,8 +1312,11 @@ function fusionnerV(defauts, restaure) {
 // premier parsing : c'est un index de rendu, jamais une identité persistée.
 function fusionnerRegistre(defaut, restaure) {
   if (!Array.isArray(restaure) || !restaure.length) return defaut;
+  // `surface` peut être un nombre (issu du parsing) ou une chaîne (cellule en
+  // cours d'édition, prompt B2) : la conversion se fait au seul point qui
+  // alimente le moteur, pas ici.
   const valide = restaure.every(r => r && typeof r === 'object'
-    && typeof r.idu === 'string' && typeof r.surface === 'number');
+    && typeof r.idu === 'string' && 'surface' in r && 'situation' in r);
   if (!valide) return defaut;
   return restaure.map((r, i) => ({ ...r, _id: i }));
 }
@@ -1333,6 +1377,12 @@ class Component extends DCLogic {
       voletPlantierOuvert: false, voletPlantierOverrides: {},
       sourceParcellaire: 'manuel',
       registreRows,
+      // prompt B2 — `registreImporte` fait basculer le libellé de l'onglet de
+      // « Registre parcellaire — exemple » à « Registre parcellaire ». Il est
+      // persisté avec l'instantané : sans lui, un registre importé puis rechargé
+      // se présenterait à nouveau comme le jeu d'exemple.
+      registreImporte: !!(instantane && instantane.registreImporte),
+      importErreur: null, importOk: null,
       parcelleIdu: iduPlanteesInit[0] || null,
       parcelleLignesExclues: {},
       // prompt B1 — la restauration ne peut que remplacer des clés existantes
@@ -1414,10 +1464,11 @@ class Component extends DCLogic {
   // ne pas toucher au stockage à chaque re-rendu de navigation (ouverture d'un
   // volet, changement d'étape) qui ne modifie aucune donnée.
   componentDidUpdate() {
-    const instantane = JSON.stringify({ v: this.state.v, registreRows: this.state.registreRows });
+    const instantane = JSON.stringify({ v: this.state.v, registreRows: this.state.registreRows,
+      registreImporte: this.state.registreImporte });
     if (instantane === this.__dernierInstantane) return;
     this.__dernierInstantane = instantane;
-    ecrireInstantane(this.state.v, this.state.registreRows);
+    ecrireInstantane(this.state.v, this.state.registreRows, this.state.registreImporte);
   }
 
   // Remet l'outil dans l'état d'une première visite : instantané effacé,
@@ -1432,9 +1483,86 @@ class Component extends DCLogic {
     this.setState({
       v: { ...V_DEFAUTS },
       registreRows,
+      registreImporte: false,
+      importErreur: null, importOk: null,
       parcelleIdu: idus[0] || null,
       parcelleLignesExclues: {}
     });
+  }
+
+  // Colonnes obligatoires manquantes dans l'en-tête d'un CSV — prompt B2.
+  // Renvoie la liste des noms absents, vide si l'en-tête est complet.
+  colonnesManquantes(texte) {
+    const nettoye = String(texte || '').replace(/^\uFEFF/, '').trim();
+    const premiere = nettoye.split(/\r?\n/)[0] || '';
+    const entete = premiere.split(';').map(h => h.trim().toLowerCase());
+    return COLONNES_CIVC.filter(c => entete.indexOf(c) < 0);
+  }
+
+  // Lecture d'un CSV local choisi par l'utilisateur — prompt B2.
+  // Aucun envoi : FileReader lit le fichier dans le navigateur.
+  onFichierChoisi(evt) {
+    const input = evt.target;
+    const fichier = input.files && input.files[0];
+    if (!fichier) return;
+    const lecteur = new FileReader();
+    lecteur.onerror = () => {
+      this.setState({ importErreur: 'Le fichier n’a pas pu être lu.', importOk: null });
+      input.value = '';
+    };
+    lecteur.onload = () => {
+      this.appliquerImport(String(lecteur.result || ''), fichier.name);
+      // On vide le champ pour que réimporter le MÊME fichier redéclenche bien
+      // un onChange (sinon le navigateur considère la valeur inchangée).
+      input.value = '';
+    };
+    lecteur.readAsText(fichier, 'utf-8');
+  }
+
+  // Contrôle, confirmation, puis remplacement. En cas d'échec — colonne
+  // manquante ou fichier sans ligne de données — la table EN PLACE n'est pas
+  // touchée : mieux vaut garder un registre valide qu'en installer un faux.
+  appliquerImport(texte, nomFichier) {
+    const manquantes = this.colonnesManquantes(texte);
+    if (manquantes.length) {
+      this.setState({ importOk: null, importErreur:
+        'Import annulé — colonne obligatoire absente du fichier : '
+        + manquantes.map(c => '« ' + c + ' »').join(', ')
+        + '. Le registre actuel n’a pas été modifié.' });
+      return;
+    }
+    const rows = this.parseRegistreCSV(texte);
+    if (!rows.length) {
+      this.setState({ importOk: null, importErreur:
+        'Import annulé — le fichier ne contient aucune ligne de données sous son en-tête. '
+        + 'Le registre actuel n’a pas été modifié.' });
+      return;
+    }
+    const ok = window.confirm(
+      'Cela remplacera le registre actuel et les corrections que vous y avez saisies.\n\n'
+      + 'Importer ' + rows.length + ' ligne(s) depuis « ' + nomFichier + ' » ?');
+    if (!ok) return;
+    // `parcelleIdu` et `parcelleLignesExclues` sont indexés sur la position des
+    // lignes : conservés tels quels après un import, ils désigneraient
+    // silencieusement d'autres parcelles. On les repose sur le nouveau registre.
+    const idus = [...new Set(rows.filter(r => r.situation === 'plantee').map(r => r.idu))];
+    this.setState({
+      registreRows: rows,
+      registreImporte: true,
+      parcelleIdu: idus[0] || null,
+      parcelleLignesExclues: {},
+      importErreur: null,
+      importOk: rows.length + ' ligne(s) importées depuis « ' + nomFichier + ' ».'
+    });
+  }
+
+  // Correction d'une cellule du registre — prompt B2. `_id` est la position de
+  // la ligne dans la table, réattribuée à chaque parsing : elle ne sert qu'ici,
+  // le temps d'un rendu, et n'est jamais persistée comme identité.
+  majCelluleRegistre(id, champ, valeur) {
+    this.setState(st => ({
+      registreRows: st.registreRows.map(r => r._id === id ? { ...r, [champ]: valeur } : r)
+    }));
   }
 
   parseRegistreCSV(texte) {
@@ -1555,7 +1683,21 @@ class Component extends DCLogic {
     // (chantier A4, voir plus bas).
     const modeRegistre = s.sourceParcellaire === 'registre';
     const campagne = +v.campagne || new Date().getFullYear();
-    const registreRows = s.registreRows || [];
+    // prompt B2 — les cellules éditables stockent la frappe BRUTE (« 0, »,
+    // « 1,2 », vide en cours de correction) pour ne pas se battre avec
+    // l'utilisateur pendant la saisie. La conversion en nombre se fait ici, au
+    // seul point qui alimente le moteur : au-delà de cette ligne, aucune ligne
+    // de registre ne porte plus de chaîne dans un champ numérique.
+    const nombreCellule = (x) => {
+      const val = parseFloat(String(x === undefined || x === null ? '' : x).replace(',', '.'));
+      return isNaN(val) ? 0 : val;
+    };
+    const registreRows = (s.registreRows || []).map(r => ({
+      ...r,
+      anneePlant: nombreCellule(r.anneePlant),
+      surface: nombreCellule(r.surface),
+      tauxManquant: nombreCellule(r.tauxManquant)
+    }));
     const agregExploitation = OAD ? OAD.agregerRegistreExploitation(registreRows, campagne) : { surfTot: 0, ageMoy: 0 };
     const iduDisponibles = [...new Set(registreRows.filter(r => r.situation === 'plantee').map(r => r.idu))];
     const lignesParcelleCandidates = registreRows.filter(r => r.idu === s.parcelleIdu && r.situation === 'plantee');
@@ -1953,12 +2095,29 @@ class Component extends DCLogic {
     out.registreNbLignes = registreRows.length;
     out.registreSurfTotTxt = this.fmtHa(agregExploitation.surfTot) + ' ha';
     out.registreAgeMoyTxt = nf(agregExploitation.ageMoy, 1) + ' ans';
-    out.registreLignesTable = registreRows.map(r => ({
-      idu: r.idu, commune: r.commune, cepage: r.cepage, anneePlant: r.anneePlant,
-      age: campagne - r.anneePlant, surfaceTxt: this.fmtHa(r.surface),
-      situationTxt: r.situation === 'arrachee' ? 'Arrachée' : 'Plantée',
-      situationFg: r.situation === 'arrachee' ? '#A5433A' : '#4C7A57'
+    // prompt B2 — la table se construit sur `s.registreRows` (valeurs BRUTES)
+    // et non sur `registreRows` (normalisées) : un champ que l'utilisateur est
+    // en train de vider doit rester vide sous ses doigts, pas se remplir d'un 0.
+    // L'âge, lui, est dérivé et passe donc par la valeur normalisée.
+    out.registreLignesTable = (s.registreRows || []).map(r => ({
+      idu: r.idu, commune: r.commune, cepage: r.cepage,
+      anneePlant: r.anneePlant, surface: r.surface, tauxManquant: r.tauxManquant,
+      age: campagne - nombreCellule(r.anneePlant),
+      situation: r.situation,
+      onAnneePlant: (e) => this.majCelluleRegistre(r._id, 'anneePlant', e.target.value),
+      onSurface: (e) => this.majCelluleRegistre(r._id, 'surface', e.target.value),
+      onTauxManquant: (e) => this.majCelluleRegistre(r._id, 'tauxManquant', e.target.value),
+      onSituation: (e) => this.majCelluleRegistre(r._id, 'situation', e.target.value)
     }));
+    // Import du registre CIVC — prompt B2.
+    out.registreOngletLabel = s.registreImporte ? 'Registre parcellaire' : 'Registre parcellaire — exemple';
+    out.registreTitre = s.registreImporte ? 'Registre parcellaire' : 'Registre parcellaire — exemple';
+    out.colonnesAttenduesTxt = COLONNES_CIVC.join(', ');
+    out.onFichierRegistre = (e) => this.onFichierChoisi(e);
+    out.importErreur = !!s.importErreur;
+    out.importErreurTxt = s.importErreur || '';
+    out.importOk = !!s.importOk;
+    out.importOkTxt = s.importOk || '';
     out.iduOptions = iduDisponibles.map(idu => ({ value: idu }));
     out.parcelleIdu = s.parcelleIdu;
     out.onParcelleIdu = (e) => this.setState({ parcelleIdu: e.target.value, parcelleLignesExclues: {} });
