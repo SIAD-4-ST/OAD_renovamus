@@ -967,6 +967,69 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           </div>
         </div>
 
+        <!-- ============ LECTURE PRINCIPALE — prompt B5 ============
+             Avec un horizon de 10 ans et deux vendanges déficitaires par défaut,
+             la trésorerie cumulée est négative dans la quasi-totalité des
+             configurations. Lue en premier, elle rend l'outil décourageant au
+             point d'être inutilisable, alors qu'elle ne dit qu'une chose déjà
+             connue : un renouvellement coûte avant de rapporter.
+             Ce que le renouvellement PRODUIT est physique — un vignoble plus
+             jeune, une réserve mobilisée puis reconstituée — et c'est cela qui
+             passe en tête, au niveau typographique occupé jusqu'ici par les KPI
+             financiers. Les KPI financiers ne perdent rien : ils descendent d'un
+             cran (blocs 2 et 3), avec tout leur détail. -->
+        <div style="background:#fff;border:1px solid #DDD9CE;border-left:4px solid #A97F26;border-radius:8px;padding:18px 20px;margin:20px 0">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Ce que le renouvellement produit</div>
+          <div style="font-size:12.5px;color:#5C6157;margin-bottom:14px;max-width:74ch">Les grandeurs physiques, en années et en kilos : elles ne dépendent ni du prix du raisin ni de vos charges. Le coût, lui, est juste en dessous.</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px">
+            <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiEcartAge.lib }}</div>
+              <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:650;margin:3px 0;line-height:1.1;color:#5C4B1F">{{ kpiEcartAge.val }}</div>
+              <div style="font-size:12px;color:#5C6157;line-height:1.45">{{ kpiEcartAge.det }}</div>
+            </div>
+            <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiStockReserve.lib }}</div>
+              <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiStockReserve.val }}</div>
+              <div style="font-size:12px;color:#5C6157;line-height:1.45">{{ kpiStockReserve.det }}</div>
+            </div>
+            <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiReserveMin.lib }}</div>
+              <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiReserveMin.val }}</div>
+              <div style="font-size:12px;color:#5C6157;line-height:1.45">{{ kpiReserveMin.det }}</div>
+            </div>
+          </div>
+
+          <!-- Les deux graphiques restent repliés par défaut (prompt B5, point 3) ;
+               seul leur bouton d'ouverture remonte ici, au-dessus du bloc
+               financier. Le contenu est inchangé. -->
+          <div style="margin-top:16px;border-top:1px dotted #DDD9CE;padding-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+            <button onClick="{{ toggleStockChart }}" style="font-size:12.5px;padding:7px 14px;border:1px solid #DDD9CE;background:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
+              <span>Afficher la trajectoire du stock (kg/ha)</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ stockChartChevron }}</span>
+            </button>
+            <button onClick="{{ toggleAgeChart }}" style="font-size:12.5px;padding:7px 14px;border:1px solid #DDD9CE;background:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
+              <span>Afficher la trajectoire d'âge du vignoble</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ ageChartChevron }}</span>
+            </button>
+          </div>
+          <sc-if value="{{ stockChartOuvert }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:12px">
+              {{ chartStock }}
+              <div style="font-size:11.5px;color:#5C6157;margin-top:6px">En kg/ha de surface productive. Un cumul flatteur peut cacher une réserve asséchée. Plafond 10 000 kg/ha.</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ ageChartOuvert }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:12px">
+              {{ chartAge }}
+              <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:12.5px;margin-top:10px">
+                <sc-for list="{{ ageLegendItems }}" as="li" hint-placeholder-count="3">
+                  <span style="display:inline-flex;align-items:center;gap:6px">{{ li.swatch }}{{ li.label }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
         <!-- ============ BLOC 1 — Récapitulatif technique ============ -->
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
           <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Bloc 1 · Ce qui est arraché puis replanté</div>
@@ -1006,12 +1069,12 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:16px">
             <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiInvestTotal.lib }}</div>
-              <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiInvestTotal.val }}</div>
+              <div style="font-family:'Fraunces',serif;font-size:19px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiInvestTotal.val }}</div>
               <div style="font-size:12px;color:#5C6157;line-height:1.45">{{ kpiInvestTotal.det }}</div>
             </div>
             <div style="background:#fff;border:1px solid #DDD9CE;border-left:4px solid #A5433A;border-radius:6px;padding:14px 16px">
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiPointBas.lib }}</div>
-              <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:650;margin:3px 0;line-height:1.1;color:#A5433A">{{ kpiPointBas.val }}</div>
+              <div style="font-family:'Fraunces',serif;font-size:19px;font-weight:650;margin:3px 0;line-height:1.1;color:#A5433A">{{ kpiPointBas.val }}</div>
               <div style="font-size:12px;color:#5C6157;line-height:1.45">{{ kpiPointBas.det }}</div>
             </div>
           </div>
@@ -1024,13 +1087,8 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
             <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiAmortisseur.lib }}</div>
-              <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiAmortisseur.val }}</div>
+              <div style="font-family:'Fraunces',serif;font-size:19px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiAmortisseur.val }}</div>
               <div style="font-size:12px;color:#5C6157;line-height:1.45">{{ kpiAmortisseur.det }}</div>
-            </div>
-            <div style="background:#fff;border:1px solid #DDD9CE;border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiReserveMin.lib }}</div>
-              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiReserveMin.val }}</div>
-              <div style="font-size:12px;color:#5C6157;line-height:1.45">{{ kpiReserveMin.det }}</div>
             </div>
           </div>
 
@@ -1042,23 +1100,10 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <sc-if value="{{ effortNetOuvert }}" hint-placeholder-val="{{ false }}">
               <div style="max-width:280px;margin-top:10px;background:#fff;border:1px solid #DDD9CE;border-left:4px solid #4C7A57;border-radius:6px;padding:14px 16px">
                 <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiEffortNet.lib }}</div>
-                <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiEffortNet.val }}</div>
+                <div style="font-family:'Fraunces',serif;font-size:19px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiEffortNet.val }}</div>
                 <div style="font-size:12px;color:#5C6157;line-height:1.45">{{ kpiEffortNet.det }}</div>
               </div>
             </sc-if>
-          </div>
-
-          <div style="margin-top:16px;border-top:1px dotted #DDD9CE;padding-top:14px">
-            <button onClick="{{ toggleStockChart }}" style="font-size:12.5px;padding:7px 14px;border:1px solid #DDD9CE;background:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
-              <span>Afficher la trajectoire du stock (kg/ha)</span>
-              <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ stockChartChevron }}</span>
-            </button>
-            <sc-if value="{{ stockChartOuvert }}" hint-placeholder-val="{{ false }}">
-              <div style="margin-top:12px">
-                {{ chartStock }}
-              </div>
-            </sc-if>
-            <div style="font-size:11.5px;color:#5C6157;margin-top:6px">En kg/ha de surface productive. Un cumul flatteur peut cacher une réserve asséchée. Plafond 10 000 kg/ha.</div>
           </div>
 
           <div style="margin-top:16px;border-top:1px dotted #DDD9CE;padding-top:14px">
@@ -1133,25 +1178,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               <div style="font-family:'Fraunces',serif;font-size:21px;font-weight:650;margin-top:2px;color:#A97F26">{{ ageApresArrTxt }}</div>
             </div>
           </div>
-          <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px;margin-bottom:14px;max-width:440px">
-            <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiEcartAge.lib }}</div>
-            <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin:3px 0;line-height:1.1;color:#5C4B1F">{{ kpiEcartAge.val }}</div>
-            <div style="font-size:12px;color:#5C6157;line-height:1.45">{{ kpiEcartAge.det }}</div>
-          </div>
-          <button onClick="{{ toggleAgeChart }}" style="font-size:12.5px;padding:7px 14px;border:1px solid #DDD9CE;background:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
-            <span>Afficher la trajectoire</span>
-            <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ ageChartChevron }}</span>
-          </button>
-          <sc-if value="{{ ageChartOuvert }}" hint-placeholder-val="{{ false }}">
-            <div style="margin-top:12px">
-              {{ chartAge }}
-              <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:12.5px;margin-top:10px">
-                <sc-for list="{{ ageLegendItems }}" as="li" hint-placeholder-count="3">
-                  <span style="display:inline-flex;align-items:center;gap:6px">{{ li.swatch }}{{ li.label }}</span>
-                </sc-for>
-              </div>
-            </div>
-          </sc-if>
         </figure>
 
         <!-- ============ Annexe technique (hors des 5 blocs) ============ -->
@@ -2542,7 +2568,7 @@ class Component extends DCLogic {
       Object.assign(out, { investTxt: '…', reserveReelleTxt: '…', reserveTheoTxt: '…', effortNetTxt: '…',
         creuxTxt: '…', creuxT: '…', creuxAbsTxt: '…', creuxAbsT: '…', stockMinTxt: '…', stockMinC: '#A97F26', tMin: '…',
         kpiInvestTotal: kpiVide, kpiPointBas: kpiVide, kpiAmortisseur: kpiVide, kpiEffortNet: kpiVide,
-        kpiReserveMin: kpiVide, kpiEcartAge: kpiVide, regimesTravail: [],
+        kpiReserveMin: kpiVide, kpiEcartAge: kpiVide, kpiStockReserve: kpiVide, regimesTravail: [],
         ageAvantTxt: '…', ageApresArrTxt: '…', ageApresSQTxt: '…',
         chartStock: null, chartAge: null, ageLegendItems: [], detailRows: [], magRows: [], lectureTreso: '',
         syntheseCouvTxt: '…', syntheseCouvSuffixTxt: '', syntheseAbsorptionTxt: '',
@@ -2729,6 +2755,15 @@ class Component extends DCLogic {
     // quel, juste replié par défaut derrière un disclosure.
     out.kpiAmortisseur = { lib: 'Réserve mobilisée', val: this.fmtE0(reserveReelle), det: couvDet };
     out.kpiEffortNet = { lib: 'Effort net après réserve', val: this.fmtE0(effortNet), det: 'investissement − réserve = coût réel de décision' };
+    // prompt B5 — KPI physique : où en est le stock de réserve au bout de
+    // l'horizon, comparé au statu quo. Dérivé de la MÊME série que le graphique
+    // de stock (sc.arrachage.kg[t].stockHa) — aucune modélisation nouvelle.
+    const stockFinArr = sc.arrachage.kg[inp.horizon].stockHa;
+    const stockFinSQ = sc.statuquo.kg[inp.horizon].stockHa;
+    const ecartStockFin = stockFinArr - stockFinSQ;
+    out.kpiStockReserve = { lib: `Stock de réserve à ${inp.horizon} ans`,
+      val: this.fmtKg(stockFinArr) + ' kg/ha',
+      det: `contre ${this.fmtKg(stockFinSQ)} kg/ha en statu quo, soit ${ecartStockFin >= 0 ? '+' : '−'}${this.fmtKg(Math.abs(ecartStockFin))} kg/ha — la réserve mobilisée pendant la transition s'est ${ecartStockFin >= 0 ? 'entièrement reconstituée' : 'partiellement reconstituée à cet horizon'}` };
     out.kpiReserveMin = { lib: 'Réserve min en transition', val: this.fmtKg(stockMin) + ' kg/ha', det: `année ${tMin} · ${stockMin < seuil ? '⚠ sous ' + this.fmtKg(seuil) + ' — coussin de sécurité entamé' : 'coussin suffisant, réserve mobilisée puis reconstituée'}` };
 
     // Bloc 5 — écart d'âge à l'horizon, avec sa contrepartie dans la même
