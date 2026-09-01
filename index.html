@@ -556,11 +556,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                   <div class="row"><input id="f-manquants" type="number" step="1" min="0" max="60" value="{{ v.manquants }}" onInput="{{ on.manquants }}" class="inp"><span class="unit">%</span></div>
                 </div>
               </sc-if>
-              <div class="field">
-                <label class="lbl" for="f-declinSQ">Déclin annuel si rien n'est fait</label>
-                <div class="row"><input id="f-declinSQ" type="number" step="0.1" min="0" max="10" value="{{ v.declinSQ }}" onInput="{{ on.declinSQ }}" class="inp"><span class="unit">%/an</span></div>
-                <span class="hint warn">perte de rendement attendue si la parcelle n'est pas renouvelée — 1 %/an par défaut, à ajuster</span>
-              </div>
               <sc-if value="{{ estFermage }}" hint-placeholder-val="{{ false }}">
                 <div class="field">
                   <label class="lbl" for="f-loyerHa">Loyer annuel</label>
@@ -942,11 +937,15 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               </button>
               <sc-if value="{{ voletPlantierOuvert }}" hint-placeholder-val="{{ false }}">
                 <div style="padding:0 16px 16px">
-                  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px">
-                    <label style="font-size:12.5px;font-weight:600">Fraction de formation</label>
-                    <div style="display:flex;align-items:center;gap:6px"><input type="number" step="0.05" min="0" max="1" value="{{ v.fracFormation }}" onInput="{{ on.fracFormation }}" style="width:70px;padding:7px 9px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:13px"></div>
-                    <span class="hint">part du travail d'une vigne adulte que représente la taille de formation — à ajuster</span>
-                  </div>
+                  <!-- prompt C1 — la saisie « fraction de formation » est retirée de
+                       l'interface : c'est un coefficient de modélisation (part du
+                       travail d'une vigne adulte que représente la taille de
+                       formation), pas une donnée d'exploitation que l'utilisateur
+                       puisse relever chez lui. Il reste dans state.v, dans inp et
+                       dans le moteur à sa valeur par défaut, et reste affiché dans
+                       la fiche d'audit imprimable — donc auditable, mais plus
+                       proposé à la saisie. -->
+                  <div style="font-size:11.5px;color:#5C6157;margin-bottom:12px">Fraction de formation retenue : <b style="font-family:'JetBrains Mono',monospace">{{ fracFormationTxt }}</b> — coefficient de modélisation, détaillé dans la fiche imprimable.</div>
                   <div style="overflow-x:auto">
                     <div style="display:grid;grid-template-columns:1.8fr 0.9fr 1fr 1.8fr;gap:0;font-size:12px;min-width:560px">
                       <div class="th">Opération</div>
@@ -1291,6 +1290,24 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               </div>
             </div>
           </sc-if>
+        </div>
+
+        <!-- Hypothèses de comparaison — prompt C1.
+
+             `declinSQ` était saisi à l'écran 2, au milieu des caractéristiques de
+             la parcelle, alors qu'il ne décrit pas la parcelle : il décrit le
+             CONTRE-FACTUEL, c'est-à-dire ce qu'on suppose qu'il arriverait si on
+             ne renouvelait pas. Son seul effet visible est le tableau « Manque à
+             gagner » ci-dessous. Il est donc déplacé ici, à côté de ce qu'il
+             pilote, où l'on voit immédiatement ce que le chiffre change. -->
+        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:12px;padding:16px 20px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Hypothèses de comparaison</div>
+          <div style="font-size:12.5px;color:#5C6157;margin-bottom:12px;max-width:76ch">Le repère de comparaison n'est pas la parcelle d'aujourd'hui figée : on suppose qu'elle continuerait de décliner si elle n'était pas renouvelée. Ce seul chiffre commande l'écart affiché ci-dessous.</div>
+          <div class="field" style="max-width:260px">
+            <label class="lbl" for="f-declinSQ">Déclin annuel si rien n'est fait</label>
+            <div class="row"><input id="f-declinSQ" type="number" step="0.1" min="0" max="10" value="{{ v.declinSQ }}" onInput="{{ on.declinSQ }}" class="inp"><span class="unit">%/an</span></div>
+            <span class="hint warn">perte de rendement attendue si la parcelle n'est pas renouvelée — 1 %/an par défaut, à ajuster</span>
+          </div>
         </div>
 
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:12px;overflow:hidden">
@@ -2264,6 +2281,9 @@ class Component extends DCLogic {
     // désherbage, taille de formation, remplacement des plants morts (demandés), puis
     // protection/entretien palissage (conservés, anti-double-compte chantier P8).
     const fracFormation = Math.max(0, Math.min(1, +v.fracFormation || 0));
+    // prompt C1 — plus saisissable, mais toujours affiché : un coefficient qui
+    // pilote une ligne de coût ne doit pas devenir invisible en devenant fixe.
+    out.fracFormationTxt = nf(fracFormation, 2);
     const plantierRefs = [
       this.REF_PLANTIER[0], // désherbage
       { id: 'tailleFormation', lib: 'Taille de formation', hHa: voletProdHeuresManuellesHa * fracFormation,
@@ -2483,7 +2503,7 @@ class Component extends DCLogic {
     out.toggleAjuster2 = () => this.setState(st => ({ ajusterOuvert2: !st.ajusterOuvert2 }));
     out.ajusterChevron2 = s.ajusterOuvert2 ? '−' : '+';
     out.ajusterResume2 = nf(+v.nbRangs || 0, 0) + ' rangs · '
-      + nf(+v.manquants || 0, 0) + ' % de pieds manquants · déclin ' + nf(+v.declinSQ || 0, 1) + ' %/an'
+      + nf(+v.manquants || 0, 0) + ' % de pieds manquants'
       + (v.regime === 'fermage' ? ' · loyer ' + eur0(v.loyerHa) + '/ha/an' : '')
       + (v.regime === 'metayage' ? ' · métayage ' + nf(+v.partRecolte || 0, 0) + ' % récolte / '
         + nf(+v.partCouts || 0, 0) + ' % coûts' : '');
@@ -2565,7 +2585,7 @@ class Component extends DCLogic {
       { lib: 'Âge de la parcelle', val: nf(inp.ageParc, 0), unite: 'ans', origine: modeRegistre ? `Dérivé du registre — moyenne pondérée par surface de la sélection (idu ${s.parcelleIdu}), campagne ${campagne}` : 'Saisi' },
       { lib: 'Pieds manquants', val: nf(inp.manquants * 100, 1), unite: '%', origine: modeRegistre ? 'Dérivé du registre — moyenne pondérée par surface de la sélection' : 'Saisi' },
       { lib: 'Rendement estimé de la parcelle', val: nf(inp.rendEstime, 0), unite: 'kg/ha', origine: 'Saisi' },
-      { lib: 'Déclin annuel en statu quo', val: nf(inp.declinSQ * 100, 2), unite: '%/an', origine: 'Saisi' },
+      { lib: 'Déclin annuel en statu quo', val: nf(inp.declinSQ * 100, 2), unite: '%/an', origine: 'Saisi — volet « hypothèses de comparaison » de l’écran 5 (prompt C1)' },
       { lib: 'Régime de faire-valoir', val: v.regime, unite: '—', origine: 'Saisi' },
       { lib: 'Loyer annuel (fermage)', val: nf(+v.loyerHa || 0, 0), unite: '€/ha/an', origine: 'Saisi — utilisé si régime = fermage' },
       { lib: 'Loyer annuel × surface parcelle', val: nf(inp.fv.loyerAn, 0), unite: '€/an', origine: 'Dérivé — loyer/ha × surface réelle de la parcelle' },
@@ -2595,13 +2615,13 @@ class Component extends DCLogic {
       { lib: 'Palissage', val: nf(inp.coutPalissageHa, 0), unite: '€/ha', origine: s.palisManuel ? 'Saisi — édité à la main' : 'Dérivé de la géométrie — relevé fournisseur [date à préciser] + gripple/MO LutEnVi 2025' },
       { lib: 'Protection du jeune plant (tuteur + cache-plant)', val: nf(inp.coutProtectionHa, 0), unite: '€/ha', origine: s.protectionManuel ? 'Saisi — édité à la main' : 'Dérivé de la densité — relevé fournisseur [date à préciser] ; non appliqué à la complantation, coutEntreplant supposé l\'inclure déjà' },
       { lib: 'Arrosage du plantier (si oui)', val: nf(inp.coutIrrigHa, 0), unite: '€/ha', origine: 'Saisi' },
-      { lib: 'Survie des entreplants', val: nf(inp.survie * 100, 1), unite: '%', origine: 'Saisi' },
-      { lib: 'Coût par entreplant', val: nf(inp.coutEntreplant, 2), unite: '€/pied', origine: 'Saisi' },
+      { lib: 'Survie des entreplants', val: nf(inp.survie * 100, 1), unite: '%', origine: 'NON SAISISSABLE — n’alimente que le scénario de complantation, jamais affiché (prompt C1)' },
+      { lib: 'Coût par entreplant', val: nf(inp.coutEntreplant, 2), unite: '€/pied', origine: 'NON SAISISSABLE — n’alimente que le scénario de complantation, jamais affiché (prompt C1)' },
       { lib: 'Charge liée à la surface (production)', val: nf(inp.coutSurfaceProdHaAn, 0), unite: '€/ha/an', origine: 'Cerfrance 2024 (charges de structure hors charges locatives, amortissement retiré) — 15 300 − 3 900, ou repris du détail par opération' },
       { lib: 'Charge liée au rendement', val: nf(inp.coutRdtParKg, 2), unite: '€/kg', origine: 'Cerfrance 2024 (charges proportionnelles ÷ rendement de référence 10 000 kg/ha)' },
       { lib: 'Charge de transition — repos', val: nf(inp.coutReposHaAn, 0), unite: '€/ha/an', origine: 'Saisi — défaut 0 (assumé), ou repris du détail par opération (repos)' },
       { lib: 'Charge de transition — plantier', val: nf(inp.coutPlantierHaAn, 0), unite: '€/ha/an', origine: 'MHCS (taille de formation + remplacement des plants morts), ou repris du détail par opération (plantier)' },
-      { lib: 'Fraction de formation (plantier)', val: nf(fracFormation, 2), unite: 'ratio', origine: 'Saisi — défaut 0,35, applique le volet production à la ligne "taille de formation"' },
+      { lib: 'Fraction de formation (plantier)', val: nf(fracFormation, 2), unite: 'ratio', origine: 'NON SAISISSABLE depuis le prompt C1 — coefficient de modélisation figé à 0,35 ; applique le volet production à la ligne "taille de formation"' },
       { lib: 'Taux horaire chargé (volet 1)', val: nf(+v.tauxHoraire || 0, 2), unite: '€/h', origine: 'Saisi — défaut SMIC 2026 chargé ≈ 17' },
       // prompt B3 — la fiche imprimable doit dire quel scénario climatique a
       // produit les chiffres qu'elle présente : sans cela, deux fiches issues
