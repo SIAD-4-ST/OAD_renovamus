@@ -1268,6 +1268,89 @@ test('LIMITE ASSUMÉE — le rendement de 3e feuille dépend de l\'année de ple
 });
 
 // ----------------------------------------------------------------------
+section('16. Référentiel clones (prompt A1) — union Guide 2025 / PlantGrape');
+// ----------------------------------------------------------------------
+// Ce référentiel est INFORMATIF : aucun test ne doit vérifier qu'il influe sur
+// un scénario, puisqu'il n'entre dans aucun `inp` (même traitement qu'ARBRE_PG).
+// Ce qui est figé ici, c'est la COMPLÉTUDE et la TRAÇABILITÉ du relevé : toute
+// ligne perdue, tout trou comblé en douce fera tomber un de ces tests.
+
+const CLONES = OAD.CLONES_CHAMPAGNE;
+
+test('42 lignes au total, réparties 11 Chardonnay / 19 Pinot noir / 12 Meunier', () => {
+  assert.strictEqual(CLONES.length, 42);
+  assert.strictEqual(OAD.clonesParCepage('Chardonnay').length, 11);
+  assert.strictEqual(OAD.clonesParCepage('Pinot noir').length, 19);
+  assert.strictEqual(OAD.clonesParCepage('Meunier').length, 12);
+});
+
+test('chaque ligne porte les 13 champs attendus, et `sources` n\'est jamais vide', () => {
+  const champs = ['cepage', 'clone', 'sources', 'refAgronomiques', 'production', 'sucre',
+    'fertilite', 'typiciteChampagne', 'precocite', 'botrytis', 'multiplicationHa',
+    'remarqueGuide', 'remarquePlantGrape'];
+  CLONES.forEach(c => {
+    champs.forEach(k => assert.ok(k in c, `champ ${k} absent sur ${c.cepage} ${c.clone}`));
+    assert.ok(Array.isArray(c.sources) && c.sources.length >= 1,
+      `origine absente sur ${c.cepage} ${c.clone} — aucune ligne ne peut être sans source`);
+  });
+});
+
+test('3 lignes exactement portent une origine partielle : Pinot noir 115 et Meunier 925 (PlantGrape hors référence Champagne), Meunier 458 (PlantGrape seul, absent du Guide)', () => {
+  const partielles = CLONES.filter(c =>
+    c.sources.length === 1 || c.sources.some(s => s.includes('hors réf.')));
+  assert.deepStrictEqual(
+    partielles.map(c => c.cepage + ' ' + c.clone).sort(),
+    ['Meunier 458', 'Meunier 925', 'Pinot noir 115']);
+  assert.deepStrictEqual(CLONES.find(c => c.clone === '458').sources, ['PlantGrape']);
+  assert.strictEqual(CLONES.find(c => c.clone === '458').remarqueGuide, '');
+});
+
+test('`botrytis` est renseigné sur 5 lignes seulement — les 37 autres restent vides (donnée absente des sources, jamais comblée)', () => {
+  const avec = CLONES.filter(c => c.botrytis !== '');
+  assert.strictEqual(avec.length, 5);
+  assert.deepStrictEqual(
+    avec.map(c => c.cepage + ' ' + c.clone),
+    ['Pinot noir 236', 'Pinot noir 665', 'Meunier 818', 'Meunier 900', 'Meunier 924']);
+});
+
+test('clonesParCepage trie par numéro de clone croissant — tri NUMÉRIQUE, pas lexicographique (75 avant 118)', () => {
+  const ch = OAD.clonesParCepage('Chardonnay').map(c => Number(c.clone));
+  assert.deepStrictEqual(ch, [75, 76, 78, 95, 96, 118, 121, 124, 130, 131, 132]);
+  ['Pinot noir', 'Meunier'].forEach(cep => {
+    const nums = OAD.clonesParCepage(cep).map(c => Number(c.clone));
+    nums.forEach((n, i) => { if (i) assert.ok(n > nums[i - 1], cep + ' : ordre rompu en ' + n); });
+  });
+});
+
+test('clonesParCepage ne mute pas le référentiel et renvoie [] sur un cépage inconnu (Voltis)', () => {
+  const avant = CLONES.map(c => c.clone).join(',');
+  OAD.clonesParCepage('Pinot noir').sort((a, b) => Number(b.clone) - Number(a.clone));
+  assert.strictEqual(CLONES.map(c => c.clone).join(','), avant);
+  assert.deepStrictEqual(OAD.clonesParCepage('Voltis'), []);
+});
+
+test('typiciteChampagne n\'est renseigné que sur le Pinot noir, precocite jamais sur le Pinot noir — les deux colonnes sont exclusives par cépage (colonne conditionnelle de l\'écran 3)', () => {
+  CLONES.forEach(c => {
+    if (c.typiciteChampagne !== '') assert.strictEqual(c.cepage, 'Pinot noir',
+      `typicité renseignée hors Pinot noir : ${c.cepage} ${c.clone}`);
+    if (c.precocite !== '') assert.notStrictEqual(c.cepage, 'Pinot noir',
+      `précocité renseignée sur Pinot noir : ${c.clone}`);
+  });
+});
+
+test('les 3 Meunier à mutations réverses (458, 900, 983) sont identifiables par leur remarque — support du badge d\'alerte de l\'écran 3', () => {
+  const reverses = CLONES.filter(c =>
+    /mutations r[ée]verses/i.test(c.remarqueGuide + ' ' + c.remarquePlantGrape));
+  assert.deepStrictEqual(reverses.map(c => c.clone).sort(), ['458', '900', '983']);
+  reverses.forEach(c => assert.strictEqual(c.cepage, 'Meunier'));
+});
+
+test('le référentiel n\'entre dans aucun calcul : construireScenarios ignore CLONES_CHAMPAGNE (même statut qu\'ARBRE_PG)', () => {
+  const avecClone = OAD.construireScenarios({ ...INP_A, clone: '927', cepage: 'Pinot noir' });
+  assert.deepStrictEqual(snapshotScenarios(avecClone), snapshotScenarios(SC_BASE));
+});
+
+// ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------
 

@@ -608,6 +608,90 @@ function preconPorteGreffe(calcairePct, profondeur, drainage) {
 }
 
 /* =====================================================================
+   Référentiel clones agréés — UNION de deux sources, chaque ligne portant
+   son origine. INFORMATION, hors calcul économique : ce référentiel n'entre
+   dans aucun `inp` et n'influence aucun scénario, exactement comme ARBRE_PG.
+
+   Sources :
+     - Guide pratique Viticulture durable en Champagne 2025, p. 42-44 ;
+     - PlantGrape (INRAE / IFV / Institut Agro Montpellier), www.plantgrape.fr
+       — RELEVÉ NON DATÉ, À CONFIRMER AVANT DIFFUSION.
+
+   Les cellules vides le sont dans les sources : elles ne sont jamais comblées
+   par interpolation ni par dire d'expert. Les surfaces de multiplication sont
+   un relevé national, indication de disponibilité en pépinière — pas un
+   rendement, pas une garantie d'approvisionnement.
+
+   Copie de travail lisible : data/clones-champagne.json (même contenu). Le
+   littéral ci-dessous en est la transcription — le projet n'a ni build ni
+   dépendance, le navigateur ne peut pas charger le JSON.
+
+   [ cepage, clone, sources, refAgronomiques, production, sucre, fertilite,
+     typiciteChampagne, precocite, botrytis, multiplicationHa,
+     remarqueGuide, remarquePlantGrape ]
+   ===================================================================== */
+const CLONES_CHAMPAGNE_ROWS = [
+  ['Chardonnay', '75',  ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne; Languedoc',              'Moyen à supérieur',   'Inférieure à moyenne',  'Moyenne',               '',            '',        '',                      '4.1',    'Production irrégulière, grappes plus lâches', 'Vigueur et production inégales suivant les régions. Maîtriser la production pour vins tranquilles. Peut être utilisé pour effervescents.'],
+  ['Chardonnay', '76',  ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne; Languedoc; Val-de-Loire', 'Moyen',               'Moyenne à supérieure',  'Moyenne',               '',            'Précoce', '',                      '16.18',  'Régulier, précoce', 'Clone apprécié pour sa régularité de production et la qualité des vins. Peut être utilisé pour effervescents.'],
+  ['Chardonnay', '78',  ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne; Val-de-Loire',           'Supérieur',           'Inférieure',            'Moyenne à supérieure',  '',            '',        '',                      '4.44',   'Peu expressif en surproduction', 'Clone productif, adapté à la production de vins effervescents.'],
+  ['Chardonnay', '95',  ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne; Languedoc',              'Moyen',               'Moyenne à supérieure',  'Moyenne',               '',            '',        '',                      '12.59',  'Régulier, plus vigoureux que le clone 76', 'Clone apprécié pour sa régularité, ses caractéristiques agronomiques et la qualité des vins. Peut être utilisé pour effervescents.'],
+  ['Chardonnay', '96',  ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne; Languedoc; Val-de-Loire', 'Moyen à supérieur',   'Moyenne à supérieure',  'Moyenne',               '',            'Précoce', '',                      '28.3',   'Régulier, précoce, vins plus acides', 'Production régulière, à maîtriser pour vins tranquilles. Peut être utilisé pour effervescents.'],
+  ['Chardonnay', '118', ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne',                         'Supérieur',           'Moyenne',               'Supérieure',            '',            '',        '',                      '2.19',   'Vins dilués en surproduction', 'Clone adapté à la production de vins effervescents.'],
+  ['Chardonnay', '121', ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne',                         'Moyen',               'Moyenne',               'Moyenne',               '',            '',        '',                      '3.42',   'RAS', 'Clone apprécié pour ses caractéristiques agronomiques et la qualité des vins. Peut être utilisé pour effervescents.'],
+  ['Chardonnay', '124', ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne',                         'Supérieur',           'Inférieure à moyenne',  'Supérieure',            '',            'Tardif',  '',                      '5.82',   'Plus tardif, meilleure remise à fruit en cas de gel de printemps', 'Maîtriser la production pour vins tranquilles. Peut être utilisé pour effervescents.'],
+  ['Chardonnay', '130', ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne; Languedoc',              'Moyen à supérieur',   'Moyenne',               'Moyenne à supérieure',  '',            '',        '',                      '4.09',   'Vins dilués en surproduction', 'Clone adapté à la production de vins effervescents.'],
+  ['Chardonnay', '131', ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne',                         'Moyen à supérieur',   'Moyenne à supérieure',  'Moyenne',               '',            '',        '',                      '4.02',   'Régulier, vins plus acides', 'Maîtriser la production pour vins tranquilles. Peut être utilisé pour effervescents.'],
+  ['Chardonnay', '132', ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne',                         'Supérieur',           'Inférieure à moyenne',  'Supérieure',            '',            'Précoce', '',                      '3.34',   'Précoce', 'Clone adapté à la production de vins effervescents.'],
+  ['Pinot noir', '115', ['Guide 2025', 'PlantGrape (hors réf. Champagne)'], 'Bourgogne; Languedoc',                         'Inférieur à moyen',   'Moyenne à supérieure',  'Inférieure à moyenne',  '',            '',        '',                      '12.64',  'Régulier, port moins retombant, production inférieure aux clones 927 et 779', 'Clone apprécié pour sa régularité de production, ses caractéristiques agronomiques et la qualité des vins. Bonnes aptitudes à l\'élaboration de vins de garde.'],
+  ['Pinot noir', '236', ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne',                         'Supérieur',           'Inférieure',            'Supérieure',            'Assez typé',  '',        'Moyenne à supérieure',  '3.51',   'RAS', 'Clone considéré comme «assez typé» en Champagne.'],
+  ['Pinot noir', '292', ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne',                         'Supérieur',           'Inférieure à moyenne',  'Moyenne à supérieure',  'Peu typé',    '',        '',                      '3.96',   'RAS', 'Peut être utilisé pour effervescents mais considéré «peu typé» en Champagne.'],
+  ['Pinot noir', '375', ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne; Languedoc',              'Supérieur',           'Inférieure à moyenne',  'Moyenne à supérieure',  '',            '',        '',                      '3.92',   'RAS', 'Rendement à maîtriser. Peut être utilisé pour effervescents.'],
+  ['Pinot noir', '386', ['Guide 2025', 'PlantGrape'],               'Bourgogne; Champagne; Languedoc',              'Moyen à supérieur',   'Inférieure à moyenne',  'Supérieure',            'Typé',        '',        '',                      '4.62',   'Pellicule plus épaisse, baies moins colorées', 'Baies charnues. Effervescents. Considéré «typé» en Champagne.'],
+  ['Pinot noir', '388', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen à supérieur',   'Inférieure',            'Supérieure',            'Peu typé',    '',        '',                      '2.17',   'Vins dilués en cas de surproduction', 'Considéré «peu typé» en Champagne.'],
+  ['Pinot noir', '389', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen à supérieur',   'Inférieure',            'Supérieure',            'Peu typé',    '',        '',                      '2.06',   'Vins dilués en cas de surproduction', 'Considéré «peu typé» en Champagne.'],
+  ['Pinot noir', '521', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen à supérieur',   'Moyenne',               'Moyenne à supérieure',  'Typé',        '',        '',                      '1.59',   'Grappes plus petites mais plus nombreuses', 'Considéré «typé» en Champagne.'],
+  ['Pinot noir', '665', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Supérieur',           'Inférieure',            'Supérieure',            'Assez typé',  '',        'Moyenne à supérieure',  '1.37',   'RAS', 'Considéré «assez typé» en Champagne.'],
+  ['Pinot noir', '666', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Supérieur',           'Inférieure',            'Supérieure',            'Assez typé',  '',        '',                      '1.8',    'Régulier', 'Considéré «assez typé» en Champagne.'],
+  ['Pinot noir', '668', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen à supérieur',   'Inférieure',            'Supérieure',            'Peu typé',    '',        '',                      '0.74',   'Vins dilués en cas de surproduction', 'Considéré «peu typé» en Champagne.'],
+  ['Pinot noir', '743', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Supérieur',           'Moyenne',               'Supérieure',            'Peu typé',    '',        '',                      '1.23',   'Tendance à faire des fourches', 'Considéré «peu typé» en Champagne.'],
+  ['Pinot noir', '779', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen',               'Moyenne à supérieure',  'Moyenne à supérieure',  'Typé',        '',        '',                      '0.77',   'Régulier, apte à la production de vin rouge', 'Considéré «typé» en Champagne.'],
+  ['Pinot noir', '780', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen à supérieur',   'Inférieure',            'Supérieure',            'Typé',        '',        '',                      '0.39',   'RAS', 'Considéré «typé» en Champagne.'],
+  ['Pinot noir', '792', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen à supérieur',   'Moyenne',               'Moyenne à supérieure',  'Typé',        '',        '',                      '1.38',   'RAS', 'Considéré «typé» en Champagne.'],
+  ['Pinot noir', '870', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen à supérieur',   'Moyenne',               'Moyenne à supérieure',  'Typé',        '',        '',                      '0.99',   'RAS', 'Considéré «typé» en Champagne.'],
+  ['Pinot noir', '871', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Supérieur',           'Inférieure',            'Moyenne à supérieure',  'Typé',        '',        '',                      '0.95',   'RAS', 'Considéré «typé» en Champagne.'],
+  ['Pinot noir', '872', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen à supérieur',   'Moyenne',               'Moyenne à supérieure',  'Typé',        '',        '',                      '0.64',   'RAS', 'Considéré «typé» en Champagne.'],
+  ['Pinot noir', '927', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen',               'Moyenne à supérieure',  'Moyenne à supérieure',  'Typé',        '',        '',                      '0.57',   'Régulier, apte à la production de vin rouge', 'Considéré «typé» en Champagne.'],
+  ['Meunier',    '458', ['PlantGrape'],                             'Champagne',                                    'Irrégulier',          'Supérieure',            'Inférieure à moyenne',  '',            '',        '',                      '',       '', 'Mutations reverses fréquentes pouvant entraîner la disparition du caractère «meunier».'],
+  ['Meunier',    '791', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Supérieur',           'Inférieure',            'Supérieure',            '',            'Précoce', '',                      '1.05',   'Plus précoce, régulier', 'Clone plus précoce avec feuilles plus découpées.'],
+  ['Meunier',    '817', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen',               'Moyenne',               'Moyenne',               '',            'Précoce', '',                      '1.75',   'Plus précoce, régulier', 'Clone plus précoce.'],
+  ['Meunier',    '818', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen à supérieur',   'Moyenne',               'Moyenne',               '',            'Précoce', 'Moyenne à supérieure',  '1.26',   'Plus précoce, régulier', 'Clone plus précoce.'],
+  ['Meunier',    '864', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen',               'Moyenne',               'Moyenne',               '',            '',        '',                      '0.63',   'Degré irrégulier', ''],
+  ['Meunier',    '865', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen',               'Supérieure',            'Supérieure',            '',            '',        '',                      '1.7',    'RAS', ''],
+  ['Meunier',    '900', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen',               'Supérieure',            'Moyenne',               '',            '',        'Moyenne à supérieure',  '1.58',   'Mutations réverses plus fréquentes', 'Mutations reverses possibles pouvant entraîner la disparition du caractère «meunier».'],
+  ['Meunier',    '924', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen',               'Supérieure',            'Moyenne',               '',            '',        'Moyenne à supérieure',  '2.4',    'RAS', ''],
+  ['Meunier',    '925', ['Guide 2025', 'PlantGrape (hors réf. Champagne)'], 'Val-de-Loire',                                 'Supérieur',           'Inférieure',            'Moyenne',               '',            '',        '',                      '0.65',   'RAS', ''],
+  ['Meunier',    '977', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen',               'Supérieure',            'Supérieure',            '',            'Tardif',  '',                      '0.89',   'Plus tardif, régulier', 'Clone plus tardif.'],
+  ['Meunier',    '978', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Moyen à supérieur',   'Moyenne',               'Moyenne',               '',            '',        '',                      '0.88',   'RAS', ''],
+  ['Meunier',    '983', ['Guide 2025', 'PlantGrape'],               'Champagne',                                    'Supérieur',           'Inférieure',            'Supérieure',            '',            '',        '',                      '0.16',   'Mutations réverses plus fréquentes', 'Mutations reverses possibles pouvant entraîner la disparition du caractère «meunier».']
+];
+const CLONES_CHAMPAGNE = CLONES_CHAMPAGNE_ROWS.map(r => Object.freeze({
+  cepage: r[0], clone: r[1], sources: Object.freeze(r[2]), refAgronomiques: r[3],
+  production: r[4], sucre: r[5], fertilite: r[6], typiciteChampagne: r[7],
+  precocite: r[8], botrytis: r[9], multiplicationHa: r[10],
+  remarqueGuide: r[11], remarquePlantGrape: r[12]
+}));
+
+// Lignes d'un cépage, triées par NUMÉRO de clone croissant (tri numérique, pas
+// lexicographique : 75 avant 118). Jamais de tri par production — l'échelle
+// PlantGrape est qualitative et un classement suggérerait un jugement que les
+// sources ne portent pas.
+function clonesParCepage(cepage) {
+  return CLONES_CHAMPAGNE
+    .filter(c => c.cepage === cepage)
+    .sort((a, b) => Number(a.clone) - Number(b.clone));
+}
+
+/* =====================================================================
    Référentiel temps de travaux & taux horaire — préremplissage opt-in et
    indicateur heures uniquement. Aucun branchement dans le moteur de calcul :
    ces constantes ne modifient ni chargesEntretien ni construireScenarios.
@@ -777,7 +861,8 @@ if (typeof module !== 'undefined') module.exports =
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
-    nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique };
+    nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
+    CLONES_CHAMPAGNE, clonesParCepage };
 if (typeof window !== 'undefined') window.OAD =
   { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
     chargesEntretien, coutPalissage, PRIX_PALISSAGE, FILS_PAR_TAILLE, largeurEquivalente,
@@ -785,6 +870,7 @@ if (typeof window !== 'undefined') window.OAD =
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
-    nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique };
+    nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
+    CLONES_CHAMPAGNE, clonesParCepage };
 
 }
