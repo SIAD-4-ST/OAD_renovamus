@@ -54,6 +54,7 @@ chiffrée se met à jour en continu dans la colonne de droite.
 18. [Graphiques SVG faits main](#18-graphiques-svg-faits-main)
 19. [Limites, hypothèses et paramètres cachés](#19-limites-hypothèses-et-paramètres-cachés)
     - [19bis. Journal d'arbitrages — accueil, simplification de l'interface, deux corrections](#19bis-journal-darbitrages--accueil-simplification-de-linterface-deux-corrections)
+    - [19ter. Journal d'arbitrages — session du 01/09/2026](#19ter-journal-darbitrages--session-du-01092026)
 20. [Pour aller plus loin](#20-pour-aller-plus-loin)
 21. [Recette humaine — contrôles non automatisables](#21-recette-humaine--contrôles-non-automatisables)
 
@@ -168,6 +169,46 @@ build ni serveur Node.
 
 ## 3bis. Conventions d'interface — classes CSS et panneaux d'aide
 
+### Le panneau d'accueil (prompt B6)
+
+L'encart « mode d'emploi » replié en tête de l'étape 1 est remplacé par un
+**panneau d'accueil**, ouvert au premier chargement seulement (drapeau
+`accueilVu`, persisté avec la clé `oad-renovamus-v1`), refermable, et
+atteignable en permanence par le bouton **« Comment lire cet outil »** de
+l'en-tête, à côté du Lexique. L'encart de l'étape 1 reste en place, replié.
+
+Il contient une **frise SVG faite main** (`friseAccueil()`, construite en
+`React.createElement` comme les graphiques, §18) : arrachage (année 0) →
+repos → plantation → 3ᵉ feuille → pleine production, avec la courbe de
+rendement qui tombe puis remonte et la barre de réserve individuelle qui se
+vide pour combler le trou avant de se reconstituer. C'est le mécanisme que
+l'outil chiffre et que l'interface n'expliquait nulle part. Le dessin est
+**illustratif** : il montre la forme du phénomène, pas le résultat des
+saisies — la page le dit explicitement.
+
+Un encadré **« ce que l'outil ne fait pas »** énonce les trois limites qui
+comptent pour lire l'écran 5 : aucune recommandation, aucune actualisation
+des flux, aucune valeur patrimoniale du vignoble rajeuni ni de la réserve
+reconstituée — d'où des résultats structurellement pessimistes en fin
+d'horizon.
+
+**Contraintes techniques tenues** : SVG inline, **aucune image externe** (la
+page dépend déjà d'unpkg et de Google Fonts, §19) ; **pas de
+`position: fixed`** — le panneau est dans le flux du document, en tête de
+page, car un panneau fixe qui recouvre la page est un piège à focus
+classique. `Échap` le ferme et le focus revient au bouton qui l'a ouvert,
+quel que soit le chemin de fermeture ; la frise porte un `aria-label`
+descriptif.
+
+**Deux textes corrigés au passage**, qui contredisaient la note de cadrage
+du 24/07/2026 : l'accroche « l'outil compare deux avenirs […] la renouveler
+ou ne rien faire » devient une formulation de **simulateur d'impact du seul
+renouvellement**, le maintien en l'état n'étant plus qu'un repère de
+comparaison ; et l'entrée **« Complantation » du lexique**, qui annonçait à
+l'utilisateur un scénario calculé mais jamais affiché, est retirée du
+lexique visible — le moteur continue de le calculer, ce qui disparaît est la
+promesse faite à l'écran.
+
 ### Les styles répétés vivent dans `<style>`, plus dans les balises
 
 Le template `<x-dc>` a longtemps porté ses styles exclusivement en
@@ -256,6 +297,15 @@ dire pour celui qui la saisit.
 
 ## 4. Le parcours en 5 étapes
 
+> **Depuis la session d'arbitrage du 01/09/2026 (§19ter).** Le parcours est
+> hiérarchisé en un **chemin court de 11 champs** et des volets « Ajuster »
+> repliés (un par écran, aucun champ supprimé) — voir §6. L'**horizon est figé
+> à 10 ans** côté interface, son sélecteur retiré. Le **test de résistance
+> climatique est actif par défaut**, sur deux vendanges déficitaires. Un
+> **panneau d'accueil illustré** remplace l'encart replié de l'étape 1 (§3bis).
+> L'écran 5 met désormais les **KPI physiques en tête** et les KPI financiers
+> d'un cran en dessous.
+
 La navigation de gauche (`etapes`, généré depuis un tableau de labels dans
 `renderVals()`) et le bouton « {{ labelSuivant }} → » en bas de page
 pilotent un simple index `state.step` (0 à 4). Une seule étape est visible
@@ -267,11 +317,11 @@ renseigné.
 
 | # | Étape | Contenu |
 |---|---|---|
-| 1 | **Votre exploitation** | Surface totale, âge moyen du vignoble, VolCo, prix du raisin, réserve individuelle actuelle (curseur en % du plafond) ; **charges de production à l'hectare** (charge liée à la surface, coût de la vendange, détail par opération heures manuelles/mécanisées — chantier B1, déplacées depuis l'écran « Coûts et charges », paramètres de référence de l'exploitation réutilisés à l'écran 5, voir §11 F9). Ce sont les repères globaux, dénominateurs de tout le calcul d'impact. Saisie manuelle par défaut, ou bascule vers un **registre parcellaire** (jeu d'exemple préchargé, en mémoire de session uniquement, aucun import de fichier pour l'instant) qui dérive surface totale et âge moyen d'un tableau de parcelles — voir [§6bis](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif). |
-| 2 | **La parcelle que vous désignez** | **Géométrie de la parcelle en tête d'écran** (chantier B2, déplacée depuis l'écran 3) : surface arrachée, écart entre rangs, nombre de rangs, écart entre pieds — seuls champs saisis ; longueur de rang déduite, densité, pieds à planter et badge de conformité AOC en sont affichés, jamais saisis (§16). Puis âge, taux de pieds manquants, rendement estimé, déclin en statu quo, régime de faire-valoir (propriété / fermage / métayage) et ses paramètres. En mode registre, un sélecteur d'`idu` et des cases à cocher par ligne désignent la parcelle et en dérivent surface, âge et taux de manquants (§6bis). |
-| 3 | **Votre projet de replantation** | **Deux blocs seulement (chantier B3)** : (1) simulateur d'aide au choix du matériel végétal (cépage/calcaire/profondeur/drainage, arbre porte-greffe, table clones — dépliable, purement informatif), positionné juste avant la sélection définitive matériel végétal/porte-greffe qu'il éclaire, avec fiche conseil (dont l'avertissement 161-49 C) ; (2) palissage et conduite — mode de conduite (dont Chablis, chantier A5), année de pleine production (chantier A3, §7bis), équipements de palissage dérivés de la géométrie de l'écran 2 (postes obligatoires toujours comptés, poste optionnel décochable — chantier A5, §14). Ni le sélecteur d'irrigation ni la pénalité VSL n'apparaissent ici (irrigation déplacée à l'écran 4, VSL retirée de l'interface — chantier B4). Un message bloquant remplace les indicateurs de palissage si la géométrie est incomplète (surface ou nombre de rangs nul). |
-| 4 | **Coûts et charges** | **Deux blocs seulement (chantier B4)** : BLOC A « Investissements liés à la parcelle arrachée puis replantée » — prestations d'arrachage et préparation, matériel végétal et sa protection, matériel de palissage, options de coût à l'installation (dont l'irrigation, déplacée depuis l'écran 3), et la complantation (survie, coût par entreplant — l'entrée en production n'est plus éditable depuis le chantier A3, fixée à 7 ans, voir §7bis) ; BLOC B « Entretien en deux temps » — B.1 entretien de la parcelle au repos, B.2 entretien du plantier (chantier B1 a déplacé le volet « production », permanent, à l'écran 1 — voir §11 F9, non dupliqué ici). Aucun champ VSL. |
-| 5 | **Résultats** | Synthèse rédigée autour du **seul scénario arrachage-replantation** (§12bis, décision 1 : le statu quo n'est plus un scénario que l'utilisateur choisit de regarder, seulement le contre-factuel silencieux de chaque différentiel affiché) — sélecteur d'horizon (10 ou 25 ans), sélecteur de vue (Ensemble / Part exploitant / Part propriétaire), de test de résistance climatique et de mode main d'œuvre (Prestataire / Familiale — affichage seul, §11 F7), KPI en 2 familles typographiquement distinctes — décision financière (€) et effets physiques non monétisés (voir §17) —, encadré main d'œuvre économisée, graphiques de stock de réserve et de trajectoire d'âge (repliés par défaut), détail annuel dépliable du scénario arrachage, tableau du manque à gagner (dérivé vs statu quo, jamais soustrait au calcul), et une fiche imprimable regroupant hypothèses, KPI (avec formule) et détail annuel complet des 3 scénarios calculés en interne — conservé à des fins d'audit, voir §17 (bouton « Imprimer », `window.print()`). |
+| 1 | **Votre exploitation** | Surface totale, âge moyen du vignoble, VolCo, prix du raisin, réserve individuelle actuelle (curseur en % du plafond) ; **charges de production à l'hectare** (charge liée à la surface, coût de la vendange, détail par opération heures manuelles/mécanisées — chantier B1, déplacées depuis l'écran « Coûts et charges », paramètres de référence de l'exploitation réutilisés à l'écran 5, voir §11 F9). Ce sont les repères globaux, dénominateurs de tout le calcul d'impact. Saisie manuelle par défaut, ou bascule vers un **registre parcellaire** (jeu d'exemple préchargé, **importable** depuis un export du portail CIVC et **corrigeable cellule par cellule** depuis le prompt B2) qui dérive surface totale et âge moyen d'un tableau de parcelles — voir [§6bis](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif). |
+| 2 | **La parcelle que vous désignez** | **Géométrie de la parcelle en tête d'écran** (chantier B2, déplacée depuis l'écran 3) : surface arrachée, écart entre rangs, nombre de rangs, écart entre pieds — seuls champs saisis ; longueur de rang déduite, densité, pieds à planter et badge de conformité AOC en sont affichés, jamais saisis (§16). Puis âge, taux de pieds manquants, rendement estimé, régime de faire-valoir (propriété / fermage / métayage) et ses paramètres. Le **déclin en statu quo a été déplacé à l'écran 5** (prompt C1) : il ne décrit pas la parcelle mais le contre-factuel, et son seul effet visible est le tableau « Manque à gagner ». En mode registre, un sélecteur d'`idu` et des cases à cocher par ligne désignent la parcelle et en dérivent surface, âge et taux de manquants (§6bis). |
+| 3 | **Votre projet de replantation** | **Deux blocs seulement (chantier B3)** : (1) simulateur d'aide au choix du matériel végétal (cépage/calcaire/profondeur/drainage, arbre porte-greffe, table clones — dépliable, purement informatif), positionné juste avant la sélection définitive matériel végétal/porte-greffe qu'il éclaire, avec fiche conseil (dont l'avertissement 161-49 C) ; (2) palissage et conduite — mode de conduite (dont Chablis, chantier A5), année de pleine production (chantier A3, §7bis), équipements de palissage dérivés de la géométrie de l'écran 2 (postes obligatoires toujours comptés, poste optionnel décochable — chantier A5, §14). Ni le sélecteur d'arrosage ni la pénalité VSL n'apparaissent ici (arrosage du plantier à l'écran 4, VSL retirée de l'interface — chantier B4). Depuis le prompt B7 la **table clones occupe toute la largeur de la carte** et affiche 8 colonnes sourcées (§15). Aucun champ de cet écran n'appartenant au chemin court, l'écran entier vit dans son volet « Ajuster » (prompt B4). Un message bloquant remplace les indicateurs de palissage si la géométrie est incomplète (surface ou nombre de rangs nul). |
+| 4 | **Coûts et charges** | **Deux blocs seulement (chantier B4)** : BLOC A « Investissements liés à la parcelle arrachée puis replantée » — prestations d'arrachage et préparation, matériel végétal et sa protection, matériel de palissage, options de coût à l'installation (dont l'irrigation, déplacée depuis l'écran 3), et l'**arrosage du plantier** (prompt B7, ex-« ferti-irrigation »). La complantation (`survie`, `coutEntreplant`) n'a plus de champ de saisie : elle n'alimente qu'un scénario jamais affiché (prompt C1), les valeurs restent dans `state.v` et dans la fiche d'audit. L'entrée en production de la complantation n'est plus éditable depuis le chantier A3, fixée à 7 ans, voir §7bis ; BLOC B « Entretien en deux temps » — B.1 entretien de la parcelle au repos, B.2 entretien du plantier (chantier B1 a déplacé le volet « production », permanent, à l'écran 1 — voir §11 F9, non dupliqué ici). Aucun champ VSL. |
+| 5 | **Résultats** | Synthèse rédigée autour du **seul scénario arrachage-replantation** (§12bis, décision 1 : le statu quo n'est plus un scénario que l'utilisateur choisit de regarder, seulement le contre-factuel silencieux de chaque différentiel affiché) — bandeau climatique non repliable en tête (prompt B3), sélecteur de vue (Ensemble / Part exploitant / Part propriétaire), de test de résistance climatique et de mode main d'œuvre (Prestataire / Familiale — affichage seul, §11 F7) ; **plus de sélecteur d'horizon** (arbitrage 6). Depuis le prompt B5, les **KPI physiques passent en tête** dans un bloc « Ce que le renouvellement produit » (écart d'âge, stock de réserve à l'horizon, réserve minimale) et les KPI financiers descendent d'un cran, sans rien perdre ; les boutons d'ouverture des deux graphiques (stock, trajectoire d'âge — toujours repliés par défaut) remontent au-dessus du bloc financier. Puis encadré main d'œuvre économisée, détail annuel dépliable du scénario arrachage, volet « hypothèses de comparaison » portant `declinSQ` (prompt C1) et tableau du manque à gagner (dérivé vs statu quo, jamais soustrait au calcul), et une fiche imprimable regroupant hypothèses, KPI (avec formule) et détail annuel complet des 3 scénarios calculés en interne — conservé à des fins d'audit, voir §17 (bouton « Imprimer », `window.print()`). |
 
 La colonne de droite (`<aside>`, « Synthèse en continu ») est visible à
 **partir de l'écran 3** (retirée des écrans 1 et 2 — chantiers B1 puis B2 :
@@ -337,6 +387,53 @@ graphiques. Sur une machine normale, c'est instantané ; ça n'a jamais posé
 de problème de fluidité en pratique.
 
 ## 6. Glossaire des champs de saisie
+
+### Le chemin court — 11 repères (prompt B4, arbitrage 11)
+
+Les 53 contrôles de l'outil sont hiérarchisés depuis le 01/09/2026 : **11
+champs** restent au fil principal, tout le reste vit dans un volet `.fold`
+« Ajuster » replié, **au sein de son écran d'origine**. Aucun champ n'a été
+supprimé ni rendu inaccessible ; chaque en-tête de volet affiche en résumé
+les valeurs qu'il cache, pour que replier n'enterre jamais un chiffre qui
+pilote le calcul.
+
+| Écran | Les 11 repères |
+|---|---|
+| 1 | surface totale, âge moyen *(ou dérivés du registre)*, VolCo, prix du raisin |
+| 2 | surface arrachée, âge de la parcelle, rendement estimé, régime de faire-valoir, écart entre rangs, écart entre pieds |
+| 4 | durée de repos |
+
+La liste vit dans `REPERES_CHEMIN_COURT` (`index.html`), avec pour chaque
+repère son écran et l'`id` de son champ. Un indicateur discret et permanent
+de la navigation latérale annonce « *n* repères sur 11 sont encore des
+valeurs d'exemple » et emmène, d'un clic, au premier repère non touché en
+lui donnant le focus. En mode registre, les repères dérivés du fichier de
+l'exploitant comptent comme renseignés — ce sont ses données, pas un exemple.
+
+**Drapeaux « champ touché ».** `state.champsTouches` marque chaque clé de
+`v` réellement éditée, posé par le gestionnaire générique `on[k]` sur le
+modèle de `palisManuel` / `protectionManuel`. Un champ reste « touché »
+même si l'utilisateur y remet la valeur par défaut : ce qu'on suit, c'est
+« ce chiffre a-t-il été regardé ». Ces drapeaux sont persistés avec
+l'instantané (§19), sans quoi l'indicateur et le libellé de l'investissement
+repartiraient à zéro alors que les valeurs, elles, seraient restaurées.
+
+**Libellé de l'investissement (arbitrage 11).** Tant qu'aucun des quatre
+postes `coutArrachageHa`, `coutPlant`, `coutPalissageHa`,
+`coutProtectionHa` n'a été édité, le KPI s'intitule **« Coût de référence
+Champagne »** — à l'écran 5, dans la synthèse latérale et dans la fiche
+imprimable. Dès qu'un seul est modifié, il devient **« Votre
+investissement »**. Le montant ne change pas ; seul change ce que le libellé
+prétend.
+
+**Champs retirés de l'interface (prompt C1), conservés dans `state.v`, dans
+`inp` et dans le moteur :** `fracFormation` (coefficient de modélisation ;
+sa valeur retenue reste affichée là où elle agit), `survie` et
+`coutEntreplant` (n'alimentent que la complantation, jamais affichée).
+`campagne` reste saisissable dans le volet « Ajuster » de l'écran 1,
+lui-même conditionné au mode registre. Tous restent listés dans la fiche
+d'audit imprimable, avec une provenance qui dit désormais « NON
+SAISISSABLE » plutôt que « Saisi ».
 
 Toutes les valeurs saisies vivent dans un seul objet, `state.v`, initialisé
 avec ces valeurs par défaut (constructeur du composant, `index.html`). Un
@@ -516,11 +613,57 @@ est peuplé au chargement à partir d'une constante `REGISTRE_EXEMPLE_CSV`
 (`index.html`, chaîne CSV `;`-séparée codée en dur, 12 lignes), parsée par
 `parseRegistreCSV()` (résolution des colonnes par en-tête, indépendante de
 l'ordre ; normalisation de `situation` en `'plantee'`/`'arrachee'`).
-**Aucun import de fichier n'est câblé pour l'instant** — c'est prévu pour
-une prochaine version. Le registre **ne persiste pas** : ni envoyé, ni
-`localStorage` (rappel de la contrainte CLAUDE.md), il vit en mémoire de
-l'onglet et disparaît au rechargement — un bandeau dans l'UI le rappelle
-explicitement à l'utilisateur.
+### Import de l'export portail CIVC (prompt B2)
+
+Un bouton **« Importer mon registre »** à l'étape 1 lit un CSV local via
+`<input type="file">` et `FileReader` : **aucun envoi, aucune donnée en
+URL**. Le fichier est parsé par `parseRegistreCSV()`, dont la résolution des
+colonnes par en-tête rend l'ordre du fichier indifférent.
+
+**Colonnes attendues, confirmées le 01/09/2026** (`COLONNES_CIVC`) :
+`idu`, `commune`, `num_civc`, `mode_explo`, `cepage`, `anneeplant`,
+`surface_ss_parcelle`, `productivite_moyenne`, `taux_manquant`,
+`enroulement`, `court_noue`, `situation`.
+
+`parseRegistreCSV()` sait *résoudre* une colonne mais pas *constater* qu'elle
+manque — il produirait des zéros silencieux. D'où `colonnesManquantes()` :
+si une colonne obligatoire est absente, le message d'erreur **la nomme** et
+**la table en place n'est pas remplacée**. Un fichier sans ligne de données
+est refusé de même. L'écrasement est précédé d'une confirmation qui
+mentionne explicitement la perte des corrections saisies.
+
+Après un import réussi, `state.parcelleIdu` est reposé sur la première
+parcelle plantée et `state.parcelleLignesExclues` est vidé : tous deux sont
+indexés sur la **position** des lignes et deviendraient faux en silence.
+
+L'onglet et le titre du tableau s'intitulent **« Registre parcellaire —
+exemple »** tant qu'aucun import n'a eu lieu ; le drapeau `registreImporte`
+est persisté avec l'instantané, sinon un registre importé se présenterait à
+nouveau comme le jeu d'exemple après rechargement.
+
+### Édition des cellules (prompt B2, arbitrage 2)
+
+Les quatre colonnes qui **pilotent le calcul** sont saisissables directement
+dans le tableau de l'étape 1 : `surface`, `anneePlant`, `tauxManquant`
+(colonne « Manquants », ajoutée pour rendre visible ce qu'on rend éditable)
+et `situation`. `idu`, `commune` et `cepage` restent en lecture — ce sont
+les identifiants du fichier. **Ni ajout, ni suppression, ni case d'exclusion
+à l'étape 1** ; le mécanisme d'exclusion de lignes de l'étape 2 est intact.
+
+Les cellules stockent la **frappe brute** (« 0, », « 1,2 », vide en cours de
+correction) : la conversion en nombre se fait au seul point qui alimente le
+moteur, dans `renderVals()`. Sans cela, un champ que l'utilisateur est en
+train de vider se remplirait d'un 0 sous ses doigts.
+
+### Persistance (prompt B1)
+
+Le registre **persiste** désormais, sous forme d'instantané, avec le reste
+des saisies — voir §19. Ce qui est enregistré est le **tableau avec ses
+valeurs déjà corrigées**, jamais un diff ni un identifiant de ligne : au
+rechargement on relit la table telle quelle, ce qui rend inutile toute clé
+stable de ligne. `_id` est réattribué par position à chaque parsing ; c'est
+un index de rendu, jamais une identité persistée. Rien n'est envoyé hors du
+navigateur, et un bandeau le rappelle à l'utilisateur.
 
 **Étape 1 — agrégation exploitation.** `OAD.agregerRegistreExploitation(registreRows,
 campagne)` (`moteur-oad.js`) renvoie `{ surfTot, ageMoy }` :
@@ -1599,7 +1742,59 @@ d'arbitrages du chantier P8 (§12) pour les deux garde-fous
 anti-double-compte (recentrage de `REF_PLANTIER[0]` sur la main d'œuvre
 seule ; hypothèse que `coutEntreplant` inclut déjà la protection).
 
-## 15. Arbre de décision porte-greffe — `preconPorteGreffe`
+## 15. Arbre de décision porte-greffe — `preconPorteGreffe` · référentiel clones
+
+### Référentiel clones — `CLONES_CHAMPAGNE` / `OAD.clonesParCepage()`
+
+**Information pure, hors calcul économique**, exactement comme `ARBRE_PG` :
+le référentiel n'entre dans aucun `inp` et n'influence aucun scénario (un
+test le vérifie). Depuis le prompt A1 il vit dans `moteur-oad.js` et non
+plus dans `index.html` (où `this.CLONES` offrait 3 cépages sur 2 colonnes,
+avec les seules notes du Guide).
+
+**Union de deux sources, chaque ligne portant son origine** — arbitrage 4 :
+
+- Guide pratique Viticulture durable en Champagne 2025, p. 42-44 ;
+- PlantGrape (INRAE / IFV / Institut Agro Montpellier), www.plantgrape.fr —
+  **relevé non daté, à confirmer avant diffusion**.
+
+**42 lignes** : 11 Chardonnay, 19 Pinot noir, 12 Meunier. 13 champs par
+ligne (`cepage`, `clone`, `sources`, `refAgronomiques`, `production`,
+`sucre`, `fertilite`, `typiciteChampagne`, `precocite`, `botrytis`,
+`multiplicationHa`, `remarqueGuide`, `remarquePlantGrape`).
+`OAD.clonesParCepage(cepage)` renvoie les lignes triées par **numéro** de
+clone croissant — tri numérique, pas lexicographique.
+
+Une copie de travail lisible est commitée sous `data/clones-champagne.json` ;
+le littéral du moteur en est la transcription (le projet n'a ni build ni
+dépendance, le navigateur ne peut pas charger le JSON).
+
+**Aucune cellule vide n'est comblée.** `botrytis` n'est renseigné que sur
+**5 des 42 lignes** (Pinot noir 236 et 665, Meunier 818, 900 et 924) ; les 37
+autres restent vides à l'écran, avec la note renvoyant aux données CIVC ou à
+plantgrape.fr (arbitrage 5). Trois lignes portent une **origine partielle** :
+Pinot noir 115 et Meunier 925 (PlantGrape hors référence Champagne),
+Meunier 458 (PlantGrape seul, absent du Guide).
+
+**Affichage — écran 3, prompt B7.** Huit colonnes, dans cet ordre : Clone ·
+Niveau de production · Richesse en sucre · Fertilité · *Typicité en
+Champagne* (Pinot noir) ou *Précocité* (Chardonnay, Meunier) · Sensibilité
+Botrytis · Disponibilité · Remarque.
+
+- **Niveau de production** porte une infobulle : échelle qualitative
+  PlantGrape, **ce n'est pas un rendement en kg/ha** et cela n'entre dans
+  aucun calcul.
+- **Disponibilité** affiche `multiplicationHa` en hectares — indication de
+  disponibilité en pépinière, relevé national **non daté**.
+- **Origine par ligne** : marqueur `G·P` (les deux sources), `G·P*`
+  (PlantGrape hors référence Champagne), `P` (PlantGrape seul), avec
+  légende ; les trois origines partielles sont distinguées en couleur.
+- **Badge d'alerte « mutations réverses »** sur les Meunier 458, 900 et 983,
+  au même traitement visuel que l'avertissement 161-49 C des porte-greffes.
+- **Table ni triable ni filtrable**, ordre fixe par numéro de clone : trier
+  par production suggérerait un classement que les sources ne portent pas.
+
+### L'arbre porte-greffe
 
 **Information pure, hors calcul économique.** Reproduction fidèle de
 l'arbre du Guide pratique Viticulture durable en Champagne 2025 (p. 39).
@@ -2033,7 +2228,8 @@ formule par formule, via la fiche imprimable (`out.printKpiRows`, §17).
   anti-double-compte du projet, mais à garder en tête pour toute lecture
   « valeur nette du patrimoine ».
 - **Aucune actualisation.** Les flux de trésorerie (`cashNet`, `investissement`,
-  cumuls) sont sommés bruts sur l'horizon (10 ou 25 ans), sans taux
+  cumuls) sont sommés bruts sur l'horizon (10 ans côté interface depuis
+  l'arbitrage 6 du 01/09/2026 ; le moteur accepte toujours 25), sans taux
   d'actualisation ni VAN : un euro à l'année 10 pèse, dans les KPI,
   exactement comme un euro à l'année 0. Choix de simplicité pour un outil
   de sensibilisation (§0) ; à corriger si l'outil devait un jour servir de
@@ -2047,15 +2243,46 @@ formule par formule, via la fiche imprimable (`out.printKpiRows`, §17).
   fixés par le cahier des charges AOC/CIVC de la campagne en cours, pas des
   constantes physiques : ils **peuvent changer d'une campagne à l'autre** et
   doivent être revérifiés avant tout usage, au même titre que le volume
-  commercialisable (`v.volco`, déjà un champ de saisie éditable, lui).
-- **Paramètres fixés en dur, non éditables dans l'UI :** `plafond = 10000`
-  kg/ha (`renderVals()`), `rendMean = 12296.6` kg/ha (moyenne régionale,
-  `renderVals()`). `volSortieArr` (9000 kg/ha) est, depuis le **chantier
-  A2**, une constante du moteur (`OAD.VOL_SORTIE_ARRACHAGE`) plutôt que
-  câblée dans `renderVals()` — non éditable dans l'UI pour autant. `horizon`
-  (10 ou 25 ans), lui, **est** éditable (sélecteur étape 5) — seule `seuilReserve` reste une
-  prop cachée non exposée (§17). Le facteur écart-type régional
-  (`EC = 3440` kg/ha) est câblé directement dans `renderVals()`.
+  commercialisable (`v.volco`, champ de saisie éditable).
+- **VolCo de campagne — `OAD.VOLCO_CAMPAGNE = 8800` kg/ha.** Décision du
+  Bureau exécutif du Comité Champagne du **22/07/2026**, campagne 2026
+  (9 000 en 2025, 10 000 en 2024, 11 400 en 2023, 12 000 en 2022). C'est
+  une **valeur annuelle** : elle doit être revérifiée à chaque campagne, et
+  elle est le défaut du champ `v.volco`, que l'utilisateur reste libre de
+  modifier. Un test de cohérence (§18 de la suite) vérifie que le défaut de
+  l'interface et la constante du moteur ne divergent pas.
+- **⚠ `VOLCO_CAMPAGNE` et `VOL_SORTIE_ARRACHAGE` sont deux choses
+  différentes.** La seconde vaut 9 000 kg/ha, et le VolCo de la campagne
+  2025 valait lui aussi 9 000 kg/ha : **coïncidence de chiffres, pas
+  égalité de nature.** `VOL_SORTIE_ARRACHAGE` est le volume annuel débloqué
+  de la réserve individuelle pendant la fenêtre d'arrachage (règle CIVC
+  repos → déblocages) ; `VOLCO_CAMPAGNE` est le volume commercialisable
+  voté chaque année. Les deux ne se mettent pas à jour ensemble. Ne jamais
+  dériver l'une de l'autre ni les fusionner en une constante unique — un
+  test dédié vérifie qu'elles restent distinctes.
+- **Paramètres non éditables dans l'UI, sortis de `renderVals()` au prompt
+  A2** : `OAD.PLAFOND_RESERVE` (10 000 kg/ha), `OAD.REND_MOYEN_REGIONAL`
+  (12 296,6 kg/ha) et `OAD.ECART_TYPE_REGIONAL` (3 440 kg/ha) vivent
+  désormais dans `moteur-oad.js`, où ils portent leur provenance et sont
+  couverts par les tests. Ils étaient auparavant câblés dans la vue —
+  intenable depuis que l'écart-type pilote le **scénario par défaut**
+  (arbitrage 8). Le couple (moyenne, écart-type) reste *assumé* : sa
+  période de calcul est à documenter avant diffusion.
+  `horizon` n'est **plus** éditable depuis l'arbitrage 6 : figé à 10 ans
+  côté UI, entier côté moteur. `seuilReserve` reste une prop cachée non
+  exposée (§17).
+- **⚠ Le test de résistance climatique change de nature selon le VolCo
+  saisi.** Le test force la mauvaise vendange à
+  `REND_MOYEN_REGIONAL − ECART_TYPE_REGIONAL` = **8 856,6 kg/ha**. Face à un
+  VolCo de 9 000 (campagne 2025) elle est **déficitaire** de 143 kg/ha et
+  puise dans la réserve ; face au VolCo de 8 800 (campagne 2026) elle est
+  **excédentaire** de 57 kg/ha et l'abonde. Le scénario par défaut de
+  l'outil bascule donc de sens selon un champ que l'utilisateur peut
+  modifier. Ce comportement n'a **pas** été changé — `simulerReserveKg` est
+  intact ; il a été rendu visible et testable par
+  `OAD.stressEstDeficitaire(volco)` (prompt A3) et le bandeau de l'écran 5
+  affiche la précision correspondante, calculée sur le VolCo effectivement
+  saisi.
 - **Faire-valoir simplifié** : fermage = loyer fixe (souvent indexé
   kg/bouteilles en réalité) ; métayage = parts éditables mais fixes dans le
   temps ; les contrats réels varient davantage.
@@ -2088,11 +2315,33 @@ formule par formule, via la fiche imprimable (`out.printKpiRows`, §17).
   jamais dans `inp` ni dans le calcul.
 - **Règles AOC modélisées** : écartement rang ≤ 2,00 m, pied 0,70–1,50 m,
   somme ≤ 3,00 m (cahier des charges homologué le 31/07/2025) ; irrigation
-  interdite (avertissement seulement, ne bloque pas le calcul) ; Voltis
+  interdite (l'ancien badge « interdite en AOC » a été remplacé au prompt
+  B7 par un renvoi au cahier des charges, chapitre I — conditions de
+  production ; le champ « arrosage du plantier » ne bloque pas le calcul et
+  ne porte, par arbitrage du 01/09/2026, **aucun commentaire de
+  provenance** : seule dérogation du projet à la règle de sourçage) ; Voltis
   ≤ 5 % de l'encépagement + 10 % d'assemblage (badge informatif).
 - **Dépendance réseau** : `support.js` charge React/ReactDOM/Babel depuis
   `unpkg.com`, et `index.html` charge les polices depuis Google Fonts. Sans
-  connexion Internet au premier chargement, la page reste blanche.
+  connexion Internet au premier chargement, la page reste blanche. C'est la
+  raison pour laquelle la frise d'accueil (prompt B6) et tous les graphiques
+  sont en **SVG inline** : aucune image externe n'est ajoutée à cette
+  dépendance déjà présente.
+- **Persistance locale — la contrainte « pas de `localStorage` » est levée**
+  (arbitrage 1 du 01/09/2026, prompt B1). L'outil enregistre un **instantané**
+  de `state.v`, de `state.registreRows` et de quelques drapeaux
+  (`registreImporte`, `champsTouches`, `accueilVu`) sous la clé versionnée
+  `oad-renovamus-v1`. Jamais un diff, jamais un identifiant de ligne : au
+  rechargement la table est relue telle quelle, ce qui rend inutile toute
+  clé stable de ligne. Un instantané d'une version antérieure du format est
+  ignoré en silence, l'outil repartant sur ses défauts. Lectures et écritures
+  sont encapsulées et ne lèvent jamais : `localStorage` peut être absent,
+  plein ou refusé (navigation privée, politique d'entreprise). **Ce qui reste
+  interdit :** tout appel réseau et toute donnée placée dans l'URL. Rien ne
+  sort jamais du navigateur. Le bouton « Effacer mes données » de l'en-tête
+  vide la clé et recharge les valeurs d'exemple. `CLAUDE.md` a été mis à
+  jour dans le même commit, pour qu'une session ultérieure ne supprime pas
+  la persistance en croyant réparer une violation.
 - **Classeur Excel de portage : maquette jetable, ne fait pas foi.** Le
   classeur Excel qui a servi de support initial au chiffrage de ce chantier
   (distinct des classeurs sources cités en provenance des valeurs, ex.
@@ -2150,6 +2399,53 @@ seule la manière dont ils sont présentés change. Le moteur
   source (`agregParcelle.cepageMixte`), indépendante de l'ordre des
   affectations sur `out`. Avertissement purement informatif — aucun
   impact sur le calcul économique.
+
+### 19ter. Journal d'arbitrages — session du 01/09/2026
+
+Quatorze décisions prises en séance, appliquées par la séquence de prompts
+A1-A3 / B1-B7 / C1-C3. Pour chacune : ce qu'elle produit, et **ce qu'elle
+écarte** — une décision dont on n'a pas noté l'alternative se rediscute à
+l'infini.
+
+| # | Décision | Conséquence | Ce que ça écarte |
+|---|---|---|---|
+| 1 | `localStorage` autorisé — persistance par **instantané** de `state.v` et `state.registreRows`, pas par diff | Les saisies survivent au rechargement ; bouton « Effacer mes données » dans l'en-tête ; `CLAUDE.md` mis à jour **dans le même commit** | Écarte la persistance par diff, qui aurait exigé une clé stable par ligne de registre — donc un appariement fragile après import. Écarte aussi tout stockage distant : rien ne sort du navigateur |
+| 2 | Registre : **édition des cellules uniquement**, ni ajout ni suppression ni exclusion de lignes à l'écran 1 | 4 colonnes saisissables (surface, année de plantation, taux de manquants, situation) | Écarte un éditeur de registre complet. Le mécanisme d'exclusion de lignes de l'écran 2 reste seul et inchangé — deux mécanismes d'exclusion auraient été indistinguables pour l'utilisateur |
+| 3 | Import : **export du portail CIVC**, 12 colonnes spécifiées | Colonne obligatoire manquante → message qui **la nomme**, table en place non remplacée | Écarte un import « best effort » qui aurait produit des zéros silencieux là où une colonne manque |
+| 4 | Clones : **union** Guide 2025 + PlantGrape, origine marquée par ligne — 42 lignes | Référentiel sourcé dans le moteur, marqueur d'origine par ligne, 3 origines partielles visibles | Écarte le choix d'une source unique, qui aurait perdu soit les clones hors Guide, soit les colonnes agronomiques |
+| 5 | Colonne **Botrytis conservée vide**, avec note explicative | Affichée et vide sur 37 des 42 lignes, renvoi CIVC / plantgrape.fr | Écarte à la fois le retrait de la colonne (on perdrait l'information qu'elle manque) et son remplissage par dire d'expert |
+| 6 | **Horizon figé à 10 ans**, sélecteur retiré, paramètre conservé dans le moteur | Un réglage de moins ; `inp.horizon = 10` en dur côté UI | Écarte le sélecteur 10/25 ans. **N'écarte pas** la capacité du moteur : les tests de parité couvrent toujours 25 ans |
+| 7 | **Arrosage du plantier** autorisé et affiché, sans mention de provenance dans le code | Sélecteur rétabli sous ce libellé, renvoi au cahier des charges | Écarte le badge « interdite en AOC », qui tranchait une question réglementaire à la place de la source. **Seule dérogation du projet à la règle de sourçage** |
+| 8 | **Test de résistance climatique actif par défaut**, 2 années déficitaires | Bandeau non repliable en tête de l'écran 5, bascule en un clic | Écarte le défaut « moyenne régionale chaque année », qui présentait la transition sous son jour le plus favorable |
+| 9 | IDU réels du jeu d'exemple : **diffusion validée** | Le jeu d'exemple reste tel quel | Écarte l'anonymisation des identifiants parcellaires |
+| 10 | **Mobile hors périmètre** | Aucun travail d'adaptation petite largeur | Écarte le responsive mobile pour cette version |
+| 11 | **Chemin court à 11 champs** ; investissement affiché comme « coût de référence Champagne » | Volets « Ajuster » repliés par écran, indicateur « *n* repères sur 11 », libellé qui bascule sur « votre investissement » dès qu'un des 4 postes est édité | Écarte la suppression de champs : les 53 contrôles sont tous encore là. Écarte aussi un total présenté comme « le vôtre » alors qu'il n'est qu'une référence |
+| — | Référentiel clones **hébergé dans `moteur-oad.js`**, comme `ARBRE_PG` | `CLONES_CHAMPAGNE` + `OAD.clonesParCepage()`, JSON de travail commité sous `data/` | Écarte le chargement du JSON à l'exécution — le projet n'a ni build ni dépendance |
+| — | `declinSQ` déplacé vers un volet **« hypothèses de comparaison »** à l'écran 5 | Saisi juste au-dessus du tableau « Manque à gagner » qu'il commande | Écarte son maintien à l'écran 2, où il passait pour une caractéristique de la parcelle alors qu'il décrit le contre-factuel |
+| — | Écran 5 : **KPI physiques en tête**, trésorerie en second | Bloc « Ce que le renouvellement produit » au niveau typographique des ex-KPI financiers ; ceux-ci descendent d'un cran sans rien perdre | Écarte une lecture qui commence par une trésorerie cumulée négative dans la quasi-totalité des configurations |
+| — | Année de retour à l'équilibre : **écartée** | Aucun indicateur du moment où la trésorerie s'inverse | Point de vigilance porté en recette (§21) : vérifier que la lecture ne devient pas décourageante au point d'être inutilisable |
+
+**Ce que la séquence n'a pas touché.** `support.js` (jamais modifié).
+`simulerReserveKg` et toutes les formules du moteur : les 97 tests de parité
+d'origine passent inchangés, aucune valeur attendue n'a été mise à jour. Les
+17 tests ajoutés (sections 16 à 18) documentent le référentiel clones, les
+constantes de campagne, le basculement du test climatique et la cohérence
+entre les défauts de l'interface et les constantes du moteur — **114 ok,
+0 FAIL**.
+
+**Ce qui reste ouvert après cette séquence** (repris de la séquence de
+prompts, à trancher avant diffusion) :
+
+- Numéro de la décision CIVC fixant la règle repos → déblocages
+  (1/2/3 ans → 3/4/5 années à 9 000 kg/ha), toujours non publiée.
+- `coutReposHaAn` reste à 0 €/ha/an — seul paramètre de charge non sourcé ;
+  sur la fenêtre de jachère, le contre-factuel garde un biais optimiste
+  résiduel.
+- Postes mécanisés des volets par opération, à caler sur données coopérative
+  ou Chambre d'agriculture de la Marne.
+- Date de relevé des prix `PRIX_PALISSAGE` et `PRIX_PROTECTION_PLANT`.
+- Date de relevé des surfaces de multiplication PlantGrape, et période de
+  calcul du couple (`REND_MOYEN_REGIONAL`, `ECART_TYPE_REGIONAL`).
 
 ## 20. Pour aller plus loin
 
