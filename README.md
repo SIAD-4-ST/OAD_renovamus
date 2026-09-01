@@ -2491,3 +2491,89 @@ changement touchant l'écran 5 :
 - La fiche imprimable (`window.print()`) reste lisible en A4 : titres de
   section, tableaux non coupés en plein milieu d'une ligne, pas de couleur
   illisible une fois imprimée en noir et blanc.
+
+### Points ajoutés par la session du 01/09/2026
+
+Six contrôles supplémentaires, tous non automatisables pour la même
+raison : ils portent sur ce qu'une personne **comprend** en regardant
+l'écran, pas sur ce que le code calcule. Les vérifier avant toute
+diffusion, et après tout changement touchant les écrans concernés.
+
+**1. Lisibilité de l'écran 5 après la bascule de hiérarchie (prompt B5).**
+Les KPI physiques sont passés en tête, les KPI financiers d'un cran en
+dessous. Vérifier **à l'œil** que la lecture n'est pas devenue
+décourageante au point d'être inutilisable : avec un horizon de 10 ans et
+deux vendanges déficitaires par défaut, la trésorerie cumulée est négative
+dans la quasi-totalité des configurations. La question à se poser en
+regardant l'écran est : *un vigneron qui découvre l'outil comprend-il que
+le renouvellement produit quelque chose, ou n'y voit-il qu'une perte ?* Si
+c'est la seconde réponse, le problème n'est pas dans le calcul — il est
+dans l'ordre de lecture, et c'est ce point qu'il faut rouvrir.
+
+**2. Absence d'indicateur de retour à l'équilibre — limite ASSUMÉE.**
+L'année où la trésorerie annuelle s'inverse a été **écartée** en séance.
+L'utilisateur ne dispose donc d'aucun repère sur le moment où l'opération
+cesse de coûter. C'est une décision, pas un oubli : ne pas la « corriger »
+sans rouvrir l'arbitrage. Ce qu'il faut vérifier en recette, c'est que
+cette absence ne conduit pas un lecteur à conclure que la trésorerie ne
+revient **jamais** à l'équilibre — ce que l'outil ne dit pas et ne peut pas
+dire sur 10 ans.
+
+**3. Cohérence du libellé de l'investissement (arbitrage 11).** Parcours à
+faire dans cet ordre :
+   - ouvrir l'outil sans rien toucher → les trois emplacements (KPI de
+     l'écran 5, synthèse latérale, fiche imprimable) doivent dire **« Coût
+     de référence Champagne »**, avec la mention renvoyant au volet
+     « Ajuster » de l'étape 4 ;
+   - modifier **un seul** des quatre postes (`coutArrachageHa`,
+     `coutPlant`, `coutPalissageHa`, `coutProtectionHa`) → les trois
+     emplacements doivent basculer **ensemble** sur « Votre
+     investissement » ; aucun ne doit rester en arrière ;
+   - remettre la valeur d'origine → le libellé doit **rester** « Votre
+     investissement » (le drapeau suit « ce chiffre a-t-il été regardé »,
+     pas « diffère-t-il du défaut ») ;
+   - recharger la page → le libellé doit être conservé (drapeaux persistés) ;
+   - « Effacer mes données » → retour à « Coût de référence Champagne ».
+
+**4. Panneau d'accueil au clavier (prompt B6).** Sans jamais toucher la
+souris :
+   - au premier chargement, le panneau est ouvert ; `Tab` doit atteindre
+     le bouton « Commencer ✕ » sans passer par du contenu invisible ;
+   - `Échap` ferme le panneau, et le focus doit revenir **visiblement** sur
+     le bouton « Comment lire cet outil » de l'en-tête ;
+   - ce même bouton rouvre le panneau et le focus doit partir sur le bouton
+     de fermeture ;
+   - vérifier qu'on peut tabuler dans toute la page **sans** que le focus
+     disparaisse derrière un élément recouvrant : le panneau est dans le
+     flux du document précisément pour éviter ce piège, et toute
+     réintroduction d'un `position: fixed` le ramènerait.
+   - recharger : le panneau ne doit **plus** s'ouvrir tout seul.
+   - vérifier au lecteur d'écran que la frise annonce sa description
+     (`aria-label`) plutôt que d'être passée sous silence.
+
+**5. Message d'erreur d'import CIVC (prompt B2).** Préparer un export du
+portail auquel on retire **une** colonne obligatoire, puis l'importer :
+   - le message doit **nommer la colonne manquante**, pas dire « fichier
+     invalide » ;
+   - le registre affiché à l'écran ne doit **pas** avoir changé — c'est le
+     point le plus important, et le plus facile à casser en refactorant ;
+   - refaire avec deux colonnes retirées : les deux doivent être nommées ;
+   - importer un fichier correct, refuser la confirmation → rien ne change ;
+   - accepter → le tableau, le sélecteur de parcelle et le titre de
+     l'onglet (« Registre parcellaire », sans « — exemple ») changent
+     ensemble ; les corrections de cellules précédentes ont bien disparu,
+     comme la confirmation l'annonçait.
+
+**6. Effacement des données effectif (prompt B1).** Saisir dans plusieurs
+écrans, corriger une cellule du registre, recharger pour vérifier que tout
+est revenu, puis « Effacer mes données » :
+   - la confirmation doit précéder toute destruction ;
+   - après effacement, **tous** les champs reviennent aux valeurs
+     d'exemple, y compris le registre, la parcelle sélectionnée, les lignes
+     exclues de l'étape 2 et l'indicateur « *n* repères sur 11 » ;
+   - recharger encore une fois : les valeurs d'exemple doivent tenir — si
+     les saisies réapparaissent, la clé n'a pas été vidée mais seulement
+     l'état en mémoire.
+   - refaire le tout en navigation privée stricte, où `localStorage` peut
+     être refusé : l'outil doit fonctionner normalement, simplement sans
+     rien conserver, et **sans message d'erreur**.
