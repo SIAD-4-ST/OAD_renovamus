@@ -1496,7 +1496,14 @@ class Component extends DCLogic {
     // hook actif : il n'est simplement plus alimenté depuis l'UI, donc 1 —
     // voir README, journal d'arbitrages « chantier B4 ».
     const fDens = 1;
-    const EC = 3440, m = 12296.6;
+    // prompt A2 — plus aucune constante de campagne câblée ici : le plafond de
+    // réserve, le rendement moyen régional et son écart-type viennent du moteur,
+    // où ils portent leur provenance et sont couverts par les tests. Les replis
+    // ne servent qu'au cas (jamais rencontré en production) où moteur-oad.js
+    // n'aurait pas été chargé.
+    const PLAFOND = OAD ? OAD.PLAFOND_RESERVE : 10000;
+    const m = OAD ? OAD.REND_MOYEN_REGIONAL : 12296.6;
+    const EC = OAD ? OAD.ECART_TYPE_REGIONAL : 3440;
     const rendYearFn = v.sequence === 'creux34' ? (t => (t === 3 || t === 4) ? m - EC : m)
       : v.sequence === 'creux1' ? (t => (t === 1) ? m - EC : m) : null;
 
@@ -1554,8 +1561,8 @@ class Component extends DCLogic {
       repos: reposChoisi,
       nbSortie: OAD ? OAD.nbSortiePourRepos(reposChoisi) : reposChoisi + 2,
       volSortieArr: OAD ? OAD.VOL_SORTIE_ARRACHAGE : 9000,
-      plafond: 10000, volco: +v.volco || 0, rendMean: m,
-      reserveInit: 10000 * (+v.riPct || 0) / 100, horizon: +v.horizon || 10,
+      plafond: PLAFOND, volco: +v.volco || 0, rendMean: m,
+      reserveInit: PLAFOND * (+v.riPct || 0) / 100, horizon: +v.horizon || 10,
       ramp: rampeProfil, rampYears: rampeProfil.length, rendYearFn,
       rendFactorProjet: fDens,
       rendEstime: +v.rendEstime || 0,
@@ -1744,8 +1751,10 @@ class Component extends DCLogic {
 
     // Fiche d'audit imprimable — chantier "auditabilité des hypothèses" :
     // toutes les valeurs de `inp` doivent être traçables (saisi / défaut /
-    // dérivé de la géométrie / câblé en dur), y compris les constantes non
-    // éditables par l'utilisateur (volSortieArr, plafond, rendMean, EC).
+    // dérivé de la géométrie / constante du moteur), y compris les valeurs non
+    // éditables par l'utilisateur (volSortieArr, plafond, rendMean, EC). Depuis
+    // le prompt A2, ces quatre-là ne sont plus câblées ici : elles viennent de
+    // moteur-oad.js, où elles portent leur provenance.
     const nf = (x, d = 2) => (typeof x !== 'number' || isNaN(x)) ? String(x) : x.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: d });
     const oui = b => b ? 'oui' : 'non';
     // Résumé affiché sur l'en-tête du volet « charges de production » replié :
@@ -1764,7 +1773,7 @@ class Component extends DCLogic {
       { lib: 'Volume commercialisable (VolCo)', val: nf(inp.volco, 0), unite: 'kg/ha', origine: 'Saisi' },
       { lib: 'Prix du raisin', val: nf(inp.prixKg, 2), unite: '€/kg', origine: 'Saisi' },
       { lib: 'Réserve individuelle initiale (saisie)', val: nf(+v.riPct || 0, 0), unite: '% du plafond', origine: 'Saisi' },
-      { lib: 'Réserve individuelle initiale', val: nf(inp.reserveInit, 0), unite: 'kg/ha', origine: 'Dérivé — plafond câblé en dur (10 000) × réserve saisie / 100' },
+      { lib: 'Réserve individuelle initiale', val: nf(inp.reserveInit, 0), unite: 'kg/ha', origine: 'Dérivé — OAD.PLAFOND_RESERVE (10 000) × réserve saisie / 100' },
       { lib: 'Âge de la parcelle', val: nf(inp.ageParc, 0), unite: 'ans', origine: modeRegistre ? `Dérivé du registre — moyenne pondérée par surface de la sélection (idu ${s.parcelleIdu}), campagne ${campagne}` : 'Saisi' },
       { lib: 'Pieds manquants', val: nf(inp.manquants * 100, 1), unite: '%', origine: modeRegistre ? 'Dérivé du registre — moyenne pondérée par surface de la sélection' : 'Saisi' },
       { lib: 'Rendement estimé de la parcelle', val: nf(inp.rendEstime, 0), unite: 'kg/ha', origine: 'Saisi' },
@@ -1790,9 +1799,9 @@ class Component extends DCLogic {
       { lib: 'Facteur rendement projet (rendFactorProjet)', val: nf(fDens, 3), unite: 'ratio', origine: 'CÂBLÉ EN DUR — 1, non éditable depuis l\'interface' },
       { lib: 'Repos avant replantation', val: nf(inp.repos, 0), unite: 'ans', origine: 'Saisi — sous réserve de publication de la décision CIVC de juillet 2026' },
       { lib: 'Durée de sortie de réserve', val: nf(inp.nbSortie, 0), unite: 'ans', origine: 'Dérivé — OAD.nbSortiePourRepos(repos), sous réserve de publication de la décision CIVC de juillet 2026' },
-      { lib: "Volume de sortie de réserve à l'arrachage", val: nf(inp.volSortieArr, 0), unite: 'kg/ha/an', origine: 'CÂBLÉ EN DUR — 9 000, non éditable' },
-      { lib: 'Plafond de la réserve individuelle', val: nf(inp.plafond, 0), unite: 'kg/ha', origine: 'CÂBLÉ EN DUR — 10 000, non éditable' },
-      { lib: 'Rendement moyen régional de référence', val: nf(inp.rendMean, 1), unite: 'kg/ha', origine: 'CÂBLÉ EN DUR — 12 296,6, non éditable' },
+      { lib: "Volume de sortie de réserve à l'arrachage", val: nf(inp.volSortieArr, 0), unite: 'kg/ha/an', origine: 'Constante du moteur — OAD.VOL_SORTIE_ARRACHAGE, non éditable ; sans lien avec le VolCo de campagne malgré la coïncidence de chiffres' },
+      { lib: 'Plafond de la réserve individuelle', val: nf(inp.plafond, 0), unite: 'kg/ha', origine: 'Constante du moteur — OAD.PLAFOND_RESERVE, non éditable' },
+      { lib: 'Rendement moyen régional de référence', val: nf(inp.rendMean, 1), unite: 'kg/ha', origine: 'Constante du moteur — OAD.REND_MOYEN_REGIONAL, non éditable ; écart-type OAD.ECART_TYPE_REGIONAL = 3 440 kg/ha' },
       { lib: "Coût d'arrachage (tout compris — MHCS)", val: nf(inp.coutArrachageHa, 0), unite: '€/ha', origine: 'Saisi' },
       { lib: 'Plant (matériel végétal)', val: nf(inp.coutPlant, 2), unite: '€/pied', origine: 'Saisi' },
       { lib: 'Palissage', val: nf(inp.coutPalissageHa, 0), unite: '€/ha', origine: s.palisManuel ? 'Saisi — édité à la main' : 'Dérivé de la géométrie — relevé fournisseur [date à préciser] + gripple/MO LutEnVi 2025' },

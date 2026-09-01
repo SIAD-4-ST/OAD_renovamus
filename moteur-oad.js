@@ -830,6 +830,15 @@ function regimesTravailArrachage(scArr, scSQ, inp, opsManuel = REF_OPS_MANUEL, f
 // détermine mécaniquement le nombre de déblocages de réserve. Voir README,
 // journal d'arbitrages « chantier A2 ». Statut réglementaire à rappeler côté
 // UI tant que la décision CIVC n'est pas publiée.
+// ⚠ ATTENTION — NE PAS CONFONDRE AVEC `VOLCO_CAMPAGNE`.
+// VOL_SORTIE_ARRACHAGE vaut 9 000 kg/ha, et le VolCo de la campagne 2025 valait
+// lui aussi 9 000 kg/ha : c'est une COÏNCIDENCE de chiffres, pas une égalité de
+// nature. Le premier est le volume annuel débloqué de la réserve individuelle
+// pendant la fenêtre d'arrachage (règle CIVC repos -> déblocages) ; le second
+// est le volume commercialisable voté chaque année. Les deux ne se mettent pas
+// à jour ensemble : le VolCo change à chaque campagne (8 800 en 2026), celui-ci
+// non. Ne jamais dériver l'un de l'autre, ni les remplacer par une constante
+// unique. Voir README §19.
 const VOL_SORTIE_ARRACHAGE = 9000; // kg/ha/an, inchangé depuis avant ce chantier — voir README §19
 const NB_SORTIE_PAR_REPOS = { 1: 3, 2: 4, 3: 5 }; // repos (ans) -> nb d'années de déblocage
 function nbSortiePourRepos(repos) {
@@ -839,6 +848,35 @@ function nbSortiePourRepos(repos) {
   }
   return nbSortie;
 }
+
+/* =====================================================================
+   Prompt A2 — constantes de campagne, sorties de `renderVals()`.
+
+   Ces trois valeurs étaient câblées en dur dans la vue (index.html). Depuis
+   l'arbitrage 8, l'écart-type régional pilote le SCÉNARIO PAR DÉFAUT de
+   l'outil : une valeur non sourcée et non testable ne pouvait plus rester
+   dans le rendu. Elles sont ici pour être lues par la vue, pas pour entrer
+   dans `inp` autrement que via les champs existants.
+   ===================================================================== */
+
+// Plafond de la réserve individuelle. Non éditable dans l'UI.
+const PLAFOND_RESERVE = 10000;        // kg/ha
+
+// Rendement moyen régional de référence et son écart-type, utilisés par le
+// test de résistance climatique (« mauvaise vendange » = moyenne − écart-type).
+// Reprises telles quelles de `renderVals()`, où elles étaient non sourcées.
+// assumé — provenance et période de calcul du couple (moyenne, écart-type) à
+// documenter avant diffusion.
+const REND_MOYEN_REGIONAL = 12296.6;  // kg/ha
+const ECART_TYPE_REGIONAL = 3440;     // kg/ha
+
+// Volume commercialisable de la campagne — VALEUR ANNUELLE, À REVÉRIFIER À
+// CHAQUE CAMPAGNE. Campagne 2026 : 8 800 kg/ha, Bureau exécutif du Comité
+// Champagne du 22/07/2026. Historique : 9 000 en 2025, 10 000 en 2024,
+// 11 400 en 2023, 12 000 en 2022. Sert de valeur PAR DÉFAUT du champ VolCo ;
+// l'utilisateur reste libre de la modifier. Voir aussi l'avertissement
+// au-dessus de VOL_SORTIE_ARRACHAGE : les deux constantes sont distinctes.
+const VOLCO_CAMPAGNE = 8800;          // kg/ha
 
 // Chantier A3 — remplace les paliers de montée en charge (sélecteur 30/60/100 %
 // ou 50/80/100 %) par une rampe linéaire dérivée d'une seule saisie : l'année
@@ -862,7 +900,8 @@ if (typeof module !== 'undefined') module.exports =
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
-    CLONES_CHAMPAGNE, clonesParCepage };
+    CLONES_CHAMPAGNE, clonesParCepage,
+    PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE };
 if (typeof window !== 'undefined') window.OAD =
   { simulerReserveKg, coucheEuro, repartir, cumul, construireScenarios, manqueAGagner,
     chargesEntretien, coutPalissage, PRIX_PALISSAGE, FILS_PAR_TAILLE, largeurEquivalente,
@@ -871,6 +910,8 @@ if (typeof window !== 'undefined') window.OAD =
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
-    CLONES_CHAMPAGNE, clonesParCepage };
+    CLONES_CHAMPAGNE, clonesParCepage,
+    PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,
+    stressEstDeficitaire };
 
 }

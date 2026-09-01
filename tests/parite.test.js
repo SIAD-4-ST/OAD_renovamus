@@ -1351,6 +1351,29 @@ test('le référentiel n\'entre dans aucun calcul : construireScenarios ignore C
 });
 
 // ----------------------------------------------------------------------
+section('17. Constantes de campagne (prompt A2)');
+// ----------------------------------------------------------------------
+
+test('les constantes de campagne sorties de renderVals() valent bien ce que la vue câblait : plafond 10 000, moyenne 12 296,6, écart-type 3 440', () => {
+  assert.strictEqual(OAD.PLAFOND_RESERVE, 10000);
+  assert.strictEqual(OAD.REND_MOYEN_REGIONAL, 12296.6);
+  assert.strictEqual(OAD.ECART_TYPE_REGIONAL, 3440);
+});
+
+test('VOLCO_CAMPAGNE et VOL_SORTIE_ARRACHAGE sont deux constantes DISTINCTES : 8 800 (campagne 2026) contre 9 000 (déblocage de réserve), sans lien de dérivation', () => {
+  assert.strictEqual(OAD.VOLCO_CAMPAGNE, 8800, 'VolCo campagne 2026 — Bureau exécutif du 22/07/2026');
+  assert.strictEqual(OAD.VOL_SORTIE_ARRACHAGE, 9000, 'volume annuel débloqué pendant la fenêtre d\'arrachage');
+  assert.notStrictEqual(OAD.VOLCO_CAMPAGNE, OAD.VOL_SORTIE_ARRACHAGE,
+    'si ces deux valeurs redeviennent égales, vérifier que ce n\'est pas une fusion accidentelle : elles ne se mettent pas à jour ensemble');
+});
+
+test('les KPI existants sont inchangés à VolCo identique — sortir les constantes de la vue n\'a touché aucune formule', () => {
+  assert.deepStrictEqual(snapshotScenarios(OAD.construireScenarios(INP_A)), snapshotScenarios(SC_BASE));
+  assert.strictEqual(INP_A.plafond, OAD.PLAFOND_RESERVE);
+  assert.strictEqual(INP_A.rendMean, OAD.REND_MOYEN_REGIONAL);
+});
+
+// ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------
 
