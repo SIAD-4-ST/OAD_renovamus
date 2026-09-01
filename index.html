@@ -90,6 +90,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
       <div style="font-family:'Fraunces',serif;font-weight:650;font-size:20px;line-height:1.1">Renouvellement du vignoble</div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#A97F26;letter-spacing:0.08em">SIMULATEUR · IMPACT ARRACHAGE-REPLANTATION</div>
       <button onClick="{{ toggleLexique }}" style="margin-left:auto;font-size:12.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:{{ lexiqueBg }};color:{{ lexiqueFg }}">{{ lexiqueLabel }}</button>
+      <!-- prompt B6 — point d'entrée PERMANENT vers le panneau d'accueil, à côté
+           du Lexique : l'aide ne doit pas être réservée à la première visite. -->
+      <button id="accueil-ouvrir" onClick="{{ ouvrirAccueil }}" style="font-size:12.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:#fff;color:#20291F">Comment lire cet outil</button>
       <!-- prompt B1 — les saisies sont désormais persistées localement ; il faut
            donc un moyen visible et permanent de les reprendre à zéro. -->
       <button onClick="{{ effacerDonnees }}" title="Remplace vos saisies et le registre par les valeurs d'exemple" style="font-size:12.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:#fff;color:#A5433A">Effacer mes données</button>
@@ -108,6 +111,45 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
       </div>
     </sc-if>
   </header>
+
+  <!-- Panneau d'accueil — prompt B6.
+
+       Volontairement DANS LE FLUX du document : pas de `position: fixed`, pas de
+       superposition. Un panneau fixe qui recouvre la page est un piège à focus
+       classique — on tabule derrière lui sans le voir. Ici le panneau est le
+       premier contenu de la page ; le focus y entre naturellement, Échap le
+       ferme, et le focus revient au bouton qui l'a ouvert. -->
+  <sc-if value="{{ accueilOuvert }}" hint-placeholder-val="{{ true }}">
+    <div role="dialog" aria-modal="false" aria-label="Comment lire cet outil" onKeyDown="{{ onAccueilTouche }}" style="background:#FAF9F5;border-bottom:3px solid #20291F">
+      <div style="max-width:1360px;margin:0 auto;padding:26px 28px 30px">
+        <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:6px">
+          <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:24px;margin:0">Ce que fait cet outil</h2>
+          <button id="accueil-fermer" onClick="{{ fermerAccueil }}" style="margin-left:auto;font-size:13px;padding:8px 16px;border:1px solid #20291F;background:#20291F;color:#FAF9F5;border-radius:6px;cursor:pointer">Commencer ✕</button>
+        </div>
+        <p style="font-size:14.5px;line-height:1.6;max-width:76ch;margin:0 0 4px;color:#20291F">Vous désignez une parcelle et l'outil <b>simule l'impact de son renouvellement</b> : ce que la transition coûte, ce que la réserve individuelle absorbe, et en combien de temps la parcelle revient en production. Il ne vous dit pas quoi faire.</p>
+        <p style="font-size:12.5px;color:#5C6157;margin:0 0 14px">Appuyez sur <b>Échap</b> pour fermer. Vous retrouverez ce panneau à tout moment par le bouton <b>« Comment lire cet outil »</b>, en haut de la page.</p>
+
+        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:16px 18px;margin-bottom:16px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:2px">Le mécanisme, en une image</div>
+          <div style="font-size:12.5px;color:#5C6157;margin-bottom:10px;max-width:76ch">Dessin illustratif : il montre la <b>forme</b> du phénomène, pas le résultat de vos saisies. Vos chiffres sont à l'étape 5.</div>
+          {{ friseAccueil }}
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+          <div style="background:#E3EDE5;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.55">
+            <b style="display:block;margin-bottom:6px">Ce que l'outil fait</b>
+            Il chiffre la trajectoire physique et financière du renouvellement d'<b>une</b> parcelle, sur 10 ans : coût de l'opération, kilos de réserve mobilisés puis reconstitués, âge du vignoble, trésorerie année par année. Tous les champs sont préremplis : vous pouvez aller droit aux résultats, puis revenir affiner.
+          </div>
+          <div style="background:#F3E0DD;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.55">
+            <b style="display:block;margin-bottom:6px">Ce que l'outil ne fait pas</b>
+            <b>Aucune recommandation</b> — il ne conclut jamais qu'il faut arracher ou attendre.
+            <b>Aucune actualisation des flux</b> — un euro de l'année 9 y pèse autant qu'un euro d'aujourd'hui.
+            <b>Aucune valeur patrimoniale</b> — ni celle du vignoble rajeuni, ni celle de la réserve reconstituée. Les résultats sont donc structurellement pessimistes sur la fin de l'horizon.
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
 
   <div id="appGrid" style="max-width:1360px;margin:0 auto;width:100%;flex:1;display:grid;grid-template-columns:216px minmax(0,1fr) 296px;gap:0;align-items:start">
 
@@ -162,7 +204,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           </button>
           <sc-if value="{{ introOuvert }}" hint-placeholder-val="{{ true }}">
             <div class="fold-body" style="font-size:13.5px;line-height:1.6;max-width:78ch">
-              <p style="margin:0 0 12px">Vous désignez <b>une parcelle</b> de votre exploitation et l'outil compare deux avenirs pour elle : la <b>renouveler</b> — l'arracher, laisser le sol se reposer, replanter — ou <b>ne rien faire</b>. Il chiffre ce que la transition coûte, ce que la réserve individuelle permet d'absorber, et en combien de temps la parcelle revient en production.</p>
+              <p style="margin:0 0 12px">Vous désignez <b>une parcelle</b> de votre exploitation et l'outil simule <b>l'impact de son renouvellement</b> : l'arracher, laisser le sol se reposer, replanter. Il chiffre ce que la transition coûte, ce que la réserve individuelle permet d'absorber, et en combien de temps la parcelle revient en production. Le maintien en l'état sert de <b>repère de comparaison</b> pour mesurer cet impact — l'outil ne recommande ni l'un ni l'autre.</p>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px 20px;margin-bottom:12px">
                 <div><b>1 · Exploitation</b><br><span style="color:#5C6157">votre domaine dans son ensemble</span></div>
                 <div><b>2 · Parcelle</b><br><span style="color:#5C6157">celle que vous voulez renouveler</span></div>
@@ -1443,10 +1485,11 @@ function lireInstantane() {
     return o;
   } catch (e) { return null; }
 }
-function ecrireInstantane(v, registreRows, registreImporte, champsTouches) {
+function ecrireInstantane(v, registreRows, registreImporte, champsTouches, accueilVu) {
   try {
     window.localStorage.setItem(CLE_STOCKAGE,
-      JSON.stringify({ version: VERSION_STOCKAGE, v, registreRows, registreImporte, champsTouches }));
+      JSON.stringify({ version: VERSION_STOCKAGE, v, registreRows, registreImporte,
+        champsTouches, accueilVu }));
     return true;
   } catch (e) { return false; }
 }
@@ -1541,7 +1584,10 @@ class Component extends DCLogic {
       // Panneaux d'aide : le mode d'emploi est ouvert au premier affichage
       // (première visite), le lexique et les charges de production sont
       // repliés — accessibles à tout moment, mais hors du chemin par défaut.
-      introOuvert: true, lexiqueOuvert: false, chargesProdOuvert: false,
+      // prompt B6 — l'encart de l'écran 1 n'est plus ouvert au premier
+      // affichage : c'est le panneau d'accueil qui accueille désormais. L'encart
+      // reste en place, replié, pour qui veut relire le déroulé des 5 étapes.
+      introOuvert: false, lexiqueOuvert: false, chargesProdOuvert: false,
       aideOuverte: false, detailOuvert: false, magOuvert: false,
       effortNetOuvert: false, stockChartOuvert: false, ageChartOuvert: false,
       voletProdOuvert: false, voletProdOverrides: {},
@@ -1560,6 +1606,10 @@ class Component extends DCLogic {
       // l'investissement repartiraient à zéro à chaque rechargement, alors même
       // que les valeurs saisies, elles, seraient bien restaurées.
       champsTouches: (instantane && instantane.champsTouches) || {},
+      // prompt B6 — le panneau d'accueil ne s'ouvre de lui-même qu'à la PREMIÈRE
+      // visite. Ensuite il reste atteignable en permanence depuis l'en-tête.
+      accueilVu: !!(instantane && instantane.accueilVu),
+      accueilOuvert: !(instantane && instantane.accueilVu),
       // Volets « Ajuster » (prompt B4) — repliés par défaut sur chaque écran.
       ajusterOuvert1: false, ajusterOuvert2: false, ajusterOuvert3: false, ajusterOuvert4: false,
       parcelleIdu: iduPlanteesInit[0] || null,
@@ -1650,11 +1700,12 @@ class Component extends DCLogic {
   // volet, changement d'étape) qui ne modifie aucune donnée.
   componentDidUpdate() {
     const instantane = JSON.stringify({ v: this.state.v, registreRows: this.state.registreRows,
-      registreImporte: this.state.registreImporte, champsTouches: this.state.champsTouches });
+      registreImporte: this.state.registreImporte, champsTouches: this.state.champsTouches,
+      accueilVu: this.state.accueilVu });
     if (instantane === this.__dernierInstantane) return;
     this.__dernierInstantane = instantane;
     ecrireInstantane(this.state.v, this.state.registreRows, this.state.registreImporte,
-      this.state.champsTouches);
+      this.state.champsTouches, this.state.accueilVu);
   }
 
   // Remet l'outil dans l'état d'une première visite : instantané effacé,
@@ -1670,6 +1721,7 @@ class Component extends DCLogic {
       v: { ...V_DEFAUTS },
       registreRows,
       champsTouches: {},
+      accueilVu: false, accueilOuvert: true,
       registreImporte: false,
       importErreur: null, importOk: null,
       parcelleIdu: idus[0] || null,
@@ -1855,6 +1907,105 @@ class Component extends DCLogic {
     else if (marker === 'triangle') ch.push(e('polygon', { key: 'm', points: `${cx},${cy - 3.4} ${cx - 3},${cy + 2.6} ${cx + 3},${cy + 2.6}`, fill: c }));
     else ch.push(e('circle', { key: 'm', cx, cy, r: 3, fill: c }));
     return e('svg', { width: w, height: h, viewBox: `0 0 ${w} ${h}` }, ch);
+  }
+
+  /* Frise d'accueil — prompt B6.
+
+     Le mécanisme que l'outil chiffre et que l'interface n'explique nulle part :
+     on arrache (année 0), le sol se repose, on replante, la 3e feuille donne une
+     première récolte, la pleine production revient. Pendant tout ce temps la
+     parcelle ne produit pas — et c'est la réserve individuelle qui comble le
+     trou, en se vidant.
+
+     SVG en ligne, construit comme les graphiques existants (React.createElement,
+     pas de JSX) : AUCUNE image externe. La page dépend déjà d'unpkg et de Google
+     Fonts, on n'y ajoute pas une dépendance de plus.
+
+     Le dessin est illustratif : ses courbes ne sont pas le résultat du calcul,
+     elles montrent la FORME du phénomène. Les chiffres, eux, sont à l'écran 5. */
+  friseAccueil() {
+    const e = React.createElement;
+    const W = 720, H = 260;
+    const mL = 46, mR = 14, mT = 26, mB = 54;
+    const x0 = mL, x1 = W - mR;
+    const yBase = H - mB;              // ligne de sol
+    const yHaut = mT;                  // plein rendement
+    const ch = [];
+
+    // Repères d'étape, en années depuis l'arrachage.
+    const etapes = [
+      { t: 0,  lib: 'Arrachage',        sous: 'année 0' },
+      { t: 1,  lib: 'Repos du sol',     sous: '1 à 3 ans' },
+      { t: 2,  lib: 'Plantation',       sous: 'après le repos' },
+      { t: 4,  lib: '3ᵉ feuille',       sous: 'première récolte' },
+      { t: 7,  lib: 'Pleine production', sous: 'régime normal' }
+    ];
+    const tMax = 8;
+    const X = t => x0 + (x1 - x0) * t / tMax;
+    const Y = r => yBase - (yBase - yHaut) * r;   // r = ratio de rendement 0..1
+
+    // Bandes de phase, pour que l'œil sépare les trois régimes.
+    const bandes = [
+      { a: 0, b: 2, c: '#F3E0DD', lib: 'sol au repos' },
+      { a: 2, b: 4, c: '#F1E6CC', lib: 'plantier' },
+      { a: 4, b: tMax, c: '#E3EDE5', lib: 'retour en production' }
+    ];
+    bandes.forEach((bd, i) => {
+      ch.push(e('rect', { key: 'bd' + i, x: X(bd.a), y: yHaut - 10,
+        width: X(bd.b) - X(bd.a), height: yBase - yHaut + 10, fill: bd.c }));
+      ch.push(e('text', { key: 'bdl' + i, x: (X(bd.a) + X(bd.b)) / 2, y: yHaut - 14,
+        textAnchor: 'middle', fontSize: 10.5, fill: '#5C6157',
+        fontFamily: 'JetBrains Mono, monospace' }, bd.lib));
+    });
+
+    // Barre de réserve individuelle : pleine avant l'arrachage, elle se vide
+    // pendant la fenêtre sans production, puis se reconstitue.
+    const reserve = [[0, 1], [1, 0.72], [2, 0.48], [3, 0.3], [4, 0.34], [5, 0.55], [6, 0.78], [7, 0.94], [8, 1]];
+    reserve.forEach(([t, r], i) => {
+      if (t === tMax) return;
+      const hb = (yBase - yHaut) * 0.30 * r;
+      ch.push(e('rect', { key: 'rs' + i, x: X(t) + 3, y: yBase - hb,
+        width: Math.max(6, X(1) - X(0) - 6), height: hb, fill: '#A97F26', opacity: 0.35 }));
+    });
+    ch.push(e('text', { key: 'rsl', x: X(0) + 4, y: yBase + 34, fontSize: 10.5,
+      fill: '#8E6A1F', fontFamily: 'JetBrains Mono, monospace' },
+      'réserve individuelle — elle se vide pour combler le trou, puis se reconstitue'));
+
+    // Courbe de rendement : elle tombe à zéro dès l'arrachage et ne remonte
+    // qu'à partir de la 3e feuille.
+    const rendement = [[0, 0.82], [0.35, 0], [2, 0], [4, 0.3], [5, 0.55], [6, 0.8], [7, 1], [8, 1]];
+    const d = rendement.map(([t, r], i) => (i ? 'L' : 'M') + X(t).toFixed(1) + ' ' + Y(r).toFixed(1)).join(' ');
+    ch.push(e('path', { key: 'rd', d, fill: 'none', stroke: '#20291F', strokeWidth: 2.6,
+      strokeLinejoin: 'round', strokeLinecap: 'round' }));
+    ch.push(e('text', { key: 'rdl', x: X(6.1), y: Y(1) - 8, fontSize: 11, fill: '#20291F',
+      fontFamily: 'JetBrains Mono, monospace' }, 'rendement'));
+
+    // Axes minimalistes.
+    ch.push(e('line', { key: 'ax', x1: x0, x2: x1, y1: yBase, y2: yBase, stroke: '#20291F', strokeWidth: 1.2 }));
+    ch.push(e('text', { key: 'ay1', x: x0 - 8, y: yHaut + 4, textAnchor: 'end', fontSize: 10,
+      fill: '#5C6157', fontFamily: 'JetBrains Mono, monospace' }, '100 %'));
+    ch.push(e('text', { key: 'ay0', x: x0 - 8, y: yBase + 4, textAnchor: 'end', fontSize: 10,
+      fill: '#5C6157', fontFamily: 'JetBrains Mono, monospace' }, '0'));
+
+    // Jalons.
+    etapes.forEach((et, i) => {
+      ch.push(e('line', { key: 'jl' + i, x1: X(et.t), x2: X(et.t), y1: yHaut - 10, y2: yBase,
+        stroke: '#20291F', strokeWidth: 1, strokeDasharray: '3 3', opacity: 0.45 }));
+      ch.push(e('circle', { key: 'jc' + i, cx: X(et.t), cy: yBase, r: 4, fill: '#20291F' }));
+      ch.push(e('text', { key: 'jt' + i, x: X(et.t), y: yBase + 16, textAnchor: i === 0 ? 'start' : 'middle',
+        fontSize: 11, fontWeight: 600, fill: '#20291F' }, et.lib));
+      ch.push(e('text', { key: 'js' + i, x: X(et.t), y: yBase + 28, textAnchor: i === 0 ? 'start' : 'middle',
+        fontSize: 10, fill: '#5C6157' }, et.sous));
+    });
+
+    return e('svg', {
+      viewBox: '0 0 ' + W + ' ' + H, width: '100%', style: { maxWidth: W + 'px', height: 'auto' },
+      role: 'img',
+      'aria-label': "Frise : à l'arrachage le rendement de la parcelle tombe à zéro ; il ne "
+        + "remonte qu'à partir de la 3e feuille, après le repos du sol et la plantation, "
+        + "jusqu'au retour en pleine production. Pendant cette fenêtre sans récolte, la "
+        + "réserve individuelle se vide pour combler le manque, puis se reconstitue."
+    }, ch);
   }
 
   renderVals() {
@@ -2134,6 +2285,27 @@ class Component extends DCLogic {
       introOuvert: s.introOuvert, toggleIntro: () => this.setState(st => ({ introOuvert: !st.introOuvert })),
       introChevron: s.introOuvert ? '−' : '+',
       lexiqueOuvert: s.lexiqueOuvert, toggleLexique: () => this.setState(st => ({ lexiqueOuvert: !st.lexiqueOuvert })),
+      // Panneau d'accueil — prompt B6. Le focus part au bouton de fermeture à
+      // l'ouverture, et revient au bouton d'ouverture à la fermeture : quel que
+      // soit le chemin (Échap ou clic), on ne perd jamais le curseur clavier.
+      accueilOuvert: s.accueilOuvert,
+      friseAccueil: this.friseAccueil(),
+      ouvrirAccueil: () => this.setState({ accueilOuvert: true }, () => {
+        const el = document.getElementById('accueil-fermer');
+        if (el) el.focus();
+      }),
+      fermerAccueil: () => this.setState({ accueilOuvert: false, accueilVu: true }, () => {
+        const el = document.getElementById('accueil-ouvrir');
+        if (el) el.focus();
+      }),
+      onAccueilTouche: (ev) => {
+        if (ev.key !== 'Escape' && ev.key !== 'Esc') return;
+        ev.stopPropagation();
+        this.setState({ accueilOuvert: false, accueilVu: true }, () => {
+          const el = document.getElementById('accueil-ouvrir');
+          if (el) el.focus();
+        });
+      },
       // prompt B1 — effacement des données locales, confirmation préalable :
       // l'action est irréversible et détruit des corrections de registre que
       // l'utilisateur a pu saisir ligne à ligne.
@@ -2158,7 +2330,11 @@ class Component extends DCLogic {
         { mot: 'Faire-valoir', def: "qui exploite la parcelle et à quel titre : propriété (vous), fermage (loyer fixe au bailleur) ou métayage (part de récolte au bailleur)." },
         { mot: 'Statu quo', def: "le scénario de référence : vous ne renouvelez pas la parcelle et elle continue de vieillir, avec le déclin de rendement que vous avez saisi." },
         { mot: 'Densité', def: "nombre de pieds par hectare, déduit des écartements entre rangs et entre pieds. Elle commande le nombre de plants à acheter." },
-        { mot: 'Complantation', def: "remplacer les pieds manquants un à un plutôt que d'arracher la parcelle entière. Le moteur la calcule, elle n'est pas affichée dans cette version." }
+        // prompt B6 — l'entrée « Complantation » est retirée du lexique visible :
+        // elle annonçait à l'utilisateur un scénario que l'interface n'affiche
+        // nulle part. Le moteur continue de le calculer (construireScenarios
+        // renvoie toujours les trois scénarios) et le README le documente ; ce
+        // qui disparaît, c'est la promesse faite à l'écran, pas le calcul.
       ],
       chargesProdOuvert: s.chargesProdOuvert, toggleChargesProd: () => this.setState(st => ({ chargesProdOuvert: !st.chargesProdOuvert })),
       chargesProdChevron: s.chargesProdOuvert ? '−' : '+',
