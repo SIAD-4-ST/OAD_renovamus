@@ -185,7 +185,7 @@ test('(a) cas base (défauts UI)', () => {
 });
 
 test('(b) motif sanitaire (repos=3, nbSortie=5)', () => {
-  const sc = OAD.construireScenarios(INP_B_SANITAIRE);
+  const sc = OAD.construireScenarios(INP_B_REPOS3);
   assert.deepStrictEqual(snapshotScenarios(sc), {
     arrachage: { investissement: 15891, cashRITotal: 94500, cumulCashNet10: 658209, stockFin10: 10000, stockHaMin: 3837 },
     complantation: { investissement: 3347, cashRITotal: 0, cumulCashNet10: 689653, stockFin10: 10000 },
@@ -225,8 +225,8 @@ test("investissement t=0 == surfParc × coutArrachageHa exactement (motif classi
 });
 
 test("investissement t=0 == surfParc × coutArrachageHa exactement (motif sanitaire, repos=3)", () => {
-  const sc = OAD.construireScenarios(INP_B_SANITAIRE);
-  assertClose(sc.arrachage.eur[0].coutsParcelle, INP_B_SANITAIRE.surfParc * INP_B_SANITAIRE.coutArrachageHa, 1e-9);
+  const sc = OAD.construireScenarios(INP_B_REPOS3);
+  assertClose(sc.arrachage.eur[0].coutsParcelle, INP_B_REPOS3.surfParc * INP_B_REPOS3.coutArrachageHa, 1e-9);
 });
 
 test('aucun terme résiduel de préparation du sol : investissement total == formule exacte sans coutPrepaHa', () => {
@@ -249,9 +249,9 @@ test("calendrier d'engagement préservé (t=0 puis t=repos, aucun autre t) — m
 });
 
 test("calendrier d'engagement préservé (t=0 puis t=repos, aucun autre t) — motif sanitaire (repos=3)", () => {
-  const sc = OAD.construireScenarios(INP_B_SANITAIRE);
+  const sc = OAD.construireScenarios(INP_B_REPOS3);
   sc.arrachage.eur.forEach(row => {
-    if (row.t === 0 || row.t === INP_B_SANITAIRE.repos) {
+    if (row.t === 0 || row.t === INP_B_REPOS3.repos) {
       assert.ok(row.coutsParcelle > 0, `t=${row.t} devrait porter un engagement`);
     } else {
       assertClose(row.coutsParcelle, 0, 1e-9, `t=${row.t} ne devrait porter aucun engagement résiduel`);
@@ -1116,9 +1116,9 @@ test('fracFormation=1 (hypothèse extrême) : le plantier redevient identique à
   assertClose(reg[1].heuresHaAn, reg[1].heuresHaAnRef, 1e-9);
 });
 
-test("repos=3 (INP_B_SANITAIRE) : la fenêtre repos s'élargit d'autant, le plantier démarre à t=3", () => {
-  const sc = OAD.construireScenarios(INP_B_SANITAIRE);
-  const reg = OAD.regimesTravailArrachage(sc.arrachage.kg, sc.statuquo.kg, INP_B_SANITAIRE);
+test("repos=3 (INP_B_REPOS3) : la fenêtre repos s'élargit d'autant, le plantier démarre à t=3", () => {
+  const sc = OAD.construireScenarios(INP_B_REPOS3);
+  const reg = OAD.regimesTravailArrachage(sc.arrachage.kg, sc.statuquo.kg, INP_B_REPOS3);
   assertClose(reg[0].nbAnnees, 3, 1e-9);
   assert.strictEqual(reg[1].id, 'plantier');
 });

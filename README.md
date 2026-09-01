@@ -31,6 +31,7 @@ chiffrée se met à jour en continu dans la colonne de droite.
 1. [Démarrage rapide](#1-démarrage-rapide)
 2. [Architecture des 3 fichiers](#2-architecture-des-3-fichiers)
 3. [Comment tourne la page — le format `.dc` / `x-dc`](#3-comment-tourne-la-page--le-format-dc--x-dc)
+    - [3bis. Conventions d'interface — classes CSS et panneaux d'aide](#3bis-conventions-dinterface--classes-css-et-panneaux-daide)
 4. [Le parcours en 5 étapes](#4-le-parcours-en-5-étapes)
 5. [Le flux de données, de la frappe au résultat](#5-le-flux-de-données-de-la-frappe-au-résultat)
 6. [Glossaire des champs de saisie](#6-glossaire-des-champs-de-saisie)
@@ -52,6 +53,7 @@ chiffrée se met à jour en continu dans la colonne de droite.
 17. [KPI et synthèse](#17-kpi-et-synthèse)
 18. [Graphiques SVG faits main](#18-graphiques-svg-faits-main)
 19. [Limites, hypothèses et paramètres cachés](#19-limites-hypothèses-et-paramètres-cachés)
+    - [19bis. Journal d'arbitrages — accueil, simplification de l'interface, deux corrections](#19bis-journal-darbitrages--accueil-simplification-de-linterface-deux-corrections)
 20. [Pour aller plus loin](#20-pour-aller-plus-loin)
 21. [Recette humaine — contrôles non automatisables](#21-recette-humaine--contrôles-non-automatisables)
 
@@ -163,6 +165,94 @@ HTML statique** — c'est une petite application React assemblée au vol
 dans le navigateur, à partir d'un fichier unique. C'est ce qui permet de
 livrer l'outil sous la forme d'un seul fichier ouvrable directement, sans
 build ni serveur Node.
+
+## 3bis. Conventions d'interface — classes CSS et panneaux d'aide
+
+### Les styles répétés vivent dans `<style>`, plus dans les balises
+
+Le template `<x-dc>` a longtemps porté ses styles exclusivement en
+attribut `style=` inline. Une poignée de motifs y était répétée
+verbatim des dizaines de fois (le même champ de saisie 28 fois, le même
+libellé 46 fois), ce qui rendait toute retouche d'apparence
+mécanique et risquée — et laissait des variantes diverger sans qu'on
+le voie (trois habillages différents du **même** volet repliable).
+
+Ces motifs sont désormais des **classes**, définies dans l'unique bloc
+`<style>` en tête de fichier. `support.js` traduit `class` en
+`className` et `for` en `htmlFor` (voir `support.js`, table
+d'attributs), donc la syntaxe HTML normale suffit — rien à adapter.
+
+| Classe | Rôle |
+|---|---|
+| `.field` | conteneur vertical d'un champ (libellé + saisie + aide) |
+| `.lbl` | libellé de champ |
+| `.row` | ligne saisie + unité |
+| `.unit` | unité à droite d'une saisie (`ha`, `€/kg`…) |
+| `.hint` | ligne d'aide sous un champ ; `.hint.warn` pour la variante rouge |
+| `.inp` / `.sel` | saisie numérique / liste déroulante |
+| `.ro` | **valeur dérivée non saisissable** (fond ambré) — signal visuel constant : ambré = calculé pour vous |
+| `.grid` | grille de champs auto-ajustée |
+| `.card` / `.card-h` | carte blanche et son titre |
+| `.fold` / `.fold-btn` / `.fold-sign` / `.fold-body` | volet repliable (voir ci-dessous) |
+| `.th` / `.th.r` | en-tête de colonne d'un tableau en grille |
+| `.mono` / `.eyebrow` | chiffre en chasse fixe / surtitre d'étape |
+
+Les `style=` restants sont ceux qui sont **uniques à un élément** ou qui
+portent une **valeur calculée** `{{ }}` (couleurs d'état, largeurs de
+colonnes) — ceux-là ne peuvent pas devenir des classes.
+
+**Règle** : un style qui apparaît une seule fois reste inline ; à partir
+de la deuxième occurrence identique, il devient une classe.
+
+### Tous les volets repliables se ressemblent
+
+Il existait trois habillages du même contrôle « déplier / replier ».
+Un seul subsiste : `.fold` (le cadre) → `.fold-btn` (l'en-tête cliquable
+pleine largeur) → `.fold-sign` (le `+` / `−` à droite) → `.fold-body`
+(le contenu, sous un `sc-if`). Chaque volet reste piloté par sa propre
+paire `xxxOuvert` / `toggleXxx` dans l'état du composant, comme avant.
+
+Quand un volet replié cache une **valeur que l'utilisateur doit pouvoir
+vérifier**, son en-tête l'affiche en résumé (voir
+`chargesProdResumeTxt`) : replier ne doit jamais enterrer un chiffre qui
+pilote le calcul.
+
+### Les trois panneaux d'aide
+
+| Panneau | État | Défaut | Contenu |
+|---|---|---|---|
+| Mode d'emploi | `introOuvert` | **ouvert** | à quoi sert l'outil, les 5 étapes, « tout est prérempli », « rien n'est enregistré » — en tête de l'étape 1 |
+| Lexique | `lexiqueOuvert` | replié | 8 définitions (réserve individuelle, VolCo, repos, plantier, faire-valoir, statu quo, densité, complantation), sous l'en-tête, accessible depuis **n'importe quelle étape** |
+| Charges de production | `chargesProdOuvert` | replié | les paramètres Cerfrance 2024 de l'étape 1, avec leur détail par opération |
+
+Le lexique est dans le `<header>`, hors de la grille des étapes : c'est
+le seul contenu d'aide qui doit rester atteignable partout.
+
+### Vocabulaire visible
+
+L'interface ne mentionne **jamais** les chantiers (« chantier A4 »),
+les renvois au README (« voir §7 »), ni les numéros d'arbitrage
+(« P6 »). Ces références restent utiles et sont conservées — mais en
+**commentaires HTML/JS** et dans ce README, jamais dans un texte lu par
+l'utilisateur. Un vigneron qui ouvre l'outil ne sait pas ce qu'est un
+chantier B3.
+
+De même, « à caler » (jargon interne signifiant « valeur non encore
+sourcée ») est remplacé partout par « à ajuster », et les formulations
+qui décrivaient la mécanique interne (« alimente la référence interne de
+calcul, jamais un scénario affiché à part ») par ce que la valeur veut
+dire pour celui qui la saisit.
+
+### Accessibilité
+
+- Chaque libellé de champ est rattaché à sa saisie par `for` / `id`
+  (identifiant dérivé du nom d'état : `v.surfTot` → `f-surfTot`), donc
+  cliquer le libellé donne le focus au champ et un lecteur d'écran
+  annonce lequel.
+- L'étape courante du sommaire porte `aria-current="step"`, en plus de
+  sa couleur de fond.
+- Sous 1080 px de large, la grille à 3 colonnes se replie en une seule
+  (sommaire horizontal en haut, synthèse sous le contenu).
 
 ## 4. Le parcours en 5 étapes
 
@@ -2010,6 +2100,56 @@ formule par formule, via la fiche imprimable (`out.printKpiRows`, §17).
   maintenu en parallèle de ce dépôt et ne doit **jamais** être utilisé comme
   référence pour auditer un chiffre affiché à l'écran. `moteur-oad.js` et
   `tests/parite.test.js` (formules + snapshots figés) font seuls foi.
+
+### 19bis. Journal d'arbitrages — accueil, simplification de l'interface, deux corrections
+
+Objectif : qu'une personne qui n'a jamais vu le projet puisse s'en
+servir. Aucune fonctionnalité, aucun champ, aucun KPI n'a été retiré —
+seule la manière dont ils sont présentés change. Le moteur
+(`moteur-oad.js`) n'a pas été touché.
+
+**Ce qui a changé dans l'interface** (détail des conventions : §3bis)
+
+1. **Un mode d'emploi**, ouvert au premier affichage en tête de l'étape 1 :
+   ce que l'outil compare, les 5 étapes, le fait que tout est prérempli
+   et qu'aucune donnée n'est enregistrée ni envoyée.
+2. **Un lexique** accessible depuis l'en-tête, à toutes les étapes.
+3. **Le jargon de développement est sorti des textes visibles** : plus de
+   « chantier A4 », « voir README, journal d'arbitrages », « P6 »,
+   « v1 ». Ces références restent en commentaires et ici.
+4. **Les charges de production de l'étape 1 sont repliées** par défaut —
+   ce sont des paramètres de référence déjà calés que personne n'a à
+   toucher au premier passage. Leur en-tête affiche les deux montants en
+   résumé, pour que le repli n'enterre pas un chiffre vérifiable.
+5. **Les 4 réglages d'affichage de l'étape 5** (vue faire-valoir, main
+   d'œuvre, horizon, test de résistance), auparavant alignés en une rangée
+   où rien ne disait ce qu'ils font, sont étiquetés un par un sous un
+   titre qui précise qu'ils ne modifient aucune saisie.
+6. **Le sommaire porte un sous-titre par étape** — « Plantation » seul ne
+   dit pas ce qu'on va y saisir.
+7. **Uniformisation** : un seul habillage de volet repliable au lieu de
+   trois, et les styles inline répétés (≈ 280 occurrences) portés sur des
+   classes CSS.
+8. **Accessibilité** : `for`/`id` sur les 40 champs saisissables,
+   `aria-current` sur l'étape courante, mise en page repliée sous 1080 px.
+
+**Deux corrections**
+
+- **`tests/parite.test.js` — 4 tests ne s'exécutaient pas.** Le jeu
+  d'essai « repos = 3 ans » avait été renommé `INP_B_REPOS3`, mais quatre
+  tests référençaient encore `INP_B_SANITAIRE` : ils échouaient sur
+  `ReferenceError`, pas sur une valeur. Les références ont été alignées
+  sur le nom réel du jeu d'essai ; la suite passe à **97 ok, 0 FAIL**.
+  Aucune valeur attendue n'a été modifiée.
+- **`index.html` — l'avertissement « cépages mixtes » ne s'affichait
+  jamais.** `out.cepageMixteTxt` était calculé à partir de
+  `out.cepageMixteAlerte`, qui n'est affecté qu'une trentaine de lignes
+  plus bas dans `renderVals()` : la valeur lue était toujours
+  `undefined`, donc le texte toujours vide, y compris sur une sélection
+  de registre réellement hétérogène. Le texte est désormais dérivé de sa
+  source (`agregParcelle.cepageMixte`), indépendante de l'ordre des
+  affectations sur `out`. Avertissement purement informatif — aucun
+  impact sur le calcul économique.
 
 ## 20. Pour aller plus loin
 
