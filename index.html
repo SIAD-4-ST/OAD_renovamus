@@ -218,35 +218,43 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           </sc-if>
         </div>
 
-        <div style="display:flex;gap:8px;margin-bottom:18px">
-          <button onClick="{{ setSourceManuel }}" style="padding:8px 14px;border:1px solid #20291F;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:{{ srcBgManuel }};color:{{ srcFgManuel }}">Saisie manuelle</button>
-          <button onClick="{{ setSourceRegistre }}" style="padding:8px 14px;border:1px solid #20291F;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:{{ srcBgRegistre }};color:{{ srcFgRegistre }}">{{ registreOngletLabel }}</button>
+        <!-- prompt B8 (arbitrage du 01/09/2026) — le registre parcellaire est
+             devenu la SEULE source des surfaces et des âges. Les deux boutons
+             de bascule « Saisie manuelle » / « Registre parcellaire » ont
+             disparu : il n'y a plus de mode à choisir, donc plus rien à
+             basculer. Ce qui reste ici, c'est le bandeau de persistance et
+             l'import CSV, sans condition d'affichage. -->
+        <div style="margin-bottom:18px;padding:10px 14px;border-radius:6px;background:#F1E6CC;font-size:12.5px;line-height:1.5">Vos saisies sont conservées sur cet ordinateur uniquement. Rien n'est envoyé. Le registre ({{ registreNbLignes }} lignes) et les corrections que vous y apportez sont relus tels quels au prochain chargement.</div>
+
+        <!-- Import du registre réel — prompt B2. Le fichier est lu par le
+             navigateur (FileReader) et n'est jamais transmis : pas d'envoi,
+             pas d'URL. Champ de fichier natif et visible, plutôt qu'un input
+             masqué derrière un faux bouton — il reste ainsi utilisable au
+             clavier avec un focus visible. -->
+        <div style="margin-bottom:18px;padding:14px 16px;border:1px solid #DDD9CE;border-radius:8px;background:#fff">
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px">Importer mon registre</div>
+          <div style="font-size:12px;color:#5C6157;line-height:1.5;margin-bottom:10px">Export du portail CIVC, au format CSV séparé par des points-virgules. Le fichier est lu sur cet ordinateur : rien n'est envoyé.</div>
+          <input type="file" accept=".csv,text/csv" onChange="{{ onFichierRegistre }}" style="font-size:12.5px;max-width:100%">
+          <div style="font-size:11.5px;color:#5C6157;margin-top:8px">Colonnes attendues : {{ colonnesAttenduesTxt }}</div>
+          <sc-if value="{{ importErreur }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:#F7E9E7;border:1px solid #A5433A;color:#A5433A;font-size:12.5px;line-height:1.5">{{ importErreurTxt }}</div>
+          </sc-if>
+          <sc-if value="{{ importOk }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:#E3EDE5;border:1px solid #4C7A57;color:#2F5B3C;font-size:12.5px;line-height:1.5">{{ importOkTxt }}</div>
+          </sc-if>
         </div>
 
-        <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-bottom:18px;padding:10px 14px;border-radius:6px;background:#F1E6CC;font-size:12.5px;line-height:1.5">Vos saisies sont conservées sur cet ordinateur uniquement. Rien n'est envoyé. Le registre ({{ registreNbLignes }} lignes) et les corrections que vous y apportez sont relus tels quels au prochain chargement.</div>
-
-          <!-- Import du registre réel — prompt B2. Le fichier est lu par le
-               navigateur (FileReader) et n'est jamais transmis : pas d'envoi,
-               pas d'URL. Champ de fichier natif et visible, plutôt qu'un input
-               masqué derrière un faux bouton — il reste ainsi utilisable au
-               clavier avec un focus visible. -->
-          <div style="margin-bottom:18px;padding:14px 16px;border:1px solid #DDD9CE;border-radius:8px;background:#fff">
-            <div style="font-size:13px;font-weight:600;margin-bottom:6px">Importer mon registre</div>
-            <div style="font-size:12px;color:#5C6157;line-height:1.5;margin-bottom:10px">Export du portail CIVC, au format CSV séparé par des points-virgules. Le fichier est lu sur cet ordinateur : rien n'est envoyé.</div>
-            <input type="file" accept=".csv,text/csv" onChange="{{ onFichierRegistre }}" style="font-size:12.5px;max-width:100%">
-            <div style="font-size:11.5px;color:#5C6157;margin-top:8px">Colonnes attendues : {{ colonnesAttenduesTxt }}</div>
-            <sc-if value="{{ importErreur }}" hint-placeholder-val="{{ false }}">
-              <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:#F7E9E7;border:1px solid #A5433A;color:#A5433A;font-size:12.5px;line-height:1.5">{{ importErreurTxt }}</div>
-            </sc-if>
-            <sc-if value="{{ importOk }}" hint-placeholder-val="{{ false }}">
-              <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:#E3EDE5;border:1px solid #4C7A57;color:#2F5B3C;font-size:12.5px;line-height:1.5">{{ importOkTxt }}</div>
-            </sc-if>
-          </div>
+        <!-- prompt B8 — état bloquant. Surface totale et âge moyen ne sont plus
+             saisissables : ils sont DÉRIVÉS du registre. Un registre sans
+             aucune surface ne donne donc pas « 0 ha » et des ratios
+             indéterminés, il donne cet avertissement, à la place des deux
+             champs dérivés. -->
+        <sc-if value="{{ registreSansSurface }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-bottom:18px;padding:12px 16px;border-radius:6px;background:#F7E9E7;border:1px solid #A5433A;color:#A5433A;font-size:13px;line-height:1.5"><b>Ajoutez au moins une ligne au registre pour continuer.</b><br>La surface totale et l'âge moyen du vignoble sont déduits du registre parcellaire, plus bas sur cet écran : tant qu'il ne porte aucune surface, les résultats des étapes suivantes ne veulent rien dire.</div>
         </sc-if>
 
         <div class="grid">
-          <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ !registreSansSurface }}" hint-placeholder-val="{{ true }}">
             <div class="field">
               <label class="lbl">Surface totale</label>
               <div class="ro">{{ registreSurfTotTxt }}</div>
@@ -256,16 +264,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               <label class="lbl">Âge moyen du vignoble</label>
               <div class="ro">{{ registreAgeMoyTxt }}</div>
               <span class="hint">moyenne pondérée par surface, lignes Plantée uniquement</span>
-            </div>
-          </sc-if>
-          <sc-if value="{{ !modeRegistre }}" hint-placeholder-val="{{ true }}">
-            <div class="field">
-              <label class="lbl" for="f-surfTot">Surface totale</label>
-              <div class="row"><input id="f-surfTot" type="number" step="0.1" min="0.1" value="{{ v.surfTot }}" onInput="{{ on.surfTot }}" class="inp"><span class="unit">ha</span></div>
-            </div>
-            <div class="field">
-              <label class="lbl" for="f-ageMoy">Âge moyen du vignoble</label>
-              <div class="row"><input id="f-ageMoy" type="number" step="1" min="0" value="{{ v.ageMoy }}" onInput="{{ on.ageMoy }}" class="inp"><span class="unit">ans</span></div>
             </div>
           </sc-if>
           <div class="field">
@@ -292,13 +290,11 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           <sc-if value="{{ ajusterOuvert1 }}" hint-placeholder-val="{{ false }}">
           <div class="fold-body">
             <div class="grid" style="margin-bottom:18px">
-              <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
-                <div class="field">
-                  <label class="lbl" for="f-campagne">Campagne de référence</label>
-                  <div class="row"><input id="f-campagne" type="number" step="1" value="{{ v.campagne }}" onInput="{{ on.campagne }}" class="inp"></div>
-                  <span class="hint">âge = campagne − année de plantation</span>
-                </div>
-              </sc-if>
+              <div class="field">
+                <label class="lbl" for="f-campagne">Campagne de référence</label>
+                <div class="row"><input id="f-campagne" type="number" step="1" value="{{ v.campagne }}" onInput="{{ on.campagne }}" class="inp"></div>
+                <span class="hint">âge = campagne − année de plantation</span>
+              </div>
             </div>
             <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px">
               <label class="lbl" for="f-riPct">Réserve individuelle actuelle</label>
@@ -379,37 +375,49 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           </sc-if>
         </div>
 
-        <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-top:22px;background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;overflow-x:auto">
-            <h3 style="font-family:'Fraunces',serif;font-size:15px;margin:0 0 4px">{{ registreTitre }} ({{ registreNbLignes }} lignes)</h3>
-            <!-- Édition des cellules — prompt B2 (arbitrage 2). Seules les quatre
-                 colonnes qui pilotent le calcul sont saisissables ; idu, commune
-                 et cépage restent en lecture, ce sont les identifiants du
-                 fichier. Ni ajout, ni suppression, ni exclusion de lignes ici :
-                 l'exclusion de lignes est un mécanisme de l'écran 2, inchangé. -->
-            <div style="font-size:11.5px;color:#5C6157;margin:0 0 12px;line-height:1.45">Les colonnes <b>Planté</b>, <b>Surface</b>, <b>Manquants</b> et <b>Situation</b> sont corrigeables directement dans le tableau ; l'âge en est déduit. Vos corrections sont conservées sur cet ordinateur.</div>
-            <div style="display:grid;grid-template-columns:repeat(8,minmax(88px,1fr));gap:0;font-size:12.5px;min-width:760px">
-              <div class="th wide">idu</div>
-              <div class="th wide">Commune</div>
-              <div class="th wide">Cépage</div>
-              <div class="th wide">Planté</div>
-              <div class="th wide">Âge</div>
-              <div class="th wide">Surface</div>
-              <div class="th wide">Manquants</div>
-              <div class="th wide">Situation</div>
-              <sc-for list="{{ registreLignesTable }}" as="r" hint-placeholder-count="3">
-                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC;font-family:'JetBrains Mono',monospace">{{ r.idu }}</div>
-                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.commune }}</div>
-                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.cepage }}</div>
-                <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="number" step="1" value="{{ r.anneePlant }}" onInput="{{ r.onAnneePlant }}" class="cell" aria-label="Année de plantation"></div>
-                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.age }}</div>
-                <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="number" step="0.01" min="0" value="{{ r.surface }}" onInput="{{ r.onSurface }}" class="cell" aria-label="Surface en hectares"></div>
-                <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="number" step="1" min="0" max="100" value="{{ r.tauxManquant }}" onInput="{{ r.onTauxManquant }}" class="cell" aria-label="Taux de pieds manquants en pourcent"></div>
-                <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><select value="{{ r.situation }}" onChange="{{ r.onSituation }}" class="cell" aria-label="Situation de la parcelle"><option value="plantee">Plantée</option><option value="arrachee">Arrachée</option></select></div>
-              </sc-for>
-            </div>
+        <div style="margin-top:22px;background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;overflow-x:auto">
+          <h3 style="font-family:'Fraunces',serif;font-size:15px;margin:0 0 4px">{{ registreTitre }} ({{ registreNbLignes }} lignes)</h3>
+          <!-- Édition des cellules — prompt B2 (arbitrage 2), RÉVISÉ au prompt
+               B8. Le commentaire précédent disait « ni ajout, ni suppression de
+               lignes ici » : ce n'est plus vrai, et c'est délibéré. Depuis que
+               la saisie manuelle a disparu des écrans 1 et 2, le registre est
+               la seule source des surfaces et des âges — il doit donc pouvoir
+               se remplir entièrement à la main, pour qui n'a pas d'export CSV
+               du portail CIVC sous la main. Toutes les colonnes sont donc
+               saisissables, idu et commune compris : ce ne sont plus « les
+               identifiants du fichier », puisqu'il peut n'y avoir aucun
+               fichier. Ce qui n'a pas changé : l'exclusion de lignes de la
+               parcelle désignée reste un mécanisme de l'écran 2, distinct de
+               la suppression pure et simple offerte ici. -->
+          <div style="font-size:11.5px;color:#5C6157;margin:0 0 12px;line-height:1.45">Toutes les colonnes sont corrigeables directement dans le tableau ; l'âge en est déduit. Vous pouvez ajouter des lignes et en supprimer. Vos corrections sont conservées sur cet ordinateur.</div>
+          <div style="display:grid;grid-template-columns:repeat(8,minmax(88px,1fr)) 44px;gap:0;font-size:12.5px;min-width:804px">
+            <div class="th wide">idu</div>
+            <div class="th wide">Commune</div>
+            <div class="th wide">Cépage</div>
+            <div class="th wide">Planté</div>
+            <div class="th wide">Âge</div>
+            <div class="th wide">Surface</div>
+            <div class="th wide">Manquants</div>
+            <div class="th wide">Situation</div>
+            <div class="th wide"></div>
+            <sc-for list="{{ registreLignesTable }}" as="r" hint-placeholder-count="3">
+              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="text" value="{{ r.idu }}" onInput="{{ r.onIdu }}" class="cell" style="font-family:'JetBrains Mono',monospace" aria-label="Identifiant de parcelle (idu)"></div>
+              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="text" value="{{ r.commune }}" onInput="{{ r.onCommune }}" class="cell" aria-label="Commune"></div>
+              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="text" value="{{ r.cepage }}" onInput="{{ r.onCepage }}" class="cell" aria-label="Cépage"></div>
+              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="number" step="1" value="{{ r.anneePlant }}" onInput="{{ r.onAnneePlant }}" class="cell" aria-label="Année de plantation"></div>
+              <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.age }}</div>
+              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="number" step="0.01" min="0" value="{{ r.surface }}" onInput="{{ r.onSurface }}" class="cell" aria-label="Surface en hectares"></div>
+              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="number" step="1" min="0" max="100" value="{{ r.tauxManquant }}" onInput="{{ r.onTauxManquant }}" class="cell" aria-label="Taux de pieds manquants en pourcent"></div>
+              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><select value="{{ r.situation }}" onChange="{{ r.onSituation }}" class="cell" aria-label="Situation de la parcelle"><option value="plantee">Plantée</option><option value="arrachee">Arrachée</option></select></div>
+              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC;text-align:center"><button onClick="{{ r.onSupprimer }}" title="{{ r.supprimerTitre }}" aria-label="{{ r.supprimerTitre }}" style="border:1px solid #DDD9CE;border-radius:5px;background:#fff;color:#A5433A;cursor:pointer;font-size:13px;line-height:1;padding:5px 7px">✕</button></div>
+            </sc-for>
           </div>
-        </sc-if>
+          <!-- prompt B8 — ni l'ajout ni la suppression ne demandent
+               confirmation : tout reste dans ce navigateur, rien n'est détruit
+               ailleurs, et l'instantané local n'est de toute façon pas
+               versionné. -->
+          <button onClick="{{ onAjouterLigneRegistre }}" style="margin-top:14px;padding:8px 14px;border:1px solid #20291F;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#fff;color:#20291F">+ Ajouter une ligne</button>
+        </div>
       </sc-if>
 
       <sc-if value="{{ estEtape1 }}" hint-placeholder-val="{{ false }}">
@@ -424,20 +432,15 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <div class="card" style="margin-bottom:20px">
           <h3 class="card-h" style="margin-bottom:14px">Géométrie de la parcelle</h3>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px 18px">
-            <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
-              <div class="field">
-                <label class="lbl">Surface arrachée</label>
-                <div class="ro">{{ surfParcRegistreTxt }}</div>
-                <span class="hint">dérivée du registre — surface retenue pour la parcelle désignée</span>
-              </div>
-            </sc-if>
-            <sc-if value="{{ !modeRegistre }}" hint-placeholder-val="{{ true }}">
-              <div class="field">
-                <label class="lbl" for="f-surfArr">Surface arrachée</label>
-                <div class="row"><input id="f-surfArr" type="number" step="0.01" min="0" value="{{ v.surfArr }}" onInput="{{ on.surfArr }}" class="inp"><span class="unit">ha</span></div>
-                <span class="hint">c'est la surface qui commande : la longueur de rang en est déduite</span>
-              </div>
-            </sc-if>
+            <!-- prompt B8 — la surface arrachée n'est plus saisissable : elle
+                 vient du registre, seule source depuis l'arbitrage du
+                 01/09/2026. Elle reste la grandeur qui commande la géométrie
+                 (chantier A4) ; c'est son origine qui a changé, pas son rôle. -->
+            <div class="field">
+              <label class="lbl">Surface arrachée</label>
+              <div class="ro">{{ surfParcRegistreTxt }}</div>
+              <span class="hint">dérivée du registre — surface retenue pour la parcelle désignée</span>
+            </div>
             <div class="field">
               <label class="lbl" for="f-ecartRang">Écart entre rangs</label>
               <div class="row"><input id="f-ecartRang" type="number" step="0.05" value="{{ v.ecartRang }}" onInput="{{ on.ecartRang }}" class="inp"><span class="unit">m</span></div>
@@ -463,8 +466,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           </sc-if>
         </div>
 
-        <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
-          <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin-bottom:20px">
+        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin-bottom:20px">
             <div style="display:flex;flex-direction:column;gap:5px;max-width:320px">
               <label class="lbl" for="f-parcelleIdu">Parcelle (idu du registre)</label>
               <select id="f-parcelleIdu" value="{{ parcelleIdu }}" onChange="{{ onParcelleIdu }}" class="sel">
@@ -489,28 +491,19 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               </sc-for>
             </div>
             <div style="font-size:11.5px;color:#5C6157;margin-top:6px">décochez une ligne pour l'exclure de la parcelle désignée — la pondération (âge, pieds manquants) se recalcule automatiquement · surface retenue : <b>{{ surfParcRegistreTxt }}</b><sc-if value="{{ cepageMixteTxt }}" hint-placeholder-val="{{ false }}"><br>{{ cepageMixteTxt }}</sc-if></div>
-          </div>
-        </sc-if>
+        </div>
 
         <div class="grid">
-          <sc-if value="{{ modeRegistre }}" hint-placeholder-val="{{ false }}">
-            <div class="field">
-              <label class="lbl">Âge de la parcelle</label>
-              <div class="ro">{{ ageParcRegistreTxt }}</div>
-              <span class="hint">dérivé du registre — moyenne pondérée par surface</span>
-            </div>
-            <div class="field">
-              <label class="lbl">Pieds manquants</label>
-              <div class="ro">{{ manquantsRegistreTxt }}</div>
-              <span class="hint">dérivé du registre — moyenne pondérée par surface</span>
-            </div>
-          </sc-if>
-          <sc-if value="{{ !modeRegistre }}" hint-placeholder-val="{{ true }}">
-            <div class="field">
-              <label class="lbl" for="f-ageParc">Âge de la parcelle</label>
-              <div class="row"><input id="f-ageParc" type="number" step="1" min="0" value="{{ v.ageParc }}" onInput="{{ on.ageParc }}" class="inp"><span class="unit">ans</span></div>
-            </div>
-          </sc-if>
+          <div class="field">
+            <label class="lbl">Âge de la parcelle</label>
+            <div class="ro">{{ ageParcRegistreTxt }}</div>
+            <span class="hint">dérivé du registre — moyenne pondérée par surface</span>
+          </div>
+          <div class="field">
+            <label class="lbl">Pieds manquants</label>
+            <div class="ro">{{ manquantsRegistreTxt }}</div>
+            <span class="hint">dérivé du registre — moyenne pondérée par surface</span>
+          </div>
           <div class="field">
             <label class="lbl" for="f-rendEstime">Rendement estimé de la parcelle</label>
             <div class="row"><input id="f-rendEstime" type="number" step="100" min="0" value="{{ v.rendEstime }}" onInput="{{ on.rendEstime }}" class="inp"><span class="unit">kg/ha</span></div>
@@ -550,12 +543,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                 <label class="lbl" for="f-nbRangs">Nombre de rangs</label>
                 <div class="row"><input id="f-nbRangs" type="number" step="1" min="1" value="{{ v.nbRangs }}" onInput="{{ on.nbRangs }}" class="inp"><span class="unit">rangs</span></div>
               </div>
-              <sc-if value="{{ !modeRegistre }}" hint-placeholder-val="{{ true }}">
-                <div class="field">
-                  <label class="lbl" for="f-manquants">Pieds manquants</label>
-                  <div class="row"><input id="f-manquants" type="number" step="1" min="0" max="60" value="{{ v.manquants }}" onInput="{{ on.manquants }}" class="inp"><span class="unit">%</span></div>
-                </div>
-              </sc-if>
               <sc-if value="{{ estFermage }}" hint-placeholder-val="{{ false }}">
                 <div class="field">
                   <label class="lbl" for="f-loyerHa">Loyer annuel</label>
@@ -617,7 +604,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px">
                       <div class="field">
                         <label class="lbl" for="f-cepage">Cépage</label>
-                        <select id="f-cepage" value="{{ v.cepage }}" onChange="{{ on.cepage }}" class="sel">
+                        <select id="f-cepage" value="{{ cepageSel }}" onChange="{{ on.cepage }}" class="sel">
                           <option>Pinot noir</option><option>Meunier</option><option>Chardonnay</option>
                         </select>
                       </div>
@@ -662,14 +649,13 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               <div style="font-size:13px;font-weight:600;margin-bottom:2px">{{ clonesTitre }}</div>
               <div style="font-size:11.5px;color:#5C6157;margin-bottom:10px;max-width:80ch">{{ clonesSourceTxt }}</div>
               <div style="overflow-x:auto">
-                <div style="display:grid;grid-template-columns:52px 118px 118px 118px 130px 120px 104px minmax(220px,1fr);gap:0;font-size:11.5px;min-width:940px">
+                <div style="display:grid;grid-template-columns:52px 118px 118px 118px 130px 120px minmax(220px,1fr);gap:0;font-size:11.5px;min-width:836px">
                   <div class="th">Clone</div>
                   <div class="th" title="Échelle qualitative PlantGrape (inférieur / moyen / supérieur). Ce n'est PAS un rendement en kg/ha, et cela n'entre dans aucun calcul de l'outil.">Niveau de production ⓘ</div>
                   <div class="th">Richesse en sucre</div>
                   <div class="th">Fertilité</div>
                   <div class="th">{{ clonesColCondLabel }}</div>
                   <div class="th" title="Donnée absente des sources retenues sur 37 des 42 clones. Elle n'est pas comblée : se reporter aux données CIVC ou à plantgrape.fr.">Sensibilité Botrytis ⓘ</div>
-                  <div class="th" title="Surface de multiplication en pépinière, en hectares. Indication de disponibilité, relevé national non daté — pas une garantie d'approvisionnement.">Disponibilité ⓘ</div>
                   <div class="th">Remarque</div>
                   <sc-for list="{{ clonesList }}" as="cl" hint-placeholder-count="8">
                     <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;font-family:'JetBrains Mono',monospace;font-size:12.5px;display:flex;align-items:baseline;gap:5px">
@@ -680,7 +666,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                     <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157">{{ cl.fertilite }}</div>
                     <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157">{{ cl.colCond }}</div>
                     <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157">{{ cl.botrytis }}</div>
-                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157;font-family:'JetBrains Mono',monospace;font-size:11.5px">{{ cl.dispo }}</div>
                     <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157;overflow-wrap:anywhere">
                       <sc-if value="{{ cl.alerte }}" hint-placeholder-val="{{ false }}">
                         <span style="display:inline-block;background:#F3E0DD;color:#A5433A;border-radius:4px;padding:1px 6px;margin-right:5px;font-size:10.5px">⚠ {{ cl.alerteTxt }}</span>
@@ -693,7 +678,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               <div style="font-size:11px;color:#5C6157;margin-top:10px;line-height:1.5">
                 <b>Niveau de production</b> : échelle qualitative PlantGrape — ce n'est pas un rendement en kg/ha et cela n'entre dans aucun calcul.<br>
                 <b>Sensibilité Botrytis</b> : donnée absente des sources retenues sur 37 des 42 clones ; les cellules vides le restent. Se reporter aux données CIVC ou à plantgrape.fr.<br>
-                <b>Disponibilité</b> : surface de multiplication en hectares — indication de disponibilité en pépinière, relevé national non daté.<br>
                 <b>Origine</b> : <span style="font-family:'JetBrains Mono',monospace">G·P</span> Guide 2025 et PlantGrape · <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">G·P*</span> PlantGrape hors référence Champagne · <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">P</span> PlantGrape seul, absent du Guide.
               </div>
             </div>
@@ -1466,9 +1450,17 @@ const REGISTRE_EXEMPLE_CSV = `idu;commune;num_civc;mode_explo;cepage;anneeplant;
 
    Ce que l'outil enregistre : un INSTANTANÉ de `state.v` (toutes les saisies)
    et de `state.registreRows` (le tableau du registre, avec les corrections
-   déjà appliquées). Pas un diff, pas un identifiant de ligne : au rechargement
-   on relit la table telle quelle, ce qui rend inutile toute clé stable de
-   ligne — et évite qu'une correction se raccroche à la mauvaise parcelle.
+   déjà appliquées). Pas un diff : au rechargement on relit la table telle
+   quelle, jamais une liste de modifications à rejouer.
+
+   Nuance apportée au prompt B8 : la table relue porte maintenant ses `_id`, et
+   ils sont conservés au lieu d'être réattribués par position. Ce n'est pas un
+   revirement sur le principe — l'instantané reste une photo complète, pas un
+   diff — mais depuis que des lignes peuvent être ajoutées et SUPPRIMÉES à la
+   main, la position d'une ligne n'est plus une clé : renuméroter au
+   rechargement ferait glisser `parcelleLignesExclues` sur des voisines. `_id`
+   est donc devenu une identité, locale à ce navigateur, et voyage avec la
+   photo. Voir `fusionnerRegistre` plus bas.
 
    Ce que l'outil n'enregistre PAS : l'étape courante, les volets ouverts ou
    repliés, la sélection de parcelle. Ce sont des états de navigation, pas des
@@ -1563,8 +1555,15 @@ function fusionnerV(defauts, restaure) {
   return out;
 }
 
-// Le registre est relu TEL QUEL. `_id` est réattribué par position, comme au
-// premier parsing : c'est un index de rendu, jamais une identité persistée.
+// Le registre est relu TEL QUEL, `_id` compris — prompt B8. Avant ce prompt,
+// `_id` était réattribué par position à chaque relecture : c'était sans risque
+// tant que le nombre de lignes ne pouvait pas changer. Depuis que l'ajout et
+// la suppression existent, réattribuer ferait pointer `parcelleLignesExclues`
+// sur d'autres lignes que celles réellement décochées. On garde donc les `_id`
+// relus ; seules les lignes qui n'en portent pas de valide (instantané d'une
+// version antérieure au prompt B8, ou doublon) en reçoivent un nouveau, pris
+// au-dessus du plus grand déjà présent — l'unicité est garantie sans qu'aucun
+// identifiant existant ne bouge.
 function fusionnerRegistre(defaut, restaure) {
   if (!Array.isArray(restaure) || !restaure.length) return defaut;
   // `surface` peut être un nombre (issu du parsing) ou une chaîne (cellule en
@@ -1573,7 +1572,14 @@ function fusionnerRegistre(defaut, restaure) {
   const valide = restaure.every(r => r && typeof r === 'object'
     && typeof r.idu === 'string' && 'surface' in r && 'situation' in r);
   if (!valide) return defaut;
-  return restaure.map((r, i) => ({ ...r, _id: i }));
+  const vus = {};
+  let libre = window.OAD ? window.OAD.prochainIdRegistre(restaure) : restaure.length;
+  return restaure.map(r => {
+    const id = Number(r._id);
+    if (Number.isFinite(id) && !vus[id]) { vus[id] = true; return { ...r, _id: id }; }
+    vus[libre] = true;
+    return { ...r, _id: libre++ };
+  });
 }
 
 // Valeurs par défaut des saisies — sorties de `this.state` au prompt B1 pour
@@ -1622,9 +1628,13 @@ class Component extends DCLogic {
     super(props);
     // Registre parcellaire (chantier 1) — jeu d'exemple préchargé, puis, depuis
     // le prompt B1, écrasé par l'instantané local s'il en existe un lisible.
-    // `sourceParcellaire` bascule surfTot/ageMoy/surfParc/ageParc/manquants/
-    // cepage entre saisie manuelle et dérivation du registre — une seule source
-    // active à la fois.
+    // `sourceParcellaire` valait 'manuel' ou 'registre' et faisait basculer
+    // surfTot/ageMoy/surfParc/ageParc/manquants/cepage entre saisie directe et
+    // dérivation du registre. Arbitrage du 01/09/2026 (prompt B8) : le registre
+    // devient la SEULE source, la saisie manuelle disparaît des écrans 1 et 2.
+    // La clé reste ici, figée à 'registre', parce que le pont vers le moteur et
+    // les libellés de provenance de l'écran 5 la lisent encore — leur nettoyage
+    // est un lot à part.
     const instantane = lireInstantane();
     const registreRows = fusionnerRegistre(
       this.parseRegistreCSV(REGISTRE_EXEMPLE_CSV), instantane && instantane.registreRows);
@@ -1647,8 +1657,16 @@ class Component extends DCLogic {
       voletProdOuvert: false, voletProdOverrides: {},
       voletReposOuvert: false, voletReposOverrides: {}, voletReposCourtNoue: false,
       voletPlantierOuvert: false, voletPlantierOverrides: {},
-      sourceParcellaire: 'manuel',
+      sourceParcellaire: 'registre',
       registreRows,
+      // prompt B8 — compteur MONOTONE des `_id` de lignes du registre. Il ne
+      // recule jamais et ne réutilise jamais un identifiant libéré par une
+      // suppression : deux lignes ajoutées à un an d'intervalle ne peuvent pas
+      // se retrouver avec le même. Initialisé au-dessus du plus grand `_id`
+      // effectivement présent, que les lignes viennent du CSV d'exemple, d'un
+      // import ou de l'instantané local. Non persisté : il se recalcule à
+      // l'identique au chargement suivant, à partir des lignes elles-mêmes.
+      nextRowId: window.OAD ? window.OAD.prochainIdRegistre(registreRows) : registreRows.length,
       // prompt B2 — `registreImporte` fait basculer le libellé de l'onglet de
       // « Registre parcellaire — exemple » à « Registre parcellaire ». Il est
       // persisté avec l'instantané : sans lui, un registre importé puis rechargé
@@ -1772,6 +1790,7 @@ class Component extends DCLogic {
     this.setState({
       v: { ...V_DEFAUTS },
       registreRows,
+      nextRowId: window.OAD.prochainIdRegistre(registreRows),
       champsTouches: {},
       accueilVu: false, accueilOuvert: true,
       registreImporte: false,
@@ -1839,6 +1858,10 @@ class Component extends DCLogic {
     const idus = [...new Set(rows.filter(r => r.situation === 'plantee').map(r => r.idu))];
     this.setState({
       registreRows: rows,
+      // prompt B8 — le compteur repart du registre importé, pas de sa valeur
+      // précédente : les `_id` du fichier sont ceux de `parseRegistreCSV`
+      // (0..n-1), garder l'ancien compteur laisserait un trou sans utilité.
+      nextRowId: window.OAD.prochainIdRegistre(rows),
       registreImporte: true,
       parcelleIdu: idus[0] || null,
       parcelleLignesExclues: {},
@@ -1847,13 +1870,60 @@ class Component extends DCLogic {
     });
   }
 
-  // Correction d'une cellule du registre — prompt B2. `_id` est la position de
-  // la ligne dans la table, réattribuée à chaque parsing : elle ne sert qu'ici,
-  // le temps d'un rendu, et n'est jamais persistée comme identité.
+  // Correction d'une cellule du registre — prompt B2, étendu au prompt B8.
+  // `_id` n'est plus la position de la ligne mais son identité stable (voir
+  // `fusionnerRegistre` et OAD.prochainIdRegistre).
+  //
+  // Deux colonnes ont un effet au-delà de leur propre cellule depuis que le
+  // registre s'édite entièrement à la main :
+  //   - `idu` : renommer l'idu de la parcelle désignée doit emmener la
+  //     désignation avec lui, sinon l'écran 2 pointerait sur un idu qui vient
+  //     de disparaître et afficherait une parcelle de 0 ha ;
+  //   - `situation` : passer en « Arrachée » la dernière ligne Plantée d'un idu
+  //     retire cet idu du sélecteur — il faut alors redésigner, exactement
+  //     comme après une suppression de ligne.
+  // Dans les deux cas c'est OAD.resoudreParcelleIdu qui tranche, une seule
+  // règle pour l'édition, la suppression et le chargement initial.
   majCelluleRegistre(id, champ, valeur) {
-    this.setState(st => ({
-      registreRows: st.registreRows.map(r => r._id === id ? { ...r, [champ]: valeur } : r)
-    }));
+    this.setState(st => {
+      const registreRows = st.registreRows.map(r => r._id === id ? { ...r, [champ]: valeur } : r);
+      if (champ !== 'idu' && champ !== 'situation') return { registreRows };
+      const avant = st.registreRows.find(r => r._id === id);
+      const vise = (champ === 'idu' && avant && avant.idu === st.parcelleIdu) ? valeur : st.parcelleIdu;
+      return { registreRows, parcelleIdu: window.OAD.resoudreParcelleIdu(registreRows, vise) };
+    });
+  }
+
+  // Ajout d'une ligne au registre — prompt B8. Pas de confirmation, pas de
+  // valeur devinée : la ligne arrive vierge (OAD.ligneRegistreVierge) et c'est
+  // à l'utilisateur de la remplir. `parcelleIdu` est re-résolu parce qu'ajouter
+  // une ligne Plantée à un registre qui n'en avait aucune doit rendre l'écran 2
+  // utilisable sans autre geste.
+  ajouterLigneRegistre() {
+    this.setState(st => {
+      const campagne = +st.v.campagne || new Date().getFullYear();
+      const id = st.nextRowId;
+      const registreRows = [...st.registreRows, window.OAD.ligneRegistreVierge(campagne, id)];
+      return { registreRows, nextRowId: id + 1,
+        parcelleIdu: window.OAD.resoudreParcelleIdu(registreRows, st.parcelleIdu) };
+    });
+  }
+
+  // Suppression d'une ligne — prompt B8. Sans confirmation : rien n'est détruit
+  // ailleurs que dans ce navigateur, et l'instantané local n'est pas versionné,
+  // donc une boîte de dialogue ne protégerait de rien qu'elle puisse rendre.
+  // Les `_id` des lignes restantes ne bougent PAS (c'est tout l'objet du
+  // compteur monotone) ; seule l'entrée de `parcelleLignesExclues` qui portait
+  // sur la ligne supprimée est retirée, pour ne pas laisser un décochage
+  // orphelin ressurgir sur une ligne future.
+  supprimerLigneRegistre(id) {
+    this.setState(st => {
+      const registreRows = st.registreRows.filter(r => r._id !== id);
+      const parcelleLignesExclues = { ...st.parcelleLignesExclues };
+      delete parcelleLignesExclues[id];
+      return { registreRows, parcelleLignesExclues,
+        parcelleIdu: window.OAD.resoudreParcelleIdu(registreRows, st.parcelleIdu) };
+    });
   }
 
   parseRegistreCSV(texte) {
@@ -1869,6 +1939,10 @@ class Component extends DCLogic {
       iCourtNoue = col('court_noue'), iSituation = col('situation');
     const nombre = (s) => { const n = parseFloat(String(s ?? '0').trim().replace(',', '.')); return isNaN(n) ? 0 : n; };
     const normaliser = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    // prompt B8 — `_id: i` reste valable ici : un parsing produit toujours un
+    // registre NEUF, dont les lignes n'ont pas d'identité antérieure à
+    // préserver. 0..n-1 est donc une numérotation monotone et unique, et
+    // `prochainIdRegistre` en repart correctement chez l'appelant.
     return lignes.slice(1).map((ligne, i) => {
       const c = ligne.split(';');
       return {
@@ -2094,6 +2168,20 @@ class Component extends DCLogic {
     const lignesParcelleRetenues = lignesParcelleCandidates.filter(r => !s.parcelleLignesExclues[r._id]);
     const agregParcelle = OAD ? OAD.agregerRegistreParcelle(lignesParcelleRetenues, campagne)
       : { surfParc: 0, ageParc: 0, tauxManquant: 0, cepage: null, cepageMixte: false };
+
+    // Cépage retenu pour le simulateur d'aide au choix (§15 : fiche clones,
+    // resume du volet « Ajuster » de l'écran 3). Le registre n'en donne qu'une
+    // LECTURE de l'existant : c'est le cépage arraché, pas nécessairement celui
+    // qu'on replante. Il sert donc de valeur de départ, que le sélecteur de
+    // l'écran 3 peut remplacer — sans quoi le sélecteur n'avait aucun effet,
+    // `sourceParcellaire` étant figé à 'registre' depuis le prompt B8 : la
+    // table de clones affichait le cépage de la parcelle (Chardonnay dans le
+    // jeu d'exemple) quel que soit le choix de l'utilisateur.
+    // `champsTouches.cepage` (marqué par on.cepage, persisté avec l'instantané)
+    // distingue « l'utilisateur a choisi » de « valeur héritée du registre ».
+    const cepageEffectif = s.champsTouches.cepage
+      ? v.cepage
+      : (modeRegistre ? this.cepageAffichage(agregParcelle.cepage) : v.cepage);
 
     // Chantier A4 — refonte de la géométrie de parcelle : la longueur/largeur
     // déclarées disparaissent. La surface (surfArr, manuel, ou surface du
@@ -2515,7 +2603,7 @@ class Component extends DCLogic {
     out.ajusterOuvert3 = s.ajusterOuvert3;
     out.toggleAjuster3 = () => this.setState(st => ({ ajusterOuvert3: !st.ajusterOuvert3 }));
     out.ajusterChevron3 = s.ajusterOuvert3 ? '−' : '+';
-    out.ajusterResume3 = v.cepage + ' · ' + v.porteGreffe + ' · ' + v.materiel
+    out.ajusterResume3 = cepageEffectif + ' · ' + v.porteGreffe + ' · ' + v.materiel
       + ' · ' + v.typeTaille + ', ' + nf(+v.nbFils || 0, 0) + ' fils'
       + ' · pleine production en ' + nf(+v.anneePleineProd || 0, 0) + 'e année'
       + ' · calcaire actif ' + nf(+v.calcaireActif || 0, 0) + ' %';
@@ -2636,19 +2724,20 @@ class Component extends DCLogic {
       { lib: 'Horizon de simulation', val: nf(inp.horizon, 0), unite: 'ans', origine: 'FIGÉ À 10 ANS côté interface (arbitrage 6) — le moteur accepte tout horizon' }
     ];
 
-    // Registre parcellaire (chantier 1) — bascule de mode, table de synthèse
-    // exploitation et sélecteur de la parcelle désignée (idu + sous-lignes).
-    // Import en mémoire uniquement : rien n'est persisté (pas de localStorage),
-    // le registre est reperdu à chaque rechargement de page.
-    out.modeRegistre = modeRegistre;
-    out.setSourceManuel = () => this.setState({ sourceParcellaire: 'manuel' });
-    out.setSourceRegistre = () => this.setState({ sourceParcellaire: 'registre' });
-    out.srcBgManuel = !modeRegistre ? '#20291F' : '#fff'; out.srcFgManuel = !modeRegistre ? '#FAF9F5' : '#20291F';
-    out.srcBgRegistre = modeRegistre ? '#20291F' : '#fff'; out.srcFgRegistre = modeRegistre ? '#FAF9F5' : '#20291F';
-    out.registreVide = registreRows.length === 0;
+    // Registre parcellaire (chantier 1) — table de synthèse de l'exploitation
+    // et sélecteur de la parcelle désignée (idu + sous-lignes). La bascule de
+    // mode a disparu au prompt B8 : le registre est la seule source, il n'y a
+    // plus rien à choisir. Le registre et ses corrections sont conservés dans
+    // le navigateur (localStorage, prompt B1) ; rien n'est jamais envoyé.
     out.registreNbLignes = registreRows.length;
     out.registreSurfTotTxt = this.fmtHa(agregExploitation.surfTot) + ' ha';
     out.registreAgeMoyTxt = nf(agregExploitation.ageMoy, 1) + ' ans';
+    // prompt B8 — état bloquant de l'écran 1. Le test porte sur la SURFACE, pas
+    // sur le nombre de lignes : un registre de dix lignes toutes à 0 ha ne
+    // produit pas plus de résultat exploitable qu'un registre vide, et donnerait
+    // un âge moyen indéterminé (dénominateur nul, ramené à 0 par
+    // agregerRegistreExploitation) affiché comme s'il voulait dire quelque chose.
+    out.registreSansSurface = !(agregExploitation.surfTot > 0);
     // prompt B2 — la table se construit sur `s.registreRows` (valeurs BRUTES)
     // et non sur `registreRows` (normalisées) : un champ que l'utilisateur est
     // en train de vider doit rester vide sous ses doigts, pas se remplir d'un 0.
@@ -2658,13 +2747,21 @@ class Component extends DCLogic {
       anneePlant: r.anneePlant, surface: r.surface, tauxManquant: r.tauxManquant,
       age: campagne - nombreCellule(r.anneePlant),
       situation: r.situation,
+      onIdu: (e) => this.majCelluleRegistre(r._id, 'idu', e.target.value),
+      onCommune: (e) => this.majCelluleRegistre(r._id, 'commune', e.target.value),
+      onCepage: (e) => this.majCelluleRegistre(r._id, 'cepage', e.target.value),
       onAnneePlant: (e) => this.majCelluleRegistre(r._id, 'anneePlant', e.target.value),
       onSurface: (e) => this.majCelluleRegistre(r._id, 'surface', e.target.value),
       onTauxManquant: (e) => this.majCelluleRegistre(r._id, 'tauxManquant', e.target.value),
-      onSituation: (e) => this.majCelluleRegistre(r._id, 'situation', e.target.value)
+      onSituation: (e) => this.majCelluleRegistre(r._id, 'situation', e.target.value),
+      onSupprimer: () => this.supprimerLigneRegistre(r._id),
+      // Le libellé nomme la ligne : « Supprimer la ligne » tout court laisserait
+      // un lecteur d'écran devant huit boutons indiscernables.
+      supprimerTitre: 'Supprimer la ligne ' + (r.idu ? r.idu : 'sans idu')
+        + (r.commune ? ' — ' + r.commune : '')
     }));
+    out.onAjouterLigneRegistre = () => this.ajouterLigneRegistre();
     // Import du registre CIVC — prompt B2.
-    out.registreOngletLabel = s.registreImporte ? 'Registre parcellaire' : 'Registre parcellaire — exemple';
     out.registreTitre = s.registreImporte ? 'Registre parcellaire' : 'Registre parcellaire — exemple';
     out.colonnesAttenduesTxt = COLONNES_CIVC.join(', ');
     out.onFichierRegistre = (e) => this.onFichierChoisi(e);
@@ -2717,12 +2814,14 @@ class Component extends DCLogic {
     if (v.irrigation === '1') conseqs.push({ titre: 'Arrosage du plantier', detail: "cahier des charges de l'AOC Champagne, chapitre I — conditions de production" });
     out.conseqs = conseqs;
 
-    // clones + precon — en mode registre, le cépage vient de la parcelle
-    // sélectionnée (reprojeté sur les 3 libellés du sélecteur, purement
-    // informatif — voir cepageAffichage()) ; sinon, le sélecteur manuel.
-    const cepageEffectif = modeRegistre ? this.cepageAffichage(agregParcelle.cepage) : v.cepage;
+    // clones + precon — `cepageEffectif` est calculé en haut de renderVals()
+    // (sélecteur de l'écran 3, à défaut cépage de la parcelle du registre).
     const cl = OAD ? OAD.clonesParCepage(cepageEffectif) : [];
     out.cepageEffectif = cepageEffectif;
+    // Le <select> lit `cepageEffectif`, pas `v.cepage` : tant que l'utilisateur
+    // n'a rien choisi, il affiche le cépage hérité du registre, en accord avec
+    // la table de clones juste en dessous.
+    out.cepageSel = cepageEffectif;
     out.cepageMixteAlerte = modeRegistre && agregParcelle.cepageMixte;
     // Table clones — prompt B7, alimentée par OAD.clonesParCepage() (prompt A1).
     // Ordre fixe, croissant par numéro de clone : ni tri ni filtre côté UI.
@@ -2741,7 +2840,6 @@ class Component extends DCLogic {
         production: vide(c.production), sucre: vide(c.sucre), fertilite: vide(c.fertilite),
         colCond: vide(estPinot ? c.typiciteChampagne : c.precocite),
         botrytis: vide(c.botrytis),
-        dispo: c.multiplicationHa ? nf(Number(c.multiplicationHa), 2) + ' ha' : '—',
         remarque: c.remarqueGuide || c.remarquePlantGrape || '—',
         origineTxt: guide ? (horsRef ? 'G·P*' : 'G·P') : 'P',
         origineFg: partielle ? '#A97F26' : '#9A9E97',

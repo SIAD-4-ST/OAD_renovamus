@@ -320,6 +320,63 @@ function agregerRegistreParcelle(rows, campagne) {
 }
 
 /* =====================================================================
+   Édition manuelle du registre — prompt B8 (arbitrage du 01/09/2026).
+
+   Le registre parcellaire est devenu la SEULE source des surfaces et des
+   âges : la saisie manuelle a disparu des écrans 1 et 2. Il doit donc
+   pouvoir se remplir à la main, sans export CSV du portail CIVC — d'où
+   l'ajout et la suppression de lignes, jusqu'ici explicitement exclus.
+
+   Ces trois fonctions portent la part CALCULABLE de cette édition
+   (attribution des identifiants de ligne, re-désignation de la parcelle)
+   pour qu'elle soit testable hors navigateur, comme le reste du moteur.
+   Elles sont pures : aucune ne mute son argument.
+   ===================================================================== */
+
+// `_id` n'est plus la POSITION de la ligne dans la table (prompt B2) mais une
+// IDENTITÉ : supprimer une ligne ne doit jamais renuméroter les autres, sans
+// quoi `parcelleLignesExclues`, qui les indexe, désignerait silencieusement
+// d'autres lignes que celles décochées. D'où ce compteur monotone : il ne
+// réutilise jamais un identifiant libéré par une suppression.
+// Registre vide -> 0. Les `_id` non numériques (registre bricolé à la main,
+// instantané d'une version antérieure) sont ignorés, jamais comptés.
+function prochainIdRegistre(rows) {
+  return (rows || []).reduce((suivant, r) => {
+    const id = Number(r && r._id);
+    return Number.isFinite(id) && id >= suivant ? id + 1 : suivant;
+  }, 0);
+}
+
+// Ligne ajoutée à la main. Valeurs par défaut ASSUMÉES, sans source (prompt
+// B8) : `idu` et `commune` restent vides — ce sont des identifiants CIVC que
+// le vigneron connaît, l'outil n'a pas à en inventer ; l'année de plantation
+// place la ligne à 10 ans, âge où la question du renouvellement ne se pose pas
+// encore, donc une valeur neutre qu'il faudra corriger. Les colonnes que le
+// calcul n'utilise pas (num_civc, productivité, enroulement, court-noué) sont
+// présentes à 0 pour que la ligne ait exactement la forme de celles que
+// produit `parseRegistreCSV`.
+function ligneRegistreVierge(campagne, id) {
+  return {
+    _id: id, idu: '', commune: '', numCivc: '', modeExplo: '',
+    cepage: 'CHARDONNAY B', anneePlant: campagne - 10, surface: 0,
+    productiviteMoyenne: 0, tauxManquant: 0, enroulement: 0, courtNoue: 0,
+    situation: 'plantee'
+  };
+}
+
+// Parcelle désignée (écran 2) après une édition du registre. L'idu courant est
+// conservé tant qu'au moins une ligne Plantée le porte encore ; sinon on
+// retombe sur la première ligne Plantée restante, exactement comme au
+// chargement initial ; sinon `null` — jamais un idu fantôme, jamais
+// `undefined`. Le registre sans aucune ligne Plantée est un cas normal (tout
+// est arraché), pas une erreur.
+function resoudreParcelleIdu(rows, iduActuel) {
+  const plantees = (rows || []).filter(r => r && r.situation === 'plantee').map(r => r.idu);
+  if (iduActuel !== null && iduActuel !== undefined && plantees.indexOf(iduActuel) >= 0) return iduActuel;
+  return plantees.length ? plantees[0] : null;
+}
+
+/* =====================================================================
    Trajectoire d'âge moyen du vignoble — chantier P7, famille 2 (physique,
    non monétisé), symétrique du graphique de stock de réserve. Remplace le
    KPI ponctuel ageApres/gainAge (instantané : comptait la parcelle à l'âge
@@ -920,6 +977,7 @@ if (typeof module !== 'undefined') module.exports =
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
+    prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
     CLONES_CHAMPAGNE, clonesParCepage,
     PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,
@@ -931,6 +989,7 @@ if (typeof window !== 'undefined') window.OAD =
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
+    prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
     CLONES_CHAMPAGNE, clonesParCepage,
     PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,

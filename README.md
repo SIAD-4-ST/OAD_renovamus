@@ -35,7 +35,7 @@ chiffrée se met à jour en continu dans la colonne de droite.
 4. [Le parcours en 5 étapes](#4-le-parcours-en-5-étapes)
 5. [Le flux de données, de la frappe au résultat](#5-le-flux-de-données-de-la-frappe-au-résultat)
 6. [Glossaire des champs de saisie](#6-glossaire-des-champs-de-saisie)
-    - [6bis. Le registre parcellaire — un mode de saisie alternatif](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif)
+    - [6bis. Le registre parcellaire — seule source des surfaces et des âges](#6bis-le-registre-parcellaire--seule-source-des-surfaces-et-des-âges)
 7. [Le moteur kg — `simulerReserveKg`](#7-le-moteur-kg--simulerreservekg)
     - [7bis. Journal d'arbitrages — chantier A2 : uniformisation de l'arrachage](#7bis-journal-darbitrages--chantier-a2--uniformisation-de-larrachage)
     - [7ter. Journal d'arbitrages — chantier A3 : remplacement des paliers de montée en charge](#7ter-journal-darbitrages--chantier-a3--remplacement-des-paliers-de-montée-en-charge)
@@ -317,7 +317,7 @@ renseigné.
 
 | # | Étape | Contenu |
 |---|---|---|
-| 1 | **Votre exploitation** | Surface totale, âge moyen du vignoble, VolCo, prix du raisin, réserve individuelle actuelle (curseur en % du plafond) ; **charges de production à l'hectare** (charge liée à la surface, coût de la vendange, détail par opération heures manuelles/mécanisées — chantier B1, déplacées depuis l'écran « Coûts et charges », paramètres de référence de l'exploitation réutilisés à l'écran 5, voir §11 F9). Ce sont les repères globaux, dénominateurs de tout le calcul d'impact. Saisie manuelle par défaut, ou bascule vers un **registre parcellaire** (jeu d'exemple préchargé, **importable** depuis un export du portail CIVC et **corrigeable cellule par cellule** depuis le prompt B2) qui dérive surface totale et âge moyen d'un tableau de parcelles — voir [§6bis](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif). |
+| 1 | **Votre exploitation** | Surface totale, âge moyen du vignoble, VolCo, prix du raisin, réserve individuelle actuelle (curseur en % du plafond) ; **charges de production à l'hectare** (charge liée à la surface, coût de la vendange, détail par opération heures manuelles/mécanisées — chantier B1, déplacées depuis l'écran « Coûts et charges », paramètres de référence de l'exploitation réutilisés à l'écran 5, voir §11 F9). Ce sont les repères globaux, dénominateurs de tout le calcul d'impact. Surface totale et âge moyen ne sont plus saisis : ils sont **dérivés du registre parcellaire**, seule source depuis le prompt B8 (jeu d'exemple préchargé, **importable** depuis un export du portail CIVC, **corrigeable cellule par cellule** et, depuis le prompt B8, **complétable ligne par ligne**) — voir [§6bis](#6bis-le-registre-parcellaire--seule-source-des-surfaces-et-des-âges). |
 | 2 | **La parcelle que vous désignez** | **Géométrie de la parcelle en tête d'écran** (chantier B2, déplacée depuis l'écran 3) : surface arrachée, écart entre rangs, nombre de rangs, écart entre pieds — seuls champs saisis ; longueur de rang déduite, densité, pieds à planter et badge de conformité AOC en sont affichés, jamais saisis (§16). Puis âge, taux de pieds manquants, rendement estimé, régime de faire-valoir (propriété / fermage / métayage) et ses paramètres. Le **déclin en statu quo a été déplacé à l'écran 5** (prompt C1) : il ne décrit pas la parcelle mais le contre-factuel, et son seul effet visible est le tableau « Manque à gagner ». En mode registre, un sélecteur d'`idu` et des cases à cocher par ligne désignent la parcelle et en dérivent surface, âge et taux de manquants (§6bis). |
 | 3 | **Votre projet de replantation** | **Deux blocs seulement (chantier B3)** : (1) simulateur d'aide au choix du matériel végétal (cépage/calcaire/profondeur/drainage, arbre porte-greffe, table clones — dépliable, purement informatif), positionné juste avant la sélection définitive matériel végétal/porte-greffe qu'il éclaire, avec fiche conseil (dont l'avertissement 161-49 C) ; (2) palissage et conduite — mode de conduite (dont Chablis, chantier A5), année de pleine production (chantier A3, §7bis), équipements de palissage dérivés de la géométrie de l'écran 2 (postes obligatoires toujours comptés, poste optionnel décochable — chantier A5, §14). Ni le sélecteur d'arrosage ni la pénalité VSL n'apparaissent ici (arrosage du plantier à l'écran 4, VSL retirée de l'interface — chantier B4). Depuis le prompt B7 la **table clones occupe toute la largeur de la carte** et affiche 8 colonnes sourcées (§15). Aucun champ de cet écran n'appartenant au chemin court, l'écran entier vit dans son volet « Ajuster » (prompt B4). Un message bloquant remplace les indicateurs de palissage si la géométrie est incomplète (surface ou nombre de rangs nul). |
 | 4 | **Coûts et charges** | **Deux blocs seulement (chantier B4)** : BLOC A « Investissements liés à la parcelle arrachée puis replantée » — prestations d'arrachage et préparation, matériel végétal et sa protection, matériel de palissage, options de coût à l'installation (dont l'irrigation, déplacée depuis l'écran 3), et l'**arrosage du plantier** (prompt B7, ex-« ferti-irrigation »). La complantation (`survie`, `coutEntreplant`) n'a plus de champ de saisie : elle n'alimente qu'un scénario jamais affiché (prompt C1), les valeurs restent dans `state.v` et dans la fiche d'audit. L'entrée en production de la complantation n'est plus éditable depuis le chantier A3, fixée à 7 ans, voir §7bis ; BLOC B « Entretien en deux temps » — B.1 entretien de la parcelle au repos, B.2 entretien du plantier (chantier B1 a déplacé le volet « production », permanent, à l'écran 1 — voir §11 F9, non dupliqué ici). Aucun champ VSL. |
@@ -597,16 +597,40 @@ réutilisé ici pour convertir h → € dans les volets B.1/B.2.
 | `state.vueFV` | `'1'` (Ensemble) | bascule Ensemble / Part exploitant / Part propriétaire — traverse `OAD.repartir()` avant cumul (§10) |
 | `state.moExterne` | `true` (Prestataire) | bascule Prestataire / Familiale de l'encadré « main d'œuvre économisée » — affichage uniquement, jamais dans le calcul (§11 F7) |
 
-## 6bis. Le registre parcellaire — un mode de saisie alternatif
+## 6bis. Le registre parcellaire — seule source des surfaces et des âges
 
-**Chantier 1.** Aux étapes 1 et 2, deux boutons « Saisie manuelle » /
-« Registre parcellaire » (`out.setSourceManuel` / `out.setSourceRegistre`,
-`index.html`) basculent `state.sourceParcellaire` (`'manuel'` par défaut).
-Quand `modeRegistre` (= `sourceParcellaire === 'registre'`) est actif,
-`surfTot`, `ageMoy`, `ageParc` et `manquants` ne sont plus des champs
-saisis directement : ils sont **dérivés d'un tableau de parcelles**, plutôt
-que d'un chiffre unique par champ — utile quand l'exploitation a déjà un
-registre parcellaire (type CIVC/douanes) sous la main.
+**Chantier 1, puis prompt B8.** Le registre a d'abord été un *mode de saisie
+alternatif* : deux boutons « Saisie manuelle » / « Registre parcellaire »
+basculaient `state.sourceParcellaire`, `'manuel'` par défaut.
+
+**Arbitrage du 01/09/2026 (prompt B8) : la saisie manuelle disparaît.** Le
+registre est la **seule** source. Les deux boutons de bascule et
+`out.setSourceManuel` ont été retirés des étapes 1 et 2, avec toutes les
+branches `!modeRegistre` de ces deux écrans. `state.sourceParcellaire` reste
+en place, figé à `'registre'` : le pont vers le moteur et les libellés de
+provenance de l'écran 5 le lisent encore, sous forme de ternaires désormais
+toujours vrais — leur nettoyage est un lot à part, hors du prompt B8.
+
+`surfTot`, `ageMoy`, `surfParc`, `ageParc`, `manquants` et `cepage` sont donc
+**dérivés d'un tableau de parcelles**, jamais saisis. Les clés correspondantes
+de `V_DEFAUTS` (`v.surfTot`, `v.ageMoy`, `v.surfArr`, `v.ageParc`,
+`v.manquants`) subsistent comme filet interne côté moteur ; seule leur
+exposition en interface a disparu.
+
+**Contrepartie assumée : le registre doit pouvoir se remplir à la main.**
+Rendre le registre obligatoire sans lui donner l'ajout et la suppression de
+lignes aurait rendu l'outil inutilisable pour qui n'a pas d'export CSV du
+portail CIVC sous la main — voir « Ajout et suppression de lignes » ci-dessous.
+
+**État bloquant du registre vide.** Quand `agregExploitation.surfTot` vaut 0
+(registre vide, ou toutes lignes à 0 ha), l'étape 1 remplace les deux champs
+dérivés par un bandeau « Ajoutez au moins une ligne au registre pour
+continuer » (`out.registreSansSurface`) plutôt que d'afficher `0 ha` et un âge
+moyen indéterminé. Le test porte sur la **surface**, pas sur le nombre de
+lignes : dix lignes à 0 ha ne valent pas mieux qu'aucune ligne. C'est un
+garde-fou d'**interface** : côté moteur, `simulerReserveKg` protégeait déjà
+ses divisions (`surfProd === 0 ? 0 : …`), et un test dédié le fige (§18,
+section 19 des tests).
 
 **Origine des données — jeu d'exemple, pas d'import réel.** `state.registreRows`
 est peuplé au chargement à partir d'une constante `REGISTRE_EXEMPLE_CSV`
@@ -641,14 +665,53 @@ exemple »** tant qu'aucun import n'a eu lieu ; le drapeau `registreImporte`
 est persisté avec l'instantané, sinon un registre importé se présenterait à
 nouveau comme le jeu d'exemple après rechargement.
 
-### Édition des cellules (prompt B2, arbitrage 2)
+### Édition des cellules (prompt B2, arbitrage 2 — révisé au prompt B8)
 
-Les quatre colonnes qui **pilotent le calcul** sont saisissables directement
-dans le tableau de l'étape 1 : `surface`, `anneePlant`, `tauxManquant`
-(colonne « Manquants », ajoutée pour rendre visible ce qu'on rend éditable)
-et `situation`. `idu`, `commune` et `cepage` restent en lecture — ce sont
-les identifiants du fichier. **Ni ajout, ni suppression, ni case d'exclusion
-à l'étape 1** ; le mécanisme d'exclusion de lignes de l'étape 2 est intact.
+Au prompt B2, seules les quatre colonnes qui **pilotent le calcul** étaient
+saisissables (`surface`, `anneePlant`, `tauxManquant`, `situation`) ; `idu`,
+`commune` et `cepage` restaient en lecture, « identifiants du fichier », et
+il n'y avait **ni ajout ni suppression** de lignes.
+
+**Prompt B8 : toutes les colonnes sont saisissables**, `idu` et `commune`
+comprises. La raison tient en une phrase : puisqu'il peut n'y avoir aucun
+fichier, il n'y a plus d'« identifiants du fichier » à protéger. Ce qui n'a
+pas changé : l'exclusion de lignes de la parcelle désignée reste un mécanisme
+de l'**étape 2**, distinct de la suppression pure et simple de l'étape 1.
+
+Deux colonnes ont un effet au-delà de leur cellule (`majCelluleRegistre`) :
+renommer l'`idu` de la parcelle désignée **emmène la désignation avec lui** ;
+passer en « Arrachée » la dernière ligne Plantée d'un `idu` force une
+redésignation. Dans les deux cas c'est `OAD.resoudreParcelleIdu()` qui
+tranche — une seule règle pour l'édition, la suppression et le chargement.
+
+### Ajout et suppression de lignes (prompt B8)
+
+Un bouton **« + Ajouter une ligne »** sous le tableau de l'étape 1 et un
+bouton **✕** par ligne. Aucune confirmation : rien n'est détruit ailleurs que
+dans ce navigateur, et l'instantané local n'est pas versionné — une boîte de
+dialogue ne protégerait de rien qu'elle puisse rendre.
+
+**Valeurs par défaut d'une ligne ajoutée** (`OAD.ligneRegistreVierge()`,
+assumées, sans source) : `idu` et `commune` vides — ce sont des identifiants
+CIVC que le vigneron connaît, l'outil n'en invente pas ; `cepage`
+`CHARDONNAY B` ; `anneePlant` = campagne − 10 ; `surface`, `tauxManquant` à
+0 ; `situation` `plantee`. Une ligne vierge n'apporte donc **aucune surface**
+et ne lève pas à elle seule l'état bloquant.
+
+**`_id` change de nature.** C'était la position de la ligne, réattribuée à
+chaque parsing et à chaque relecture de l'instantané. Depuis que des lignes
+peuvent être supprimées, c'est une **identité** : `state.nextRowId` est un
+compteur monotone (`OAD.prochainIdRegistre()`), initialisé au-dessus du plus
+grand `_id` présent et jamais reculé — un identifiant libéré par une
+suppression n'est jamais réattribué. Sans cela, `state.parcelleLignesExclues`,
+qui indexe par `_id`, ferait glisser un décochage sur une ligne voisine.
+`nextRowId` n'est **pas** persisté : il se recalcule à l'identique depuis les
+lignes au chargement suivant.
+
+En conséquence, `fusionnerRegistre()` ne renumérote plus : les `_id` d'un
+instantané sont relus tels quels, et seules les lignes qui n'en portent pas
+de valide (instantané antérieur au prompt B8, ou doublon) en reçoivent un
+nouveau, pris au-dessus du plus grand déjà présent.
 
 Les cellules stockent la **frappe brute** (« 0, », « 1,2 », vide en cours de
 correction) : la conversion en nombre se fait au seul point qui alimente le
@@ -1776,16 +1839,20 @@ plantgrape.fr (arbitrage 5). Trois lignes portent une **origine partielle** :
 Pinot noir 115 et Meunier 925 (PlantGrape hors référence Champagne),
 Meunier 458 (PlantGrape seul, absent du Guide).
 
-**Affichage — écran 3, prompt B7.** Huit colonnes, dans cet ordre : Clone ·
+**Affichage — écran 3, prompt B7.** Sept colonnes, dans cet ordre : Clone ·
 Niveau de production · Richesse en sucre · Fertilité · *Typicité en
 Champagne* (Pinot noir) ou *Précocité* (Chardonnay, Meunier) · Sensibilité
-Botrytis · Disponibilité · Remarque.
+Botrytis · Remarque.
 
 - **Niveau de production** porte une infobulle : échelle qualitative
   PlantGrape, **ce n'est pas un rendement en kg/ha** et cela n'entre dans
   aucun calcul.
-- **Disponibilité** affiche `multiplicationHa` en hectares — indication de
-  disponibilité en pépinière, relevé national **non daté**.
+- **Disponibilité retirée de l'écran.** Une colonne affichait
+  `multiplicationHa` (surface de multiplication en pépinière) ; elle a été
+  retirée de la table — relevé national non daté, sans valeur de décision
+  pour l'utilisateur. Le champ **reste** dans le référentiel du moteur, où
+  il est toujours transcrit depuis les sources : c'est l'affichage qui
+  disparaît, pas la donnée.
 - **Origine par ligne** : marqueur `G·P` (les deux sources), `G·P*`
   (PlantGrape hors référence Champagne), `P` (PlantGrape seul), avec
   légende ; les trois origines partielles sont distinguées en couleur.
@@ -2134,7 +2201,7 @@ Trois conventions tranchées avant codage :
 - **Pendant le repos (arrachage, `t < repos`)** : la parcelle sort du
   numérateur **et** du dénominateur (option B) — même règle que
   `agregerRegistreExploitation` pour les lignes « Arrachée » du registre
-  (chantier 1, [§6bis](#6bis-le-registre-parcellaire--un-mode-de-saisie-alternatif)) :
+  (chantier 1, [§6bis](#6bis-le-registre-parcellaire--seule-source-des-surfaces-et-des-âges)) :
   une parcelle sans vigne en terre n'a pas d'âge de vigne. Rejeté : la
   compter à l'âge 0 dès `t=0` (convention de l'ancien
   KPI, flatteuse) ou la garder à l'écran avec un âge nul non distingué.
@@ -2410,7 +2477,8 @@ l'infini.
 | # | Décision | Conséquence | Ce que ça écarte |
 |---|---|---|---|
 | 1 | `localStorage` autorisé — persistance par **instantané** de `state.v` et `state.registreRows`, pas par diff | Les saisies survivent au rechargement ; bouton « Effacer mes données » dans l'en-tête ; `CLAUDE.md` mis à jour **dans le même commit** | Écarte la persistance par diff, qui aurait exigé une clé stable par ligne de registre — donc un appariement fragile après import. Écarte aussi tout stockage distant : rien ne sort du navigateur |
-| 2 | Registre : **édition des cellules uniquement**, ni ajout ni suppression ni exclusion de lignes à l'écran 1 | 4 colonnes saisissables (surface, année de plantation, taux de manquants, situation) | Écarte un éditeur de registre complet. Le mécanisme d'exclusion de lignes de l'écran 2 reste seul et inchangé — deux mécanismes d'exclusion auraient été indistinguables pour l'utilisateur |
+| 2 | ~~Registre : **édition des cellules uniquement**, ni ajout ni suppression ni exclusion de lignes à l'écran 1~~ — **révisé au prompt B8** (voir ci-dessous) | 4 colonnes saisissables (surface, année de plantation, taux de manquants, situation) | Écarte un éditeur de registre complet. Le mécanisme d'exclusion de lignes de l'écran 2 reste seul et inchangé — deux mécanismes d'exclusion auraient été indistinguables pour l'utilisateur |
+| 2bis (B8) | **Le registre devient la seule source** : la saisie manuelle disparaît des écrans 1 et 2, et le tableau gagne l'ajout et la suppression de lignes | Toutes les colonnes saisissables, bouton « + Ajouter une ligne » et ✕ par ligne, bandeau bloquant si la surface totale est nulle | Deux sources concurrentes pour les mêmes grandeurs obligeaient à documenter partout laquelle avait gagné. Rendre le registre obligatoire imposait en retour de pouvoir le remplir sans export CSV — d'où l'ajout/suppression, qui contredit délibérément l'arbitrage 2 |
 | 3 | Import : **export du portail CIVC**, 12 colonnes spécifiées | Colonne obligatoire manquante → message qui **la nomme**, table en place non remplacée | Écarte un import « best effort » qui aurait produit des zéros silencieux là où une colonne manque |
 | 4 | Clones : **union** Guide 2025 + PlantGrape, origine marquée par ligne — 42 lignes | Référentiel sourcé dans le moteur, marqueur d'origine par ligne, 3 origines partielles visibles | Écarte le choix d'une source unique, qui aurait perdu soit les clones hors Guide, soit les colonnes agronomiques |
 | 5 | Colonne **Botrytis conservée vide**, avec note explicative | Affichée et vide sur 37 des 42 lignes, renvoi CIVC / plantgrape.fr | Écarte à la fois le retrait de la colonne (on perdrait l'information qu'elle manque) et son remplissage par dire d'expert |

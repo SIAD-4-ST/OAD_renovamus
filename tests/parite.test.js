@@ -685,7 +685,13 @@ test('surfParc (parcelle désignée, sélection multi-lignes pondérée) ≤ sur
   assert.ok(surfParc <= surfTot + 1e-9, 'surfParc ne doit jamais dépasser surfTot');
 });
 
-test('registre vide → agrégats à 0 sans exception (bascule en saisie manuelle)', () => {
+// Renommé au prompt B8 : ce test s'appelait « (bascule en saisie manuelle) ».
+// La bascule n'existe plus — le registre est la seule source depuis
+// l'arbitrage du 01/09/2026, et un registre vide fait maintenant afficher un
+// état bloquant à l'écran 1 (out.registreSansSurface). Le comportement
+// NUMÉRIQUE testé ici, lui, est inchangé et doit le rester : c'est sur lui que
+// repose l'absence d'exception derrière cet état bloquant.
+test('registre vide → agrégats à 0 sans exception (état bloquant affiché)', () => {
   assert.doesNotThrow(() => {
     const exploitationVide = OAD.agregerRegistreExploitation([], CAMPAGNE_TEST);
     assert.strictEqual(exploitationVide.surfTot, 0);
@@ -1417,6 +1423,149 @@ test('l\'horizon est figé à 10 ans côté interface, mais le moteur accepte to
   // Le moteur, lui, n'a rien perdu : la section 3 couvre l'horizon 25 ans.
   const sc25 = OAD.construireScenarios({ ...INP_A, horizon: 25 });
   assert.strictEqual(sc25.arrachage.kg.length, 26, 'le moteur doit toujours savoir simuler 25 ans');
+});
+
+// ----------------------------------------------------------------------
+section('19. Édition manuelle du registre (prompt B8)');
+// ----------------------------------------------------------------------
+// Arbitrage du 01/09/2026 : le registre parcellaire devient la SEULE source
+// des surfaces et des âges, la saisie manuelle disparaît des écrans 1 et 2.
+// Pour rester utilisable sans export CSV du portail CIVC, le tableau gagne
+// l'ajout et la suppression de lignes — ce qui fait de `_id` une identité et
+// non plus un index de rendu. Ces trois fonctions du moteur portent la part
+// calculable de cette édition ; le reste (state React, gabarit) n'est pas
+// testable ici, d'où les deux contrôles textuels sur index.html en fin de
+// section, sur le modèle de la section 18.
+
+test('prochainIdRegistre : registre vide → 0, sinon strictement au-dessus du plus grand _id', () => {
+  assert.strictEqual(OAD.prochainIdRegistre([]), 0);
+  assert.strictEqual(OAD.prochainIdRegistre(undefined), 0);
+  assert.strictEqual(OAD.prochainIdRegistre([{ _id: 0 }, { _id: 1 }, { _id: 2 }]), 3);
+  // Trous et désordre : c'est le MAXIMUM qui compte, pas le nombre de lignes —
+  // sinon un registre amputé de ses premières lignes recyclerait des _id.
+  assert.strictEqual(OAD.prochainIdRegistre([{ _id: 7 }, { _id: 2 }]), 8);
+  // _id absent ou non numérique (instantané d'une version antérieure) : ignoré,
+  // jamais compté comme un identifiant occupé.
+  assert.strictEqual(OAD.prochainIdRegistre([{ _id: 4 }, { idu: 'Z1' }, { _id: 'x' }]), 5);
+});
+
+test('ajout de ligne : chaque nouvel _id est unique, y compris après plusieurs ajouts et suppressions', () => {
+  // On rejoue la mécanique d'index.html : `nextRowId` est un compteur en state,
+  // initialisé par prochainIdRegistre puis incrémenté à chaque ajout — il ne
+  // repart JAMAIS du registre courant, sans quoi une suppression libérerait un
+  // identifiant qu'un ajout ultérieur réattribuerait à une autre ligne.
+  let rows = [
+    { _id: 0, idu: 'Z0068', surface: 0.4, situation: 'plantee' },
+    { _id: 1, idu: 'Z0069', surface: 0.3, situation: 'plantee' }
+  ];
+  let nextRowId = OAD.prochainIdRegistre(rows);
+  assert.strictEqual(nextRowId, 2);
+
+  const ajouter = () => { rows = [...rows, OAD.ligneRegistreVierge(2026, nextRowId)]; nextRowId += 1; };
+  const supprimer = (id) => { rows = rows.filter(r => r._id !== id); };
+
+  ajouter();            // _id 2
+  ajouter();            // _id 3
+  supprimer(2);         // libère 2 — il ne doit jamais revenir
+  ajouter();            // _id 4, pas 2
+  supprimer(0);         // libère 0
+  ajouter();            // _id 5, pas 0
+
+  const ids = rows.map(r => r._id);
+  assert.deepStrictEqual(ids, [1, 3, 4, 5],
+    'aucun identifiant libéré par une suppression ne doit être réattribué');
+  assert.strictEqual(new Set(ids).size, ids.length, 'les _id doivent rester deux à deux distincts');
+});
+
+test('suppression de ligne : les _id des lignes restantes ne changent jamais', () => {
+  // C'est la propriété qui protège `parcelleLignesExclues`, indexé par _id :
+  // une renumérotation ferait glisser un décochage sur la ligne voisine.
+  const rows = [
+    { _id: 0, idu: 'Z0068', surface: 0.24, situation: 'plantee' },
+    { _id: 1, idu: 'Z0068', surface: 0.02, situation: 'plantee' },
+    { _id: 2, idu: 'Z0069', surface: 0.13, situation: 'arrachee' }
+  ];
+  const apres = rows.filter(r => r._id !== 0);
+  assert.deepStrictEqual(apres.map(r => r._id), [1, 2]);
+  // ... et le compteur ne recule pas non plus.
+  assert.strictEqual(OAD.prochainIdRegistre(apres), 3);
+});
+
+test('ligneRegistreVierge : valeurs par défaut assumées, âge de 10 ans, ligne Plantée sans idu', () => {
+  const l = OAD.ligneRegistreVierge(2026, 12);
+  assert.strictEqual(l._id, 12);
+  assert.strictEqual(l.idu, '', 'idu vide : c\'est un identifiant CIVC, l\'outil n\'en invente pas');
+  assert.strictEqual(l.commune, '');
+  assert.strictEqual(l.cepage, 'CHARDONNAY B');
+  assert.strictEqual(l.anneePlant, 2016, 'campagne − 10');
+  assert.strictEqual(OAD.ageRegistre(l.anneePlant, 2026), 10);
+  assert.strictEqual(l.surface, 0);
+  assert.strictEqual(l.tauxManquant, 0);
+  assert.strictEqual(l.situation, 'plantee');
+  // Une ligne vierge n'apporte aucune surface : elle ne peut donc pas, à elle
+  // seule, faire sortir l'écran 1 de son état bloquant.
+  assert.strictEqual(OAD.agregerRegistreExploitation([l], 2026).surfTot, 0);
+});
+
+test('resoudreParcelleIdu : la parcelle désignée est conservée tant qu\'une ligne Plantée la porte', () => {
+  const rows = [
+    { _id: 0, idu: 'Z0068', situation: 'plantee' },
+    { _id: 1, idu: 'Z0069', situation: 'plantee' }
+  ];
+  assert.strictEqual(OAD.resoudreParcelleIdu(rows, 'Z0069'), 'Z0069');
+});
+
+test('re-sélection automatique : supprimer la parcelle désignée retombe sur la première ligne Plantée restante', () => {
+  const rows = [
+    { _id: 0, idu: 'Z0068', situation: 'plantee' },
+    { _id: 1, idu: 'Z0069', situation: 'plantee' },
+    { _id: 2, idu: 'Z0157', situation: 'plantee' }
+  ];
+  const apres = rows.filter(r => r.idu !== 'Z0069');
+  assert.strictEqual(OAD.resoudreParcelleIdu(apres, 'Z0069'), 'Z0068',
+    'même règle qu\'au chargement initial : la première ligne Plantée restante');
+  // Une ligne du même idu subsiste ailleurs dans le registre → rien ne bouge.
+  const multi = [
+    { _id: 0, idu: 'Z0068', situation: 'plantee' },
+    { _id: 1, idu: 'Z0068', situation: 'plantee' }
+  ];
+  assert.strictEqual(OAD.resoudreParcelleIdu(multi.filter(r => r._id !== 1), 'Z0068'), 'Z0068');
+});
+
+test('resoudreParcelleIdu : plus aucune ligne Plantée → null, sans exception (registre vide ou tout arraché)', () => {
+  assert.doesNotThrow(() => {
+    assert.strictEqual(OAD.resoudreParcelleIdu([], 'Z0068'), null);
+    assert.strictEqual(OAD.resoudreParcelleIdu(undefined, 'Z0068'), null);
+    assert.strictEqual(OAD.resoudreParcelleIdu([{ _id: 0, idu: 'Z0068', situation: 'arrachee' }], 'Z0068'), null,
+      'une ligne Arrachée ne peut pas être la parcelle désignée');
+    assert.strictEqual(OAD.resoudreParcelleIdu([], null), null);
+  });
+});
+
+test('surfTot = 0 (registre vide) : construireScenarios ne divise pas par la surface — pas de NaN, pas d\'exception', () => {
+  // Garde-fou déjà présent dans simulerReserveKg (`surfProd === 0 ? 0 : …`),
+  // au même titre que celui de trajectoireAge sur surfRest (section 10). Ce
+  // test le FIGE : l'état bloquant de l'écran 1 (prompt B8) est un garde-fou
+  // d'interface, il ne doit pas être la seule chose qui empêche le NaN.
+  let sc;
+  assert.doesNotThrow(() => { sc = OAD.construireScenarios({ ...INP_A, surfTot: 0, surfParc: 0 }); });
+  const nombresFinis = (lignes) => lignes.every(l =>
+    Object.keys(l).every(k => typeof l[k] !== 'number' || Number.isFinite(l[k])));
+  ['arrachage', 'complantation', 'statuquo'].forEach(nom => {
+    assert.ok(nombresFinis(sc[nom].kg), `couche kg du scénario ${nom} : aucun NaN ni Infinity`);
+    assert.ok(nombresFinis(sc[nom].eur), `couche € du scénario ${nom} : aucun NaN ni Infinity`);
+  });
+  assert.strictEqual(sc.arrachage.kg[0].stockHa, 0,
+    'stock par hectare sur une exploitation de 0 ha : 0, pas une division par zéro');
+});
+
+test('la saisie manuelle a bien disparu de l\'interface : plus de bouton, défaut sur le registre', () => {
+  assert.ok(/sourceParcellaire:\s*'registre'/.test(INDEX_HTML),
+    'le défaut de sourceParcellaire doit être « registre » — la saisie manuelle n\'existe plus');
+  assert.ok(!/setSourceManuel/.test(INDEX_HTML),
+    'le bouton « Saisie manuelle » et son gestionnaire doivent avoir disparu');
+  assert.ok(!/!modeRegistre/.test(INDEX_HTML),
+    'plus aucune branche « hors mode registre » ne doit subsister dans le gabarit');
 });
 
 // ----------------------------------------------------------------------
