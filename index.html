@@ -18,46 +18,109 @@
    rendu, template beaucoup plus lisible, et un seul endroit où ajuster
    l'apparence d'un type d'élément. Les styles inline restants sont ceux qui
    sont uniques à un élément ou qui portent une valeur calculée {{ }}. */
-body{margin:0;background:#FAF9F5}
+/* --- jetons de couleur — prompt 13 -------------------------------------
+   L'outil est montré au vidéoprojecteur en formation : le fond crème éblouit
+   en salle sombre. Toutes les couleurs du gabarit passent par ces jetons, et
+   le thème sombre ne fait que redéfinir leurs valeurs — il n'y a donc qu'un
+   seul endroit à relire pour vérifier un contraste.
+
+   Le mode clair reste le défaut et la version de travail. Les couleurs de
+   série des graphiques (végétal, ambre, alerte) ne changent pas d'un thème à
+   l'autre : elles sont choisies dans renderVals et passées au SVG.
+
+   La feuille d'impression, plus bas, force noir sur blanc quel que soit le
+   thème actif : on n'imprime pas un aplat sombre. */
+:root{
+  --fond:#FAF9F5;
+  --surface-basse:#FAF9F5;
+  --surface-haute:#fff;
+  --encre:#20291F;
+  --encre-2:#42473F;
+  --encre-3:#5C6157;
+  --encre-4:#9A9E97;
+  --bordure:#DDD9CE;
+  --bordure-claire:#EDEAE1;
+  --accent:#A97F26;
+  --accent-fonce:#8E6A1F;
+  --accent-fond:#F1E6CC;
+  --accent-fond-bordure:#E3D3AA;
+  --accent-encre:#5C4B1F;
+  --alerte:#A5433A;
+  --alerte-fond:#F3E0DD;
+  --alerte-fond-2:#F7E9E7;
+  --vegetal:#4C7A57;
+  --vegetal-fonce:#2F5B3C;
+  --vegetal-fond:#E3EDE5;
+  --cellule-fond:#FCFBF7;
+  --encre-inverse:#FAF9F5;
+  --encre-survol:#3A4538;
+}
+:root[data-theme="sombre"]{
+  --fond:#20291F;
+  --surface-basse:#161C15;
+  --surface-haute:#1E2620;
+  --encre:#F3F1EA;
+  --encre-2:#D6D2C6;
+  --encre-3:#BDB9AC;
+  --encre-4:#8E9489;
+  --bordure:#3A4238;
+  --bordure-claire:#4A5147;
+  --accent:#F1E6CC;
+  --accent-fonce:#E3CD96;
+  --accent-fond:#2A2018;
+  --accent-fond-bordure:#6E5A32;
+  --accent-encre:#E3CD96;
+  --alerte:#C98178;
+  --alerte-fond:#2E1D1B;
+  --alerte-fond-2:#2E1D1B;
+  --vegetal:#B8D3BC;
+  --vegetal-fonce:#B8D3BC;
+  --vegetal-fond:#1B2A1F;
+  --cellule-fond:#1E2620;
+  --encre-inverse:#20291F;
+  --encre-survol:#2A332A;
+}
+
+body{margin:0;background:var(--fond);color:var(--encre)}
 input,select,button{font-family:'Archivo',sans-serif}
-input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-offset:1px}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 
 /* --- champs de saisie ------------------------------------------------- */
 .field{display:flex;flex-direction:column;gap:5px}
 .row{display:flex;align-items:center;gap:8px}
 .lbl{font-size:13.5px;font-weight:600}
-.unit{font-size:11.5px;color:#5C6157;flex:none}
-.hint{font-size:11.5px;color:#5C6157;line-height:1.45}
-.hint.warn{color:#A5433A}
-.inp{width:100%;padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:13.5px;color:#20291F}
-.sel{padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-size:13.5px;color:#20291F}
-.inp:hover,.sel:hover{border-color:#A97F26}
+.unit{font-size:11.5px;color:var(--encre-3);flex:none}
+.hint{font-size:11.5px;color:var(--encre-3);line-height:1.45}
+.hint.warn{color:var(--alerte)}
+.inp{width:100%;padding:9px 11px;border:1px solid var(--bordure);border-radius:6px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:13.5px;color:var(--encre)}
+.sel{padding:9px 11px;border:1px solid var(--bordure);border-radius:6px;background:var(--surface-haute);font-size:13.5px;color:var(--encre)}
+.inp:hover,.sel:hover{border-color:var(--accent)}
 /* valeur dérivée, non saisissable — fond ambré = « calculé pour vous » */
-.ro{padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#F1E6CC;font-family:'JetBrains Mono',monospace;font-size:13.5px}
+.ro{padding:9px 11px;border:1px solid var(--bordure);border-radius:6px;background:var(--accent-fond);color:var(--encre);font-family:'JetBrains Mono',monospace;font-size:13.5px}
 /* Deux colonnes FIXES (prompt 2). auto-fill produisait des rangées de
    largeur imprévisible : d'un champ à l'autre, les libellés et les aides ne
    se calaient pas sur les mêmes lignes de base. */
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 30px}
 
 /* --- blocs ------------------------------------------------------------ */
-.card{background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:20px 22px}
+.card{background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:20px 22px}
 .card-h{font-family:'Newsreader',serif;font-size:22px;margin:0 0 6px}
 
 /* --- volets repliables (« en savoir plus », réglages avancés) ---------- */
-.fold{background:#fff;border:1px solid #DDD9CE;border-radius:8px;overflow:hidden}
-.fold-btn{width:100%;border:0;background:none;cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:10px;text-align:left;font-size:13.5px;color:#20291F}
-.fold-btn:hover{background:#FAF9F5}
-.fold-sign{margin-left:auto;font-family:'JetBrains Mono',monospace;color:#A97F26;font-size:13.5px;flex:none}
+.fold{background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;overflow:hidden}
+.fold-btn{width:100%;border:0;background:none;cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:10px;text-align:left;font-size:13.5px;color:var(--encre)}
+.fold-btn:hover{background:var(--surface-basse)}
+.fold-sign{margin-left:auto;font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:13.5px;flex:none}
 .fold-body{padding:0 16px 16px}
 
 /* --- en-têtes de tableaux en grille ----------------------------------- */
-.th{font-size:11.5px;text-transform:uppercase;color:#5C6157;padding:5px 6px;border-bottom:1px solid #DDD9CE}
+.th{font-size:11.5px;text-transform:uppercase;color:var(--encre-3);padding:5px 6px;border-bottom:1px solid var(--bordure)}
 /* Cellule éditable du registre (prompt B2). Le fond légèrement plus clair et
    le liseré au survol distinguent ce qui est corrigeable de ce qui est lu
    depuis le fichier : idu, commune et cépage restent non modifiables. */
-.cell{width:100%;padding:3px 5px;border:1px solid transparent;border-radius:4px;background:#FCFBF7;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#20291F}
-.cell:hover{border-color:#DDD9CE}
-.cell:focus{outline:none;border-color:#A97F26;background:#fff}
+.cell{width:100%;padding:3px 5px;border:1px solid transparent;border-radius:4px;background:var(--cellule-fond);font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--encre)}
+.cell:hover{border-color:var(--bordure)}
+.cell:focus{outline:none;border-color:var(--accent);background:var(--surface-haute)}
 .th.wide{padding:5px 8px}
 .th.r{text-align:right}
 
@@ -65,8 +128,8 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 /* Terme de métier glosé au contact du champ (prompt 4). Le soulignement
    pointillé signale « ce mot a une définition », le title la donne au survol,
    et l'aide en dessous la donne à qui ne survole pas. */
-.lex{border-bottom:1px dotted #A97F26;cursor:help}
-.eyebrow{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.08em}
+.lex{border-bottom:1px dotted var(--accent);cursor:help}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);letter-spacing:0.08em}
 
 /* --- échelle typographique (prompt 1) ---------------------------------
    Quatre niveaux, pas un de plus. Avant ce prompt, une quarantaine de
@@ -82,7 +145,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 .n1{font-family:'Newsreader',serif;font-weight:600;font-size:36px;line-height:1;white-space:nowrap}
 .n2{font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:0}
 .n3{font-size:13.5px}
-.n4{font-size:11.5px;color:#5C6157;line-height:1.45}
+.n4{font-size:11.5px;color:var(--encre-3);line-height:1.45}
 .n4.mono{font-family:'JetBrains Mono',monospace}
 
 /* --- écrans étroits --------------------------------------------------- */
@@ -102,6 +165,10 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 /* --- impression ------------------------------------------------------- */
 .print-sheet{display:none}
 @media print {
+  /* prompt 13 — l'impression reste en thème clair quel que soit le thème
+     actif : les deux règles ci-dessous forcent noir sur blanc et écrasent
+     donc les jetons, sombres compris. */
+  :root { color-scheme: light; }
   nav, aside, button { display:none !important; }
   #appGrid { grid-template-columns: 1fr !important; }
   header { position:static !important; top:auto !important; }
@@ -113,26 +180,29 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 </style>
 <script src="moteur-oad.js"></script>
 </helmet>
-<div style="min-height:100vh;font-family:'Archivo',sans-serif;color:#20291F;display:flex;flex-direction:column">
+<div style="min-height:100vh;font-family:'Archivo',sans-serif;color:var(--encre);background:var(--fond);display:flex;flex-direction:column">
 
-  <header style="border-bottom:3px solid #20291F;background:#FAF9F5;position:sticky;top:0;z-index:50">
+  <header style="border-bottom:3px solid var(--encre);background:var(--surface-basse);position:sticky;top:0;z-index:50">
     <div style="max-width:1360px;margin:0 auto;padding:14px 28px;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap">
       <div style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;line-height:1.1">Renouvellement du vignoble</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.08em">SIMULATEUR · IMPACT ARRACHAGE-REPLANTATION</div>
-      <button onClick="{{ toggleLexique }}" style="margin-left:auto;font-size:11.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:{{ lexiqueBg }};color:{{ lexiqueFg }}">{{ lexiqueLabel }}</button>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);letter-spacing:0.08em">SIMULATEUR · IMPACT ARRACHAGE-REPLANTATION</div>
+      <button onClick="{{ toggleLexique }}" style="margin-left:auto;font-size:11.5px;padding:6px 13px;border:1px solid var(--bordure);border-radius:6px;cursor:pointer;background:{{ lexiqueBg }};color:{{ lexiqueFg }}">{{ lexiqueLabel }}</button>
       <!-- prompt B6 — point d'entrée PERMANENT vers le panneau d'accueil, à côté
            du Lexique : l'aide ne doit pas être réservée à la première visite. -->
-      <button id="accueil-ouvrir" onClick="{{ ouvrirAccueil }}" style="font-size:11.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:#fff;color:#20291F">Comment lire cet outil</button>
+      <button id="accueil-ouvrir" onClick="{{ ouvrirAccueil }}" style="font-size:11.5px;padding:6px 13px;border:1px solid var(--bordure);border-radius:6px;cursor:pointer;background:var(--surface-haute);color:var(--encre)">Comment lire cet outil</button>
       <!-- prompt B1 — les saisies sont désormais persistées localement ; il faut
            donc un moyen visible et permanent de les reprendre à zéro. -->
-      <button onClick="{{ effacerDonnees }}" title="Remplace vos saisies et le registre par les valeurs d'exemple" style="font-size:11.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:#fff;color:#A5433A">Effacer mes données</button>
-      <div style="font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase;border:1px solid #A97F26;color:#A97F26;padding:3px 9px;border-radius:2px">Outil pédagogique — hypothèses à ajuster</div>
+      <!-- prompt 13 — bascule du thème de projection. Le mode clair reste le
+           défaut et la version de travail ; le sombre est là pour la salle. -->
+      <button onClick="{{ basculerTheme }}" aria-pressed="{{ themeAria }}" style="font-size:11.5px;padding:6px 13px;border:1px solid var(--bordure);border-radius:6px;cursor:pointer;background:var(--surface-haute);color:var(--encre)">{{ themeLabel }}</button>
+      <button onClick="{{ effacerDonnees }}" title="Remplace vos saisies et le registre par les valeurs d'exemple" style="font-size:11.5px;padding:6px 13px;border:1px solid var(--bordure);border-radius:6px;cursor:pointer;background:var(--surface-haute);color:var(--alerte)">Effacer mes données</button>
+      <div style="font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase;border:1px solid var(--accent);color:var(--accent);padding:3px 9px;border-radius:2px">Outil pédagogique — hypothèses à ajuster</div>
     </div>
     <!-- Lexique — accessible depuis n'importe quelle étape : les cinq mots de
          métier sans lesquels l'outil est illisible pour qui découvre le sujet
          (réserve individuelle, VolCo, repos, plantier, faire-valoir). -->
     <sc-if value="{{ lexiqueOuvert }}" hint-placeholder-val="{{ false }}">
-      <div style="border-top:1px solid #DDD9CE;background:#F1E6CC">
+      <div style="border-top:1px solid var(--bordure);background:var(--accent-fond)">
         <div style="max-width:1360px;margin:0 auto;padding:16px 28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px 26px">
           <sc-for list="{{ lexiqueEntrees }}" as="lx" hint-placeholder-count="6">
             <div style="font-size:11.5px;line-height:1.5"><b>{{ lx.mot }}</b> — {{ lx.def }}</div>
@@ -150,27 +220,27 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
        premier contenu de la page ; le focus y entre naturellement, Échap le
        ferme, et le focus revient au bouton qui l'a ouvert. -->
   <sc-if value="{{ accueilOuvert }}" hint-placeholder-val="{{ true }}">
-    <div role="dialog" aria-modal="false" aria-label="Comment lire cet outil" onKeyDown="{{ onAccueilTouche }}" style="background:#FAF9F5;border-bottom:3px solid #20291F">
+    <div role="dialog" aria-modal="false" aria-label="Comment lire cet outil" onKeyDown="{{ onAccueilTouche }}" style="background:var(--surface-basse);border-bottom:3px solid var(--encre)">
       <div style="max-width:1360px;margin:0 auto;padding:26px 28px 30px">
         <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:6px">
           <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:0">Ce que fait cet outil</h2>
-          <button id="accueil-fermer" onClick="{{ fermerAccueil }}" style="margin-left:auto;font-size:13.5px;padding:8px 16px;border:1px solid #20291F;background:#20291F;color:#FAF9F5;border-radius:6px;cursor:pointer">Commencer ✕</button>
+          <button id="accueil-fermer" onClick="{{ fermerAccueil }}" style="margin-left:auto;font-size:13.5px;padding:8px 16px;border:1px solid var(--encre);background:var(--encre);color:var(--surface-basse);border-radius:6px;cursor:pointer">Commencer ✕</button>
         </div>
-        <p style="font-size:13.5px;line-height:1.6;max-width:76ch;margin:0 0 4px;color:#20291F">Vous désignez une parcelle et l'outil <b>simule l'impact de son renouvellement</b> : ce que la transition coûte, ce que la réserve individuelle absorbe, et en combien de temps la parcelle revient en production. Il ne vous dit pas quoi faire.</p>
-        <p style="font-size:11.5px;color:#5C6157;margin:0 0 14px">Appuyez sur <b>Échap</b> pour fermer. Vous retrouverez ce panneau à tout moment par le bouton <b>« Comment lire cet outil »</b>, en haut de la page.</p>
+        <p style="font-size:13.5px;line-height:1.6;max-width:76ch;margin:0 0 4px;color:var(--encre)">Vous désignez une parcelle et l'outil <b>simule l'impact de son renouvellement</b> : ce que la transition coûte, ce que la réserve individuelle absorbe, et en combien de temps la parcelle revient en production. Il ne vous dit pas quoi faire.</p>
+        <p style="font-size:11.5px;color:var(--encre-3);margin:0 0 14px">Appuyez sur <b>Échap</b> pour fermer. Vous retrouverez ce panneau à tout moment par le bouton <b>« Comment lire cet outil »</b>, en haut de la page.</p>
 
-        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:16px 18px;margin-bottom:16px">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:2px">Le mécanisme, en une image</div>
-          <div style="font-size:11.5px;color:#5C6157;margin-bottom:10px;max-width:76ch">Dessin illustratif : il montre la <b>forme</b> du phénomène, pas le résultat de vos saisies. Vos chiffres sont au temps 3, « La trajectoire ».</div>
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:16px 18px;margin-bottom:16px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:2px">Le mécanisme, en une image</div>
+          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:10px;max-width:76ch">Dessin illustratif : il montre la <b>forme</b> du phénomène, pas le résultat de vos saisies. Vos chiffres sont au temps 3, « La trajectoire ».</div>
           {{ friseAccueil }}
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
-          <div style="background:#E3EDE5;border-radius:8px;padding:14px 16px;font-size:13.5px;line-height:1.55">
+          <div style="background:var(--vegetal-fond);border-radius:8px;padding:14px 16px;font-size:13.5px;line-height:1.55">
             <b style="display:block;margin-bottom:6px">Ce que l'outil fait</b>
             Il chiffre la trajectoire physique et financière du renouvellement d'<b>une</b> parcelle, sur 10 ans : coût de l'opération, kilos de réserve mobilisés puis reconstitués, âge du vignoble, trésorerie année par année. Tous les champs sont préremplis : vous pouvez aller droit aux résultats, puis revenir affiner.
           </div>
-          <div style="background:#F3E0DD;border-radius:8px;padding:14px 16px;font-size:13.5px;line-height:1.55">
+          <div style="background:var(--alerte-fond);border-radius:8px;padding:14px 16px;font-size:13.5px;line-height:1.55">
             <b style="display:block;margin-bottom:6px">Ce que l'outil ne fait pas</b>
             <b>Aucune recommandation</b> — il ne conclut jamais qu'il faut arracher ou attendre.
             <b>Aucune actualisation des flux</b> — un euro de l'année 9 y pèse autant qu'un euro d'aujourd'hui.
@@ -201,45 +271,45 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
        position fixed, pas de superposition. Un panneau fixe qui recouvre la
        page est un piège à focus. -->
   <sc-if value="{{ hypothesesOuvert }}" hint-placeholder-val="{{ false }}">
-    <div role="dialog" aria-modal="false" aria-label="Hypothèses" onKeyDown="{{ onHypothesesTouche }}" style="background:#FAF9F5;border-bottom:3px solid #20291F">
+    <div role="dialog" aria-modal="false" aria-label="Hypothèses" onKeyDown="{{ onHypothesesTouche }}" style="background:var(--surface-basse);border-bottom:3px solid var(--encre)">
       <div style="max-width:1360px;margin:0 auto;padding:26px 28px 30px">
         <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap">
           <h2 class="n2">Hypothèses</h2>
           <div class="n4" style="max-width:70ch">Les valeurs de référence, sourcées et datées, que l'outil préremplit pour vous. Elles pilotent les résultats sans décrire votre parcelle : c'est pourquoi elles ne sont plus dans le parcours.</div>
-          <button id="hypotheses-fermer" onClick="{{ fermerHypotheses }}" style="margin-left:auto;font-size:13.5px;padding:8px 16px;border:1px solid #20291F;background:#20291F;color:#FAF9F5;border-radius:6px;cursor:pointer">Fermer</button>
+          <button id="hypotheses-fermer" onClick="{{ fermerHypotheses }}" style="margin-left:auto;font-size:13.5px;padding:8px 16px;border:1px solid var(--encre);background:var(--encre);color:var(--surface-basse);border-radius:6px;cursor:pointer">Fermer</button>
         </div>
         <div class="n4" style="margin-top:6px">Appuyez sur <b>Échap</b> pour fermer. {{ hypResumeTxt }}</div>
 
-        <div style="border-top:1px solid #DDD9CE;padding-top:18px;margin-top:18px">
+        <div style="border-top:1px solid var(--bordure);padding-top:18px;margin-top:18px">
           <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px">
             <div class="n2" style="font-size:13.5px;font-weight:600;font-family:'Archivo',sans-serif">Charges annuelles de référence</div>
             <div class="n4">Cerfrance 2024 · {{ chargesProdResumeTxt }}</div>
-            <button onClick="{{ hypReprise.charges }}" style="margin-left:auto;font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre les valeurs de référence</button>
+            <button onClick="{{ hypReprise.charges }}" style="margin-left:auto;font-size:11.5px;padding:6px 12px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:5px;cursor:pointer">↻ Reprendre les valeurs de référence</button>
           </div>
-<div style="background:#E3EDE5;border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.55;max-width:72ch;margin-bottom:14px">
+<div style="background:var(--vegetal-fond);border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.55;max-width:72ch;margin-bottom:14px">
             Ce que coûte, chaque année, un hectare de vigne en production chez vous. Ces montants servent au temps 3 : sans eux, ne rien faire paraîtrait gratuit et la comparaison serait faussée. N'y mettre que des charges <b>réellement évitables</b> quand la parcelle ne produit pas. Valeurs par défaut : Cerfrance 2024.
           </div>
           <div class="grid">
             <div class="field">
-              <label class="lbl" for="f-coutSurfaceProdHaAn">Charge liée à la surface (vigne en production) <span style="font-weight:400;color:#A97F26">{{ hypBadge.coutSurfaceProdHaAn }}</span></label>
+              <label class="lbl" for="f-coutSurfaceProdHaAn">Charge liée à la surface (vigne en production) <span style="font-weight:400;color:var(--accent)">{{ hypBadge.coutSurfaceProdHaAn }}</span></label>
               <div class="row"><input id="f-coutSurfaceProdHaAn" type="number" step="100" min="0" value="{{ v.coutSurfaceProdHaAn }}" onInput="{{ on.coutSurfaceProdHaAn }}" class="inp"><span class="unit">€/ha/an</span></div>
               <span class="hint">Cerfrance 2024 : 15 300 €/ha de charges de structure, moins 3 900 €/ha d'amortissement — celui-ci est déjà compté dans l'investissement de plantation.</span>
             </div>
             <div class="field">
-              <label class="lbl" for="f-coutRdtParKg">Coût de la vendange <span style="font-weight:400;color:#A97F26">{{ hypBadge.coutRdtParKg }}</span></label>
+              <label class="lbl" for="f-coutRdtParKg">Coût de la vendange <span style="font-weight:400;color:var(--accent)">{{ hypBadge.coutRdtParKg }}</span></label>
               <div class="row"><input id="f-coutRdtParKg" type="number" step="0.01" min="0" value="{{ v.coutRdtParKg }}" onInput="{{ on.coutRdtParKg }}" class="inp"><span class="unit">€/kg</span></div>
               <span class="hint">Cerfrance 2024 : vendange, transport et prestations de récolte, ramenés à 10 000 kg/ha. Exprimé en €/kg — cette charge suit les kilos récoltés, elle disparaît donc quand la parcelle ne produit pas.</span>
             </div>
           </div>
         </div>
 
-        <div style="border-top:1px solid #DDD9CE;padding-top:18px;margin-top:18px">
+        <div style="border-top:1px solid var(--bordure);padding-top:18px;margin-top:18px">
           <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px">
             <div class="n2" style="font-size:13.5px;font-weight:600;font-family:'Archivo',sans-serif">Référentiel de temps de travaux et taux horaire chargé</div>
             <div class="n4">Avenant 217 · SMIC 2026 chargé</div>
-            <button onClick="{{ hypReprise.referentiel }}" style="margin-left:auto;font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre les valeurs de référence</button>
+            <button onClick="{{ hypReprise.referentiel }}" style="margin-left:auto;font-size:11.5px;padding:6px 12px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:5px;cursor:pointer">↻ Reprendre les valeurs de référence</button>
           </div>
-<div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:14px;overflow:hidden">
+<div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;margin-top:14px;overflow:hidden">
             <button onClick="{{ toggleVoletProd }}" class="fold-btn">
               <span style="font-size:13.5px;font-weight:600">Détail par opération — heures manuelles et mécanisées à l'hectare</span>
               <span class="hint">— {{ voletProdEnteteTxt }}</span>
@@ -248,8 +318,8 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <sc-if value="{{ voletProdOuvert }}" hint-placeholder-val="{{ false }}">
               <div style="padding:0 16px 16px">
                 <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px">
-                  <label style="font-size:11.5px;font-weight:600">Taux horaire chargé <span style="font-weight:400;color:#A97F26">{{ hypBadge.tauxHoraire }}</span></label>
-                  <div style="display:flex;align-items:center;gap:6px"><input type="number" step="0.5" min="0" value="{{ v.tauxHoraire }}" onInput="{{ on.tauxHoraire }}" style="width:90px;padding:7px 9px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:13.5px"><span style="font-size:11.5px;color:#5C6157">€/h</span></div>
+                  <label style="font-size:11.5px;font-weight:600">Taux horaire chargé <span style="font-weight:400;color:var(--accent)">{{ hypBadge.tauxHoraire }}</span></label>
+                  <div style="display:flex;align-items:center;gap:6px"><input type="number" step="0.5" min="0" value="{{ v.tauxHoraire }}" onInput="{{ on.tauxHoraire }}" style="width:90px;padding:7px 9px;border:1px solid var(--bordure);border-radius:6px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:13.5px"><span style="font-size:11.5px;color:var(--encre-3)">€/h</span></div>
                   <span class="hint">SMIC 2026 chargé ≈ 17 €/h — à ajuster</span>
                 </div>
                 <div style="overflow-x:auto">
@@ -260,68 +330,68 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                     <div class="th r">€/ha</div>
                     <div class="th">Source</div>
                     <sc-for list="{{ voletProdLignes }}" as="l" hint-placeholder-count="5">
-                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1">{{ l.lib }}</div>
-                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1;color:#5C6157">{{ l.type }}</div>
-                      <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
-                      <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
-                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1;font-size:11.5px;color:#5C6157">{{ l.src }}</div>
+                      <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire)">{{ l.lib }}</div>
+                      <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire);color:var(--encre-3)">{{ l.type }}</div>
+                      <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
+                      <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
+                      <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire);font-size:11.5px;color:var(--encre-3)">{{ l.src }}</div>
                     </sc-for>
                   </div>
                 </div>
                 <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px">
-                  <span style="font-size:13.5px">Total : <b class="mono">{{ voletProdTotalTxt }}</b> <span style="color:#5C6157">({{ voletProdHeuresTxt }} manuelles · {{ voletProdHeuresMecaTxt }} mécanisées)</span></span>
-                  <button onClick="{{ reprendreVoletProd }}" style="font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre cette estimation</button>
+                  <span style="font-size:13.5px">Total : <b class="mono">{{ voletProdTotalTxt }}</b> <span style="color:var(--encre-3)">({{ voletProdHeuresTxt }} manuelles · {{ voletProdHeuresMecaTxt }} mécanisées)</span></span>
+                  <button onClick="{{ reprendreVoletProd }}" style="font-size:11.5px;padding:6px 12px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:5px;cursor:pointer">↻ Reprendre cette estimation</button>
                 </div>
               </div>
             </sc-if>
           </div>
         </div>
 
-        <div style="border-top:1px solid #DDD9CE;padding-top:18px;margin-top:18px">
+        <div style="border-top:1px solid var(--bordure);padding-top:18px;margin-top:18px">
           <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px">
             <div class="n2" style="font-size:13.5px;font-weight:600;font-family:'Archivo',sans-serif">Tarifs de palissage et de protection du matériel végétal</div>
             <div class="n4">relevé fournisseur et pose · LutEnVi 2025 — à réactualiser</div>
-            <button onClick="{{ hypReprise.tarifs }}" style="margin-left:auto;font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre les valeurs de référence</button>
+            <button onClick="{{ hypReprise.tarifs }}" style="margin-left:auto;font-size:11.5px;padding:6px 12px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:5px;cursor:pointer">↻ Reprendre les valeurs de référence</button>
           </div>
             <div class="grid">
               <div class="field">
-                <label class="lbl" for="f-coutPalissageHa">Matériel de palissage à acheter <span style="font-weight:400;color:#A97F26">{{ palisBadge }}</span></label>
+                <label class="lbl" for="f-coutPalissageHa">Matériel de palissage à acheter <span style="font-weight:400;color:var(--accent)">{{ palisBadge }}</span></label>
                 <div class="row"><input id="f-coutPalissageHa" type="number" step="500" value="{{ coutPalissageAffiche }}" onInput="{{ on.coutPalissageHa }}" class="inp"><span class="unit">€/ha</span></div>
-                <button onClick="{{ reportPalis }}" style="align-self:start;font-size:11.5px;padding:5px 10px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre la valeur dérivée de la géométrie</button>
+                <button onClick="{{ reportPalis }}" style="align-self:start;font-size:11.5px;padding:5px 10px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:5px;cursor:pointer">↻ Reprendre la valeur dérivée de la géométrie</button>
               </div>
               <div class="field">
-                <label class="lbl" for="f-coutProtectionHa">Protection du matériel végétal à acheter (tuteur + cache-plant) <span style="font-weight:400;color:#A97F26">{{ protectionBadge }}</span></label>
+                <label class="lbl" for="f-coutProtectionHa">Protection du matériel végétal à acheter (tuteur + cache-plant) <span style="font-weight:400;color:var(--accent)">{{ protectionBadge }}</span></label>
                 <div class="row"><input id="f-coutProtectionHa" type="number" step="250" value="{{ coutProtectionAffiche }}" onInput="{{ on.coutProtectionHa }}" class="inp"><span class="unit">€/ha</span></div>
-                <button onClick="{{ reportProtection }}" style="align-self:start;font-size:11.5px;padding:5px 10px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre la valeur dérivée de la densité</button>
+                <button onClick="{{ reportProtection }}" style="align-self:start;font-size:11.5px;padding:5px 10px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:5px;cursor:pointer">↻ Reprendre la valeur dérivée de la densité</button>
                 <span class="hint">{{ protectionDetailTxt }}</span>
                 <span class="hint warn">distinct du palissage, qui est la structure du rang, et de l'entretien du plantier, qui ne compte que la main d'œuvre</span>
               </div>
             </div>
         </div>
 
-        <div style="border-top:1px solid #DDD9CE;padding-top:18px;margin-top:18px">
+        <div style="border-top:1px solid var(--bordure);padding-top:18px;margin-top:18px">
           <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px">
             <div class="n2" style="font-size:13.5px;font-weight:600;font-family:'Archivo',sans-serif">Paramètres de faire-valoir</div>
             <div class="n4">contractuel · à vérifier dans votre bail</div>
-            <button onClick="{{ hypReprise.fv }}" style="margin-left:auto;font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre les valeurs de référence</button>
+            <button onClick="{{ hypReprise.fv }}" style="margin-left:auto;font-size:11.5px;padding:6px 12px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:5px;cursor:pointer">↻ Reprendre les valeurs de référence</button>
           </div>
             <div class="grid">
               <sc-if value="{{ estFermage }}" hint-placeholder-val="{{ false }}">
                 <div class="field">
-                  <label class="lbl" for="f-loyerHa">Loyer annuel <span style="font-weight:400;color:#A97F26">{{ hypBadge.loyerHa }}</span></label>
+                  <label class="lbl" for="f-loyerHa">Loyer annuel <span style="font-weight:400;color:var(--accent)">{{ hypBadge.loyerHa }}</span></label>
                   <div class="row"><input id="f-loyerHa" type="number" step="100" value="{{ v.loyerHa }}" onInput="{{ on.loyerHa }}" class="inp"><span class="unit">€/ha/an</span></div>
                   <span class="hint warn">un bail viticole fixe souvent le loyer en kilos ou en bouteilles — à convertir en € ici</span>
                 </div>
               </sc-if>
               <sc-if value="{{ estMetayage }}" hint-placeholder-val="{{ false }}">
                 <div class="field">
-                  <label class="lbl" for="f-partRecolte">Part de récolte au propriétaire <span style="font-weight:400;color:#A97F26">{{ hypBadge.partRecolte }}</span></label>
+                  <label class="lbl" for="f-partRecolte">Part de récolte au propriétaire <span style="font-weight:400;color:var(--accent)">{{ hypBadge.partRecolte }}</span></label>
                   <div class="row"><input id="f-partRecolte" type="number" step="1" min="0" max="100" value="{{ v.partRecolte }}" onInput="{{ on.partRecolte }}" class="inp"><span class="unit">%</span></div>
                 </div>
               </sc-if>
               <sc-if value="{{ estMetayage }}" hint-placeholder-val="{{ false }}">
                 <div class="field">
-                  <label class="lbl" for="f-partCouts">Part des coûts au propriétaire <span style="font-weight:400;color:#A97F26">{{ hypBadge.partCouts }}</span></label>
+                  <label class="lbl" for="f-partCouts">Part des coûts au propriétaire <span style="font-weight:400;color:var(--accent)">{{ hypBadge.partCouts }}</span></label>
                   <div class="row"><input id="f-partCouts" type="number" step="1" min="0" max="100" value="{{ v.partCouts }}" onInput="{{ on.partCouts }}" class="inp"><span class="unit">%</span></div>
                   <span class="hint warn">selon le bail — possibilité de partage des coûts de renouvellement</span>
                   <span class="hint warn">part de l'investissement de replantation portée par le propriétaire — hypothèse contractuelle forte, à vérifier dans votre bail</span>
@@ -330,9 +400,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             </div>
         </div>
 
-        <div style="border-top:1px solid #DDD9CE;padding-top:16px;margin-top:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="border-top:1px solid var(--bordure);padding-top:16px;margin-top:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
           <div class="n4" style="max-width:70ch">Reprendre les valeurs de référence remet ces seuls postes à leur valeur d'origine. Vos saisies de parcelle, de projet et de registre ne sont pas touchées.</div>
-          <button onClick="{{ hypReprise.tout }}" style="margin-left:auto;font-size:13.5px;padding:9px 16px;border:1px solid #A97F26;background:#F1E6CC;border-radius:6px;cursor:pointer">↻ Reprendre toutes les valeurs de référence</button>
+          <button onClick="{{ hypReprise.tout }}" style="margin-left:auto;font-size:13.5px;padding:9px 16px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:6px;cursor:pointer">↻ Reprendre toutes les valeurs de référence</button>
         </div>
       </div>
     </div>
@@ -349,9 +419,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
        pavés égaux : trois pavés larges se lisent en projection, une liste
        verticale de cinq lignes non. À droite, l'indicateur des repères et le
        point d'entrée du panneau Hypothèses. -->
-  <nav aria-label="Votre parcours" style="border-bottom:1px solid #DDD9CE;background:#FAF9F5">
+  <nav aria-label="Votre parcours" style="border-bottom:1px solid var(--bordure);background:var(--surface-basse)">
     <div style="max-width:1360px;margin:0 auto;padding:16px 28px;display:flex;gap:18px;align-items:stretch;flex-wrap:wrap">
-      <div style="display:flex;flex:1;min-width:320px;border:1px solid #DDD9CE;border-radius:8px;overflow:hidden">
+      <div style="display:flex;flex:1;min-width:320px;border:1px solid var(--bordure);border-radius:8px;overflow:hidden">
         <sc-for list="{{ etapes }}" as="et" hint-placeholder-count="3">
           <button onClick="{{ et.go }}" aria-current="{{ et.courante }}" style="flex:1;min-width:0;padding:14px 18px;border:0;border-right:1px solid {{ et.sep }};background:{{ et.bg }};cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px">
             <span class="mono" style="font-size:11.5px;letter-spacing:0.08em;color:{{ et.surtitreFg }}">{{ et.surtitre }}</span>
@@ -361,7 +431,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         </sc-for>
       </div>
       <div style="display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:240px">
-        <button id="hypotheses-ouvrir" onClick="{{ ouvrirHypotheses }}" style="font-size:13.5px;padding:9px 15px;border:1px solid #A97F26;border-radius:6px;cursor:pointer;background:{{ hypBg }};color:{{ hypFg }};text-align:left">Hypothèses →</button>
+        <button id="hypotheses-ouvrir" onClick="{{ ouvrirHypotheses }}" style="font-size:13.5px;padding:9px 15px;border:1px solid var(--accent);border-radius:6px;cursor:pointer;background:{{ hypBg }};color:{{ hypFg }};text-align:left">Hypothèses →</button>
         <!-- Indicateur des 11 repères — prompt B4. Discret et permanent : il
              vit dans la navigation, donc visible à tous les temps. Cliquable,
              il emmène au premier repère encore à sa valeur d'exemple et lui
@@ -369,11 +439,11 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
              parfaitement utilisable sans avoir touché un seul champ, c'est
              même sa promesse. -->
         <sc-if value="{{ reperesTousFaits }}" hint-placeholder-val="{{ false }}">
-          <div style="padding:9px 12px;background:#E3EDE5;border-radius:6px;font-size:11.5px;line-height:1.45;color:#2F5B3C">✓ {{ reperesTxt }}</div>
+          <div style="padding:9px 12px;background:var(--vegetal-fond);border-radius:6px;font-size:11.5px;line-height:1.45;color:var(--vegetal-fonce)">✓ {{ reperesTxt }}</div>
         </sc-if>
         <sc-if value="{{ !reperesTousFaits }}" hint-placeholder-val="{{ true }}">
-          <button onClick="{{ allerPremierRepere }}" style="padding:9px 12px;background:#fff;border:1px dashed #A97F26;border-radius:6px;font-size:11.5px;line-height:1.45;color:#5C6157;cursor:pointer;text-align:left">
-            {{ reperesTxt }}<br><span style="color:#A97F26">{{ reperesSuivantTxt }}</span>
+          <button onClick="{{ allerPremierRepere }}" style="padding:9px 12px;background:var(--surface-haute);border:1px dashed var(--accent);border-radius:6px;font-size:11.5px;line-height:1.45;color:var(--encre-3);cursor:pointer;text-align:left">
+            {{ reperesTxt }}<br><span style="color:var(--accent)">{{ reperesSuivantTxt }}</span>
           </button>
         </sc-if>
       </div>
@@ -388,16 +458,16 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
       <sc-if value="{{ estEtape0 }}" hint-placeholder-val="{{ true }}">
         <div class="eyebrow">TEMPS 1 · VOTRE EXPLOITATION</div>
         <sc-if value="{{ erreurSurface }}" hint-placeholder-val="{{ false }}">
-          <div style="margin:8px 0;font-size:13.5px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">⚠ {{ erreurSurface }}</div>
+          <div style="margin:8px 0;font-size:13.5px;padding:9px 12px;border-radius:5px;background:var(--alerte-fond);color:var(--alerte)">⚠ {{ erreurSurface }}</div>
         </sc-if>
         <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Votre exploitation</h2>
-        <p style="color:#5C6157;font-size:13.5px;max-width:60ch;margin:0 0 20px">Ces repères décrivent tout votre domaine. Ils servent de point de comparaison à la parcelle que vous renouvellerez, décrite juste en dessous.</p>
+        <p style="color:var(--encre-3);font-size:13.5px;max-width:60ch;margin:0 0 20px">Ces repères décrivent tout votre domaine. Ils servent de point de comparaison à la parcelle que vous renouvellerez, décrite juste en dessous.</p>
 
         <!-- Panneau d'accueil — ouvert au premier affichage, repliable ensuite :
              c'est le seul endroit qui dit à quoi sert l'outil et ce qu'on en
              obtient. Sans lui, on arrive directement sur un formulaire de
              chiffres sans savoir ce qu'on est en train de préparer. -->
-        <div class="fold" style="margin-bottom:24px;background:#F1E6CC;border-color:#E3D3AA">
+        <div class="fold" style="margin-bottom:24px;background:var(--accent-fond);border-color:var(--accent-fond-bordure)">
           <button onClick="{{ toggleIntro }}" class="fold-btn">
             <span style="font-weight:600">Première visite ? Comment fonctionne ce simulateur</span>
             <span class="fold-sign">{{ introChevron }}</span>
@@ -406,9 +476,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <div class="fold-body" style="font-size:13.5px;line-height:1.6;max-width:78ch">
               <p style="margin:0 0 12px">Vous désignez <b>une parcelle</b> de votre exploitation et l'outil simule <b>l'impact de son renouvellement</b> : l'arracher, laisser le sol se reposer, replanter. Il chiffre ce que la transition coûte, ce que la réserve individuelle permet d'absorber, et en combien de temps la parcelle revient en production. Le maintien en l'état sert de <b>repère de comparaison</b> pour mesurer cet impact — l'outil ne recommande ni l'un ni l'autre.</p>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px 20px;margin-bottom:12px">
-                <div><b>Temps 1 · La parcelle</b><br><span style="color:#5C6157">registre, surface, âge, faire-valoir</span></div>
-                <div><b>Temps 2 · Le projet</b><br><span style="color:#5C6157">cépage, densité, palissage, coûts</span></div>
-                <div><b>Temps 3 · La trajectoire</b><br><span style="color:#5C6157">réserve, trésorerie, âge, fiche</span></div>
+                <div><b>Temps 1 · La parcelle</b><br><span style="color:var(--encre-3)">registre, surface, âge, faire-valoir</span></div>
+                <div><b>Temps 2 · Le projet</b><br><span style="color:var(--encre-3)">cépage, densité, palissage, coûts</span></div>
+                <div><b>Temps 3 · La trajectoire</b><br><span style="color:var(--encre-3)">réserve, trésorerie, âge, fiche</span></div>
               </div>
               <p style="margin:0 0 8px"><b>Tous les champs sont déjà préremplis</b> avec des valeurs plausibles : vous pouvez aller directement aux résultats, puis revenir affiner ce qui compte pour vous. Le calcul se refait à chaque frappe, il n'y a rien à valider.</p>
               <p style="margin:0"><b>Vos saisies sont conservées sur cet ordinateur uniquement. Rien n'est envoyé.</b> Vous les retrouverez au prochain chargement de la page ; le bouton <b>Effacer mes données</b>, en haut à droite, les remplace par les valeurs d'exemple. Le bouton <b>Lexique</b>, à côté, définit les termes de métier employés dans l'outil.</p>
@@ -422,7 +492,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
              disparu : il n'y a plus de mode à choisir, donc plus rien à
              basculer. Ce qui reste ici, c'est le bandeau de persistance et
              l'import CSV, sans condition d'affichage. -->
-        <div style="margin-bottom:18px;padding:10px 14px;border-radius:6px;background:#F1E6CC;font-size:11.5px;line-height:1.5">Vos saisies sont conservées sur cet ordinateur uniquement. Rien n'est envoyé. Le registre ({{ registreNbLignes }} lignes) et les corrections que vous y apportez sont relus tels quels au prochain chargement.</div>
+        <div style="margin-bottom:18px;padding:10px 14px;border-radius:6px;background:var(--accent-fond);font-size:11.5px;line-height:1.5">Vos saisies sont conservées sur cet ordinateur uniquement. Rien n'est envoyé. Le registre ({{ registreNbLignes }} lignes) et les corrections que vous y apportez sont relus tels quels au prochain chargement.</div>
 
         <!-- prompt B8 — état bloquant. Surface totale et âge moyen ne sont plus
              saisissables : ils sont DÉRIVÉS du registre. Un registre sans
@@ -430,7 +500,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
              indéterminés, il donne cet avertissement, à la place des deux
              champs dérivés. -->
         <sc-if value="{{ registreSansSurface }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-bottom:18px;padding:12px 16px;border-radius:6px;background:#F7E9E7;border:1px solid #A5433A;color:#A5433A;font-size:13.5px;line-height:1.5"><b>Ajoutez au moins une ligne au registre pour continuer.</b><br>La surface totale et l'âge moyen du vignoble sont déduits du registre parcellaire, plus bas sur cet écran : tant qu'il ne porte aucune surface, les résultats des étapes suivantes ne veulent rien dire.</div>
+          <div style="margin-bottom:18px;padding:12px 16px;border-radius:6px;background:var(--alerte-fond-2);border:1px solid var(--alerte);color:var(--alerte);font-size:13.5px;line-height:1.5"><b>Ajoutez au moins une ligne au registre pour continuer.</b><br>La surface totale et l'âge moyen du vignoble sont déduits du registre parcellaire, plus bas sur cet écran : tant qu'il ne porte aucune surface, les résultats des étapes suivantes ne veulent rien dire.</div>
         </sc-if>
 
         <div class="grid">
@@ -477,14 +547,14 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                 <span class="hint">âge = campagne − année de plantation</span>
               </div>
             </div>
-            <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px">
+            <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px">
               <label class="lbl" for="f-riPct"><span class="lex" title="{{ lex.reserve.def }}">Réserve individuelle</span> actuelle</label>
               <div class="hint" style="margin-top:4px">{{ lex.reserve.court }}</div>
               <div style="display:flex;align-items:center;gap:16px;margin-top:10px">
-                <input id="f-riPct" type="range" min="0" max="100" value="{{ v.riPct }}" onInput="{{ on.riPct }}" style="flex:1;accent-color:#A97F26">
+                <input id="f-riPct" type="range" min="0" max="100" value="{{ v.riPct }}" onInput="{{ on.riPct }}" style="flex:1;accent-color:var(--accent)">
                 <div style="font-family:'JetBrains Mono',monospace;font-size:13.5px;flex:none;min-width:170px;text-align:right"><b>{{ riPctTxt }}</b> du plafond ≈ <b>{{ riKgTxt }}</b> kg/ha</div>
               </div>
-              <div style="font-size:11.5px;color:#5C6157;margin-top:6px">estimation par défaut — remplacez par votre relevé</div>
+              <div style="font-size:11.5px;color:var(--encre-3);margin-top:6px">estimation par défaut — remplacez par votre relevé</div>
             </div>
           </div>
           </sc-if>
@@ -512,27 +582,27 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               <div class="n4">{{ registreResumeTxt }}</div>
             </div>
             <div style="display:flex;gap:8px;margin-left:auto;flex-wrap:wrap">
-              <button onClick="{{ toggleRegistre }}" aria-expanded="{{ registreAria }}" style="font-size:11.5px;padding:8px 14px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:#fff;color:#20291F">{{ registreBoutonTxt }} <span class="mono" style="color:#A97F26">{{ registreChevron }}</span></button>
-              <button onClick="{{ toggleImportRegistre }}" aria-expanded="{{ importAria }}" style="font-size:11.5px;padding:8px 14px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:#fff;color:#20291F">Importer un fichier <span class="mono" style="color:#A97F26">{{ importChevron }}</span></button>
+              <button onClick="{{ toggleRegistre }}" aria-expanded="{{ registreAria }}" style="font-size:11.5px;padding:8px 14px;border:1px solid var(--bordure);border-radius:6px;cursor:pointer;background:var(--surface-haute);color:var(--encre)">{{ registreBoutonTxt }} <span class="mono" style="color:var(--accent)">{{ registreChevron }}</span></button>
+              <button onClick="{{ toggleImportRegistre }}" aria-expanded="{{ importAria }}" style="font-size:11.5px;padding:8px 14px;border:1px solid var(--bordure);border-radius:6px;cursor:pointer;background:var(--surface-haute);color:var(--encre)">Importer un fichier <span class="mono" style="color:var(--accent)">{{ importChevron }}</span></button>
             </div>
           </div>
 
           <sc-if value="{{ importOuvert }}" hint-placeholder-val="{{ false }}">
-            <div class="fold-body" style="border-top:1px solid #DDD9CE;padding-top:14px">
+            <div class="fold-body" style="border-top:1px solid var(--bordure);padding-top:14px">
               <div class="n4" style="margin-bottom:10px">Export du portail CIVC, au format CSV séparé par des points-virgules. Le fichier est lu sur cet ordinateur : rien n'est envoyé.</div>
               <input type="file" accept=".csv,text/csv" onChange="{{ onFichierRegistre }}" style="font-size:11.5px;max-width:100%">
               <div class="n4" style="margin-top:8px">Colonnes attendues : {{ colonnesAttenduesTxt }}</div>
               <sc-if value="{{ importErreur }}" hint-placeholder-val="{{ false }}">
-                <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:#F7E9E7;border:1px solid #A5433A;color:#A5433A;font-size:11.5px;line-height:1.5">{{ importErreurTxt }}</div>
+                <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:var(--alerte-fond-2);border:1px solid var(--alerte);color:var(--alerte);font-size:11.5px;line-height:1.5">{{ importErreurTxt }}</div>
               </sc-if>
               <sc-if value="{{ importOk }}" hint-placeholder-val="{{ false }}">
-                <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:#E3EDE5;border:1px solid #4C7A57;color:#2F5B3C;font-size:11.5px;line-height:1.5">{{ importOkTxt }}</div>
+                <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:var(--vegetal-fond);border:1px solid var(--vegetal);color:var(--vegetal-fonce);font-size:11.5px;line-height:1.5">{{ importOkTxt }}</div>
               </sc-if>
             </div>
           </sc-if>
 
           <sc-if value="{{ registreOuvert }}" hint-placeholder-val="{{ false }}">
-          <div class="fold-body" style="border-top:1px solid #DDD9CE;padding-top:14px;overflow-x:auto">
+          <div class="fold-body" style="border-top:1px solid var(--bordure);padding-top:14px;overflow-x:auto">
           <!-- Édition des cellules — prompt B2 (arbitrage 2), RÉVISÉ au prompt
                B8. Le commentaire précédent disait « ni ajout, ni suppression de
                lignes ici » : ce n'est plus vrai, et c'est délibéré. Depuis que
@@ -545,7 +615,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                fichier. Ce qui n'a pas changé : l'exclusion de lignes de la
                parcelle désignée reste un mécanisme de l'écran 2, distinct de
                la suppression pure et simple offerte ici. -->
-          <div style="font-size:11.5px;color:#5C6157;margin:0 0 12px;line-height:1.45">Toutes les colonnes sont corrigeables directement dans le tableau ; l'âge en est déduit. Vous pouvez ajouter des lignes et en supprimer. Vos corrections sont conservées sur cet ordinateur.</div>
+          <div style="font-size:11.5px;color:var(--encre-3);margin:0 0 12px;line-height:1.45">Toutes les colonnes sont corrigeables directement dans le tableau ; l'âge en est déduit. Vous pouvez ajouter des lignes et en supprimer. Vos corrections sont conservées sur cet ordinateur.</div>
           <div style="display:grid;grid-template-columns:repeat(8,minmax(88px,1fr)) 44px;gap:0;font-size:11.5px;min-width:804px">
             <div class="th wide">idu</div>
             <div class="th wide">Commune</div>
@@ -557,31 +627,31 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <div class="th wide">Situation</div>
             <div class="th wide"></div>
             <sc-for list="{{ registreLignesTable }}" as="r" hint-placeholder-count="3">
-              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="text" value="{{ r.idu }}" onInput="{{ r.onIdu }}" class="cell" style="font-family:'JetBrains Mono',monospace" aria-label="Identifiant de parcelle (idu)"></div>
-              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="text" value="{{ r.commune }}" onInput="{{ r.onCommune }}" class="cell" aria-label="Commune"></div>
-              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="text" value="{{ r.cepage }}" onInput="{{ r.onCepage }}" class="cell" aria-label="Cépage"></div>
-              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="number" step="1" value="{{ r.anneePlant }}" onInput="{{ r.onAnneePlant }}" class="cell" aria-label="Année de plantation"></div>
-              <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.age }}</div>
-              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="number" step="0.01" min="0" value="{{ r.surface }}" onInput="{{ r.onSurface }}" class="cell" aria-label="Surface en hectares"></div>
-              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><input type="number" step="1" min="0" max="100" value="{{ r.tauxManquant }}" onInput="{{ r.onTauxManquant }}" class="cell" aria-label="Taux de pieds manquants en pourcent"></div>
-              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC"><select value="{{ r.situation }}" onChange="{{ r.onSituation }}" class="cell" aria-label="Situation de la parcelle"><option value="plantee">Plantée</option><option value="arrachee">Arrachée</option></select></div>
-              <div style="padding:3px 5px;border-bottom:1px solid #F1E6CC;text-align:center"><button onClick="{{ r.onSupprimer }}" title="{{ r.supprimerTitre }}" aria-label="{{ r.supprimerTitre }}" style="border:1px solid #DDD9CE;border-radius:5px;background:#fff;color:#A5433A;cursor:pointer;font-size:13.5px;line-height:1;padding:5px 7px">✕</button></div>
+              <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond)"><input type="text" value="{{ r.idu }}" onInput="{{ r.onIdu }}" class="cell" style="font-family:'JetBrains Mono',monospace" aria-label="Identifiant de parcelle (idu)"></div>
+              <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond)"><input type="text" value="{{ r.commune }}" onInput="{{ r.onCommune }}" class="cell" aria-label="Commune"></div>
+              <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond)"><input type="text" value="{{ r.cepage }}" onInput="{{ r.onCepage }}" class="cell" aria-label="Cépage"></div>
+              <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond)"><input type="number" step="1" value="{{ r.anneePlant }}" onInput="{{ r.onAnneePlant }}" class="cell" aria-label="Année de plantation"></div>
+              <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.age }}</div>
+              <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond)"><input type="number" step="0.01" min="0" value="{{ r.surface }}" onInput="{{ r.onSurface }}" class="cell" aria-label="Surface en hectares"></div>
+              <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond)"><input type="number" step="1" min="0" max="100" value="{{ r.tauxManquant }}" onInput="{{ r.onTauxManquant }}" class="cell" aria-label="Taux de pieds manquants en pourcent"></div>
+              <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond)"><select value="{{ r.situation }}" onChange="{{ r.onSituation }}" class="cell" aria-label="Situation de la parcelle"><option value="plantee">Plantée</option><option value="arrachee">Arrachée</option></select></div>
+              <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond);text-align:center"><button onClick="{{ r.onSupprimer }}" title="{{ r.supprimerTitre }}" aria-label="{{ r.supprimerTitre }}" style="border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);color:var(--alerte);cursor:pointer;font-size:13.5px;line-height:1;padding:5px 7px">✕</button></div>
             </sc-for>
           </div>
           <!-- prompt B8 — ni l'ajout ni la suppression ne demandent
                confirmation : tout reste dans ce navigateur, rien n'est détruit
                ailleurs, et l'instantané local n'est de toute façon pas
                versionné. -->
-          <button onClick="{{ onAjouterLigneRegistre }}" style="margin-top:14px;padding:8px 14px;border:1px solid #20291F;border-radius:6px;cursor:pointer;font-size:13.5px;font-weight:600;background:#fff;color:#20291F">+ Ajouter une ligne</button>
+          <button onClick="{{ onAjouterLigneRegistre }}" style="margin-top:14px;padding:8px 14px;border:1px solid var(--encre);border-radius:6px;cursor:pointer;font-size:13.5px;font-weight:600;background:var(--surface-haute);color:var(--encre)">+ Ajouter une ligne</button>
           </div>
           </sc-if>
         </div>
       </sc-if>
 
       <sc-if value="{{ estEtape1 }}" hint-placeholder-val="{{ false }}">
-        <div class="eyebrow" style="margin-top:40px;padding-top:28px;border-top:1px solid #DDD9CE;display:block">TEMPS 1 · LA PARCELLE DÉSIGNÉE</div>
+        <div class="eyebrow" style="margin-top:40px;padding-top:28px;border-top:1px solid var(--bordure);display:block">TEMPS 1 · LA PARCELLE DÉSIGNÉE</div>
         <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">La parcelle que vous désignez</h2>
-        <p style="color:#5C6157;font-size:13.5px;max-width:60ch;margin:0 0 24px">Décrivez la parcelle candidate au renouvellement, telle qu'elle produit aujourd'hui.</p>
+        <p style="color:var(--encre-3);font-size:13.5px;max-width:60ch;margin:0 0 24px">Décrivez la parcelle candidate au renouvellement, telle qu'elle produit aujourd'hui.</p>
 
         <!-- chantier B2 — géométrie de la parcelle, en tête de l'écran 2 (déplacée
              depuis l'écran 3) : surface arrachée, écartements et nombre de rangs
@@ -595,7 +665,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                champs, il se met à jour à chaque frappe, et la ligne de
                vérification sous lui signale une densité hors bornes AOC avant
                qu'on passe au temps suivant. -->
-          <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px">Le schéma se met à jour à chaque frappe.</div>
+          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px">Le schéma se met à jour à chaque frappe.</div>
           <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:26px;align-items:start" id="geoGrid">
           <div>
           <div class="grid" style="grid-template-columns:1fr 1fr">
@@ -636,7 +706,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                elle ne bloque pas : l'outil est pédagogique. -->
           <div style="margin-top:10px;font-size:13.5px;line-height:1.5;padding:10px 14px;border-radius:6px;background:{{ densiteBg }};border:1px solid {{ densiteBd }};color:{{ densiteFg }}">{{ densiteTxt }}</div>
           <sc-if value="{{ longueurManquante }}" hint-placeholder-val="{{ false }}">
-            <div style="margin-top:14px;font-size:13.5px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">Saisissez une surface arrachée et un nombre de rangs pour calculer la géométrie.</div>
+            <div style="margin-top:14px;font-size:13.5px;padding:9px 12px;border-radius:5px;background:var(--alerte-fond);color:var(--alerte)">Saisissez une surface arrachée et un nombre de rangs pour calculer la géométrie.</div>
           </sc-if>
           </div>
 
@@ -646,14 +716,14 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                soit le nombre réel de rangs, sinon 200 rangs donneraient une
                trame illisible et 5 rangs des bandes démesurées. -->
           <div style="display:flex;flex-direction:column;gap:10px">
-            <div class="mono" style="font-size:11.5px;letter-spacing:0.08em;color:#A97F26">SCHÉMA DE LA PARCELLE</div>
+            <div class="mono" style="font-size:11.5px;letter-spacing:0.08em;color:var(--accent)">SCHÉMA DE LA PARCELLE</div>
             {{ schemaParcelle }}
             <div class="n4" style="line-height:1.5">Schéma proportionnel, pas un plan cadastral : il sert à vérifier d'un coup d'œil que la géométrie saisie est plausible.</div>
           </div>
           </div>
         </div>
 
-        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin-bottom:20px">
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin-bottom:20px">
             <div style="display:flex;flex-direction:column;gap:5px;max-width:320px">
               <label class="lbl" for="f-parcelleIdu">Parcelle (idu du registre)</label>
               <select id="f-parcelleIdu" value="{{ parcelleIdu }}" onChange="{{ onParcelleIdu }}" class="sel">
@@ -664,20 +734,20 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               <span class="hint">seules les lignes Plantée sont proposées</span>
             </div>
             <div style="display:grid;grid-template-columns:36px repeat(4,minmax(80px,1fr));gap:0;font-size:11.5px;margin-top:14px">
-              <div style="border-bottom:1px solid #DDD9CE"></div>
+              <div style="border-bottom:1px solid var(--bordure)"></div>
               <div class="th wide">Cépage</div>
               <div class="th wide">Planté</div>
               <div class="th wide">Âge</div>
               <div class="th wide">Surface</div>
               <sc-for list="{{ parcelleLignesTable }}" as="r" hint-placeholder-count="2">
-                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC"><input type="checkbox" checked="{{ r.coche }}" onChange="{{ r.toggle }}"></div>
-                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.cepage }}</div>
-                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.anneePlant }}</div>
-                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.age }}</div>
-                <div style="padding:5px 8px;border-bottom:1px solid #F1E6CC">{{ r.surfaceTxt }} ha</div>
+                <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)"><input type="checkbox" checked="{{ r.coche }}" onChange="{{ r.toggle }}"></div>
+                <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.cepage }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.anneePlant }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.age }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.surfaceTxt }} ha</div>
               </sc-for>
             </div>
-            <div style="font-size:11.5px;color:#5C6157;margin-top:6px">décochez une ligne pour l'exclure de la parcelle désignée — la pondération (âge, pieds manquants) se recalcule automatiquement · surface retenue : <b>{{ surfParcRegistreTxt }}</b><sc-if value="{{ cepageMixteTxt }}" hint-placeholder-val="{{ false }}"><br>{{ cepageMixteTxt }}</sc-if></div>
+            <div style="font-size:11.5px;color:var(--encre-3);margin-top:6px">décochez une ligne pour l'exclure de la parcelle désignée — la pondération (âge, pieds manquants) se recalcule automatiquement · surface retenue : <b>{{ surfParcRegistreTxt }}</b><sc-if value="{{ cepageMixteTxt }}" hint-placeholder-val="{{ false }}"><br>{{ cepageMixteTxt }}</sc-if></div>
         </div>
 
         <div class="grid">
@@ -710,7 +780,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           </div>
         </div>
         <sc-if value="{{ estFermage }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-top:14px;font-size:13.5px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">⚠ L'arrachage et la replantation d'une parcelle louée supposent l'accord du bailleur (statut du fermage). L'outil suppose que le preneur porte l'investissement.</div>
+          <div style="margin-top:14px;font-size:13.5px;padding:9px 12px;border-radius:5px;background:var(--alerte-fond);color:var(--alerte)">⚠ L'arrachage et la replantation d'une parcelle louée supposent l'accord du bailleur (statut du fermage). L'outil suppose que le preneur porte l'investissement.</div>
         </sc-if>
 
         <!-- prompt 10 puis 12 — le volet « Ajuster » de ce temps a disparu : le
@@ -723,7 +793,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
       <sc-if value="{{ estEtape2 }}" hint-placeholder-val="{{ false }}">
         <div class="eyebrow">TEMPS 2 · CE QUE VOUS REPLANTEZ</div>
         <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Votre projet de replantation</h2>
-        <p style="color:#5C6157;font-size:13.5px;max-width:62ch;margin:0 0 24px">Ce que vous allez replanter, et comment la vigne sera conduite. Le coût du palissage se calcule tout seul à partir de la géométrie saisie au temps 1.</p>
+        <p style="color:var(--encre-3);font-size:13.5px;max-width:62ch;margin:0 0 24px">Ce que vous allez replanter, et comment la vigne sera conduite. Le coût du palissage se calcule tout seul à partir de la géométrie saisie au temps 1.</p>
 
         <!-- Volet « Ajuster » de l'écran 3 — prompt B4. Aucun des champs de cet
              écran n'appartient aux 11 repères du chemin court : cépage,
@@ -740,12 +810,12 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           <div class="fold-body">
           <div class="card">
             <h3 class="card-h" style="margin-bottom:4px">Matériel végétal et aide au choix</h3>
-            <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px">information seule — n'entre pas dans le calcul économique</div>
+            <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px">information seule — n'entre pas dans le calcul économique</div>
 
-            <div style="border:1px solid #DDD9CE;border-radius:8px;overflow:hidden">
+            <div style="border:1px solid var(--bordure);border-radius:8px;overflow:hidden">
               <button onClick="{{ toggleAide }}" class="fold-btn">
                 <span style="font-family:'Newsreader',serif;font-size:13.5px;font-weight:600">Simulateur d'aide au choix</span>
-                <span style="font-size:11.5px;color:#5C6157">(information, hors calcul · Guide 2025)</span>
+                <span style="font-size:11.5px;color:var(--encre-3)">(information, hors calcul · Guide 2025)</span>
                 <span class="fold-sign">{{ aideChevron }}</span>
               </button>
               <sc-if value="{{ aideOuverte }}" hint-placeholder-val="{{ false }}">
@@ -782,7 +852,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                     <div style="margin-top:14px;background:{{ preconBg }};border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.55">
                       <b>Porte-greffes envisageables</b> <span class="hint">(arbre du Guide 2025, p. 39)</span>
                       <div style="margin:6px 0;font-size:13.5px">{{ preconPg }}</div>
-                      <div style="font-size:11.5px;color:#5C6157">{{ preconMsg }}</div>
+                      <div style="font-size:11.5px;color:var(--encre-3)">{{ preconMsg }}</div>
                     </div>
                   </div>
                 </div>
@@ -795,9 +865,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                  table n'est ni triable ni filtrable. Trier par production
                  suggérerait un classement que les sources ne portent pas —
                  l'échelle PlantGrape est qualitative, pas un rendement. -->
-            <div style="margin-top:16px;border:1px solid #DDD9CE;border-radius:8px;padding:14px 16px">
+            <div style="margin-top:16px;border:1px solid var(--bordure);border-radius:8px;padding:14px 16px">
               <div style="font-size:13.5px;font-weight:600;margin-bottom:2px">{{ clonesTitre }}</div>
-              <div style="font-size:11.5px;color:#5C6157;margin-bottom:10px;max-width:80ch">{{ clonesSourceTxt }}</div>
+              <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:10px;max-width:80ch">{{ clonesSourceTxt }}</div>
               <div style="overflow-x:auto">
                 <div style="display:grid;grid-template-columns:52px 118px 118px 118px 130px 120px minmax(220px,1fr);gap:0;font-size:11.5px;min-width:836px">
                   <div class="th">Clone</div>
@@ -808,27 +878,27 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                   <div class="th" title="Donnée absente des sources retenues sur 37 des 42 clones. Elle n'est pas comblée : se reporter aux données CIVC ou à plantgrape.fr.">Sensibilité Botrytis ⓘ</div>
                   <div class="th">Remarque</div>
                   <sc-for list="{{ clonesList }}" as="cl" hint-placeholder-count="8">
-                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;font-family:'JetBrains Mono',monospace;font-size:11.5px;display:flex;align-items:baseline;gap:5px">
+                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);font-family:'JetBrains Mono',monospace;font-size:11.5px;display:flex;align-items:baseline;gap:5px">
                       {{ cl.num }}<span title="{{ cl.origineTitre }}" style="font-size:11.5px;color:{{ cl.origineFg }};font-family:'JetBrains Mono',monospace">{{ cl.origineTxt }}</span>
                     </div>
-                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157">{{ cl.production }}</div>
-                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157">{{ cl.sucre }}</div>
-                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157">{{ cl.fertilite }}</div>
-                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157">{{ cl.colCond }}</div>
-                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157">{{ cl.botrytis }}</div>
-                    <div style="padding:6px 4px;border-bottom:1px dotted #DDD9CE;color:#5C6157;overflow-wrap:anywhere">
+                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.production }}</div>
+                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.sucre }}</div>
+                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.fertilite }}</div>
+                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.colCond }}</div>
+                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.botrytis }}</div>
+                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3);overflow-wrap:anywhere">
                       <sc-if value="{{ cl.alerte }}" hint-placeholder-val="{{ false }}">
-                        <span style="display:inline-block;background:#F3E0DD;color:#A5433A;border-radius:4px;padding:1px 6px;margin-right:5px;font-size:11.5px">⚠ {{ cl.alerteTxt }}</span>
+                        <span style="display:inline-block;background:var(--alerte-fond);color:var(--alerte);border-radius:4px;padding:1px 6px;margin-right:5px;font-size:11.5px">⚠ {{ cl.alerteTxt }}</span>
                       </sc-if>
                       {{ cl.remarque }}
                     </div>
                   </sc-for>
                 </div>
               </div>
-              <div style="font-size:11.5px;color:#5C6157;margin-top:10px;line-height:1.5">
+              <div style="font-size:11.5px;color:var(--encre-3);margin-top:10px;line-height:1.5">
                 <b>Niveau de production</b> : échelle qualitative PlantGrape — ce n'est pas un rendement en kg/ha et cela n'entre dans aucun calcul.<br>
                 <b>Sensibilité Botrytis</b> : donnée absente des sources retenues sur 37 des 42 clones ; les cellules vides le restent. Se reporter aux données CIVC ou à plantgrape.fr.<br>
-                <b>Origine</b> : <span style="font-family:'JetBrains Mono',monospace">G·P</span> Guide 2025 et PlantGrape · <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">G·P*</span> PlantGrape hors référence Champagne · <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">P</span> PlantGrape seul, absent du Guide.
+                <b>Origine</b> : <span style="font-family:'JetBrains Mono',monospace">G·P</span> Guide 2025 et PlantGrape · <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">G·P*</span> PlantGrape hors référence Champagne · <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">P</span> PlantGrape seul, absent du Guide.
               </div>
             </div>
 
@@ -851,20 +921,20 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <div style="margin-top:14px;background:{{ pgNoteBg }};border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.5">
               <b>{{ pgTitre }}</b> — {{ pgDesc }}<br>
               <span style="font-size:11.5px">{{ pgAvert }}</span>
-              <div style="font-size:11.5px;color:#5C6157;margin-top:4px">Guide pratique Viticulture durable en Champagne 2025, p. 38-39 — à valider par une analyse de terre.</div>
+              <div style="font-size:11.5px;color:var(--encre-3);margin-top:4px">Guide pratique Viticulture durable en Champagne 2025, p. 38-39 — à valider par une analyse de terre.</div>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
               <sc-for list="{{ conseqs }}" as="c" hint-placeholder-count="2">
-                <div style="background:#F1E6CC;border-radius:10px;padding:3px 10px;font-size:11.5px"><b>{{ c.titre }}</b> · {{ c.detail }}</div>
+                <div style="background:var(--accent-fond);border-radius:10px;padding:3px 10px;font-size:11.5px"><b>{{ c.titre }}</b> · {{ c.detail }}</div>
               </sc-for>
             </div>
           </div>
 
           <div class="card" style="margin-top:16px">
             <h3 class="card-h" style="margin-bottom:4px">Palissage et conduite</h3>
-            <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px">calculé d'après la géométrie saisie au temps 1 · tarifs fournisseur et pose (LutEnVi 2025) à réactualiser</div>
+            <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px">calculé d'après la géométrie saisie au temps 1 · tarifs fournisseur et pose (LutEnVi 2025) à réactualiser</div>
             <sc-if value="{{ longueurManquante }}" hint-placeholder-val="{{ false }}">
-              <div style="font-size:13.5px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">Saisissez une surface arrachée et un nombre de rangs au temps 1 pour calculer la géométrie.</div>
+              <div style="font-size:13.5px;padding:9px 12px;border-radius:5px;background:var(--alerte-fond);color:var(--alerte)">Saisissez une surface arrachée et un nombre de rangs au temps 1 pour calculer la géométrie.</div>
             </sc-if>
             <sc-if value="{{ !longueurManquante }}" hint-placeholder-val="{{ true }}">
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
@@ -881,7 +951,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                   </div>
                   <div class="field">
                     <label class="lbl" for="f-nbFils">Fils par rang</label>
-                    <input id="f-nbFils" type="number" step="1" min="2" max="8" value="{{ v.nbFils }}" onInput="{{ on.nbFils }}" style="padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:13.5px">
+                    <input id="f-nbFils" type="number" step="1" min="2" max="8" value="{{ v.nbFils }}" onInput="{{ on.nbFils }}" style="padding:9px 11px;border:1px solid var(--bordure);border-radius:6px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:13.5px">
                   </div>
                   <div class="field">
                     <label class="lbl" for="f-espPiquet">Espacement des piquets</label>
@@ -892,23 +962,23 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                     <label class="lbl" for="f-anneePleineProd">Année de pleine production</label>
                     <div class="row"><input id="f-anneePleineProd" type="number" step="1" min="3" max="12" value="{{ v.anneePleineProd }}" onInput="{{ on.anneePleineProd }}" class="inp"><span class="unit">années</span></div>
                     <span class="hint">comptée depuis la plantation ; l'année 3 est l'entrée en production</span>
-                    <span style="font-size:11.5px;color:#5C6157;font-family:'JetBrains Mono',monospace">{{ rampeProgressionTxt }}</span>
+                    <span style="font-size:11.5px;color:var(--encre-3);font-family:'JetBrains Mono',monospace">{{ rampeProgressionTxt }}</span>
                   </div>
                 </div>
-                <div style="border:1px solid #DDD9CE;border-radius:6px;padding:14px 16px">
-                  <div style="font-size:11.5px;color:#5C6157;margin-bottom:6px">Équipements de palissage</div>
+                <div style="border:1px solid var(--bordure);border-radius:6px;padding:14px 16px">
+                  <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:6px">Équipements de palissage</div>
                   <sc-for list="{{ palisLignes }}" as="pl" hint-placeholder-count="6">
-                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;padding:4px 0;border-bottom:1px dotted #DDD9CE">
+                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)">
                       <span style="display:flex;align-items:center;gap:6px">
                         <sc-if value="{{ pl.optionnel }}" hint-placeholder-val="{{ false }}">
                           <input type="checkbox" checked="{{ pl.inclus }}" onChange="{{ pl.toggle }}">
                         </sc-if>
-                        {{ pl.lib }} <span style="color:#9A9E97">×{{ pl.qte }}</span>
+                        {{ pl.lib }} <span style="color:var(--encre-4)">×{{ pl.qte }}</span>
                         <sc-if value="{{ pl.optionnel }}" hint-placeholder-val="{{ false }}">
-                          <span style="font-size:11.5px;color:#A97F26">optionnel</span>
+                          <span style="font-size:11.5px;color:var(--accent)">optionnel</span>
                         </sc-if>
                         <sc-if value="{{ !pl.optionnel }}" hint-placeholder-val="{{ true }}">
-                          <span style="font-size:11.5px;color:#5C6157">obligatoire</span>
+                          <span style="font-size:11.5px;color:var(--encre-3)">obligatoire</span>
                         </sc-if>
                       </span>
                       <b class="mono">{{ pl.tot }}</b>
@@ -917,7 +987,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                   <div style="display:flex;justify-content:space-between;font-size:13.5px;padding-top:8px">
                     <b>Total /ha</b><b class="mono">{{ palisTotalHa }}</b>
                   </div>
-                  <div style="font-size:11.5px;color:#5C6157;margin-top:6px">{{ palisDetailTxt }}</div>
+                  <div style="font-size:11.5px;color:var(--encre-3);margin-top:6px">{{ palisDetailTxt }}</div>
                 </div>
               </div>
             </sc-if>
@@ -928,9 +998,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
       </sc-if>
 
       <sc-if value="{{ estEtape3 }}" hint-placeholder-val="{{ false }}">
-        <div class="eyebrow" style="margin-top:40px;padding-top:28px;border-top:1px solid #DDD9CE;display:block">TEMPS 2 · CE QUE CELA COÛTE</div>
+        <div class="eyebrow" style="margin-top:40px;padding-top:28px;border-top:1px solid var(--bordure);display:block">TEMPS 2 · CE QUE CELA COÛTE</div>
         <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Coûts et charges</h2>
-        <p style="color:#5C6157;font-size:13.5px;max-width:62ch;margin:0 0 24px">D'abord ce que vous investissez une fois pour toutes, puis ce que la parcelle coûte chaque année pendant la transition. Tous les montants sont modifiables — <span style="color:#A5433A">les valeurs par défaut sont des ordres de grandeur, à valider avant tout usage réel</span>.</p>
+        <p style="color:var(--encre-3);font-size:13.5px;max-width:62ch;margin:0 0 24px">D'abord ce que vous investissez une fois pour toutes, puis ce que la parcelle coûte chaque année pendant la transition. Tous les montants sont modifiables — <span style="color:var(--alerte)">les valeurs par défaut sont des ordres de grandeur, à valider avant tout usage réel</span>.</p>
 
         <!-- Chemin court de l'écran 4 — prompt B4 : la durée de repos est le
              seul des 11 repères qui se saisit ici. Elle commande le nombre de
@@ -976,7 +1046,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                 <div class="row"><input id="f-coutPlant" type="number" step="0.1" value="{{ v.coutPlant }}" onInput="{{ on.coutPlant }}" class="inp"><span class="unit">€/pied</span></div>
               </div>
             </div>
-            <div style="margin-top:18px;padding-top:14px;border-top:1px dotted #DDD9CE">
+            <div style="margin-top:18px;padding-top:14px;border-top:1px dotted var(--bordure)">
               <div style="font-size:13.5px;font-weight:600;margin-bottom:10px">Options de coût à l'installation</div>
               <div class="grid">
                 <!-- Arrosage du plantier — prompt B7. Rétabli sous ce libellé, et
@@ -1004,7 +1074,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
           <div class="card" style="margin-top:16px">
             <h3 class="card-h">Entretien en deux temps</h3>
-            <div style="background:#F3E0DD;border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.55;max-width:72ch;margin-bottom:14px;color:#A5433A">
+            <div style="background:var(--alerte-fond);border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.55;max-width:72ch;margin-bottom:14px;color:var(--alerte)">
               <b>Ne pas inclure l'installation</b> (arrachage, préparation, plants, palissage) : déjà comptée en coûts ponctuels. Ce volet ne couvre que l'entretien récurrent, pendant le repos puis le plantier.
             </div>
             <div class="grid">
@@ -1021,7 +1091,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               </div>
             </div>
 
-            <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:14px;overflow:hidden">
+            <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;margin-top:14px;overflow:hidden">
               <button onClick="{{ toggleVoletRepos }}" class="fold-btn">
                 <span style="font-size:13.5px;font-weight:600">B.1 — Détail par opération (repos)</span>
                 <span class="hint">— {{ voletReposEnteteTxt }}</span>
@@ -1040,22 +1110,22 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                       <div class="th r">€/ha</div>
                       <div class="th">Source</div>
                       <sc-for list="{{ voletReposLignes }}" as="l" hint-placeholder-count="3">
-                        <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1">{{ l.lib }}</div>
-                        <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
-                        <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
-                        <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1;font-size:11.5px;color:#5C6157">{{ l.src }}</div>
+                        <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire)">{{ l.lib }}</div>
+                        <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
+                        <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
+                        <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire);font-size:11.5px;color:var(--encre-3)">{{ l.src }}</div>
                       </sc-for>
                     </div>
                   </div>
                   <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px">
                     <span style="font-size:13.5px">Total : <b class="mono">{{ voletReposTotalTxt }}</b></span>
-                    <button onClick="{{ reprendreVoletRepos }}" style="font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre cette estimation</button>
+                    <button onClick="{{ reprendreVoletRepos }}" style="font-size:11.5px;padding:6px 12px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:5px;cursor:pointer">↻ Reprendre cette estimation</button>
                   </div>
                 </div>
               </sc-if>
             </div>
 
-            <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:12px;overflow:hidden">
+            <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;margin-top:12px;overflow:hidden">
               <button onClick="{{ toggleVoletPlantier }}" class="fold-btn">
                 <span style="font-size:13.5px;font-weight:600">B.2 — Détail par opération (plantier)</span>
                 <span class="hint">— {{ voletPlantierEnteteTxt }}</span>
@@ -1071,7 +1141,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                        dans le moteur à sa valeur par défaut, et reste affiché dans
                        la fiche d'audit imprimable — donc auditable, mais plus
                        proposé à la saisie. -->
-                  <div style="font-size:11.5px;color:#5C6157;margin-bottom:12px">Fraction de formation retenue : <b style="font-family:'JetBrains Mono',monospace">{{ fracFormationTxt }}</b> — coefficient de modélisation, détaillé dans la fiche imprimable.</div>
+                  <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:12px">Fraction de formation retenue : <b style="font-family:'JetBrains Mono',monospace">{{ fracFormationTxt }}</b> — coefficient de modélisation, détaillé dans la fiche imprimable.</div>
                   <div style="overflow-x:auto">
                     <div style="display:grid;grid-template-columns:1.8fr 0.9fr 1fr 1.8fr;gap:0;font-size:11.5px;min-width:560px">
                       <div class="th">Opération</div>
@@ -1079,16 +1149,16 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                       <div class="th r">€/ha</div>
                       <div class="th">Source</div>
                       <sc-for list="{{ voletPlantierLignes }}" as="l" hint-placeholder-count="4">
-                        <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1">{{ l.lib }}</div>
-                        <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
-                        <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
-                        <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1;font-size:11.5px;color:#5C6157">{{ l.src }}</div>
+                        <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire)">{{ l.lib }}</div>
+                        <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
+                        <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
+                        <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire);font-size:11.5px;color:var(--encre-3)">{{ l.src }}</div>
                       </sc-for>
                     </div>
                   </div>
                   <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px">
                     <span style="font-size:13.5px">Total : <b class="mono">{{ voletPlantierTotalTxt }}</b></span>
-                    <button onClick="{{ reprendreVoletPlantier }}" style="font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre cette estimation</button>
+                    <button onClick="{{ reprendreVoletPlantier }}" style="font-size:11.5px;padding:6px 12px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:5px;cursor:pointer">↻ Reprendre cette estimation</button>
                   </div>
                 </div>
               </sc-if>
@@ -1102,7 +1172,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
       <sc-if value="{{ estEtape4 }}" hint-placeholder-val="{{ false }}">
         <div class="eyebrow">TEMPS 3 · LA TRAJECTOIRE</div>
         <sc-if value="{{ erreurSurface }}" hint-placeholder-val="{{ false }}">
-          <div style="margin:8px 0;font-size:13.5px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">⚠ {{ erreurSurface }}</div>
+          <div style="margin:8px 0;font-size:13.5px;padding:9px 12px;border-radius:5px;background:var(--alerte-fond);color:var(--alerte)">⚠ {{ erreurSurface }}</div>
         </sc-if>
         <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Ce que représente votre projet, sur {{ horizonTxt }}</h2>
 
@@ -1118,18 +1188,18 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
              elles viennent de `construireScenarios`, de `trajectoireAge` et de
              `anneeRetourProduction`. Le paragraphe de synthèse descend sous
              elles : il devient leur commentaire, pas leur substitut. -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid #DDD9CE;border-radius:10px;overflow:hidden;margin:16px 0 4px">
-          <div style="padding:20px 22px;background:#F1E6CC;display:flex;flex-direction:column;gap:4px;border-right:1px solid #E3D3AA">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--bordure);border-radius:10px;overflow:hidden;margin:16px 0 4px">
+          <div style="padding:20px 22px;background:var(--accent-fond);display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--accent-fond-bordure)">
             <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Retour en production</div>
             <div class="n1">{{ teteRetour.val }}</div>
             <div class="n4">{{ teteRetour.det }}</div>
           </div>
-          <div style="padding:20px 22px;background:#F1E6CC;display:flex;flex-direction:column;gap:4px;border-right:1px solid #E3D3AA">
+          <div style="padding:20px 22px;background:var(--accent-fond);display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--accent-fond-bordure)">
             <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Effort net à financer</div>
             <div class="n1">{{ teteEffort.val }}</div>
             <div class="n4">{{ teteEffort.det }}</div>
           </div>
-          <div style="padding:20px 22px;background:#F1E6CC;display:flex;flex-direction:column;gap:4px">
+          <div style="padding:20px 22px;background:var(--accent-fond);display:flex;flex-direction:column;gap:4px">
             <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Vignoble rajeuni de</div>
             <div class="n1">{{ teteAge.val }}</div>
             <div class="n4">{{ teteAge.det }}</div>
@@ -1141,7 +1211,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
              graphique est construit dans renderVals() (React.createElement) :
              les trois pistes doivent partager exactement la même géométrie de
              colonnes, ce qui suppose de la calculer une fois. -->
-        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:10px;padding:20px 22px;margin:16px 0 4px;display:flex;flex-direction:column;gap:14px">
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:10px;padding:20px 22px;margin:16px 0 4px;display:flex;flex-direction:column;gap:14px">
           <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
             <div class="n2">La trajectoire de la parcelle, année par année</div>
             <div class="n4">phases, kilos et euros sur un seul axe de temps</div>
@@ -1156,33 +1226,33 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
              jamais pouvoir le perdre de vue. Le bouton bascule en un clic vers
              une trajectoire sans aléa, et inversement. -->
         <div style="margin:12px 0 4px;padding:12px 16px;border-radius:8px;background:{{ aleaBandeauBg }};border:1px solid {{ aleaBandeauBd }};display:flex;gap:14px;align-items:baseline;flex-wrap:wrap">
-          <div style="font-size:13.5px;line-height:1.55;flex:1;min-width:280px;color:{{ aleaBandeauFg }}">{{ aleaBandeauTxt }} <span style="color:#5C6157">{{ aleaBandeauPrecision }}</span></div>
-          <button onClick="{{ basculerAlea }}" style="font-size:11.5px;padding:7px 13px;border:1px solid #20291F;background:#fff;border-radius:6px;cursor:pointer;color:#20291F;flex:none">{{ aleaBandeauBouton }}</button>
+          <div style="font-size:13.5px;line-height:1.55;flex:1;min-width:280px;color:{{ aleaBandeauFg }}">{{ aleaBandeauTxt }} <span style="color:var(--encre-3)">{{ aleaBandeauPrecision }}</span></div>
+          <button onClick="{{ basculerAlea }}" style="font-size:11.5px;padding:7px 13px;border:1px solid var(--encre);background:var(--surface-haute);border-radius:6px;cursor:pointer;color:var(--encre);flex:none">{{ aleaBandeauBouton }}</button>
         </div>
 
         <div style="margin:10px 0 4px">
-          <button onClick="{{ imprimerFiche }}" style="font-size:13.5px;padding:9px 16px;border:1px solid #20291F;background:#fff;border-radius:6px;cursor:pointer;color:#20291F">🖨 Imprimer la fiche d'hypothèses et de résultats</button>
-          <span style="font-size:11.5px;color:#5C6157;margin-left:10px">ouvre l'aperçu avant impression du navigateur — inclut une fiche d'audit exhaustive (hypothèses, KPI, détail des 3 scénarios)</span>
+          <button onClick="{{ imprimerFiche }}" style="font-size:13.5px;padding:9px 16px;border:1px solid var(--encre);background:var(--surface-haute);border-radius:6px;cursor:pointer;color:var(--encre)">🖨 Imprimer la fiche d'hypothèses et de résultats</button>
+          <span style="font-size:11.5px;color:var(--encre-3);margin-left:10px">ouvre l'aperçu avant impression du navigateur — inclut une fiche d'audit exhaustive (hypothèses, KPI, détail des 3 scénarios)</span>
         </div>
 
-        <div style="background:#20291F;color:#FAF9F5;border-radius:10px;padding:20px 24px;margin:16px 0;font-size:13.5px;line-height:1.65">
-          Sur {{ horizonTxt }}, l'<b style="color:#F1E6CC">arrachage-replantation</b> est une opération de <b style="color:#F1E6CC">transition</b>. La réserve mobilisable — <b style="color:#F1E6CC">{{ reserveReelleTxt }}</b> réellement mobilisés ({{ reserveTheoTxt }} théoriques) — {{ syntheseCouvTxt }} <b style="color:#F1E6CC">{{ investTxt }}</b>{{ syntheseCouvSuffixTxt }}. L'effort net à financer ressort à <b style="color:#F1E6CC">{{ effortNetTxt }}</b>. Tension de trésorerie maximale en année {{ creuxT }} (<b style="color:#F1E6CC">{{ creuxTxt }}</b>){{ syntheseAbsorptionTxt }}. {{ syntheseStockLeadTxt }} <b style="color:#F1E6CC">{{ stockMinTxt }} kg/ha</b> {{ syntheseStockTailTxt }} {{ syntheseHorizonTxt }}
+        <div style="background:var(--encre);color:var(--surface-basse);border-radius:10px;padding:20px 24px;margin:16px 0;font-size:13.5px;line-height:1.65">
+          Sur {{ horizonTxt }}, l'<b style="color:var(--accent-fond)">arrachage-replantation</b> est une opération de <b style="color:var(--accent-fond)">transition</b>. La réserve mobilisable — <b style="color:var(--accent-fond)">{{ reserveReelleTxt }}</b> réellement mobilisés ({{ reserveTheoTxt }} théoriques) — {{ syntheseCouvTxt }} <b style="color:var(--accent-fond)">{{ investTxt }}</b>{{ syntheseCouvSuffixTxt }}. L'effort net à financer ressort à <b style="color:var(--accent-fond)">{{ effortNetTxt }}</b>. Tension de trésorerie maximale en année {{ creuxT }} (<b style="color:var(--accent-fond)">{{ creuxTxt }}</b>){{ syntheseAbsorptionTxt }}. {{ syntheseStockLeadTxt }} <b style="color:var(--accent-fond)">{{ stockMinTxt }} kg/ha</b> {{ syntheseStockTailTxt }} {{ syntheseHorizonTxt }}
         </div>
-        <div style="font-size:11.5px;color:#5C6157;margin:8px 0 16px;line-height:1.5">Ordres de grandeur pédagogiques établis sur vos saisies — une décision d'investissement s'instruit avec votre conseil comptable et, le cas échéant, votre bailleur.</div>
+        <div style="font-size:11.5px;color:var(--encre-3);margin:8px 0 16px;line-height:1.5">Ordres de grandeur pédagogiques établis sur vos saisies — une décision d'investissement s'instruit avec votre conseil comptable et, le cas échéant, votre bailleur.</div>
 
         <!-- Réglages d'affichage — les quatre contrôles étaient alignés en une
              seule rangée où rien ne disait lesquels changent le calcul. Ils sont
              désormais étiquetés un par un, dans une grille, sous un titre qui
              annonce qu'ils ne modifient aucune de vos saisies. -->
-        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:16px 18px;margin:14px 0 20px">
-          <div style="font-size:11.5px;color:#5C6157;margin-bottom:12px">Ces réglages changent <b>la façon de lire les résultats</b> ci-dessous — ils ne modifient aucune de vos saisies.</div>
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:16px 18px;margin:14px 0 20px">
+          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:12px">Ces réglages changent <b>la façon de lire les résultats</b> ci-dessous — ils ne modifient aucune de vos saisies.</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px 22px">
 
             <div class="field">
               <span class="lbl">Trésorerie affichée</span>
-              <div style="display:inline-flex;border:1px solid #DDD9CE;border-radius:6px;overflow:hidden;width:fit-content;max-width:100%">
-                <button onClick="{{ vue1 }}" style="font-size:13.5px;padding:7px 13px;border:0;cursor:pointer;border-right:1px solid #DDD9CE;background:{{ vueBg1 }};color:{{ vueFg1 }}">Ensemble</button>
-                <button onClick="{{ vueExp }}" style="font-size:13.5px;padding:7px 13px;border:0;cursor:pointer;border-right:1px solid #DDD9CE;background:{{ vueBgExp }};color:{{ vueFgExp }}">Part exploitant</button>
+              <div style="display:inline-flex;border:1px solid var(--bordure);border-radius:6px;overflow:hidden;width:fit-content;max-width:100%">
+                <button onClick="{{ vue1 }}" style="font-size:13.5px;padding:7px 13px;border:0;cursor:pointer;border-right:1px solid var(--bordure);background:{{ vueBg1 }};color:{{ vueFg1 }}">Ensemble</button>
+                <button onClick="{{ vueExp }}" style="font-size:13.5px;padding:7px 13px;border:0;cursor:pointer;border-right:1px solid var(--bordure);background:{{ vueBgExp }};color:{{ vueFgExp }}">Part exploitant</button>
                 <button onClick="{{ vueProp }}" style="font-size:13.5px;padding:7px 13px;border:0;cursor:pointer;background:{{ vueBgProp }};color:{{ vueFgProp }}">Part propriétaire</button>
               </div>
               <span class="hint">{{ fvHint }}</span>
@@ -1190,8 +1260,8 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
             <div class="field">
               <span class="lbl">Main d'œuvre</span>
-              <div style="display:inline-flex;border:1px solid #DDD9CE;border-radius:6px;overflow:hidden;width:fit-content">
-                <button onClick="{{ moPrestataire }}" style="font-size:13.5px;padding:7px 13px;border:0;cursor:pointer;border-right:1px solid #DDD9CE;background:{{ moBgExterne }};color:{{ moFgExterne }}">Prestataire</button>
+              <div style="display:inline-flex;border:1px solid var(--bordure);border-radius:6px;overflow:hidden;width:fit-content">
+                <button onClick="{{ moPrestataire }}" style="font-size:13.5px;padding:7px 13px;border:0;cursor:pointer;border-right:1px solid var(--bordure);background:{{ moBgExterne }};color:{{ moFgExterne }}">Prestataire</button>
                 <button onClick="{{ moFamiliale }}" style="font-size:13.5px;padding:7px 13px;border:0;cursor:pointer;background:{{ moBgFamiliale }};color:{{ moFgFamiliale }}">Familiale</button>
               </div>
               <span class="hint">change la lecture des heures économisées, jamais la trésorerie</span>
@@ -1226,44 +1296,44 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
              passe en tête, au niveau typographique occupé jusqu'ici par les KPI
              financiers. Les KPI financiers ne perdent rien : ils descendent d'un
              cran (blocs 2 et 3), avec tout leur détail. -->
-        <div style="background:#fff;border:1px solid #DDD9CE;border-left:4px solid #A97F26;border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Ce que le renouvellement produit</div>
-          <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:74ch">Les grandeurs physiques, en années et en kilos : elles ne dépendent ni du prix du raisin ni de vos charges. Le coût, lui, est juste en dessous.</div>
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-left:4px solid var(--accent);border-radius:8px;padding:18px 20px;margin:20px 0">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Ce que le renouvellement produit</div>
+          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px;max-width:74ch">Les grandeurs physiques, en années et en kilos : elles ne dépendent ni du prix du raisin ni de vos charges. Le coût, lui, est juste en dessous.</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px">
-            <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiEcartAge.lib }}</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#5C4B1F">{{ kpiEcartAge.val }}</div>
-              <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiEcartAge.det }}</div>
+            <div style="background:var(--accent-fond);border-radius:6px;padding:14px 16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiEcartAge.lib }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--accent-encre)">{{ kpiEcartAge.val }}</div>
+              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiEcartAge.det }}</div>
             </div>
-            <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiStockReserve.lib }}</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiStockReserve.val }}</div>
-              <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiStockReserve.det }}</div>
+            <div style="background:var(--accent-fond);border-radius:6px;padding:14px 16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiStockReserve.lib }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiStockReserve.val }}</div>
+              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiStockReserve.det }}</div>
             </div>
-            <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiReserveMin.lib }}</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiReserveMin.val }}</div>
-              <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiReserveMin.det }}</div>
+            <div style="background:var(--accent-fond);border-radius:6px;padding:14px 16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiReserveMin.lib }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiReserveMin.val }}</div>
+              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiReserveMin.det }}</div>
             </div>
           </div>
 
           <!-- Les deux graphiques restent repliés par défaut (prompt B5, point 3) ;
                seul leur bouton d'ouverture remonte ici, au-dessus du bloc
                financier. Le contenu est inchangé. -->
-          <div style="margin-top:16px;border-top:1px dotted #DDD9CE;padding-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-            <button onClick="{{ toggleStockChart }}" style="font-size:11.5px;padding:7px 14px;border:1px solid #DDD9CE;background:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
+          <div style="margin-top:16px;border-top:1px dotted var(--bordure);padding-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+            <button onClick="{{ toggleStockChart }}" style="font-size:11.5px;padding:7px 14px;border:1px solid var(--bordure);background:var(--surface-haute);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
               <span>{{ stockChartLabel }}</span>
-              <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ stockChartChevron }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">{{ stockChartChevron }}</span>
             </button>
-            <button onClick="{{ toggleAgeChart }}" style="font-size:11.5px;padding:7px 14px;border:1px solid #DDD9CE;background:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
+            <button onClick="{{ toggleAgeChart }}" style="font-size:11.5px;padding:7px 14px;border:1px solid var(--bordure);background:var(--surface-haute);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
               <span>{{ ageChartLabel }}</span>
-              <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ ageChartChevron }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">{{ ageChartChevron }}</span>
             </button>
           </div>
           <sc-if value="{{ stockChartOuvert }}" hint-placeholder-val="{{ false }}">
             <div style="margin-top:12px">
               {{ chartStock }}
-              <div style="font-size:11.5px;color:#5C6157;margin-top:6px">En kg/ha de surface productive. Un cumul flatteur peut cacher une réserve asséchée. Plafond 10 000 kg/ha.</div>
+              <div style="font-size:11.5px;color:var(--encre-3);margin-top:6px">En kg/ha de surface productive. Un cumul flatteur peut cacher une réserve asséchée. Plafond 10 000 kg/ha.</div>
             </div>
           </sc-if>
           <sc-if value="{{ ageChartOuvert }}" hint-placeholder-val="{{ false }}">
@@ -1298,34 +1368,34 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
              state.ongletResultat est un état d'interface : hors instantané
              localStorage, comme l'étape courante et les volets. -->
-        <div role="tablist" aria-label="Détail des résultats" onKeyDown="{{ ongletsClavier }}" style="display:flex;border:1px solid #DDD9CE;border-radius:8px;overflow:hidden;margin:20px 0 0;flex-wrap:wrap">
+        <div role="tablist" aria-label="Détail des résultats" onKeyDown="{{ ongletsClavier }}" style="display:flex;border:1px solid var(--bordure);border-radius:8px;overflow:hidden;margin:20px 0 0;flex-wrap:wrap">
           <sc-for list="{{ ongletsResultat }}" as="og" hint-placeholder-count="5">
-            <button role="tab" id="{{ og.id }}" aria-selected="{{ og.aria }}" aria-controls="{{ og.panneau }}" tabindex="{{ og.tabindex }}" onClick="{{ og.go }}" style="font-size:13.5px;padding:11px 18px;border:0;border-right:1px solid #DDD9CE;border-bottom:2px solid {{ og.souligne }};cursor:pointer;background:{{ og.bg }};color:{{ og.fg }};font-weight:{{ og.poids }}">{{ og.label }}</button>
+            <button role="tab" id="{{ og.id }}" aria-selected="{{ og.aria }}" aria-controls="{{ og.panneau }}" tabindex="{{ og.tabindex }}" onClick="{{ og.go }}" style="font-size:13.5px;padding:11px 18px;border:0;border-right:1px solid var(--bordure);border-bottom:2px solid {{ og.souligne }};cursor:pointer;background:{{ og.bg }};color:{{ og.fg }};font-weight:{{ og.poids }}">{{ og.label }}</button>
           </sc-for>
         </div>
 
         <sc-if value="{{ onglet0 }}" hint-placeholder-val="{{ true }}">
         <div role="tabpanel" id="onglet-panneau-0" aria-labelledby="onglet-btn-0">
         <!-- ============ BLOC 2 — Coût de l'investissement ============ -->
-        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:74ch">Ce que coûte le renouvellement de la parcelle, poste par poste.</div>
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin:20px 0">
+          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px;max-width:74ch">Ce que coûte le renouvellement de la parcelle, poste par poste.</div>
           <div style="display:grid;grid-template-columns:1fr auto auto;gap:2px 16px;font-size:13.5px;align-items:baseline">
             <sc-for list="{{ investLignes }}" as="il" hint-placeholder-count="4">
-              <div style="padding:7px 0;border-bottom:1px dotted #DDD9CE">{{ il.lib }}<span style="color:#9A9E97;font-size:11.5px"> — {{ il.note }}</span></div>
-              <div style="padding:7px 0;border-bottom:1px dotted #DDD9CE;text-align:right;color:#5C6157;font-size:11.5px;white-space:nowrap">{{ il.quand }}</div>
-              <div style="padding:7px 0;border-bottom:1px dotted #DDD9CE;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap">{{ il.val }}</div>
+              <div style="padding:7px 0;border-bottom:1px dotted var(--bordure)">{{ il.lib }}<span style="color:var(--encre-4);font-size:11.5px"> — {{ il.note }}</span></div>
+              <div style="padding:7px 0;border-bottom:1px dotted var(--bordure);text-align:right;color:var(--encre-3);font-size:11.5px;white-space:nowrap">{{ il.quand }}</div>
+              <div style="padding:7px 0;border-bottom:1px dotted var(--bordure);text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap">{{ il.val }}</div>
             </sc-for>
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:16px">
-            <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiInvestTotal.lib }}</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiInvestTotal.val }}</div>
-              <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiInvestTotal.det }}</div>
+            <div style="background:var(--accent-fond);border-radius:6px;padding:14px 16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiInvestTotal.lib }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiInvestTotal.val }}</div>
+              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiInvestTotal.det }}</div>
             </div>
-            <div style="background:#fff;border:1px solid #DDD9CE;border-left:4px solid #A5433A;border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiPointBas.lib }}</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#A5433A">{{ kpiPointBas.val }}</div>
-              <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiPointBas.det }}</div>
+            <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-left:4px solid var(--alerte);border-radius:6px;padding:14px 16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiPointBas.lib }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--alerte)">{{ kpiPointBas.val }}</div>
+              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiPointBas.det }}</div>
             </div>
           </div>
         </div>
@@ -1335,45 +1405,45 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <sc-if value="{{ onglet1 }}" hint-placeholder-val="{{ false }}">
         <div role="tabpanel" id="onglet-panneau-1" aria-labelledby="onglet-btn-1">
         <!-- ============ BLOC 3 — Impact sur la réserve ============ -->
-        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:74ch">La réserve individuelle est un stock de kg déjà constitué, pas un revenu nouveau : l'arrachage autorise à en puiser une partie plus vite que d'habitude, pour jouer son rôle d'assurance pendant la période sans production normale de la parcelle.</div>
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin:20px 0">
+          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px;max-width:74ch">La réserve individuelle est un stock de kg déjà constitué, pas un revenu nouveau : l'arrachage autorise à en puiser une partie plus vite que d'habitude, pour jouer son rôle d'assurance pendant la période sans production normale de la parcelle.</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
-            <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiAmortisseur.lib }}</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiAmortisseur.val }}</div>
-              <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiAmortisseur.det }}</div>
+            <div style="background:var(--accent-fond);border-radius:6px;padding:14px 16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiAmortisseur.lib }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiAmortisseur.val }}</div>
+              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiAmortisseur.det }}</div>
             </div>
           </div>
 
           <div style="margin-top:10px">
-            <button onClick="{{ toggleEffortNet }}" style="font-size:11.5px;padding:7px 14px;border:1px solid #DDD9CE;background:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
+            <button onClick="{{ toggleEffortNet }}" style="font-size:11.5px;padding:7px 14px;border:1px solid var(--bordure);background:var(--surface-haute);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
               <span>Détail — effort net après réserve</span>
-              <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ effortNetChevron }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">{{ effortNetChevron }}</span>
             </button>
             <sc-if value="{{ effortNetOuvert }}" hint-placeholder-val="{{ false }}">
-              <div style="max-width:280px;margin-top:10px;background:#fff;border:1px solid #DDD9CE;border-left:4px solid #4C7A57;border-radius:6px;padding:14px 16px">
-                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiEffortNet.lib }}</div>
-                <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiEffortNet.val }}</div>
-                <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiEffortNet.det }}</div>
+              <div style="max-width:280px;margin-top:10px;background:var(--surface-haute);border:1px solid var(--bordure);border-left:4px solid var(--vegetal);border-radius:6px;padding:14px 16px">
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiEffortNet.lib }}</div>
+                <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiEffortNet.val }}</div>
+                <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiEffortNet.det }}</div>
               </div>
             </sc-if>
           </div>
 
-          <div style="margin-top:16px;border-top:1px dotted #DDD9CE;padding-top:14px">
+          <div style="margin-top:16px;border-top:1px dotted var(--bordure);padding-top:14px">
             <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">
               <span class="lbl">Réserve débloquée par l'arrachage</span>
-              <span class="hint">sortie « arrachage », en kg — total <b style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ sortieTotalTxt }} kg</b></span>
+              <span class="hint">sortie « arrachage », en kg — total <b style="font-family:'JetBrains Mono',monospace;color:var(--accent)">{{ sortieTotalTxt }} kg</b></span>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:8px">
               <sc-for list="{{ sortieAnnees }}" as="so" hint-placeholder-count="3">
-                <div style="background:#F1E6CC;border-radius:6px;padding:6px 11px;display:flex;flex-direction:column;line-height:1.25">
-                  <span style="font-size:11.5px;color:#8E6A1F;text-transform:uppercase;letter-spacing:0.04em">Année {{ so.t }}</span>
+                <div style="background:var(--accent-fond);border-radius:6px;padding:6px 11px;display:flex;flex-direction:column;line-height:1.25">
+                  <span style="font-size:11.5px;color:var(--accent-fonce);text-transform:uppercase;letter-spacing:0.04em">Année {{ so.t }}</span>
                   <span style="font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:500">{{ so.kg }} kg</span>
-                  <span style="font-size:11.5px;color:#5C6157">≈ {{ so.eur }} mobilisés</span>
+                  <span style="font-size:11.5px;color:var(--encre-3)">≈ {{ so.eur }} mobilisés</span>
                 </div>
               </sc-for>
             </div>
-            <div style="font-size:11.5px;color:#5C6157;margin-top:10px">L'arrachage puise dans la réserve puis la reconstitue ; le statu quo la maintient. Chaque kg de réserve mobilisé est un coussin de sécurité entamé d'autant, pas un gain net.</div>
+            <div style="font-size:11.5px;color:var(--encre-3);margin-top:10px">L'arrachage puise dans la réserve puis la reconstitue ; le statu quo la maintient. Chaque kg de réserve mobilisé est un coussin de sécurité entamé d'autant, pas un gain net.</div>
           </div>
         </div>
         </div>
@@ -1382,35 +1452,35 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <sc-if value="{{ onglet2 }}" hint-placeholder-val="{{ false }}">
         <div role="tabpanel" id="onglet-panneau-2" aria-labelledby="onglet-btn-2">
         <!-- ============ BLOC 4 — Main d'œuvre et charges ============ -->
-        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:76ch">La parcelle renouvelée reste entretenue tout au long de la transition — mais pas de la même façon selon la phase : le repos n'engage quasiment aucun travail, le plantier en engage un réel (formation, protection, remplacement des manquants, désherbage), seule la vendange est franchement économisée tant qu'il n'y a rien à récolter. Charges de surface reprises du panneau Hypothèses.</div>
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin:20px 0">
+          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px;max-width:76ch">La parcelle renouvelée reste entretenue tout au long de la transition — mais pas de la même façon selon la phase : le repos n'engage quasiment aucun travail, le plantier en engage un réel (formation, protection, remplacement des manquants, désherbage), seule la vendange est franchement économisée tant qu'il n'y a rien à récolter. Charges de surface reprises du panneau Hypothèses.</div>
           <div style="display:grid;grid-template-columns:1.6fr repeat(4,auto);gap:2px 14px;font-size:11.5px;align-items:center">
-            <div style="font-size:11.5px;text-transform:uppercase;color:#5C6157;padding:5px 0;border-bottom:1px solid #DDD9CE">Régime</div>
-            <div style="font-size:11.5px;text-transform:uppercase;color:#5C6157;padding:5px 0;border-bottom:1px solid #DDD9CE;text-align:right">Durée</div>
-            <div style="font-size:11.5px;text-transform:uppercase;color:#5C6157;padding:5px 0;border-bottom:1px solid #DDD9CE;text-align:right">Travail manuel</div>
-            <div style="font-size:11.5px;text-transform:uppercase;color:#5C6157;padding:5px 0;border-bottom:1px solid #DDD9CE;text-align:right">Charge de surface</div>
-            <div style="font-size:11.5px;text-transform:uppercase;color:#5C6157;padding:5px 0;border-bottom:1px solid #DDD9CE;text-align:right">Vendange</div>
+            <div style="font-size:11.5px;text-transform:uppercase;color:var(--encre-3);padding:5px 0;border-bottom:1px solid var(--bordure)">Régime</div>
+            <div style="font-size:11.5px;text-transform:uppercase;color:var(--encre-3);padding:5px 0;border-bottom:1px solid var(--bordure);text-align:right">Durée</div>
+            <div style="font-size:11.5px;text-transform:uppercase;color:var(--encre-3);padding:5px 0;border-bottom:1px solid var(--bordure);text-align:right">Travail manuel</div>
+            <div style="font-size:11.5px;text-transform:uppercase;color:var(--encre-3);padding:5px 0;border-bottom:1px solid var(--bordure);text-align:right">Charge de surface</div>
+            <div style="font-size:11.5px;text-transform:uppercase;color:var(--encre-3);padding:5px 0;border-bottom:1px solid var(--bordure);text-align:right">Vendange</div>
             <sc-for list="{{ regimesTravail }}" as="rt" hint-placeholder-count="3">
-              <div style="padding:9px 0;border-bottom:1px dotted #EDEAE1">
+              <div style="padding:9px 0;border-bottom:1px dotted var(--bordure-claire)">
                 <b>{{ rt.lib }}</b>
-                <div style="font-size:11.5px;color:#5C6157;margin-top:2px;font-weight:400">{{ rt.messageTxt }}</div>
+                <div style="font-size:11.5px;color:var(--encre-3);margin-top:2px;font-weight:400">{{ rt.messageTxt }}</div>
               </div>
-              <div style="padding:9px 0;border-bottom:1px dotted #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace;white-space:nowrap">{{ rt.nbAnneesTxt }}</div>
-              <div style="padding:9px 0;border-bottom:1px dotted #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace;white-space:nowrap">{{ rt.heuresTxt }}</div>
-              <div style="padding:9px 0;border-bottom:1px dotted #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace;white-space:nowrap">{{ rt.chargeSurfaceTxt }}</div>
-              <div style="padding:9px 0;border-bottom:1px dotted #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace;color:{{ rt.vendangeFg }}">{{ rt.vendangeTxt }}</div>
+              <div style="padding:9px 0;border-bottom:1px dotted var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace;white-space:nowrap">{{ rt.nbAnneesTxt }}</div>
+              <div style="padding:9px 0;border-bottom:1px dotted var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace;white-space:nowrap">{{ rt.heuresTxt }}</div>
+              <div style="padding:9px 0;border-bottom:1px dotted var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace;white-space:nowrap">{{ rt.chargeSurfaceTxt }}</div>
+              <div style="padding:9px 0;border-bottom:1px dotted var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace;color:{{ rt.vendangeFg }}">{{ rt.vendangeTxt }}</div>
             </sc-for>
           </div>
-          <div style="font-size:11.5px;color:#5C6157;margin-top:8px">Colonne « travail manuel » : heures/ha estimées (référentiel Avenant 217) — la vigne mature demande le même travail, quel que soit le scénario.</div>
+          <div style="font-size:11.5px;color:var(--encre-3);margin-top:8px">Colonne « travail manuel » : heures/ha estimées (référentiel Avenant 217) — la vigne mature demande le même travail, quel que soit le scénario.</div>
 
-          <div style="background:#F1E6CC;border:1px solid #DDD9CE;border-radius:8px;padding:16px 20px;margin-top:16px;font-size:13.5px;line-height:1.6">
-            <b>Main d'œuvre manuelle économisée sur l'ensemble de la transition (repos + plantier)</b> <span style="color:#5C6157">— indicateur physique, jamais dans la trésorerie</span><br>
+          <div style="background:var(--accent-fond);border:1px solid var(--bordure);border-radius:8px;padding:16px 20px;margin-top:16px;font-size:13.5px;line-height:1.6">
+            <b>Main d'œuvre manuelle économisée sur l'ensemble de la transition (repos + plantier)</b> <span style="color:var(--encre-3)">— indicateur physique, jamais dans la trésorerie</span><br>
             ≈ <b class="mono">{{ moHeuresTxt }}</b> de main d'œuvre manuelle non engagée sur la transition — une heure non travaillée sur la parcelle en repos est aussi une heure de vendange en moins sur cette même parcelle.
             <sc-if value="{{ moExterne }}" hint-placeholder-val="{{ true }}">
-              <br>≈ <b class="mono">{{ moEuroTxt }}</b> de prestation évitée <span style="color:#A5433A">— indicatif, hors trésorerie</span>.
+              <br>≈ <b class="mono">{{ moEuroTxt }}</b> de prestation évitée <span style="color:var(--alerte)">— indicatif, hors trésorerie</span>.
             </sc-if>
             <sc-if value="{{ moFamilialeActive }}" hint-placeholder-val="{{ false }}">
-              <br><span style="color:#5C6157">Temps redéployable sur l'exploitation.</span>
+              <br><span style="color:var(--encre-3)">Temps redéployable sur l'exploitation.</span>
             </sc-if>
           </div>
         </div>
@@ -1420,24 +1490,24 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <sc-if value="{{ onglet3 }}" hint-placeholder-val="{{ false }}">
         <div role="tabpanel" id="onglet-panneau-3" aria-labelledby="onglet-btn-3">
         <!-- ============ BLOC 1 — Récapitulatif technique ============ -->
-        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:74ch">Récapitulatif technique de l'opération, sur la parcelle désignée au temps 1.</div>
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin:20px 0">
+          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px;max-width:74ch">Récapitulatif technique de l'opération, sur la parcelle désignée au temps 1.</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
             <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Surface renouvelée</div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">Surface renouvelée</div>
               <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapSurfaceTxt }}</div>
             </div>
             <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Densité de plantation</div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">Densité de plantation</div>
               <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapDensiteTxt }}</div>
             </div>
             <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Matériel végétal</div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">Matériel végétal</div>
               <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapPiedsTxt }}</div>
-              <div style="font-size:11.5px;color:#5C6157;margin-top:2px">{{ recapMaterielTxt }}</div>
+              <div style="font-size:11.5px;color:var(--encre-3);margin-top:2px">{{ recapMaterielTxt }}</div>
             </div>
             <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Matériel de palissage</div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">Matériel de palissage</div>
               <div style="font-size:13.5px;margin-top:6px;line-height:1.4">{{ recapPalissageTxt }}</div>
             </div>
           </div>
@@ -1448,21 +1518,21 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <sc-if value="{{ onglet4 }}" hint-placeholder-val="{{ false }}">
         <div role="tabpanel" id="onglet-panneau-4" aria-labelledby="onglet-btn-4">
         <!-- ============ BLOC 5 — Rajeunissement du vignoble ============ -->
-        <figure style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
+        <figure style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin:20px 0">
           <figcaption style="font-family:'Newsreader',serif;font-weight:600;font-size:22px">Âge moyen du vignoble, avant / après</figcaption>
-          <div style="font-size:11.5px;color:#5C6157;margin:2px 0 12px;max-width:74ch">Âge moyen de l'exploitation (parcelle désignée + reste), en années. Pendant le repos du sol, la parcelle sort du calcul : aucun rajeunissement affiché avant qu'une vigne ne soit effectivement replantée.</div>
+          <div style="font-size:11.5px;color:var(--encre-3);margin:2px 0 12px;max-width:74ch">Âge moyen de l'exploitation (parcelle désignée + reste), en années. Pendant le repos du sol, la parcelle sort du calcul : aucun rajeunissement affiché avant qu'une vigne ne soit effectivement replantée.</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:14px">
             <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Aujourd'hui</div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">Aujourd'hui</div>
               <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ ageAvantTxt }}</div>
             </div>
             <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">À {{ horizonTxt }} · statu quo</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px;color:#9A9E97">{{ ageApresSQTxt }}</div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">À {{ horizonTxt }} · statu quo</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px;color:var(--encre-4)">{{ ageApresSQTxt }}</div>
             </div>
             <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">À {{ horizonTxt }} · arrachage</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px;color:#A97F26">{{ ageApresArrTxt }}</div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">À {{ horizonTxt }} · arrachage</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px;color:var(--accent)">{{ ageApresArrTxt }}</div>
             </div>
           </div>
         </figure>
@@ -1470,7 +1540,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         </sc-if>
 
         <!-- ============ Annexe technique (hors des 5 blocs) ============ -->
-        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:16px;overflow:hidden">
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;margin-top:16px;overflow:hidden">
           <button onClick="{{ toggleDetail }}" class="fold-btn">
             <span style="font-size:13.5px;font-weight:600">Mode technique — détail annuel (scénario arrachage)</span>
             <span class="hint">— {{ detailEnteteTxt }}</span>
@@ -1489,15 +1559,15 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                 <div class="th r">Stock kg/ha</div>
                 <div class="th r">Cash net</div>
                 <sc-for list="{{ detailRows }}" as="r" hint-placeholder-count="4">
-                  <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;font-family:'JetBrains Mono',monospace">{{ r.t }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace">{{ r.surfProd }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace">{{ r.recolte }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace">{{ r.volcoVendu }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace">{{ r.mise }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace">{{ r.sortieInsuff }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace">{{ r.sortieArr }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace">{{ r.stockHa }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace">{{ r.cashNet }}</div>
+                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);font-family:'JetBrains Mono',monospace">{{ r.t }}</div>
+                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.surfProd }}</div>
+                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.recolte }}</div>
+                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.volcoVendu }}</div>
+                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.mise }}</div>
+                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.sortieInsuff }}</div>
+                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.sortieArr }}</div>
+                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.stockHa }}</div>
+                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.cashNet }}</div>
                 </sc-for>
               </div>
             </div>
@@ -1512,9 +1582,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
              ne renouvelait pas. Son seul effet visible est le tableau « Manque à
              gagner » ci-dessous. Il est donc déplacé ici, à côté de ce qu'il
              pilote, où l'on voit immédiatement ce que le chiffre change. -->
-        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:12px;padding:16px 20px">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Hypothèses de comparaison</div>
-          <div style="font-size:11.5px;color:#5C6157;margin-bottom:12px;max-width:76ch">Le repère de comparaison n'est pas la parcelle d'aujourd'hui figée : on suppose qu'elle continuerait de décliner si elle n'était pas renouvelée. Ce seul chiffre commande l'écart affiché ci-dessous.</div>
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;margin-top:12px;padding:16px 20px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Hypothèses de comparaison</div>
+          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:12px;max-width:76ch">Le repère de comparaison n'est pas la parcelle d'aujourd'hui figée : on suppose qu'elle continuerait de décliner si elle n'était pas renouvelée. Ce seul chiffre commande l'écart affiché ci-dessous.</div>
           <div class="field" style="max-width:260px">
             <label class="lbl" for="f-declinSQ">Déclin annuel si rien n'est fait</label>
             <div class="row"><input id="f-declinSQ" type="number" step="0.1" min="0" max="10" value="{{ v.declinSQ }}" onInput="{{ on.declinSQ }}" class="inp"><span class="unit">%/an</span></div>
@@ -1522,7 +1592,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           </div>
         </div>
 
-        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:12px;overflow:hidden">
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;margin-top:12px;overflow:hidden">
           <button onClick="{{ toggleMaG }}" class="fold-btn">
             <span style="font-size:13.5px;font-weight:600">Manque à gagner par rapport au statu quo (indicatif — jamais déduit du calcul)</span>
             <span class="hint">— {{ magEnteteTxt }}</span>
@@ -1534,15 +1604,15 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                 <div class="th">t</div>
                 <div class="th r">Arrachage</div>
                 <sc-for list="{{ magRows }}" as="m" hint-placeholder-count="4">
-                  <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;font-family:'JetBrains Mono',monospace">{{ m.t }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid #EDEAE1;text-align:right;font-family:'JetBrains Mono',monospace">{{ m.arr }}</div>
+                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);font-family:'JetBrains Mono',monospace">{{ m.t }}</div>
+                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ m.arr }}</div>
                 </sc-for>
               </div>
             </div>
           </sc-if>
         </div>
 
-        <p style="font-size:11.5px;color:#5C6157;max-width:78ch;margin-top:24px;border-top:1px solid #DDD9CE;padding-top:14px;line-height:1.6">Simulation pédagogique construite sur vos seules saisies — hypothèses, sources et formule de chaque chiffre : fiche imprimable ci-dessus (« 🖨 Imprimer la fiche »).</p>
+        <p style="font-size:11.5px;color:var(--encre-3);max-width:78ch;margin-top:24px;border-top:1px solid var(--bordure);padding-top:14px;line-height:1.6">Simulation pédagogique construite sur vos seules saisies — hypothèses, sources et formule de chaque chiffre : fiche imprimable ci-dessus (« 🖨 Imprimer la fiche »).</p>
 
         <div class="print-sheet">
           <h2 style="font-family:'Newsreader',serif;font-size:22px;margin:0 0 4px">Fiche d'hypothèses et de résultats — OAD Renouvellement du vignoble</h2>
@@ -1617,15 +1687,15 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
            qu'elle atteint, plus le raccourci vers les résultats. Les deux
            réutilisent les handlers de la barre latérale (`suivant`,
            `allerResultats`) : la logique de navigation n'est pas dupliquée. -->
-      <div style="display:flex;gap:12px;margin-top:32px;align-items:center;border-top:1px solid #EDEAE1;padding-top:18px">
+      <div style="display:flex;gap:12px;margin-top:32px;align-items:center;border-top:1px solid var(--bordure-claire);padding-top:18px">
         <sc-if value="{{ aPrecedent }}" hint-placeholder-val="{{ false }}">
-          <button onClick="{{ precedent }}" style="font-size:13.5px;padding:11px 20px;border:1px solid #DDD9CE;background:#fff;border-radius:7px;cursor:pointer;color:#20291F">← {{ labelPrecedent }}</button>
+          <button onClick="{{ precedent }}" style="font-size:13.5px;padding:11px 20px;border:1px solid var(--bordure);background:var(--surface-haute);border-radius:7px;cursor:pointer;color:var(--encre)">← {{ labelPrecedent }}</button>
         </sc-if>
         <sc-if value="{{ raccourciResultats }}" hint-placeholder-val="{{ true }}">
-          <button onClick="{{ allerResultats }}" style="font-size:13.5px;padding:11px 20px;border:1px solid #DDD9CE;background:#fff;border-radius:7px;cursor:pointer;color:#5C6157;margin-left:auto">Aller aux résultats</button>
+          <button onClick="{{ allerResultats }}" style="font-size:13.5px;padding:11px 20px;border:1px solid var(--bordure);background:var(--surface-haute);border-radius:7px;cursor:pointer;color:var(--encre-3);margin-left:auto">Aller aux résultats</button>
         </sc-if>
         <sc-if value="{{ aSuivant }}" hint-placeholder-val="{{ true }}">
-          <button onClick="{{ suivant }}" style="font-size:13.5px;font-weight:600;padding:11px 24px;border:0;background:#20291F;color:#FAF9F5;border-radius:7px;cursor:pointer;margin-left:{{ margeSuivant }}" style-hover="background:#3A4538">{{ labelSuivant }} →</button>
+          <button onClick="{{ suivant }}" style="font-size:13.5px;font-weight:600;padding:11px 24px;border:0;background:var(--encre);color:var(--surface-basse);border-radius:7px;cursor:pointer;margin-left:{{ margeSuivant }}" style-hover="background:var(--encre-survol)">{{ labelSuivant }} →</button>
         </sc-if>
       </div>
     </main>
@@ -1635,30 +1705,30 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
            générales de l'exploitation) et 2 (parcelle + géométrie) ;
            réapparaît dès l'écran 3. -->
       <sc-if value="{{ syntheseVisible }}" hint-placeholder-val="{{ true }}">
-        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:10px;overflow:hidden">
-          <div style="background:#20291F;color:#FAF9F5;padding:12px 16px;font-family:'Newsreader',serif;font-weight:600;font-size:13.5px">Synthèse en continu</div>
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:10px;overflow:hidden">
+          <div style="background:var(--encre);color:var(--surface-basse);padding:12px 16px;font-family:'Newsreader',serif;font-weight:600;font-size:13.5px">Synthèse en continu</div>
           <div style="padding:14px 16px">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#9A9E97;letter-spacing:0.08em;margin-bottom:6px">PARCELLE</div>
-            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted #DDD9CE"><span style="color:#5C6157">Surface</span><b class="mono">{{ sySurf }}</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted #DDD9CE"><span style="color:#5C6157">Densité</span><b class="mono">{{ syDens }}</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted #DDD9CE"><span style="color:#5C6157">Pieds à planter</span><b class="mono">{{ syPieds }}</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0"><span style="color:#5C6157">Cahier des charges</span><b style="color:{{ aocFg }}">{{ aocBadge }}</b></div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--encre-4);letter-spacing:0.08em;margin-bottom:6px">PARCELLE</div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)"><span style="color:var(--encre-3)">Surface</span><b class="mono">{{ sySurf }}</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)"><span style="color:var(--encre-3)">Densité</span><b class="mono">{{ syDens }}</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)"><span style="color:var(--encre-3)">Pieds à planter</span><b class="mono">{{ syPieds }}</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0"><span style="color:var(--encre-3)">Cahier des charges</span><b style="color:{{ aocFg }}">{{ aocBadge }}</b></div>
             <sc-if value="{{ erreurSurface }}" hint-placeholder-val="{{ false }}">
-              <div style="margin-top:8px;font-size:11.5px;padding:8px 10px;border-radius:5px;background:#F3E0DD;color:#A5433A">⚠ {{ erreurSurface }}</div>
+              <div style="margin-top:8px;font-size:11.5px;padding:8px 10px;border-radius:5px;background:var(--alerte-fond);color:var(--alerte)">⚠ {{ erreurSurface }}</div>
             </sc-if>
 
-            <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#9A9E97;letter-spacing:0.08em;margin:14px 0 6px">FINANCEMENT</div>
-            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted #DDD9CE"><span style="color:#5C6157">Investissement brut</span><b class="mono">{{ investTxt }}</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted #DDD9CE"><span style="color:#5C6157">Réserve mobilisée</span><b style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ reserveReelleTxt }}</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0"><span style="color:#5C6157">Effort net</span><b style="font-family:'JetBrains Mono',monospace;color:#4C7A57">{{ effortNetTxt }}</b></div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--encre-4);letter-spacing:0.08em;margin:14px 0 6px">FINANCEMENT</div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)"><span style="color:var(--encre-3)">Investissement brut</span><b class="mono">{{ investTxt }}</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)"><span style="color:var(--encre-3)">Réserve mobilisée</span><b style="font-family:'JetBrains Mono',monospace;color:var(--accent)">{{ reserveReelleTxt }}</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0"><span style="color:var(--encre-3)">Effort net</span><b style="font-family:'JetBrains Mono',monospace;color:var(--vegetal)">{{ effortNetTxt }}</b></div>
 
-            <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#9A9E97;letter-spacing:0.08em;margin:14px 0 6px">RISQUE</div>
-            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted #DDD9CE"><span style="color:#5C6157">Tension max trésorerie</span><b style="font-family:'JetBrains Mono',monospace;color:#A5433A">{{ creuxTxt }}</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0"><span style="color:#5C6157">Réserve min transition</span><b style="font-family:'JetBrains Mono',monospace;color:{{ stockMinC }}">{{ stockMinTxt }} kg/ha</b></div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--encre-4);letter-spacing:0.08em;margin:14px 0 6px">RISQUE</div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)"><span style="color:var(--encre-3)">Tension max trésorerie</span><b style="font-family:'JetBrains Mono',monospace;color:var(--alerte)">{{ creuxTxt }}</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0"><span style="color:var(--encre-3)">Réserve min transition</span><b style="font-family:'JetBrains Mono',monospace;color:{{ stockMinC }}">{{ stockMinTxt }} kg/ha</b></div>
           </div>
-          <button onClick="{{ allerResultats }}" style="width:100%;border:0;border-top:1px solid #DDD9CE;background:#F1E6CC;padding:11px;font-size:13.5px;font-weight:600;cursor:pointer;color:#20291F">Voir les résultats détaillés →</button>
+          <button onClick="{{ allerResultats }}" style="width:100%;border:0;border-top:1px solid var(--bordure);background:var(--accent-fond);padding:11px;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--encre)">Voir les résultats détaillés →</button>
         </div>
-        <div style="font-size:11.5px;color:#9A9E97;margin-top:12px;line-height:1.5;padding:0 4px">Simulation pédagogique, recalculée à chaque saisie. Les hypothèses de coût sont à valider avec votre conseil avant tout usage réel.</div>
+        <div style="font-size:11.5px;color:var(--encre-4);margin-top:12px;line-height:1.5;padding:0 4px">Simulation pédagogique, recalculée à chaque saisie. Les hypothèses de coût sont à valider avec votre conseil avant tout usage réel.</div>
       </sc-if>
     </aside>
 
@@ -1790,11 +1860,11 @@ function lireInstantane() {
     return o;
   } catch (e) { return null; }
 }
-function ecrireInstantane(v, registreRows, registreImporte, champsTouches, accueilVu) {
+function ecrireInstantane(v, registreRows, registreImporte, champsTouches, accueilVu, theme) {
   try {
     window.localStorage.setItem(CLE_STOCKAGE,
       JSON.stringify({ version: VERSION_STOCKAGE, v, registreRows, registreImporte,
-        champsTouches, accueilVu }));
+        champsTouches, accueilVu, theme }));
     return true;
   } catch (e) { return false; }
 }
@@ -1843,6 +1913,12 @@ function fusionnerRegistre(defaut, restaure) {
 
 // Valeurs par défaut des saisies — sorties de `this.state` au prompt B1 pour
 // que « Effacer mes données » puisse y revenir sans dupliquer la liste.
+/* prompt 13 — le thème est une préférence de poste, pas une donnée de
+   simulation : il rejoint l'instantané localStorage (l'outil est montré au
+   vidéoprojecteur, on ne veut pas rebasculer à chaque ouverture), mais il
+   vit à part de state.v pour ne pas polluer l'objet des saisies. */
+const THEMES = { clair: 'clair', sombre: 'sombre' };
+
 const V_DEFAUTS = {
   surfTot: 10, ageMoy: 38, riPct: 75,
   // prompt B3 — VolCo de la campagne 2026, décision du Bureau exécutif du
@@ -1947,6 +2023,10 @@ class Component extends DCLogic {
       // visite. Ensuite il reste atteignable en permanence depuis l'en-tête.
       accueilVu: !!(instantane && instantane.accueilVu),
       accueilOuvert: !(instantane && instantane.accueilVu),
+      // prompt 13 — thème de projection. Clair par défaut : c'est la version
+      // de travail. Un instantané antérieur à ce prompt n'en porte pas, d'où
+      // le repli explicite plutôt qu'un `||` qui accepterait n'importe quoi.
+      theme: (instantane && instantane.theme === THEMES.sombre) ? THEMES.sombre : THEMES.clair,
       // Volets « Ajuster » (prompt B4) — repliés par défaut sur chaque écran.
       ajusterOuvert1: false, ajusterOuvert3: false, ajusterOuvert4: false,
       // prompt 3 — le registre parcellaire et l'import de fichier sont deux
@@ -2046,13 +2126,26 @@ class Component extends DCLogic {
   // ne pas toucher au stockage à chaque re-rendu de navigation (ouverture d'un
   // volet, changement d'étape) qui ne modifie aucune donnée.
   componentDidUpdate() {
+    this.appliquerTheme();
     const instantane = JSON.stringify({ v: this.state.v, registreRows: this.state.registreRows,
       registreImporte: this.state.registreImporte, champsTouches: this.state.champsTouches,
-      accueilVu: this.state.accueilVu });
+      accueilVu: this.state.accueilVu, theme: this.state.theme });
     if (instantane === this.__dernierInstantane) return;
     this.__dernierInstantane = instantane;
     ecrireInstantane(this.state.v, this.state.registreRows, this.state.registreImporte,
-      this.state.champsTouches, this.state.accueilVu);
+      this.state.champsTouches, this.state.accueilVu, this.state.theme);
+  }
+
+  componentDidMount() { this.appliquerTheme(); }
+
+  /* Le thème est porté par un attribut sur l'ÉLÉMENT RACINE — c'est là que
+     les jetons sont déclarés, et c'est le seul nœud qui englobe aussi bien le
+     gabarit que le fond de page peint par <body>. Il est posé depuis le
+     composant plutôt que dans le gabarit : rien dans <x-dc> ne peut atteindre
+     <html>. */
+  appliquerTheme() {
+    if (typeof document === 'undefined' || !document.documentElement) return;
+    document.documentElement.setAttribute('data-theme', this.state.theme);
   }
 
   // Remet l'outil dans l'état d'une première visite : instantané effacé,
@@ -2287,18 +2380,18 @@ class Component extends DCLogic {
     const ch = [];
     for (let i = 0; i <= 4; i++) {
       const val = yMin + (yMax - yMin) * i / 4, y = Y(val);
-      ch.push(e('line', { key: 'g' + i, x1: mL, x2: W - mR, y1: y, y2: y, stroke: '#EDEAE1' }));
-      ch.push(e('text', { key: 'gl' + i, x: mL - 8, y: y + 4, textAnchor: 'end', fontSize: 10.5, fill: '#8B8E8A', fontFamily: 'JetBrains Mono' }, (opt.fmt || (x => x))(val).replace(' €', '')));
+      ch.push(e('line', { key: 'g' + i, x1: mL, x2: W - mR, y1: y, y2: y, stroke: 'var(--bordure-claire)' }));
+      ch.push(e('text', { key: 'gl' + i, x: mL - 8, y: y + 4, textAnchor: 'end', fontSize: 10.5, fill: 'var(--encre-4)', fontFamily: 'JetBrains Mono' }, (opt.fmt || (x => x))(val).replace(' €', '')));
     }
-    ch.push(e('line', { key: 'z', x1: mL, x2: W - mR, y1: Y(0), y2: Y(0), stroke: '#20291F', strokeWidth: 1 }));
+    ch.push(e('line', { key: 'z', x1: mL, x2: W - mR, y1: Y(0), y2: Y(0), stroke: 'var(--encre)', strokeWidth: 1 }));
     if (opt.ref) {
       const y = Y(opt.ref.v);
-      ch.push(e('line', { key: 'r', x1: mL, x2: W - mR, y1: y, y2: y, stroke: '#A97F26', strokeWidth: 1, strokeDasharray: '2 3' }));
-      ch.push(e('text', { key: 'rl', x: W - mR, y: y - 5, textAnchor: 'end', fontSize: 10, fill: '#A97F26' }, opt.ref.label));
+      ch.push(e('line', { key: 'r', x1: mL, x2: W - mR, y1: y, y2: y, stroke: 'var(--accent)', strokeWidth: 1, strokeDasharray: '2 3' }));
+      ch.push(e('text', { key: 'rl', x: W - mR, y: y - 5, textAnchor: 'end', fontSize: 10, fill: 'var(--accent)' }, opt.ref.label));
     }
-    for (let t = 0; t <= n; t++) ch.push(e('text', { key: 'x' + t, x: X(t), y: H - mB + 16, textAnchor: 'middle', fontSize: 10.5, fill: '#8B8E8A', fontFamily: 'JetBrains Mono' }, String(t)));
-    if (opt.xTitle) ch.push(e('text', { key: 'xt', x: (mL + W - mR) / 2, y: H - 4, textAnchor: 'middle', fontSize: 10.5, fill: '#5C6157' }, opt.xTitle));
-    if (opt.yTitle) ch.push(e('text', { key: 'yt', transform: `translate(16,${(mT + H - mB) / 2}) rotate(-90)`, textAnchor: 'middle', fontSize: 10.5, fill: '#5C6157' }, opt.yTitle));
+    for (let t = 0; t <= n; t++) ch.push(e('text', { key: 'x' + t, x: X(t), y: H - mB + 16, textAnchor: 'middle', fontSize: 10.5, fill: 'var(--encre-4)', fontFamily: 'JetBrains Mono' }, String(t)));
+    if (opt.xTitle) ch.push(e('text', { key: 'xt', x: (mL + W - mR) / 2, y: H - 4, textAnchor: 'middle', fontSize: 10.5, fill: 'var(--encre-3)' }, opt.xTitle));
+    if (opt.yTitle) ch.push(e('text', { key: 'yt', transform: `translate(16,${(mT + H - mB) / 2}) rotate(-90)`, textAnchor: 'middle', fontSize: 10.5, fill: 'var(--encre-3)' }, opt.yTitle));
     series.forEach((s, i) => ch.push(e('path', { key: 'p' + i, d: path(s.pts), fill: 'none', stroke: s.c, strokeWidth: s.w, strokeDasharray: s.dash, strokeLinejoin: 'round' })));
     // Marqueurs de forme par série (accessibilité vision dichromate — ne pas
     // reposer sur la seule couleur) : opt-in via s.marker ('circle'|'square'|
@@ -2377,7 +2470,7 @@ class Component extends DCLogic {
       ch.push(e('rect', { key: 'bd' + i, x: X(bd.a), y: yHaut - 10,
         width: X(bd.b) - X(bd.a), height: yBase - yHaut + 10, fill: bd.c }));
       ch.push(e('text', { key: 'bdl' + i, x: (X(bd.a) + X(bd.b)) / 2, y: yHaut - 14,
-        textAnchor: 'middle', fontSize: 10.5, fill: '#5C6157',
+        textAnchor: 'middle', fontSize: 10.5, fill: 'var(--encre-3)',
         fontFamily: 'JetBrains Mono, monospace' }, bd.lib));
     });
 
@@ -2391,34 +2484,34 @@ class Component extends DCLogic {
         width: Math.max(6, X(1) - X(0) - 6), height: hb, fill: '#A97F26', opacity: 0.35 }));
     });
     ch.push(e('text', { key: 'rsl', x: X(0) + 4, y: yBase + 34, fontSize: 10.5,
-      fill: '#8E6A1F', fontFamily: 'JetBrains Mono, monospace' },
+      fill: 'var(--accent-fonce)', fontFamily: 'JetBrains Mono, monospace' },
       'réserve individuelle — elle se vide pour combler le trou, puis se reconstitue'));
 
     // Courbe de rendement : elle tombe à zéro dès l'arrachage et ne remonte
     // qu'à partir de la 3e feuille.
     const rendement = [[0, 0.82], [0.35, 0], [2, 0], [4, 0.3], [5, 0.55], [6, 0.8], [7, 1], [8, 1]];
     const d = rendement.map(([t, r], i) => (i ? 'L' : 'M') + X(t).toFixed(1) + ' ' + Y(r).toFixed(1)).join(' ');
-    ch.push(e('path', { key: 'rd', d, fill: 'none', stroke: '#20291F', strokeWidth: 2.6,
+    ch.push(e('path', { key: 'rd', d, fill: 'none', stroke: 'var(--encre)', strokeWidth: 2.6,
       strokeLinejoin: 'round', strokeLinecap: 'round' }));
-    ch.push(e('text', { key: 'rdl', x: X(6.1), y: Y(1) - 8, fontSize: 11, fill: '#20291F',
+    ch.push(e('text', { key: 'rdl', x: X(6.1), y: Y(1) - 8, fontSize: 11, fill: 'var(--encre)',
       fontFamily: 'JetBrains Mono, monospace' }, 'rendement'));
 
     // Axes minimalistes.
-    ch.push(e('line', { key: 'ax', x1: x0, x2: x1, y1: yBase, y2: yBase, stroke: '#20291F', strokeWidth: 1.2 }));
+    ch.push(e('line', { key: 'ax', x1: x0, x2: x1, y1: yBase, y2: yBase, stroke: 'var(--encre)', strokeWidth: 1.2 }));
     ch.push(e('text', { key: 'ay1', x: x0 - 8, y: yHaut + 4, textAnchor: 'end', fontSize: 10,
-      fill: '#5C6157', fontFamily: 'JetBrains Mono, monospace' }, '100 %'));
+      fill: 'var(--encre-3)', fontFamily: 'JetBrains Mono, monospace' }, '100 %'));
     ch.push(e('text', { key: 'ay0', x: x0 - 8, y: yBase + 4, textAnchor: 'end', fontSize: 10,
-      fill: '#5C6157', fontFamily: 'JetBrains Mono, monospace' }, '0'));
+      fill: 'var(--encre-3)', fontFamily: 'JetBrains Mono, monospace' }, '0'));
 
     // Jalons.
     etapes.forEach((et, i) => {
       ch.push(e('line', { key: 'jl' + i, x1: X(et.t), x2: X(et.t), y1: yHaut - 10, y2: yBase,
-        stroke: '#20291F', strokeWidth: 1, strokeDasharray: '3 3', opacity: 0.45 }));
-      ch.push(e('circle', { key: 'jc' + i, cx: X(et.t), cy: yBase, r: 4, fill: '#20291F' }));
+        stroke: 'var(--encre)', strokeWidth: 1, strokeDasharray: '3 3', opacity: 0.45 }));
+      ch.push(e('circle', { key: 'jc' + i, cx: X(et.t), cy: yBase, r: 4, fill: 'var(--encre)' }));
       ch.push(e('text', { key: 'jt' + i, x: X(et.t), y: yBase + 16, textAnchor: i === 0 ? 'start' : 'middle',
-        fontSize: 11, fontWeight: 600, fill: '#20291F' }, et.lib));
+        fontSize: 11, fontWeight: 600, fill: 'var(--encre)' }, et.lib));
       ch.push(e('text', { key: 'js' + i, x: X(et.t), y: yBase + 28, textAnchor: i === 0 ? 'start' : 'middle',
-        fontSize: 10, fill: '#5C6157' }, et.sous));
+        fontSize: 10, fill: 'var(--encre-3)' }, et.sous));
     });
 
     return e('svg', {
@@ -2460,9 +2553,9 @@ class Component extends DCLogic {
       production: { fond: '#4C7A57', encre: '#FAF9F5' }
     };
     const libelle = (k, principal, secondaire) => e('div', { key: k,
-      style: { fontSize: '11.5px', color: '#42473F', textAlign: 'right', lineHeight: 1.35 } },
+      style: { fontSize: '11.5px', color: 'var(--encre-2)', textAlign: 'right', lineHeight: 1.35 } },
       principal, e('br', { key: 'br' }),
-      e('span', { key: 'sec', style: { color: '#8E6A1F' } }, secondaire));
+      e('span', { key: 'sec', style: { color: 'var(--accent-fonce)' } }, secondaire));
 
     /* ---- piste 1 : phase de la parcelle ---------------------------------
        Segments proportionnels aux durées RÉELLES (flexGrow = nombre
@@ -2506,11 +2599,11 @@ class Component extends DCLogic {
       e('circle', { key: 'creux', cx: X(d.creuxT), cy: Y(d.stock[d.creuxT]), r: 4.5, fill: '#A5433A' })
     ]);
     const aDroite = d.creuxT > (N - 1) * 0.7;   // l'étiquette ne doit pas sortir de la piste
-    const piste2 = e('div', { key: 'p2', style: { height: H + 'px', borderBottom: '1px solid #DDD9CE', position: 'relative' } }, [
+    const piste2 = e('div', { key: 'p2', style: { height: H + 'px', borderBottom: '1px solid var(--bordure)', position: 'relative' } }, [
       svgStock,
       e('div', { key: 'lbl', style: { position: 'absolute', left: (X(d.creuxT) / W * 100) + '%',
         top: Math.min(H - 22, Y(d.stock[d.creuxT]) + 8) + 'px', fontSize: '11.5px', color: '#A5433A',
-        background: '#fff', padding: '0 5px', whiteSpace: 'nowrap',
+        background: 'var(--surface-haute)', padding: '0 5px', whiteSpace: 'nowrap',
         transform: aDroite ? 'translateX(-100%)' : 'none' } },
         'creux ' + d.creuxTxt)
     ]);
@@ -2533,11 +2626,11 @@ class Component extends DCLogic {
         e('div', { style: { height: h + 'px', background: c, borderRadius: '0 0 3px 3px' } }));
     });
     const piste3 = e('div', { key: 'p3', style: { display: 'flex', alignItems: 'flex-start', gap: '3px',
-      height: HB + 'px', borderTop: '1px solid #DDD9CE' } }, barres);
+      height: HB + 'px', borderTop: '1px solid var(--bordure)' } }, barres);
 
     /* ---- graduation : mêmes colonnes flex:1 et même gap que les barres --- */
     const graduation = e('div', { key: 'grad', style: { display: 'flex', gap: '3px',
-      fontFamily: "'JetBrains Mono',monospace", fontSize: '11.5px', color: '#5C6157' } },
+      fontFamily: "'JetBrains Mono',monospace", fontSize: '11.5px', color: 'var(--encre-3)' } },
       d.annees.map(t => e('div', { key: 'g' + t, style: { flex: '1', textAlign: 'center' } }, String(t))));
 
     return e('div', { style: { display: 'grid', gridTemplateColumns: '118px 1fr',
@@ -2569,16 +2662,16 @@ class Component extends DCLogic {
     const bandes = Array.from({ length: n }, (_, i) => e('div', { key: 'r' + i,
       style: { flex: '1', background: 'linear-gradient(180deg,#4C7A57,#3B5F43)', borderRadius: '2px' } }));
     const cote = (txt, droite) => e('span', { key: droite ? 'cd' : 'cg',
-      style: { fontFamily: "'JetBrains Mono',monospace", fontSize: '11.5px', color: '#5C6157' } }, txt);
+      style: { fontFamily: "'JetBrains Mono',monospace", fontSize: '11.5px', color: 'var(--encre-3)' } }, txt);
     const pied = (k, txt, droite) => e('div', { key: k,
-      style: { textAlign: droite ? 'right' : 'left', fontSize: '11.5px', color: '#5C6157' } }, txt);
-    return e('div', { style: { background: '#FAF9F5', border: '1px solid #DDD9CE',
+      style: { textAlign: droite ? 'right' : 'left', fontSize: '11.5px', color: 'var(--encre-3)' } }, txt);
+    return e('div', { style: { background: 'var(--surface-basse)', border: '1px solid var(--bordure)',
       borderRadius: '8px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' } }, [
       e('div', { key: 'rangs', title: d.titreRangs,
         style: { display: 'flex', gap: '2px', height: '150px', alignItems: 'stretch' } }, bandes),
       e('div', { key: 'cotes', style: { display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', gap: '10px' } }, [cote(d.coteRangs), cote(d.coteLongueur, true)]),
-      e('div', { key: 'pied', style: { borderTop: '1px solid #DDD9CE', paddingTop: '10px',
+      e('div', { key: 'pied', style: { borderTop: '1px solid var(--bordure)', paddingTop: '10px',
         display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' } }, [
         pied('p1', d.metresRang), pied('p2', d.pieds, true),
         pied('p3', d.surface), pied('p4', d.densite, true)
@@ -2665,13 +2758,13 @@ class Component extends DCLogic {
       // fond, invisible pour un lecteur d'écran.
       courante: s.step === i ? 'step' : undefined,
       go: () => this.setState({ step: i }),
-      bg: s.step === i ? '#F1E6CC' : '#FAF9F5',
-      fg: s.step === i ? '#20291F' : '#42473F',
-      subFg: s.step === i ? '#5C6157' : '#9A9E97',
-      surtitreFg: s.step === i ? '#8E6A1F' : '#A97F26',
+      bg: s.step === i ? 'var(--accent-fond)' : 'var(--surface-basse)',
+      fg: s.step === i ? 'var(--encre)' : 'var(--encre-2)',
+      subFg: s.step === i ? 'var(--encre-3)' : 'var(--encre-4)',
+      surtitreFg: s.step === i ? 'var(--accent-fonce)' : 'var(--accent)',
       // Le dernier pavé n'a pas de séparateur à droite : il touche déjà la
       // bordure du conteneur.
-      sep: i === labels.length - 1 ? 'transparent' : '#DDD9CE',
+      sep: i === labels.length - 1 ? 'transparent' : 'var(--bordure)',
       poids: s.step === i ? 600 : 400
     }));
 
@@ -2910,9 +3003,9 @@ class Component extends DCLogic {
               + this.fmtKg(confDensite.max) + ' pieds/ha). Rapprochez les rangs ou les pieds.'
             : 'au-dessus de la borne haute de l\'AOC Champagne (' + this.fmtKg(confDensite.min)
               + ' à ' + this.fmtKg(confDensite.max) + ' pieds/ha). Écartez les rangs ou les pieds.'),
-      densiteBg: confDensite.ok ? '#E3EDE5' : '#F1E6CC',
-      densiteBd: confDensite.ok ? '#4C7A57' : '#A97F26',
-      densiteFg: confDensite.ok ? '#2F5B3C' : '#8E6A1F',
+      densiteBg: confDensite.ok ? 'var(--vegetal-fond)' : 'var(--accent-fond)',
+      densiteBd: confDensite.ok ? 'var(--vegetal)' : 'var(--accent)',
+      densiteFg: confDensite.ok ? 'var(--vegetal-fonce)' : 'var(--accent-fonce)',
       schemaParcelle: this.schemaParcelle({
         nbRangs: g.nbRangs,
         titreRangs: g.nbRangs + ' rangs · écart ' + this.fmtM(g.eR) + ' m',
@@ -2958,8 +3051,12 @@ class Component extends DCLogic {
         if (ok) this.reinitialiserDonnees();
       },
       lexiqueLabel: s.lexiqueOuvert ? '✕ Fermer le lexique' : 'Lexique',
-      lexiqueBg: s.lexiqueOuvert ? '#20291F' : '#fff',
-      lexiqueFg: s.lexiqueOuvert ? '#FAF9F5' : '#20291F',
+      themeLabel: s.theme === THEMES.sombre ? '☀ Thème clair' : '☾ Thème de projection',
+      themeAria: s.theme === THEMES.sombre ? 'true' : 'false',
+      basculerTheme: () => this.setState(st => ({
+        theme: st.theme === THEMES.sombre ? THEMES.clair : THEMES.sombre })),
+      lexiqueBg: s.lexiqueOuvert ? 'var(--encre)' : 'var(--surface-haute)',
+      lexiqueFg: s.lexiqueOuvert ? 'var(--encre-inverse)' : 'var(--encre)',
       // Définitions des termes de métier employés dans l'outil — un vigneron
       // champenois les connaît, mais l'outil s'adresse aussi à des conseillers
       // et des étudiants qui butent dessus dès l'étape 1.
@@ -3037,10 +3134,10 @@ class Component extends DCLogic {
           // Un seul onglet dans l'ordre de tabulation (motif « tabs » ARIA) :
           // on entre dans la barre par Tab, on s'y déplace par les flèches.
           tabindex: s.ongletResultat === i ? '0' : '-1',
-          bg: s.ongletResultat === i ? '#fff' : '#FAF9F5',
-          fg: s.ongletResultat === i ? '#20291F' : '#5C6157',
+          bg: s.ongletResultat === i ? 'var(--surface-haute)' : 'var(--surface-basse)',
+          fg: s.ongletResultat === i ? 'var(--encre)' : 'var(--encre-3)',
           poids: s.ongletResultat === i ? '600' : '400',
-          souligne: s.ongletResultat === i ? '#A97F26' : 'transparent',
+          souligne: s.ongletResultat === i ? 'var(--accent)' : 'transparent',
           go: () => this.setState({ ongletResultat: i })
         })),
       onglet0: s.ongletResultat === 0, onglet1: s.ongletResultat === 1,
@@ -3067,8 +3164,8 @@ class Component extends DCLogic {
       // panneau d'accueil : le focus entre sur le bouton de fermeture, Échap
       // ferme, et le focus revient au bouton qui a ouvert.
       hypothesesOuvert: s.hypothesesOuvert,
-      hypBg: s.hypothesesOuvert ? '#20291F' : '#fff',
-      hypFg: s.hypothesesOuvert ? '#FAF9F5' : '#20291F',
+      hypBg: s.hypothesesOuvert ? 'var(--encre)' : 'var(--surface-haute)',
+      hypFg: s.hypothesesOuvert ? 'var(--encre-inverse)' : 'var(--encre)',
       ouvrirHypotheses: () => this.setState({ hypothesesOuvert: true }, () => {
         const el = document.getElementById('hypotheses-fermer');
         if (el) el.focus();
@@ -3246,9 +3343,9 @@ class Component extends DCLogic {
           + 'réserve au lieu de la vider. Le test est moins sévère qu’il n’en a l’air.';
     out.aleaBandeauBouton = nbAnneesStress > 0
       ? 'Voir sans aléa climatique' : 'Réintroduire deux vendanges déficitaires';
-    out.aleaBandeauBg = nbAnneesStress > 0 ? '#F1E6CC' : '#E3EDE5';
-    out.aleaBandeauBd = nbAnneesStress > 0 ? '#A97F26' : '#4C7A57';
-    out.aleaBandeauFg = '#20291F';
+    out.aleaBandeauBg = nbAnneesStress > 0 ? 'var(--accent-fond)' : 'var(--vegetal-fond)';
+    out.aleaBandeauBd = nbAnneesStress > 0 ? 'var(--accent)' : 'var(--vegetal)';
+    out.aleaBandeauFg = 'var(--encre)';
     out.basculerAlea = () => this.setState(st => ({
       v: { ...st.v, sequence: st.v.sequence === 'aucune' ? 'creux34' : 'aucune' }
     }));
@@ -3422,8 +3519,8 @@ class Component extends DCLogic {
 
     // AOC
     const aocOK = g.aoc.rang && g.aoc.pied && g.aoc.somme;
-    out.aocBg = aocOK ? '#E3EDE5' : '#F3E0DD';
-    out.aocFg = aocOK ? '#4C7A57' : '#A5433A';
+    out.aocBg = aocOK ? 'var(--vegetal-fond)' : 'var(--alerte-fond)';
+    out.aocFg = aocOK ? 'var(--vegetal)' : 'var(--alerte)';
     out.aocTxt = aocOK ? '✓ Écartements conformes (rang ≤ 2,00 m · pied 0,70–1,50 m · somme ≤ 3,00 m — CDC 2025)'
       : '⚠ Hors cahier des charges : ' + [!g.aoc.rang ? 'rang > 2,00 m' : '', !g.aoc.pied ? 'pied hors 0,70–1,50 m' : '', !g.aoc.somme ? 'somme > 3,00 m' : ''].filter(Boolean).join(' · ');
     out.aocBadge = aocOK ? '✓ conforme' : '⚠ non conforme';
@@ -3433,7 +3530,7 @@ class Component extends DCLogic {
     out.pgTitre = v.porteGreffe;
     out.pgDesc = pgi[0];
     out.pgAvert = pgi[1];
-    out.pgNoteBg = pgi[1].startsWith('⚠') ? '#F3E0DD' : '#E3EDE5';
+    out.pgNoteBg = pgi[1].startsWith('⚠') ? 'var(--alerte-fond)' : 'var(--vegetal-fond)';
 
     // conséquences — chantier B4 : VSL/Traditionnelle et Fil porteur retirés
     // (dépendaient du détecteur `vsl`, lui-même retiré de la géométrie)
@@ -3472,7 +3569,7 @@ class Component extends DCLogic {
         botrytis: vide(c.botrytis),
         remarque: c.remarqueGuide || c.remarquePlantGrape || '—',
         origineTxt: guide ? (horsRef ? 'G·P*' : 'G·P') : 'P',
-        origineFg: partielle ? '#A97F26' : '#9A9E97',
+        origineFg: partielle ? 'var(--accent)' : 'var(--encre-4)',
         origineTitre: 'Origine : ' + c.sources.join(' + '),
         // Badge d'alerte au même traitement visuel que l'avertissement 161-49 C
         // sur les porte-greffes (fond #F3E0DD, texte #A5433A, préfixe ⚠).
@@ -3486,14 +3583,14 @@ class Component extends DCLogic {
       + 'à confirmer avant diffusion. Information seule : aucune de ces colonnes n’entre dans le calcul économique.';
     if (OAD) {
       const r = OAD.preconPorteGreffe(+v.calcaireActif, v.profondeurSol, v.drainageSol);
-      if (r.match === 'incomplet') { out.preconPg = '—'; out.preconMsg = 'Renseignez le calcaire actif et la profondeur.'; out.preconBg = '#E3EDE5'; }
-      else if (!r.pg.length) { out.preconPg = '—'; out.preconMsg = r.msg || ''; out.preconBg = '#F3E0DD'; }
+      if (r.match === 'incomplet') { out.preconPg = '—'; out.preconMsg = 'Renseignez le calcaire actif et la profondeur.'; out.preconBg = 'var(--vegetal-fond)'; }
+      else if (!r.pg.length) { out.preconPg = '—'; out.preconMsg = r.msg || ''; out.preconBg = 'var(--alerte-fond)'; }
       else {
         out.preconPg = r.pg.map(p => p === v.porteGreffe ? p + ' ✓' : p).join('  ·  ');
         out.preconMsg = (r.match === 'approche' ? r.msg + ' ' : '') + (r.notes.length ? r.notes.map(n => '⚠ ' + n).join(' ') : 'Préconisation du guide — à valider par une analyse de terre.');
-        out.preconBg = '#E3EDE5';
+        out.preconBg = 'var(--vegetal-fond)';
       }
-    } else { out.preconPg = '—'; out.preconMsg = ''; out.preconBg = '#E3EDE5'; }
+    } else { out.preconPg = '—'; out.preconMsg = ''; out.preconBg = 'var(--vegetal-fond)'; }
 
     // palissage détail — chantier A5 : chaque ligne porte sa catégorie
     // (obligatoire/optionnel) ; seules les lignes optionnelles affichent une
@@ -3561,7 +3658,7 @@ class Component extends DCLogic {
     if (!OAD || out.erreurSurface) {
       const kpiVide = { lib: '…', val: '…', det: '' };
       Object.assign(out, { investTxt: '…', reserveReelleTxt: '…', reserveTheoTxt: '…', effortNetTxt: '…',
-        creuxTxt: '…', creuxT: '…', creuxAbsTxt: '…', creuxAbsT: '…', stockMinTxt: '…', stockMinC: '#A97F26', tMin: '…',
+        creuxTxt: '…', creuxT: '…', creuxAbsTxt: '…', creuxAbsT: '…', stockMinTxt: '…', stockMinC: 'var(--accent)', tMin: '…',
         kpiInvestTotal: kpiVide, kpiPointBas: kpiVide, kpiAmortisseur: kpiVide, kpiEffortNet: kpiVide,
         kpiReserveMin: kpiVide, kpiEcartAge: kpiVide, kpiStockReserve: kpiVide, regimesTravail: [],
         // prompt 5 — les trois chiffres de tête ont le même repli que les KPI :
@@ -3669,7 +3766,7 @@ class Component extends DCLogic {
         nbAnneesTxt: r.nbAnnees + (r.nbAnnees > 1 ? ' ans' : ' an'),
         heuresTxt: nf(r.heuresHaAn, 0) + ' h/ha',
         vendangeTxt: r.vendangeActive ? 'oui' : 'non',
-        vendangeFg: r.vendangeActive ? '#4C7A57' : '#9A9E97',
+        vendangeFg: r.vendangeActive ? 'var(--vegetal)' : 'var(--encre-4)',
         chargeSurfaceTxt: nf(chargeSurfaceParRegime[r.id] || 0, 0) + ' €/ha/an',
         messageTxt
       };
@@ -3754,7 +3851,7 @@ class Component extends DCLogic {
     out.creuxAbsTxt = this.fmtE0(creuxAbs.v);
     out.creuxAbsT = String(creuxAbs.t);
     out.stockMinTxt = this.fmtKg(stockMin);
-    out.stockMinC = stockMin < seuil ? '#A5433A' : '#4C7A57';
+    out.stockMinC = stockMin < seuil ? 'var(--alerte)' : 'var(--vegetal)';
     out.tMin = String(tMin);
 
     // Synthèse rédigée (étape 5, bloc sombre) — texte assemblé selon les résultats,

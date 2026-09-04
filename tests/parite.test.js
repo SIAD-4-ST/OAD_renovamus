@@ -1837,6 +1837,42 @@ test('le schéma de parcelle est branché, et le volet « Ajuster » vidé a dis
     'le nombre de rangs reste saisissable — remonté dans la carte Géométrie');
 });
 
+section('27. Thème sombre de projection (prompt 13)');
+
+test('aucune couleur littérale ne subsiste dans le gabarit', () => {
+  const debut = INDEX_HTML.indexOf('</helmet>');
+  const fin = INDEX_HTML.indexOf('</x-dc>');
+  const gabarit = INDEX_HTML.slice(debut, fin);
+  const litterales = (gabarit.match(/#[0-9a-fA-F]{3,6}\b/g) || [])
+    .filter(c => c.toLowerCase() !== '#000');
+  assert.deepStrictEqual(litterales, [],
+    'toutes les couleurs du gabarit passent par un jeton var(--…) ; seul #000, '
+    + 'dans la fiche imprimée, reste littéral — on n\'imprime pas un aplat sombre');
+});
+
+test('les jetons sont déclarés sur :root et basculés par data-theme', () => {
+  assert.ok(/:root\{[\s\S]*?--encre:/.test(INDEX_HTML), 'le thème clair est le défaut, sur :root');
+  assert.ok(/:root\[data-theme="sombre"\]\{/.test(INDEX_HTML),
+    'le thème sombre redéfinit les mêmes jetons sous un attribut de la racine');
+  assert.ok(/document\.documentElement\.setAttribute\('data-theme'/.test(INDEX_HTML),
+    "l'attribut est posé depuis le composant : rien dans <x-dc> ne peut atteindre <html>");
+  // Les deux thèmes doivent définir exactement les mêmes jetons, sinon un
+  // basculement laisse une couleur du thème clair sur un fond sombre.
+  const clair = INDEX_HTML.match(/:root\{([\s\S]*?)\}/)[1];
+  const sombre = INDEX_HTML.match(/:root\[data-theme="sombre"\]\{([\s\S]*?)\}/)[1];
+  const jetons = t => (t.match(/--[a-z0-9-]+:/g) || []).sort();
+  assert.deepStrictEqual(jetons(sombre), jetons(clair),
+    'chaque jeton du thème clair doit avoir sa valeur sombre, et réciproquement');
+});
+
+test('le thème entre dans l\'instantané localStorage, le mode clair reste le défaut', () => {
+  const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,700}?\n\}/);
+  assert.ok(ecriture && /theme/.test(ecriture[0]),
+    'on ne veut pas rebasculer le thème à chaque ouverture en salle');
+  assert.ok(/instantane\.theme === THEMES\.sombre\) \? THEMES\.sombre : THEMES\.clair/.test(INDEX_HTML),
+    'un instantané antérieur à ce prompt, ou porteur d\'une valeur inconnue, retombe sur le clair');
+});
+
 // ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------
