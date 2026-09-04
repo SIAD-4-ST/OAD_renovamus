@@ -1568,6 +1568,351 @@ test('la saisie manuelle a bien disparu de l\'interface : plus de bouton, défau
     'plus aucune branche « hors mode registre » ne doit subsister dans le gabarit');
 });
 
+section('20. Synthèse du registre pour le bandeau replié (prompt 3)');
+
+test('synthetiseRegistre : nombre de lignes, surface totale, cépages distincts triés', () => {
+  const rows = [
+    { idu: 'A', cepage: 'CHARDONNAY B', surface: 0.05, situation: 'plantee' },
+    { idu: 'B', cepage: 'MEUNIER N', surface: 0.21, situation: 'arrachee' },
+    { idu: 'C', cepage: 'CHARDONNAY B', surface: 0.14, situation: 'plantee' },
+    { idu: 'D', cepage: 'PINOT NOIR N', surface: 0.10, situation: 'plantee' }
+  ];
+  const r = OAD.synthetiseRegistre(rows);
+  assert.strictEqual(r.nbLignes, 4);
+  assert.ok(Math.abs(r.surfaceTotale - 0.5) < 1e-9,
+    'la surface totale compte les lignes Arrachée, comme agregerRegistreExploitation : '
+    + 'le bandeau doit annoncer la même surface que le champ « Surface totale » au-dessus de lui');
+  assert.deepStrictEqual(r.cepages, ['CHARDONNAY B', 'MEUNIER N', 'PINOT NOIR N'],
+    'cépages dédoublonnés et triés — un ordre stable évite que le bandeau se réécrive '
+    + 'à chaque frappe dans une cellule sans rapport');
+});
+
+test('synthetiseRegistre : registre vide, cellules en cours de saisie, cépage absent', () => {
+  assert.deepStrictEqual(OAD.synthetiseRegistre([]), { nbLignes: 0, surfaceTotale: 0, cepages: [] });
+  assert.deepStrictEqual(OAD.synthetiseRegistre(undefined), { nbLignes: 0, surfaceTotale: 0, cepages: [] });
+  // Une cellule que l'utilisateur est en train de vider porte '' ou '0,' :
+  // elle ne doit ni rendre la surface NaN, ni ajouter un cépage vide.
+  const r = OAD.synthetiseRegistre([
+    { idu: 'A', cepage: '', surface: '', situation: 'plantee' },
+    { idu: 'B', cepage: '   ', surface: '0,', situation: 'plantee' },
+    { idu: 'C', cepage: 'MEUNIER N', surface: 0.3, situation: 'plantee' }
+  ]);
+  assert.strictEqual(r.nbLignes, 3);
+  assert.ok(Number.isFinite(r.surfaceTotale) && Math.abs(r.surfaceTotale - 0.3) < 1e-9);
+  assert.deepStrictEqual(r.cepages, ['MEUNIER N']);
+});
+
+test("le registre de l'étape 1 est replié par défaut, hors instantané localStorage", () => {
+  assert.ok(/registreOuvert:\s*false/.test(INDEX_HTML),
+    "state.registreOuvert doit exister et valoir false au chargement — c'est tout l'objet du prompt 3");
+  const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,600}?\n\}/);
+  assert.ok(ecriture && !/registreOuvert/.test(ecriture[0]),
+    "l'état d'ouverture du volet ne doit pas entrer dans l'instantané localStorage");
+});
+
+section('21. Phases de la parcelle renouvelée (prompts 5 et 7)');
+
+test('anneeRetourProduction : repos + 3, exactement le returnYear de simulerReserveKg', () => {
+  assert.strictEqual(OAD.anneeRetourProduction(1), 4);
+  assert.strictEqual(OAD.anneeRetourProduction(2), 5);
+  assert.strictEqual(OAD.anneeRetourProduction(3), 6);
+  // Le chiffre de tête « Retour en production » ne doit jamais annoncer une
+  // autre année que celle où le moteur remet la parcelle en production.
+  [1, 2, 3].forEach(repos => {
+    const sc = OAD.construireScenarios({ ...INP_A, repos, nbSortie: OAD.nbSortiePourRepos(repos) });
+    const retour = OAD.anneeRetourProduction(repos);
+    assert.strictEqual(sc.arrachage.kg[retour - 1].recolteParcelle, 0,
+      `année ${retour - 1} : la parcelle ne produit pas encore`);
+    assert.ok(sc.arrachage.kg[retour].recolteParcelle > 0,
+      `année ${retour} : la parcelle produit`);
+  });
+});
+
+test('phasesParcelle : découpe conforme à la convention de simulerReserveKg', () => {
+  assert.deepStrictEqual(OAD.phasesParcelle(3, 10), [
+    { id: 'arrachage', lib: 'arrachage', debut: 0, fin: 1 },
+    { id: 'repos', lib: 'repos du sol', debut: 1, fin: 3 },
+    { id: 'plantier', lib: 'plantier', debut: 3, fin: 6 },
+    { id: 'production', lib: 'en production', debut: 6, fin: 11 }
+  ]);
+  // repos = 1 : la plantation a lieu dès l'année 1, il n'y a aucune année de
+  // sol nu après celle de l'arrachage — le segment de durée nulle disparaît
+  // plutôt que de produire une bande de largeur zéro à l'écran.
+  const p1 = OAD.phasesParcelle(1, 10);
+  assert.deepStrictEqual(p1.map(x => x.id), ['arrachage', 'plantier', 'production']);
+  assert.strictEqual(p1[1].debut, 1);
+  assert.strictEqual(p1[2].debut, 4);
+});
+
+test('phaseParAnnee : un identifiant par année, sur toute la largeur de l\'axe', () => {
+  assert.deepStrictEqual(OAD.phaseParAnnee(3, 10),
+    ['arrachage', 'repos', 'repos', 'plantier', 'plantier', 'plantier',
+     'production', 'production', 'production', 'production', 'production']);
+  assert.strictEqual(OAD.phaseParAnnee(2, 10).length, 11,
+    'autant d\'entrées que de colonnes d\'année : la frise doit s\'aligner sur la graduation');
+  // Horizon plus court que la transition : rien ne dépasse, rien ne manque.
+  assert.strictEqual(OAD.phaseParAnnee(3, 4).length, 5);
+  assert.deepStrictEqual(OAD.phasesParcelle(3, 4).map(x => x.id),
+    ['arrachage', 'repos', 'plantier']);
+});
+
+section('22. Trésorerie cumulée exposée par le moteur (prompt 7)');
+
+test('tresorerieCumulee : mêmes valeurs que le cumul assemblé jusqu\'ici dans index.html', () => {
+  const sc = OAD.construireScenarios(INP_A);
+  const fv = INP_A.fv;
+  // Reproduction littérale de l'ancien code d'index.html, avant qu'il ne soit
+  // remplacé par l'appel au moteur. C'est le seul but de ce test : figer que
+  // le déplacement n'a rien changé au chiffre.
+  const cum = a => { let acc = 0; return a.map(x => (acc += x)); };
+  ['1', 'exp', 'prop'].forEach(vue => {
+    const ancienEnsemble = cum(sc.arrachage.eur.map(row => {
+      if (vue === '1') return row.cashNet;
+      const p = OAD.repartir(row, fv);
+      return vue === 'exp' ? p.exp : p.prop;
+    }));
+    assert.deepStrictEqual(OAD.tresorerieCumulee(sc.arrachage, fv, vue).cumulee, ancienEnsemble,
+      `vue ${vue} — trésorerie de l'ensemble de l'exploitation`);
+
+    const ancienParcelle = cum(sc.arrachage.eur.map(row => {
+      if (vue === '1') return row.venteRaisinParcelle + row.cashRI - row.coutsParcelle;
+      const p = OAD.repartir({ ...row, venteRaisinReste: 0, coutsReste: 0 }, fv);
+      return vue === 'exp' ? p.exp : p.prop;
+    }));
+    assert.deepStrictEqual(
+      OAD.tresorerieCumulee(sc.arrachage, fv, vue, { parcelleSeule: true }).cumulee, ancienParcelle,
+      `vue ${vue} — parcelle seule`);
+  });
+});
+
+test('tresorerieCumulee : le cumul est bien le cumul de l\'annuelle, et rien n\'est muté', () => {
+  const sc = OAD.construireScenarios(INP_A);
+  const avant = JSON.stringify(sc.arrachage.eur);
+  const r = OAD.tresorerieCumulee(sc.arrachage, INP_A.fv, '1', { parcelleSeule: true });
+  assert.strictEqual(r.cumulee.length, sc.arrachage.eur.length);
+  r.cumulee.forEach((v, t) => {
+    const attendu = r.annuelle.slice(0, t + 1).reduce((a, b) => a + b, 0);
+    assert.ok(Math.abs(v - attendu) < 1e-6, `cumul de l'année ${t}`);
+  });
+  assert.strictEqual(JSON.stringify(sc.arrachage.eur), avant,
+    'tresorerieCumulee ne doit muter ni le scénario ni ses lignes');
+});
+
+section('23. Écran de résultats en onglets (prompts 8 et 9)');
+
+test("les cinq blocs sont devenus cinq onglets, et « Bloc N » a disparu", () => {
+  assert.ok(!/Bloc [1-5] ·/.test(INDEX_HTML),
+    'les intitulés « Bloc 1 » à « Bloc 5 » numérotaient l\'ordre du code : ils ne doivent plus être affichés');
+  assert.strictEqual((INDEX_HTML.match(/role="tabpanel"/g) || []).length, 5,
+    'cinq panneaux, un par onglet');
+  assert.ok(/role="tablist"/.test(INDEX_HTML) && /role="tab"/.test(INDEX_HTML),
+    'la barre d\'onglets doit être annoncée aux technologies d\'assistance');
+  ['Coût, poste par poste', 'Réserve individuelle', "Main d'œuvre et charges",
+   'Ce qui est replanté', 'Rajeunissement du vignoble'].forEach(lib => {
+    assert.ok(INDEX_HTML.indexOf(lib) >= 0, 'libellé d\'onglet présent : ' + lib);
+  });
+});
+
+test("l'onglet actif est un état d'interface, hors instantané localStorage", () => {
+  assert.ok(/ongletResultat:\s*0/.test(INDEX_HTML),
+    'state.ongletResultat doit exister et démarrer sur le premier onglet');
+  const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,600}?\n\}/);
+  assert.ok(ecriture && !/ongletResultat/.test(ecriture[0]),
+    "l'onglet actif ne doit pas entrer dans l'instantané localStorage");
+});
+
+test('prompt 9 : les graphiques sont ouverts par défaut, leurs boutons de repli conservés', () => {
+  assert.ok(/stockChartOuvert:\s*true/.test(INDEX_HTML) && /ageChartOuvert:\s*true/.test(INDEX_HTML),
+    "l'information la plus lisible ne doit plus être celle qui est cachée");
+  assert.ok(/toggleStockChart/.test(INDEX_HTML) && /toggleAgeChart/.test(INDEX_HTML),
+    'les boutons de repli restent : ouvert par défaut ne veut pas dire imposé');
+});
+
+section('24. Panneau « Hypothèses » (prompt 10)');
+
+test('les 36 contrôles liés à state.v sont toujours présents, une fois et une seule', () => {
+  const cles = ['volco', 'prixKg', 'campagne', 'riPct', 'coutSurfaceProdHaAn', 'coutRdtParKg',
+    'tauxHoraire', 'ecartRang', 'ecartPied', 'rendEstime', 'regime', 'nbRangs', 'loyerHa',
+    'partRecolte', 'partCouts', 'cepage', 'calcaireActif', 'profondeurSol', 'drainageSol',
+    'materiel', 'porteGreffe', 'typeTaille', 'nbFils', 'espPiquet', 'anneePleineProd',
+    'repos', 'coutArrachageHa', 'coutPlant', 'coutPalissageHa', 'coutProtectionHa',
+    'irrigation', 'coutIrrigHa', 'coutReposHaAn', 'coutPlantierHaAn', 'sequence', 'declinSQ'];
+  cles.forEach(k => {
+    const n = (INDEX_HTML.match(new RegExp('on\\.' + k + ' \\}\\}', 'g')) || []).length;
+    assert.strictEqual(n, 1, 'le contrôle « ' + k + ' » doit rester saisissable, exactement une fois');
+  });
+});
+
+test("le panneau Hypothèses est un état d'interface ; ses valeurs restent dans state.v", () => {
+  assert.ok(/hypothesesOuvert:\s*false/.test(INDEX_HTML),
+    'state.hypothesesOuvert doit exister et démarrer fermé');
+  const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,600}?\n\}/);
+  assert.ok(ecriture && !/hypothesesOuvert/.test(ecriture[0]),
+    "l'ouverture du panneau ne doit pas entrer dans l'instantané localStorage");
+  assert.ok(/id="hypotheses-ouvrir"/.test(INDEX_HTML) && /id="hypotheses-fermer"/.test(INDEX_HTML),
+    'le panneau doit avoir un point d\'entrée permanent et un bouton de fermeture, pour la discipline de focus');
+});
+
+test('reprendre les valeurs de référence ne porte que sur les postes préréglés', () => {
+  const bloc = INDEX_HTML.match(/const HYPOTHESES_SECTIONS = \{[\s\S]*?\};/);
+  assert.ok(bloc, 'les sections du panneau doivent être déclarées en un seul endroit');
+  ['surfArr', 'ageParc', 'rendEstime', 'volco', 'prixKg', 'repos'].forEach(k => {
+    assert.ok(bloc[0].indexOf("'" + k + "'") < 0,
+      'une saisie qui décrit la parcelle ou le projet (' + k + ') ne doit jamais être remise '
+      + 'à zéro par « Reprendre les valeurs de référence »');
+  });
+});
+
+section('25. Parcours en trois temps (prompt 11)');
+
+test('le parcours compte trois temps, et state.step ne dépasse plus 2', () => {
+  assert.ok(/const labels = \['La parcelle', 'Le projet', 'La trajectoire'\]/.test(INDEX_HTML),
+    'trois temps, nommés par le moment d\'entretien auquel ils correspondent');
+  assert.ok(/aSuivant: s\.step < 2/.test(INDEX_HTML) && /step: Math\.min\(2, st\.step \+ 1\)/.test(INDEX_HTML),
+    'la navigation doit être bornée à 2, pas à 4');
+  assert.ok(/allerResultats: \(\) => this\.setState\(\{ step: 2 \}\)/.test(INDEX_HTML),
+    'le raccourci « aller aux résultats » doit viser le temps 3');
+  assert.ok(!/SUR 5</.test(INDEX_HTML), 'plus aucun « ÉTAPE N SUR 5 » à l\'écran');
+});
+
+test("l'instantané localStorage ne contient pas step : aucune migration nécessaire", () => {
+  const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,600}?\n\}/);
+  assert.ok(ecriture, 'ecrireInstantane doit exister');
+  assert.ok(!/\bstep\b/.test(ecriture[0]),
+    "step n'entre pas dans l'instantané — un instantané écrit par la version à cinq "
+    + "étapes se recharge donc tel quel, sans valeur de step à ramener dans 0..2");
+});
+
+test('les cinq écrans deviennent cinq sections réparties sur trois temps', () => {
+  assert.ok(/estEtape0: s\.step === 0, estEtape1: s\.step === 0, estEtape2: s\.step === 1,/.test(INDEX_HTML)
+    && /estEtape3: s\.step === 1, estEtape4: s\.step === 2,/.test(INDEX_HTML),
+    'exploitation + parcelle sur le temps 1, plantation + coûts sur le temps 2, résultats sur le temps 3');
+  // Les onze repères pointent vers un temps, plus vers un écran sur cinq :
+  // un repère qui viserait l'étape 3 emmènerait désormais hors du parcours.
+  const bloc = INDEX_HTML.match(/const REPERES_CHEMIN_COURT = \[[\s\S]*?\];/)[0];
+  const etapes = (bloc.match(/etape: (\d)/g) || []).map(x => +x.slice(-1));
+  assert.strictEqual(etapes.length, 11, 'onze repères');
+  assert.ok(etapes.every(e => e >= 0 && e <= 2), 'aucun repère ne doit viser un temps inexistant');
+});
+
+section('26. Densité et bornes AOC, mètres de rang (prompt 12)');
+
+test('conformiteDensiteAOC : bornes 8 000 / 10 000 pieds/ha, inclusives', () => {
+  assert.deepStrictEqual(OAD.conformiteDensiteAOC(9000),
+    { densite: 9000, ok: true, sens: null, min: 8000, max: 10000 });
+  assert.strictEqual(OAD.conformiteDensiteAOC(8000).ok, true, 'la borne basse est incluse');
+  assert.strictEqual(OAD.conformiteDensiteAOC(10000).ok, true, 'la borne haute est incluse');
+  assert.strictEqual(OAD.conformiteDensiteAOC(7999).sens, 'sous');
+  assert.strictEqual(OAD.conformiteDensiteAOC(10001).sens, 'au-dessus');
+  // `sens` existe pour que l'écran puisse dire CE QUI CLOCHE, pas seulement
+  // « non conforme ». Le contrôle ne bloque pas la saisie.
+  assert.strictEqual(OAD.conformiteDensiteAOC(0).sens, 'sous');
+});
+
+test('la densité par défaut de l\'outil tombe bien dans les bornes AOC', () => {
+  // écart rang 1,00 m × écart pied 1,10 m -> 9 090 pieds/ha
+  const g = OAD.geometrieAgronomique(1, 1, 1.10, 100);
+  assert.strictEqual(g.densite, 9091);
+  assert.strictEqual(OAD.conformiteDensiteAOC(g.densite).ok, true);
+});
+
+test('metresDeRang : nombre de rangs × longueur de rang déduite', () => {
+  const g = OAD.geometrieAgronomique(1, 1, 1.10, 100);
+  assert.ok(Math.abs(OAD.metresDeRang(g) - g.nbRangs * g.L) < 1e-9);
+  assert.ok(Math.abs(OAD.metresDeRang(g) - 10000) < 1e-6,
+    '1 ha à 1 m d\'écart entre rangs : 10 000 m de rang, quel que soit le nombre de rangs');
+  assert.strictEqual(OAD.metresDeRang(null), 0, 'pas de géométrie, pas de longueur — et pas d\'exception');
+});
+
+test('le schéma de parcelle est branché, et le volet « Ajuster » vidé a disparu', () => {
+  assert.ok(/schemaParcelle\(d\)/.test(INDEX_HTML),
+    'le schéma est construit en React.createElement, pas dans le gabarit');
+  assert.ok(/\{\{ schemaParcelle \}\}/.test(INDEX_HTML), 'et il est bien affiché');
+  assert.ok(/\{\{ densiteTxt \}\}/.test(INDEX_HTML),
+    'la ligne de vérification de densité doit être à l\'écran');
+  assert.ok(!/ajusterOuvert2/.test(INDEX_HTML),
+    'un volet « Ajuster » qui n\'a plus rien à contenir ne reste pas à l\'écran, '
+    + 'et ses valeurs dérivées non plus');
+  assert.ok(/for="f-nbRangs"/.test(INDEX_HTML),
+    'le nombre de rangs reste saisissable — remonté dans la carte Géométrie');
+});
+
+section('27. Thème sombre de projection (prompt 13)');
+
+test('aucune couleur littérale ne subsiste dans le gabarit', () => {
+  const debut = INDEX_HTML.indexOf('</helmet>');
+  const fin = INDEX_HTML.indexOf('</x-dc>');
+  const gabarit = INDEX_HTML.slice(debut, fin);
+  const litterales = (gabarit.match(/#[0-9a-fA-F]{3,6}\b/g) || [])
+    .filter(c => c.toLowerCase() !== '#000');
+  assert.deepStrictEqual(litterales, [],
+    'toutes les couleurs du gabarit passent par un jeton var(--…) ; seul #000, '
+    + 'dans la fiche imprimée, reste littéral — on n\'imprime pas un aplat sombre');
+});
+
+test('les jetons sont déclarés sur :root et basculés par data-theme', () => {
+  assert.ok(/:root\{[\s\S]*?--encre:/.test(INDEX_HTML), 'le thème clair est le défaut, sur :root');
+  assert.ok(/:root\[data-theme="sombre"\]\{/.test(INDEX_HTML),
+    'le thème sombre redéfinit les mêmes jetons sous un attribut de la racine');
+  assert.ok(/document\.documentElement\.setAttribute\('data-theme'/.test(INDEX_HTML),
+    "l'attribut est posé depuis le composant : rien dans <x-dc> ne peut atteindre <html>");
+  // Les deux thèmes doivent définir exactement les mêmes jetons, sinon un
+  // basculement laisse une couleur du thème clair sur un fond sombre.
+  const clair = INDEX_HTML.match(/:root\{([\s\S]*?)\}/)[1];
+  const sombre = INDEX_HTML.match(/:root\[data-theme="sombre"\]\{([\s\S]*?)\}/)[1];
+  const jetons = t => (t.match(/--[a-z0-9-]+:/g) || []).sort();
+  assert.deepStrictEqual(jetons(sombre), jetons(clair),
+    'chaque jeton du thème clair doit avoir sa valeur sombre, et réciproquement');
+});
+
+test('le thème entre dans l\'instantané localStorage, le mode clair reste le défaut', () => {
+  const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,700}?\n\}/);
+  assert.ok(ecriture && /theme/.test(ecriture[0]),
+    'on ne veut pas rebasculer le thème à chaque ouverture en salle');
+  assert.ok(/instantane\.theme === THEMES\.sombre\) \? THEMES\.sombre : THEMES\.clair/.test(INDEX_HTML),
+    'un instantané antérieur à ce prompt, ou porteur d\'une valeur inconnue, retombe sur le clair');
+});
+
+section('28. Deux sorties d\'impression (prompt 14)');
+
+test('deux sorties distinctes, désignées par data-print sur la racine', () => {
+  assert.ok(/class="print-remise"/.test(INDEX_HTML) && /class="print-sheet"/.test(INDEX_HTML),
+    'la remise au vigneron et la fiche d\'audit sont deux blocs distincts');
+  assert.ok(/imprimerRemise/.test(INDEX_HTML) && /imprimerAudit/.test(INDEX_HTML),
+    'deux boutons, deux publics');
+  assert.ok(!/imprimerFiche/.test(INDEX_HTML), 'le bouton unique d\'avant a disparu');
+  assert.ok(/:root\[data-print="vigneron"\] \.print-remise/.test(INDEX_HTML)
+    && /:root:not\(\[data-print="vigneron"\]\) \.print-sheet/.test(INDEX_HTML),
+    'une sortie à la fois ; sans attribut (Ctrl+P au clavier) c\'est la fiche exhaustive');
+});
+
+test('la remise au vigneron tient sur une page, en vectoriel et en couleur', () => {
+  const bloc = INDEX_HTML.match(/:root\[data-print="vigneron"\] \.print-remise \{[\s\S]*?\}/)[0];
+  assert.ok(/page-break-inside:avoid/.test(bloc) && /break-inside:avoid/.test(bloc),
+    'une seule page, c\'est sa contrainte de conception');
+  assert.ok(/print-color-adjust:exact/.test(bloc),
+    'la frise est son contenu : en niveaux de gris elle ne dit plus rien');
+  assert.ok(/@page \{ size: A4 portrait/.test(INDEX_HTML), 'A4 portrait');
+  // La frise est un SVG construit en React, jamais une image : elle s'imprime
+  // donc en vectoriel sans qu'on ait rien à demander.
+  const remise = INDEX_HTML.slice(INDEX_HTML.indexOf('class="print-remise"'));
+  assert.ok(remise.indexOf('{{ friseTrajectoire }}') >= 0
+    && remise.indexOf('{{ friseTrajectoire }}') < remise.indexOf('class="print-sheet"'),
+    'la frise doit être présente dans la sortie remise');
+});
+
+test('la synthèse imprimée est assemblée des mêmes morceaux que celle de l\'écran', () => {
+  const debut = INDEX_HTML.indexOf('out.syntheseTxt =');
+  assert.ok(debut > 0, "la version texte plat de la synthèse doit exister");
+  const bloc = INDEX_HTML.slice(debut, debut + 900);
+  ['syntheseCouvTxt', 'syntheseCouvSuffixTxt', 'syntheseAbsorptionTxt',
+   'syntheseStockLeadTxt', 'syntheseStockTailTxt', 'syntheseHorizonTxt',
+   'reserveReelleTxt', 'investTxt', 'effortNetTxt', 'stockMinTxt'].forEach(k => {
+    assert.ok(bloc.indexOf('out.' + k) >= 0,
+      'la fiche remise au vigneron ne doit pas raconter autre chose que l\'écran : ' + k);
+  });
+});
+
 // ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------

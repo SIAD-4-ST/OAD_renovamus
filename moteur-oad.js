@@ -319,6 +319,32 @@ function agregerRegistreParcelle(rows, campagne) {
   };
 }
 
+// Synthèse du registre pour le bandeau replié de l'étape 1 — prompt 3.
+//
+// Le registre est refermé par défaut : le bandeau doit donc dire ce qu'il
+// contient, sinon replier revient à cacher. Trois grandeurs suffisent à
+// reconnaître son propre registre sans l'ouvrir : combien de lignes, quelle
+// surface, quels cépages.
+//
+// `surfaceTotale` compte TOUTES les lignes, Plantée et Arrachée, exactement
+// comme `agregerRegistreExploitation` : le bandeau doit annoncer la même
+// surface que le champ « Surface totale » juste au-dessus de lui, sans quoi
+// l'utilisateur lit deux chiffres contradictoires sur le même écran.
+// `cepages` est dédoublonné et trié par ordre alphabétique — une liste de
+// cépages n'a pas d'ordre naturel, et un ordre stable évite que le bandeau
+// se réécrive à chaque frappe dans une cellule sans rapport.
+function synthetiseRegistre(rows) {
+  const lignes = rows || [];
+  let surfaceTotale = 0;
+  const vus = {};
+  lignes.forEach(r => {
+    surfaceTotale += +(r && r.surface) || 0;
+    const c = String((r && r.cepage) || '').trim();
+    if (c) vus[c] = true;
+  });
+  return { nbLignes: lignes.length, surfaceTotale, cepages: Object.keys(vus).sort() };
+}
+
 /* =====================================================================
    Édition manuelle du registre — prompt B8 (arbitrage du 01/09/2026).
 
@@ -531,6 +557,37 @@ function geometrieAgronomique(surf, eR, eP, nbRangs) {
    n'ont pas d'équivalent parmi ces 8 lignes — aucun prix n'est inventé
    pour eux, catégories vides tant qu'une source ne les documente pas.
    Prix et quantités des 8 lignes INCHANGÉS par ce chantier. */
+/* Densité de plantation et bornes AOC — prompt 12.
+
+   `geometrieAgronomique` contrôlait déjà les ÉCARTEMENTS (rang <= 2,00 m,
+   pied entre 0,70 et 1,50 m, somme <= 3,00 m). Elle ne disait rien de la
+   DENSITÉ obtenue, qui est pourtant ce que le schéma de parcelle donne à voir
+   et ce que le cahier des charges borne : 8 000 à 10 000 pieds/ha en
+   Champagne. Le contrôle est ici, pas dans l'interface, parce que c'en est
+   un : il compare un résultat de calcul à deux bornes réglementaires.
+
+   Il n'est pas bloquant, et ne doit pas l'être : l'outil est pédagogique, il
+   signale, il n'interdit pas. `ok` dit si la densité tient dans les bornes,
+   `sens` dit de quel côté elle en sort — c'est ce qui permet à l'écran de
+   dire CE QUI CLOCHE plutôt qu'un « non conforme » muet.
+   ===================================================================== */
+const DENSITE_AOC_MIN = 8000;   // pieds/ha — cahier des charges AOC Champagne
+const DENSITE_AOC_MAX = 10000;  // pieds/ha
+
+function conformiteDensiteAOC(densite) {
+  const d = +densite || 0;
+  const sens = d < DENSITE_AOC_MIN ? 'sous' : d > DENSITE_AOC_MAX ? 'au-dessus' : null;
+  return { densite: d, ok: sens === null, sens, min: DENSITE_AOC_MIN, max: DENSITE_AOC_MAX };
+}
+
+// Mètres de rang du bloc entier : c'est cette longueur, et non la surface,
+// qui commande le palissage (voir coutPalissage). Elle était recalculée à
+// plusieurs endroits sous la forme `nbRangs * L` ; elle a désormais un nom.
+function metresDeRang(geo) {
+  if (!geo) return 0;
+  return (+geo.nbRangs || 0) * (+geo.L || 0);
+}
+
 function coutPalissage(geo, prix, opt) {
   prix = Object.assign({}, PRIX_PALISSAGE, prix || {});
   opt = opt || {};
@@ -896,6 +953,109 @@ function regimesTravailArrachage(scArr, scSQ, inp, opsManuel = REF_OPS_MANUEL, f
 // à jour ensemble : le VolCo change à chaque campagne (8 800 en 2026), celui-ci
 // non. Ne jamais dériver l'un de l'autre, ni les remplacer par une constante
 // unique. Voir README §19.
+/* =====================================================================
+   Trésorerie cumulée d'un scénario — prompt 7.
+
+   Cette série existait, mais elle était assemblée dans index.html (`serieRep`
+   / `serieRepParcelle` / `cum`). Elle passe ici parce que la frise de
+   trajectoire la dessine : une courbe et un tableau qui divergeraient d'un
+   arrondi seraient impossibles à départager à l'écran.
+
+   `vue` est la vue de faire-valoir affichée : '1' ensemble, 'exp' part
+   exploitant, 'prop' part propriétaire.
+
+   `parcelleSeule` neutralise le flux du reste de l'exploitation
+   (venteRaisinReste et coutsReste à 0) pour répondre à « combien cette
+   opération me coûte-t-elle à financer, et quand ». C'est nécessaire : sur la
+   trésorerie de toute l'exploitation, le revenu du reste du domaine masque
+   presque toujours l'effort propre à l'opération. Le procédé est le même que
+   celui déjà employé pour simuler « sans réserve » (cashRI à 0) et
+   `repartir()` est réutilisée telle quelle, sans règle nouvelle.
+
+   Pure : ne mute ni `scen` ni ses lignes (l'objet passé à `repartir` est une
+   copie).
+   ===================================================================== */
+function tresorerieCumulee(scen, fv, vue, opt) {
+  const parcelleSeule = !!(opt && opt.parcelleSeule);
+  let acc = 0;
+  const annuelle = [], cumulee = [];
+  (scen.eur || []).forEach(row => {
+    let v;
+    if (parcelleSeule) {
+      if (vue === 'exp' || vue === 'prop') {
+        const part = repartir({ ...row, venteRaisinReste: 0, coutsReste: 0 }, fv);
+        v = vue === 'exp' ? part.exp : part.prop;
+      } else {
+        v = row.venteRaisinParcelle + row.cashRI - row.coutsParcelle;
+      }
+    } else if (vue === 'exp' || vue === 'prop') {
+      const part = repartir(row, fv);
+      v = vue === 'exp' ? part.exp : part.prop;
+    } else {
+      v = row.cashNet;
+    }
+    annuelle.push(v);
+    acc += v;
+    cumulee.push(acc);
+  });
+  return { annuelle, cumulee };
+}
+
+/* =====================================================================
+   Phases de la parcelle renouvelée — prompts 5 et 7.
+
+   Le temps est partout dans l'outil (« années 3-4 », « repos », « plantier »,
+   « à 10 ans ») et n'était jamais dessiné. Pour le dessiner il faut d'abord
+   le NOMMER, année par année, et une seule fois : ces deux fonctions portent
+   la découpe, l'interface ne fait que la colorier.
+
+   La découpe suit exactement la convention de `simulerReserveKg` (§7), elle
+   ne la réinterprète pas :
+     t = 0                      arrachage — le chantier lui-même, sol nu
+     1 <= t < repos             repos du sol (vide si repos = 1)
+     repos <= t < repos + 3     plantier — la vigne est en terre, elle ne
+                                produit pas encore
+     t >= repos + 3             en production
+   `repos` est donc bien la durée pendant laquelle le sol reste nu, année
+   d'arrachage comprise : la plantation a lieu à t = repos (c'est là que
+   `construireScenarios` place invArr[repos]), et l'entrée en production à
+   t = repos + 3 (`returnYear`, la 3e feuille).
+   ===================================================================== */
+const DELAI_PLANTIER = 3;   // années entre la plantation et la 3e feuille
+
+// Année de retour en production, comptée depuis l'arrachage.
+function anneeRetourProduction(repos) {
+  return DELAI_PLANTIER + Math.max(0, +repos || 0);
+}
+
+// Segments de phase sur l'axe 0..horizon, bornes [debut, fin[ en années.
+// Un segment de durée nulle (le repos quand repos = 1) n'est pas renvoyé :
+// une bande de largeur zéro n'a rien à dire à l'écran.
+function phasesParcelle(repos, horizon) {
+  const r = Math.max(0, +repos || 0);
+  const h = Math.max(0, +horizon || 0);
+  const brut = [
+    { id: 'arrachage',  lib: 'arrachage',      debut: 0,     fin: 1 },
+    { id: 'repos',      lib: 'repos du sol',   debut: 1,     fin: r },
+    { id: 'plantier',   lib: 'plantier',       debut: r,     fin: r + DELAI_PLANTIER },
+    { id: 'production', lib: 'en production',  debut: r + DELAI_PLANTIER, fin: h + 1 }
+  ];
+  return brut
+    .map(p => ({ ...p, debut: Math.min(p.debut, h + 1), fin: Math.min(p.fin, h + 1) }))
+    .filter(p => p.fin > p.debut);
+}
+
+// La même découpe, ramenée à un identifiant de phase par année — c'est ce que
+// consomment les pistes alignées sur l'axe des années (prompt 7).
+function phaseParAnnee(repos, horizon) {
+  const segs = phasesParcelle(repos, horizon);
+  const h = Math.max(0, +horizon || 0);
+  return Array.from({ length: h + 1 }, (_, t) => {
+    const seg = segs.find(p => t >= p.debut && t < p.fin);
+    return seg ? seg.id : 'production';
+  });
+}
+
 const VOL_SORTIE_ARRACHAGE = 9000; // kg/ha/an, inchangé depuis avant ce chantier — voir README §19
 const NB_SORTIE_PAR_REPOS = { 1: 3, 2: 4, 3: 5 }; // repos (ans) -> nb d'années de déblocage
 function nbSortiePourRepos(repos) {
@@ -976,9 +1136,11 @@ if (typeof module !== 'undefined') module.exports =
     coutProtectionPlant, PRIX_PROTECTION_PLANT, preconPorteGreffe,
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
-    ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
+    ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, synthetiseRegistre, trajectoireAge,
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
+    DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee, tresorerieCumulee,
+    conformiteDensiteAOC, metresDeRang, DENSITE_AOC_MIN, DENSITE_AOC_MAX,
     CLONES_CHAMPAGNE, clonesParCepage,
     PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,
     stressEstDeficitaire };
@@ -988,9 +1150,11 @@ if (typeof window !== 'undefined') window.OAD =
     coutProtectionPlant, PRIX_PROTECTION_PLANT, preconPorteGreffe,
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
-    ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
+    ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, synthetiseRegistre, trajectoireAge,
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
+    DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee, tresorerieCumulee,
+    conformiteDensiteAOC, metresDeRang, DENSITE_AOC_MIN, DENSITE_AOC_MAX,
     CLONES_CHAMPAGNE, clonesParCepage,
     PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,
     stressEstDeficitaire };

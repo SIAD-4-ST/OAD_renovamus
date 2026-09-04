@@ -32,7 +32,8 @@ chiffrée se met à jour en continu dans la colonne de droite.
 2. [Architecture des 3 fichiers](#2-architecture-des-3-fichiers)
 3. [Comment tourne la page — le format `.dc` / `x-dc`](#3-comment-tourne-la-page--le-format-dc--x-dc)
     - [3bis. Conventions d'interface — classes CSS et panneaux d'aide](#3bis-conventions-dinterface--classes-css-et-panneaux-daide)
-4. [Le parcours en 5 étapes](#4-le-parcours-en-5-étapes)
+    - [3ter. Refonte d'interface — les 14 prompts (lot 1a / 1b / 1c)](#3ter-refonte-dinterface--les-14-prompts-lot-1a--1b--1c)
+4. [Le parcours en 3 temps](#4-le-parcours-en-3-temps)
 5. [Le flux de données, de la frappe au résultat](#5-le-flux-de-données-de-la-frappe-au-résultat)
 6. [Glossaire des champs de saisie](#6-glossaire-des-champs-de-saisie)
     - [6bis. Le registre parcellaire — seule source des surfaces et des âges](#6bis-le-registre-parcellaire--seule-source-des-surfaces-et-des-âges)
@@ -51,7 +52,9 @@ chiffrée se met à jour en continu dans la colonne de droite.
 15. [Arbre de décision porte-greffe — `preconPorteGreffe`](#15-arbre-de-décision-porte-greffe--preconportegreffe)
 16. [Géométrie de plantation — `OAD.geometrieAgronomique()`](#16-géométrie-de-plantation--oadgeometrieagronomique)
 17. [KPI et synthèse](#17-kpi-et-synthèse)
+    - [17bis. Les deux sorties d'impression](#17bis-les-deux-sorties-dimpression)
 18. [Graphiques SVG faits main](#18-graphiques-svg-faits-main)
+    - [18bis. La frise de trajectoire — `friseTrajectoire()`](#18bis-la-frise-de-trajectoire--frisetrajectoire)
 19. [Limites, hypothèses et paramètres cachés](#19-limites-hypothèses-et-paramètres-cachés)
     - [19bis. Journal d'arbitrages — accueil, simplification de l'interface, deux corrections](#19bis-journal-darbitrages--accueil-simplification-de-linterface-deux-corrections)
     - [19ter. Journal d'arbitrages — session du 01/09/2026](#19ter-journal-darbitrages--session-du-01092026)
@@ -295,41 +298,195 @@ dire pour celui qui la saisit.
 - Sous 1080 px de large, la grille à 3 colonnes se replie en une seule
   (sommaire horizontal en haut, synthèse sous le contenu).
 
-## 4. Le parcours en 5 étapes
+## 3ter. Refonte d'interface — les 14 prompts (lot 1a / 1b / 1c)
 
-> **Depuis la session d'arbitrage du 01/09/2026 (§19ter).** Le parcours est
-> hiérarchisé en un **chemin court de 11 champs** et des volets « Ajuster »
-> repliés (un par écran, aucun champ supprimé) — voir §6. L'**horizon est figé
-> à 10 ans** côté interface, son sélecteur retiré. Le **test de résistance
-> climatique est actif par défaut**, sur deux vendanges déficitaires. Un
-> **panneau d'accueil illustré** remplace l'encart replié de l'étape 1 (§3bis).
-> L'écran 5 met désormais les **KPI physiques en tête** et les KPI financiers
-> d'un cran en dessous.
+Cette section décrit **ce qui a changé dans l'interface** lors de la refonte
+menée d'après `PROMPTS.md`. Le moteur n'a rien perdu : toutes les fonctions de
+calcul ajoutées sont pures, exposées via `module.exports` et `window.OAD`, et
+couvertes par `tests/parite.test.js` (sections 20 à 28).
 
-La navigation de gauche (`etapes`, généré depuis un tableau de labels dans
-`renderVals()`) et le bouton « {{ labelSuivant }} → » en bas de page
-pilotent un simple index `state.step` (0 à 4). Une seule étape est visible
-à la fois (`estEtape0`…`estEtape4`), mais **le calcul tourne sur
-l'ensemble des champs déjà saisis à tout moment** — la colonne de droite
-(« Synthèse en continu ») affiche donc des résultats mis à jour dès
-l'étape 1, avec les valeurs par défaut pour tout ce qui n'a pas encore été
-renseigné.
+Le critère d'acceptation, rappelé à chaque prompt : **est-ce lisible à trois
+mètres, et le conseiller peut-il ne montrer qu'une chose à la fois ?**
 
-| # | Étape | Contenu |
-|---|---|---|
-| 1 | **Votre exploitation** | Surface totale, âge moyen du vignoble, VolCo, prix du raisin, réserve individuelle actuelle (curseur en % du plafond) ; **charges de production à l'hectare** (charge liée à la surface, coût de la vendange, détail par opération heures manuelles/mécanisées — chantier B1, déplacées depuis l'écran « Coûts et charges », paramètres de référence de l'exploitation réutilisés à l'écran 5, voir §11 F9). Ce sont les repères globaux, dénominateurs de tout le calcul d'impact. Surface totale et âge moyen ne sont plus saisis : ils sont **dérivés du registre parcellaire**, seule source depuis le prompt B8 (jeu d'exemple préchargé, **importable** depuis un export du portail CIVC, **corrigeable cellule par cellule** et, depuis le prompt B8, **complétable ligne par ligne**) — voir [§6bis](#6bis-le-registre-parcellaire--seule-source-des-surfaces-et-des-âges). |
-| 2 | **La parcelle que vous désignez** | **Géométrie de la parcelle en tête d'écran** (chantier B2, déplacée depuis l'écran 3) : surface arrachée, écart entre rangs, nombre de rangs, écart entre pieds — seuls champs saisis ; longueur de rang déduite, densité, pieds à planter et badge de conformité AOC en sont affichés, jamais saisis (§16). Puis âge, taux de pieds manquants, rendement estimé, régime de faire-valoir (propriété / fermage / métayage) et ses paramètres. Le **déclin en statu quo a été déplacé à l'écran 5** (prompt C1) : il ne décrit pas la parcelle mais le contre-factuel, et son seul effet visible est le tableau « Manque à gagner ». En mode registre, un sélecteur d'`idu` et des cases à cocher par ligne désignent la parcelle et en dérivent surface, âge et taux de manquants (§6bis). |
-| 3 | **Votre projet de replantation** | **Deux blocs seulement (chantier B3)** : (1) simulateur d'aide au choix du matériel végétal (cépage/calcaire/profondeur/drainage, arbre porte-greffe, table clones — dépliable, purement informatif), positionné juste avant la sélection définitive matériel végétal/porte-greffe qu'il éclaire, avec fiche conseil (dont l'avertissement 161-49 C) ; (2) palissage et conduite — mode de conduite (dont Chablis, chantier A5), année de pleine production (chantier A3, §7bis), équipements de palissage dérivés de la géométrie de l'écran 2 (postes obligatoires toujours comptés, poste optionnel décochable — chantier A5, §14). Ni le sélecteur d'arrosage ni la pénalité VSL n'apparaissent ici (arrosage du plantier à l'écran 4, VSL retirée de l'interface — chantier B4). Depuis le prompt B7 la **table clones occupe toute la largeur de la carte** et affiche 8 colonnes sourcées (§15). Aucun champ de cet écran n'appartenant au chemin court, l'écran entier vit dans son volet « Ajuster » (prompt B4). Un message bloquant remplace les indicateurs de palissage si la géométrie est incomplète (surface ou nombre de rangs nul). |
-| 4 | **Coûts et charges** | **Deux blocs seulement (chantier B4)** : BLOC A « Investissements liés à la parcelle arrachée puis replantée » — prestations d'arrachage et préparation, matériel végétal et sa protection, matériel de palissage, options de coût à l'installation (dont l'irrigation, déplacée depuis l'écran 3), et l'**arrosage du plantier** (prompt B7, ex-« ferti-irrigation »). La complantation (`survie`, `coutEntreplant`) n'a plus de champ de saisie : elle n'alimente qu'un scénario jamais affiché (prompt C1), les valeurs restent dans `state.v` et dans la fiche d'audit. L'entrée en production de la complantation n'est plus éditable depuis le chantier A3, fixée à 7 ans, voir §7bis ; BLOC B « Entretien en deux temps » — B.1 entretien de la parcelle au repos, B.2 entretien du plantier (chantier B1 a déplacé le volet « production », permanent, à l'écran 1 — voir §11 F9, non dupliqué ici). Aucun champ VSL. |
-| 5 | **Résultats** | Synthèse rédigée autour du **seul scénario arrachage-replantation** (§12bis, décision 1 : le statu quo n'est plus un scénario que l'utilisateur choisit de regarder, seulement le contre-factuel silencieux de chaque différentiel affiché) — bandeau climatique non repliable en tête (prompt B3), sélecteur de vue (Ensemble / Part exploitant / Part propriétaire), de test de résistance climatique et de mode main d'œuvre (Prestataire / Familiale — affichage seul, §11 F7) ; **plus de sélecteur d'horizon** (arbitrage 6). Depuis le prompt B5, les **KPI physiques passent en tête** dans un bloc « Ce que le renouvellement produit » (écart d'âge, stock de réserve à l'horizon, réserve minimale) et les KPI financiers descendent d'un cran, sans rien perdre ; les boutons d'ouverture des deux graphiques (stock, trajectoire d'âge — toujours repliés par défaut) remontent au-dessus du bloc financier. Puis encadré main d'œuvre économisée, détail annuel dépliable du scénario arrachage, volet « hypothèses de comparaison » portant `declinSQ` (prompt C1) et tableau du manque à gagner (dérivé vs statu quo, jamais soustrait au calcul), et une fiche imprimable regroupant hypothèses, KPI (avec formule) et détail annuel complet des 3 scénarios calculés en interne — conservé à des fins d'audit, voir §17 (bouton « Imprimer », `window.print()`). |
+### Lot 1a — resserrer (prompts 1 à 4)
 
-La colonne de droite (`<aside>`, « Synthèse en continu ») est visible à
-**partir de l'écran 3** (retirée des écrans 1 et 2 — chantiers B1 puis B2 :
-`sc-if value="{{ syntheseVisible }}"`, `syntheseVisible = step > 1`) : elle
-reprend un sous-ensemble des mêmes résultats (surface, densité, pieds à
-planter, conformité AOC, investissement, réserve mobilisée, effort net,
-tension de trésorerie, réserve minimale) et
-propose un raccourci direct vers l'étape 5.
+**Échelle typographique à quatre niveaux.** Les 19 tailles de police présentes
+dans le gabarit sont ramenées à quatre, déclarées en classes `.n1` à `.n4` :
+
+| Niveau | Usage | Corps | Remplace |
+|---|---|---|---|
+| N1 | chiffre de tête | 36 px, `nowrap` | *(introduit au prompt 5)* |
+| N2 | titre d'écran ou de bloc | 22 px | 16, 17, 19, 20, 21, 24, 26 |
+| N3 | libellé, texte courant | 13,5 px (libellé en 600) | 13, 14, 14,5, 15 |
+| N4 | aide, surtitre, unité | 11,5 px, `--encre-3` | 9,5, 10, 10,5, 11, 12, 12,5 |
+
+**Grilles de champs à deux colonnes fixes.** `.grid` passe de
+`repeat(auto-fill, minmax(220px, 1fr))` à `1fr 1fr` (gap 18 × 30 px), repli à
+une colonne sous 900 px. Les tableaux à colonnes internes — référentiel de
+temps de travaux, table des clones, registre, détail annuel — gardent leur
+grille propre et leur `overflow-x` : ce ne sont pas des grilles de champs.
+
+**Registre parcellaire replié en bandeau.** Le tableau éditable est derrière un
+volet refermé au chargement, sous un bandeau qui dit ce qu'il contient
+(`OAD.synthetiseRegistre` : nombre de lignes, surface totale, cépages
+distincts). L'import CSV garde son propre volet à côté : c'est un geste de
+mise en route, pas une correction de détail, il reste atteignable sans ouvrir
+le registre. `state.registreOuvert` et `state.importOuvert` sont des états de
+navigation, **hors instantané** — sans quoi replier ne servirait à rien.
+
+**Lexique au contact des champs.** Les cinq entrées de métier (réserve
+individuelle, VolCo, repos du sol, plantier, faire-valoir) portent une clé et
+une glose d'une ligne (`court`) dans `lexiqueEntrees`, exposées par `out.lex`
+et citées sous le champ concerné. Le terme se signale par un soulignement
+pointillé (`.lex`) et porte la définition longue en `title`. L'accordéon du
+haut lit la même liste : une correction vaut pour les deux.
+
+**Pied d'écran.** Chaque temps se termine par un pied séparé d'un filet,
+portant l'action principale nommée par l'étape qu'elle atteint et, quand elle
+n'est pas la suivante, le raccourci « Aller aux résultats ». Les deux
+réutilisent les handlers existants (`suivant`, `allerResultats`).
+
+### Lot 1b — les résultats autour d'une frise (prompts 5 à 9)
+
+**Trois chiffres de tête**, en N1 : *retour en production* (une année),
+*effort net à financer* (un montant), *vignoble rajeuni de* (une durée).
+Chacun porte sa décomposition en N4 — un chiffre de 36 px ne doit jamais être
+un chiffre nu. Aucun n'est recalculé dans `index.html` ; l'année manquait au
+moteur, d'où `OAD.anneeRetourProduction(repos)`.
+
+**Newsreader remplace Fraunces** pour les titres et les chiffres de tête
+(poids 650 → 600, axe optique 9..144 → 6..72). Archivo reste le texte courant,
+JetBrains Mono les chiffres et unités.
+
+**La frise de trajectoire** (`friseTrajectoire()`, §18bis) : trois pistes qui
+partagent le même axe de 11 colonnes d'année — phases de la parcelle, stock de
+réserve, trésorerie cumulée. C'est le cœur de la refonte : le temps était
+partout dans l'outil et n'était jamais dessiné.
+
+**Les cinq blocs deviennent cinq onglets** (`role="tablist"`, navigation aux
+flèches, `state.ongletResultat` hors instantané) : « Coût, poste par poste »,
+« Réserve individuelle », « Main d'œuvre et charges », « Ce qui est replanté »,
+« Rajeunissement du vignoble ». Les intitulés « Bloc 1 » à « Bloc 5 »
+disparaissent — ils numérotaient l'ordre du code. L'annexe technique, les
+hypothèses de comparaison et le manque à gagner restent hors onglets.
+
+> **Écart assumé avec `PROMPTS.md`.** Le handoff appariait « Réserve
+> individuelle » au bloc 4 et « Main d'œuvre et charges » au bloc 3, alors que
+> c'est l'inverse dans le code, et nommait le cinquième onglet « Détail
+> annuel » alors que le bloc 5 est le rajeunissement du vignoble — le détail
+> annuel restant par ailleurs hors onglets à la demande du même prompt.
+> L'appariement a été résolu **par libellé** : un onglet doit dire ce qu'il
+> contient.
+
+**Les graphiques par défaut, les tableaux repliés.** `stockChartOuvert` et
+`ageChartOuvert` démarrent à `true`, leurs boutons de repli conservés et
+retournés en « Masquer ». En regard, tout volet de détail long annonce dans son
+en-tête ce qu'il contient et le total de sa colonne principale.
+
+### Lot 1c — le parcours en trois temps (prompts 10 à 14)
+
+**Panneau « Hypothèses ».** Tout ce qui est préréglé ET sourcé sort du
+parcours, en quatre sections portant chacune sa source et sa date : charges
+annuelles de référence (Cerfrance 2024), référentiel de temps de travaux et
+taux horaire (Avenant 217, SMIC 2026 chargé), tarifs de palissage et de
+protection (LutEnVi 2025), paramètres de faire-valoir. **Aucun contrôle ne
+disparaît** : les 36 champs liés à `state.v` restent saisissables, exactement
+une fois chacun — un test le vérifie clé par clé. Les champs sont *déplacés*,
+pas dupliqués.
+
+Une valeur qui n'est plus celle de sa source porte le badge ambre, et
+« Reprendre les valeurs de référence » la remet à sa valeur d'origine, section
+par section ou globalement. Le badge teste la **valeur**, pas `champsTouches` :
+ici la question est « ce chiffre est-il encore celui de la source ? », et
+remettre soi-même la valeur de référence doit faire disparaître le badge —
+c'est l'inverse du chemin court (§6), qui suit « ce chiffre a-t-il été
+regardé ». La reprise ne touche jamais les saisies qui décrivent la parcelle,
+le projet ou le registre : `HYPOTHESES_SECTIONS` en fixe la liste, un test
+l'interdit.
+
+Comme le panneau d'accueil, il est **dans le flux du document** — pas de
+`position: fixed`, pas de piège à focus — avec la même discipline : le focus
+entre sur le bouton de fermeture, `Échap` ferme, le focus revient au bouton
+d'ouverture.
+
+**Parcours en trois temps** — voir §4.
+
+**Schéma de parcelle dessiné pendant la saisie** — voir §16.
+
+**Thème sombre de projection.** Toutes les couleurs du gabarit passent par des
+jetons déclarés sur `:root`, basculés par un attribut `data-theme` posé sur
+l'élément racine depuis le composant (`appliquerTheme()`, appelée par
+`componentDidMount` et `componentDidUpdate` : rien dans `<x-dc>` ne peut
+atteindre `<html>`). Le thème sombre ne fait que redéfinir les valeurs — il n'y
+a qu'un endroit à relire pour vérifier un contraste, et un test exige que les
+deux thèmes définissent exactement le même jeu de jetons. **Plus aucune couleur
+littérale dans le gabarit**, `#000` de la fiche imprimée excepté ; un test
+l'interdit désormais. Le châssis des graphiques (grille, axes, graduations,
+filets) suit le thème ; les couleurs de **série** ne changent pas.
+
+Le mode clair reste le défaut et la version de travail. Le choix de thème entre
+dans l'instantané `localStorage` — on ne veut pas rebasculer à chaque ouverture
+en salle — mais vit **hors de `state.v`**, qui reste l'objet des saisies :
+« Effacer mes données » ne le remet donc pas à zéro.
+
+**Deux sorties d'impression** — voir §17bis.
+
+### Fonctions ajoutées au moteur
+
+| Fonction | Rôle | Prompt | Tests |
+|---|---|---|---|
+| `synthetiseRegistre(rows)` | `{ nbLignes, surfaceTotale, cepages }` pour le bandeau replié du registre | 3 | §20 |
+| `anneeRetourProduction(repos)` | `repos + 3` — l'année où la parcelle reproduit | 5 | §21 |
+| `phasesParcelle(repos, horizon)` | segments `[debut, fin[` : arrachage, repos, plantier, production | 5 / 7 | §21 |
+| `phaseParAnnee(repos, horizon)` | la même découpe, un identifiant par année | 7 | §21 |
+| `tresorerieCumulee(scen, fv, vue, opt)` | `{ annuelle, cumulee }`, `opt.parcelleSeule` neutralise le reste de l'exploitation | 7 | §22 |
+| `conformiteDensiteAOC(densite)` | bornes 8 000 / 10 000 pieds/ha, plus le **sens** du dépassement | 12 | §26 |
+| `metresDeRang(geo)` | `nbRangs × L` — la longueur qui commande le palissage | 12 | §26 |
+
+`tresorerieCumulee` **remplace** l'assemblage qui vivait dans `index.html`
+(`serieRep` / `serieRepParcelle` / `cum`). Le test §22 rejoue littéralement
+l'ancien code et compare, sur les trois vues de faire-valoir et les deux
+périmètres : le déplacement ne change aucun chiffre.
+
+## 4. Le parcours en 3 temps
+
+> **Depuis la refonte d'interface (§3ter).** Les cinq étapes suivaient la
+> structure du *calcul* — exploitation, parcelle, plantation, coûts, résultats
+> — pas la conversation entre le conseiller et le vigneron. Elles sont
+> ramenées à **trois moments d'entretien** : décrire ce qu'on a, décider ce
+> qu'on fait, regarder ce que ça donne. **Rien n'est supprimé** : les cinq
+> écrans deviennent cinq *sections*, deux par temps pour les deux premiers,
+> séparées par un filet.
+
+La barre de parcours est un **bandeau horizontal de trois pavés égaux**
+(surtitre `TEMPS N` en mono, titre en N2, sous-titre listant le contenu) : trois
+pavés larges se lisent en projection, une liste verticale de cinq lignes non.
+À droite du bandeau, l'indicateur des onze repères (§6) et le point d'entrée du
+panneau **Hypothèses** (§3ter). `#appGrid` est passé de trois colonnes à deux.
+
+Le tout pilote un simple index `state.step` (0 à 2). Les booléens
+`estEtape0`…`estEtape4` sont **conservés** et remappés
+(`estEtape0 = estEtape1 = step === 0`, `estEtape2 = estEtape3 = step === 1`,
+`estEtape4 = step === 2`) : cinq blocs de gabarit inchangés n'ont pas à être
+réécrits pour un changement de découpage. Le calcul, lui, tourne sur
+l'ensemble des champs à tout moment.
+
+> `state.step` **n'entre pas** dans l'instantané `localStorage` (§19bis) : un
+> instantané écrit par la version à cinq étapes se recharge donc tel quel,
+> aucune migration n'est nécessaire. Un test fige cette absence.
+
+| # | Temps | Sections | Contenu |
+|---|---|---|---|
+| 1 | **La parcelle** | *Votre exploitation* + *La parcelle désignée* | Registre parcellaire (bandeau replié, importable, corrigeable et complétable ligne à ligne — §6bis), surface totale et âge moyen **dérivés du registre**, VolCo, prix du raisin. Puis la **géométrie de la parcelle** avec son **schéma dessiné pendant la saisie** (§16) : surface arrachée (du registre), écart entre rangs, écart entre pieds, nombre de rangs — seuls champs saisis ; longueur de rang, densité, pieds à planter, conformité des écartements et **conformité de la densité aux bornes AOC** en sont déduits, jamais saisis. Puis âge, taux de pieds manquants, rendement estimé, régime de faire-valoir. |
+| 2 | **Le projet** | *Ce que vous replantez* + *Ce que cela coûte* | Simulateur d'aide au choix du matériel végétal (cépage / calcaire / profondeur / drainage, arbre porte-greffe, table clones — informatif, §15), matériel végétal et porte-greffe, palissage et conduite dérivés de la géométrie du temps 1 (§14). Puis la durée de repos du sol, les investissements liés à la parcelle (arrachage et préparation, plants, arrosage du plantier) et l'entretien en deux temps (B.1 repos, B.2 plantier). Les **tarifs** de palissage et de protection sont dans le panneau Hypothèses, pas ici : ce sont des références sourcées, pas des choix de projet. |
+| 3 | **La trajectoire** | *Résultats* | **Trois chiffres de tête** en 36 px, puis la **frise de trajectoire** (§18bis), puis le bandeau climatique non repliable, les deux boutons d'impression, la synthèse rédigée et les réglages d'affichage (vue de faire-valoir, mode main d'œuvre, test de résistance). Le bloc « Ce que le renouvellement produit » garde les KPI physiques et les deux graphiques, **affichés par défaut**. Le détail descend dans **cinq onglets** (§3ter). Hors onglets, en bas : annexe technique (détail annuel), volet « hypothèses de comparaison » portant `declinSQ`, tableau du manque à gagner. |
+
+La colonne de droite (`<aside>`, « Synthèse en continu ») est masquée pendant
+qu'on décrit la parcelle (temps 1) et réapparaît dès le temps 2
+(`syntheseVisible = step > 0`) : elle reprend un sous-ensemble des mêmes
+résultats (surface, densité, pieds à planter, conformité AOC, investissement,
+réserve mobilisée, effort net, tension de trésorerie, réserve minimale) et
+propose un raccourci direct vers le temps 3.
 
 ## 5. Le flux de données, de la frappe au résultat
 
@@ -387,6 +544,15 @@ graphiques. Sur une machine normale, c'est instantané ; ça n'a jamais posé
 de problème de fluidité en pratique.
 
 ## 6. Glossaire des champs de saisie
+
+> **Depuis la refonte d'interface (§3ter, §4).** Les sous-sections ci-dessous
+> gardent l'ancienne numérotation en cinq écrans, qui reste la façon la plus
+> claire de décrire *quel champ décrit quoi*. La correspondance avec les trois
+> temps : écrans 1 et 2 → **temps 1**, écrans 3 et 4 → **temps 2**, écran 5 →
+> **temps 3**. Les préréglages sourcés (charges Cerfrance, référentiel de temps
+> de travaux et taux horaire, tarifs de palissage et de protection, paramètres
+> de faire-valoir) ne sont plus dans le parcours : ils sont dans le **panneau
+> Hypothèses** (§3ter). Aucun champ n'a disparu.
 
 ### Le chemin court — 11 repères (prompt B4, arbitrage 11)
 
@@ -727,6 +893,16 @@ rechargement on relit la table telle quelle, ce qui rend inutile toute clé
 stable de ligne. `_id` est réattribué par position à chaque parsing ; c'est
 un index de rendu, jamais une identité persistée. Rien n'est envoyé hors du
 navigateur, et un bandeau le rappelle à l'utilisateur.
+
+> **Ajout du prompt 13.** L'instantané porte désormais aussi le **thème**
+> (`clair` / `sombre`) : l'outil est montré au vidéoprojecteur, on ne veut pas
+> rebasculer à chaque ouverture. Il vit **hors de `state.v`**, qui reste
+> l'objet des saisies — « Effacer mes données » ne le remet donc pas à zéro,
+> ce n'est pas une donnée de simulation. Un instantané écrit avant ce prompt,
+> ou porteur d'une valeur inconnue, retombe sur le clair. Ce qui n'entre
+> toujours PAS dans l'instantané : l'étape courante, l'onglet de résultats, les
+> volets ouverts ou repliés, le panneau Hypothèses, le registre replié — ce
+> sont des états de navigation.
 
 **Étape 1 — agrégation exploitation.** `OAD.agregerRegistreExploitation(registreRows,
 campagne)` (`moteur-oad.js`) renvoie `{ surfTot, ageMoy }` :
@@ -2132,6 +2308,41 @@ mode manuel pour lui appliquer la même mécanique ; et le cas d'un `idu`
 multi-lignes aux longueurs de rang hétérogènes, où une longueur unique
 pour l'agrégat reste une approximation.
 
+### 16bis. Le schéma de parcelle et les bornes de densité (prompt 12)
+
+La géométrie se saisissait en chiffres alors qu'elle se **dessine**, et rien
+ne montrait à l'utilisateur si ce qu'il venait de taper tenait debout.
+
+`schemaParcelle(d)` dessine, à droite des champs et à chaque frappe, les rangs
+en bandes verticales. Le nombre de bandes est **plafonné à 21** quel que soit
+le nombre réel de rangs : au-delà, une trame de rangs n'est plus qu'un aplat,
+et en dessous de cinq les bandes deviennent des colonnes. Les cotes sous le
+dessin portent le nombre exact, et le pied à deux colonnes donne mètres de
+rang, nombre de pieds, hectares arrachés et densité. Le schéma est
+**proportionnel, pas cadastral** — la légende le dit.
+
+Sous le schéma, une **ligne de vérification** : « Densité obtenue : N pieds/ha »
+et la conformité aux bornes AOC Champagne. Le contrôle vient du moteur —
+`OAD.conformiteDensiteAOC(densite)`, bornes `DENSITE_AOC_MIN = 8000` et
+`DENSITE_AOC_MAX = 10000`, inclusives — parce que c'en est un : il compare un
+résultat de calcul à deux bornes réglementaires. Il renvoie `ok` **et** `sens`
+(`'sous'` / `'au-dessus'`), ce qui permet à l'écran de dire *ce qui cloche*
+plutôt qu'un « non conforme » muet. **Il ne bloque pas** la saisie : l'outil est
+pédagogique, il signale, il n'interdit pas.
+
+`geometrieAgronomique` contrôlait déjà les **écartements** (rang ≤ 2,00 m, pied
+entre 0,70 et 1,50 m, somme ≤ 3,00 m) ; les deux contrôles coexistent et
+s'affichent l'un sous l'autre. La **longueur de rang** est devenue un champ
+dérivé affiché en lecture seule, avec la mention « calculé — N m de rang au
+total » (`OAD.metresDeRang(geo)`, soit `nbRangs × L`).
+
+Le **nombre de rangs** est remonté de son volet « Ajuster » dans la carte
+Géométrie, à côté du schéma qu'il dessine. Le volet du temps 1, vidé par ce
+déplacement et par le panneau Hypothèses, a disparu — un volet qui n'a plus
+rien à contenir ne reste pas à l'écran.
+
+---
+
 ## 17. KPI et synthèse
 
 Tous calculés dans `renderVals()` (`index.html`), après
@@ -2244,6 +2455,45 @@ prévu par le format `.dc` pour qu'un site hôte puisse la surcharger. Cette
 version d'`index.html` ne l'expose dans aucun champ visible : elle reste
 donc toujours à sa valeur par défaut tant que la page est ouverte seule.
 
+### 17bis. Les deux sorties d'impression (prompt 14)
+
+La fiche imprimable était un document d'audit en trois tableaux monochromes :
+elle ne reprenait ni la synthèse ni les chiffres de tête, on ne pouvait pas la
+laisser au vigneron en fin d'entretien. Il y a désormais **deux sorties, deux
+boutons, deux publics**.
+
+| Sortie | Bouton | Contenu | Couleur |
+|---|---|---|---|
+| Remise | « Remettre au vigneron » | **une page** : identification de la parcelle et date, les trois chiffres de tête, la frise de trajectoire, la synthèse, et en pied les limites de l'outil | conservée |
+| Audit | « Fiche d'audit » | la fiche exhaustive, inchangée : hypothèses (`printInpRows`), KPI avec formule (`printKpiRows`), détail annuel (`printDetailArr`) | monochrome |
+
+Les deux blocs vivent **au niveau du document**, hors de `<main>` : ce sont des
+pages à part entière, pas des annexes de l'écran. La sortie demandée est
+désignée par un attribut `data-print` posé sur la racine le temps de
+l'impression, et retiré sur l'événement **`afterprint`** — pas sur la ligne
+suivant `print()`, qui rend la main, selon le navigateur, avant que l'aperçu
+ait fini de composer la page ; retirer l'attribut trop tôt imprimerait une page
+vide. Un délai de repli couvre les navigateurs qui n'émettent pas l'événement.
+**Sans attribut** (impression déclenchée au clavier), c'est la fiche d'audit qui
+sort : c'est la sortie exhaustive.
+
+La remise **garde ses couleurs** (`print-color-adjust: exact`) : sa frise est
+son contenu, une frise en niveaux de gris ne dit plus rien. La frise est un SVG
+construit en React, jamais une image : elle s'imprime en vectoriel sans qu'on
+ait rien à demander. `@page { size: A4 portrait }`, `page-break-inside: avoid` —
+tenir sur une seule page est sa contrainte de conception.
+
+La synthèse imprimée (`out.syntheseTxt`) est assemblée des **mêmes morceaux**
+que le bloc sombre de l'écran : une fiche qu'on laisse au vigneron ne doit pas
+raconter autre chose que ce qu'il vient de lire, et deux rédactions parallèles
+finiraient par diverger. Seul le gras disparaît. Un test le vérifie morceau par
+morceau.
+
+Quel que soit le thème actif, l'impression **reste en clair** : la feuille
+`@media print` ramène tous les jetons à leurs valeurs claires.
+
+---
+
 ## 18. Graphiques SVG faits main
 
 Pas de librairie de graphiques : chaque figure est un `<svg>` construit à
@@ -2279,6 +2529,45 @@ ne subsiste ailleurs — les chiffres qu'elles portaient (investissement,
 réserve, effort net, écart
 final avec/sans réserve) restent lisibles via les KPI et, pour le détail
 formule par formule, via la fiche imprimable (`out.printKpiRows`, §17).
+
+### 18bis. La frise de trajectoire — `friseTrajectoire()` (prompt 7)
+
+Le cœur de la refonte. Le temps est partout dans l'outil — « années 3-4 »,
+« repos », « plantier », « à 10 ans » — et n'était jamais dessiné : il se lisait
+dans six blocs séparés, chacun avec son unité (années, kilos, euros, heures).
+Il est dessiné **une seule fois**, avec les trois échelles alignées sur le même
+axe horizontal, pour que le lien de cause à effet — récolte courte, creux de
+réserve, point bas de trésorerie décalé — se voie sans être expliqué.
+
+Construit en `React.createElement` dans `renderVals()`, pas dans le gabarit :
+les trois pistes doivent partager exactement la même géométrie de colonnes, ce
+qui suppose de la calculer une fois et de la distribuer.
+
+| Piste | Source | Rendu |
+|---|---|---|
+| Phase de la parcelle | `OAD.phasesParcelle(repos, horizon)` | bande de 38 px, segments `flexGrow` proportionnels aux durées réelles ; un segment d'une seule année affiche « an N » et garde son nom en `title` |
+| Stock de réserve | `sc.arrachage.kg[t].stockHa` — la **même** série que le graphique « trajectoire du stock » | aire `--accent-fond` + courbe `#A97F26` en SVG `viewBox="0 0 1000 88"`, `preserveAspectRatio="none"` ; échelle de 0 au **plafond de réserve** (un creux se juge par rapport au plafond, pas au maximum de la courbe) |
+| Trésorerie cumulée | `OAD.tresorerieCumulee(sc.arrachage, fv, vue, { parcelleSeule: true })` — la **même** série que le KPI « point bas » | 11 barres suspendues à la règle du haut ; quatre couleurs, dans cet ordre de priorité : retour au positif, point bas, remontée encore négative, descente |
+
+**Les points de la courbe tombent au centre de leur colonne d'année** —
+`x = (i + 0,5) × 1000 / N` — et non à ses bords, sans quoi la courbe se
+décalerait d'une demi-colonne par rapport aux barres et à la graduation. La
+graduation reprend les mêmes colonnes `flex: 1` et le même `gap` que les
+barres.
+
+L'annotation du creux est **hors du SVG**, dans un `div` positionné par-dessus :
+avec `preserveAspectRatio="none"`, un texte à l'intérieur serait étiré
+horizontalement.
+
+**Aucune interpolation, aucun lissage** : les valeurs tracées sont celles du
+moteur, année par année. Le creux et le point bas affichés sont donc, par
+construction, les années que la synthèse textuelle annonce.
+
+La légende sous la frise dit la **causalité** et nomme l'aléa effectivement
+simulé — sans lui, la chaîne « récolte courte → creux de réserve → point bas de
+trésorerie » n'a pas de premier maillon.
+
+---
 
 ## 19. Limites, hypothèses et paramètres cachés
 
