@@ -1698,6 +1698,36 @@ test('tresorerieCumulee : le cumul est bien le cumul de l\'annuelle, et rien n\'
     'tresorerieCumulee ne doit muter ni le scénario ni ses lignes');
 });
 
+section('23. Écran de résultats en onglets (prompts 8 et 9)');
+
+test("les cinq blocs sont devenus cinq onglets, et « Bloc N » a disparu", () => {
+  assert.ok(!/Bloc [1-5] ·/.test(INDEX_HTML),
+    'les intitulés « Bloc 1 » à « Bloc 5 » numérotaient l\'ordre du code : ils ne doivent plus être affichés');
+  assert.strictEqual((INDEX_HTML.match(/role="tabpanel"/g) || []).length, 5,
+    'cinq panneaux, un par onglet');
+  assert.ok(/role="tablist"/.test(INDEX_HTML) && /role="tab"/.test(INDEX_HTML),
+    'la barre d\'onglets doit être annoncée aux technologies d\'assistance');
+  ['Coût, poste par poste', 'Réserve individuelle', "Main d'œuvre et charges",
+   'Ce qui est replanté', 'Rajeunissement du vignoble'].forEach(lib => {
+    assert.ok(INDEX_HTML.indexOf(lib) >= 0, 'libellé d\'onglet présent : ' + lib);
+  });
+});
+
+test("l'onglet actif est un état d'interface, hors instantané localStorage", () => {
+  assert.ok(/ongletResultat:\s*0/.test(INDEX_HTML),
+    'state.ongletResultat doit exister et démarrer sur le premier onglet');
+  const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,600}?\n\}/);
+  assert.ok(ecriture && !/ongletResultat/.test(ecriture[0]),
+    "l'onglet actif ne doit pas entrer dans l'instantané localStorage");
+});
+
+test('prompt 9 : les graphiques sont ouverts par défaut, leurs boutons de repli conservés', () => {
+  assert.ok(/stockChartOuvert:\s*true/.test(INDEX_HTML) && /ageChartOuvert:\s*true/.test(INDEX_HTML),
+    "l'information la plus lisible ne doit plus être celle qui est cachée");
+  assert.ok(/toggleStockChart/.test(INDEX_HTML) && /toggleAgeChart/.test(INDEX_HTML),
+    'les boutons de repli restent : ouvert par défaut ne veut pas dire imposé');
+});
+
 // ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------

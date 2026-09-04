@@ -352,6 +352,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:14px;overflow:hidden">
             <button onClick="{{ toggleVoletProd }}" class="fold-btn">
               <span style="font-size:13.5px;font-weight:600">Détail par opération — heures manuelles et mécanisées à l'hectare</span>
+              <span class="hint">— {{ voletProdEnteteTxt }}</span>
               <span class="fold-sign">{{ voletProdChevron }}</span>
             </button>
             <sc-if value="{{ voletProdOuvert }}" hint-placeholder-val="{{ false }}">
@@ -943,6 +944,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:14px;overflow:hidden">
               <button onClick="{{ toggleVoletRepos }}" class="fold-btn">
                 <span style="font-size:13.5px;font-weight:600">B.1 — Détail par opération (repos)</span>
+                <span class="hint">— {{ voletReposEnteteTxt }}</span>
                 <span class="fold-sign">{{ voletReposChevron }}</span>
               </button>
               <sc-if value="{{ voletReposOuvert }}" hint-placeholder-val="{{ false }}">
@@ -976,6 +978,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:12px;overflow:hidden">
               <button onClick="{{ toggleVoletPlantier }}" class="fold-btn">
                 <span style="font-size:13.5px;font-weight:600">B.2 — Détail par opération (plantier)</span>
+                <span class="hint">— {{ voletPlantierEnteteTxt }}</span>
                 <span class="fold-sign">{{ voletPlantierChevron }}</span>
               </button>
               <sc-if value="{{ voletPlantierOuvert }}" hint-placeholder-val="{{ false }}">
@@ -1169,11 +1172,11 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                financier. Le contenu est inchangé. -->
           <div style="margin-top:16px;border-top:1px dotted #DDD9CE;padding-top:14px;display:flex;gap:10px;flex-wrap:wrap">
             <button onClick="{{ toggleStockChart }}" style="font-size:11.5px;padding:7px 14px;border:1px solid #DDD9CE;background:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
-              <span>Afficher la trajectoire du stock (kg/ha)</span>
+              <span>{{ stockChartLabel }}</span>
               <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ stockChartChevron }}</span>
             </button>
             <button onClick="{{ toggleAgeChart }}" style="font-size:11.5px;padding:7px 14px;border:1px solid #DDD9CE;background:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
-              <span>Afficher la trajectoire d'âge du vignoble</span>
+              <span>{{ ageChartLabel }}</span>
               <span style="font-family:'JetBrains Mono',monospace;color:#A97F26">{{ ageChartChevron }}</span>
             </button>
           </div>
@@ -1195,34 +1198,36 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           </sc-if>
         </div>
 
-        <!-- ============ BLOC 1 — Récapitulatif technique ============ -->
-        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Bloc 1 · Ce qui est arraché puis replanté</div>
-          <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:74ch">Récapitulatif technique de l'opération, sur la parcelle désignée à l'écran 2.</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
-            <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Surface renouvelée</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapSurfaceTxt }}</div>
-            </div>
-            <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Densité de plantation</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapDensiteTxt }}</div>
-            </div>
-            <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Matériel végétal</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapPiedsTxt }}</div>
-              <div style="font-size:11.5px;color:#5C6157;margin-top:2px">{{ recapMaterielTxt }}</div>
-            </div>
-            <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Matériel de palissage</div>
-              <div style="font-size:13.5px;margin-top:6px;line-height:1.4">{{ recapPalissageTxt }}</div>
-            </div>
-          </div>
+        <!-- ============ ONGLETS DES RÉSULTATS — prompt 8 ============
+             L'écran 5 empilait dix blocs verticaux : le conseiller ne pouvait
+             pas montrer une chose à la fois, et rien n'indiquait où s'arrêter
+             de défiler. Les cinq blocs deviennent cinq onglets, même contenu,
+             un seul visible à la fois.
+
+             Les intitulés « Bloc 1 » à « Bloc 5 » disparaissent : ils
+             numérotaient l'ordre du code, pas une progression que
+             l'utilisateur reconnaît. Le libellé de l'onglet les remplace.
+
+             L'ordre est celui de PROMPTS.md, résolu PAR LIBELLÉ : le handoff
+             y appariait « Réserve individuelle » au bloc 4 et « Main d'œuvre »
+             au bloc 3, alors que c'est l'inverse dans le code, et appelait le
+             cinquième onglet « Détail annuel » alors que le bloc 5 est le
+             rajeunissement du vignoble — le détail annuel, lui, reste hors
+             onglets, dans l'annexe technique. Un onglet doit dire ce qu'il
+             contient : les libellés suivent le contenu.
+
+             state.ongletResultat est un état d'interface : hors instantané
+             localStorage, comme l'étape courante et les volets. -->
+        <div role="tablist" aria-label="Détail des résultats" onKeyDown="{{ ongletsClavier }}" style="display:flex;border:1px solid #DDD9CE;border-radius:8px;overflow:hidden;margin:20px 0 0;flex-wrap:wrap">
+          <sc-for list="{{ ongletsResultat }}" as="og" hint-placeholder-count="5">
+            <button role="tab" id="{{ og.id }}" aria-selected="{{ og.aria }}" aria-controls="{{ og.panneau }}" tabindex="{{ og.tabindex }}" onClick="{{ og.go }}" style="font-size:13.5px;padding:11px 18px;border:0;border-right:1px solid #DDD9CE;border-bottom:2px solid {{ og.souligne }};cursor:pointer;background:{{ og.bg }};color:{{ og.fg }};font-weight:{{ og.poids }}">{{ og.label }}</button>
+          </sc-for>
         </div>
 
+        <sc-if value="{{ onglet0 }}" hint-placeholder-val="{{ true }}">
+        <div role="tabpanel" id="onglet-panneau-0" aria-labelledby="onglet-btn-0">
         <!-- ============ BLOC 2 — Coût de l'investissement ============ -->
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Bloc 2 · Coût de l'investissement</div>
           <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:74ch">Ce que coûte le renouvellement de la parcelle, poste par poste.</div>
           <div style="display:grid;grid-template-columns:1fr auto auto;gap:2px 16px;font-size:13.5px;align-items:baseline">
             <sc-for list="{{ investLignes }}" as="il" hint-placeholder-count="4">
@@ -1244,10 +1249,13 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             </div>
           </div>
         </div>
+        </div>
+        </sc-if>
 
+        <sc-if value="{{ onglet1 }}" hint-placeholder-val="{{ false }}">
+        <div role="tabpanel" id="onglet-panneau-1" aria-labelledby="onglet-btn-1">
         <!-- ============ BLOC 3 — Impact sur la réserve ============ -->
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Bloc 3 · Impact sur la réserve individuelle</div>
           <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:74ch">La réserve individuelle est un stock de kg déjà constitué, pas un revenu nouveau : l'arrachage autorise à en puiser une partie plus vite que d'habitude, pour jouer son rôle d'assurance pendant la période sans production normale de la parcelle.</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
             <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
@@ -1288,10 +1296,13 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <div style="font-size:11.5px;color:#5C6157;margin-top:10px">L'arrachage puise dans la réserve puis la reconstitue ; le statu quo la maintient. Chaque kg de réserve mobilisé est un coussin de sécurité entamé d'autant, pas un gain net.</div>
           </div>
         </div>
+        </div>
+        </sc-if>
 
+        <sc-if value="{{ onglet2 }}" hint-placeholder-val="{{ false }}">
+        <div role="tabpanel" id="onglet-panneau-2" aria-labelledby="onglet-btn-2">
         <!-- ============ BLOC 4 — Main d'œuvre et charges ============ -->
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Bloc 4 · Main d'œuvre et charges</div>
           <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:76ch">La parcelle renouvelée reste entretenue tout au long de la transition — mais pas de la même façon selon la phase : le repos n'engage quasiment aucun travail, le plantier en engage un réel (formation, protection, remplacement des manquants, désherbage), seule la vendange est franchement économisée tant qu'il n'y a rien à récolter. Charges de surface reprises de vos saisies à l'écran 1.</div>
           <div style="display:grid;grid-template-columns:1.6fr repeat(4,auto);gap:2px 14px;font-size:11.5px;align-items:center">
             <div style="font-size:11.5px;text-transform:uppercase;color:#5C6157;padding:5px 0;border-bottom:1px solid #DDD9CE">Régime</div>
@@ -1323,10 +1334,41 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             </sc-if>
           </div>
         </div>
+        </div>
+        </sc-if>
 
+        <sc-if value="{{ onglet3 }}" hint-placeholder-val="{{ false }}">
+        <div role="tabpanel" id="onglet-panneau-3" aria-labelledby="onglet-btn-3">
+        <!-- ============ BLOC 1 — Récapitulatif technique ============ -->
+        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
+          <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:74ch">Récapitulatif technique de l'opération, sur la parcelle désignée à l'écran 2.</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
+            <div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Surface renouvelée</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapSurfaceTxt }}</div>
+            </div>
+            <div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Densité de plantation</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapDensiteTxt }}</div>
+            </div>
+            <div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Matériel végétal</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapPiedsTxt }}</div>
+              <div style="font-size:11.5px;color:#5C6157;margin-top:2px">{{ recapMaterielTxt }}</div>
+            </div>
+            <div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Matériel de palissage</div>
+              <div style="font-size:13.5px;margin-top:6px;line-height:1.4">{{ recapPalissageTxt }}</div>
+            </div>
+          </div>
+        </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ onglet4 }}" hint-placeholder-val="{{ false }}">
+        <div role="tabpanel" id="onglet-panneau-4" aria-labelledby="onglet-btn-4">
         <!-- ============ BLOC 5 — Rajeunissement du vignoble ============ -->
         <figure style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Bloc 5 · Rajeunissement du vignoble</div>
           <figcaption style="font-family:'Newsreader',serif;font-weight:600;font-size:22px">Âge moyen du vignoble, avant / après</figcaption>
           <div style="font-size:11.5px;color:#5C6157;margin:2px 0 12px;max-width:74ch">Âge moyen de l'exploitation (parcelle désignée + reste), en années. Pendant le repos du sol, la parcelle sort du calcul : aucun rajeunissement affiché avant qu'une vigne ne soit effectivement replantée.</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:14px">
@@ -1344,11 +1386,14 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             </div>
           </div>
         </figure>
+        </div>
+        </sc-if>
 
         <!-- ============ Annexe technique (hors des 5 blocs) ============ -->
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:16px;overflow:hidden">
           <button onClick="{{ toggleDetail }}" class="fold-btn">
             <span style="font-size:13.5px;font-weight:600">Mode technique — détail annuel (scénario arrachage)</span>
+            <span class="hint">— {{ detailEnteteTxt }}</span>
             <span class="fold-sign">{{ detailChevron }}</span>
           </button>
           <sc-if value="{{ detailOuvert }}" hint-placeholder-val="{{ false }}">
@@ -1400,6 +1445,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:12px;overflow:hidden">
           <button onClick="{{ toggleMaG }}" class="fold-btn">
             <span style="font-size:13.5px;font-weight:600">Manque à gagner par rapport au statu quo (indicatif — jamais déduit du calcul)</span>
+            <span class="hint">— {{ magEnteteTxt }}</span>
             <span class="fold-sign">{{ magChevron }}</span>
           </button>
           <sc-if value="{{ magOuvert }}" hint-placeholder-val="{{ false }}">
@@ -1766,7 +1812,13 @@ class Component extends DCLogic {
       // reste en place, replié, pour qui veut relire le déroulé des 5 étapes.
       introOuvert: false, lexiqueOuvert: false, chargesProdOuvert: false,
       aideOuverte: false, detailOuvert: false, magOuvert: false,
-      effortNetOuvert: false, stockChartOuvert: false, ageChartOuvert: false,
+      effortNetOuvert: false,
+      // prompt 9 — inversion. Les deux seuls graphiques de l'écran 5 étaient
+      // repliés derrière des boutons pendant que les tableaux de chiffres
+      // étaient dépliés : l'information la plus lisible était celle qui était
+      // cachée. Les graphiques s'affichent maintenant d'emblée, leurs boutons
+      // de repli restent.
+      stockChartOuvert: true, ageChartOuvert: true,
       voletProdOuvert: false, voletProdOverrides: {},
       voletReposOuvert: false, voletReposOverrides: {}, voletReposCourtNoue: false,
       voletPlantierOuvert: false, voletPlantierOverrides: {},
@@ -1803,6 +1855,9 @@ class Component extends DCLogic {
       // que soit l'état où on l'a laissé. C'est un état de navigation, pas
       // une donnée de l'utilisateur — même règle que `step` ou `aideOuverte`.
       registreOuvert: false, importOuvert: false,
+      // prompt 8 — onglet visible de l'écran de résultats. État d'interface :
+      // hors instantané localStorage, comme l'étape courante et les volets.
+      ongletResultat: 0,
       parcelleIdu: iduPlanteesInit[0] || null,
       parcelleLignesExclues: {},
       // prompt B1 — la restauration ne peut que remplacer des clés existantes
@@ -2742,8 +2797,13 @@ class Component extends DCLogic {
       effortNetOuvert: s.effortNetOuvert, toggleEffortNet: () => this.setState(st => ({ effortNetOuvert: !st.effortNetOuvert })),
       effortNetChevron: s.effortNetOuvert ? '−' : '+',
       stockChartOuvert: s.stockChartOuvert, toggleStockChart: () => this.setState(st => ({ stockChartOuvert: !st.stockChartOuvert })),
+      // prompt 9 — les graphiques étant ouverts par défaut, le bouton propose
+      // désormais de les MASQUER : un bouton « Afficher » sous un graphique
+      // déjà affiché ne veut rien dire.
+      stockChartLabel: (s.stockChartOuvert ? 'Masquer' : 'Afficher') + ' la trajectoire du stock (kg/ha)',
       stockChartChevron: s.stockChartOuvert ? '−' : '+',
       ageChartOuvert: s.ageChartOuvert, toggleAgeChart: () => this.setState(st => ({ ageChartOuvert: !st.ageChartOuvert })),
+      ageChartLabel: (s.ageChartOuvert ? 'Masquer' : 'Afficher') + " la trajectoire d'âge du vignoble",
       ageChartChevron: s.ageChartOuvert ? '−' : '+',
       voletProdOuvert: s.voletProdOuvert, toggleVoletProd: () => this.setState(st => ({ voletProdOuvert: !st.voletProdOuvert })),
       voletProdChevron: s.voletProdOuvert ? '−' : '+',
@@ -2769,6 +2829,42 @@ class Component extends DCLogic {
       vueBg1: s.vueFV === '1' ? '#20291F' : '#fff', vueFg1: s.vueFV === '1' ? '#FAF9F5' : '#20291F',
       vueBgExp: s.vueFV === 'exp' ? '#20291F' : '#fff', vueFgExp: s.vueFV === 'exp' ? '#FAF9F5' : '#20291F',
       vueBgProp: s.vueFV === 'prop' ? '#20291F' : '#fff', vueFgProp: s.vueFV === 'prop' ? '#FAF9F5' : '#20291F',
+      // Onglets de l'écran de résultats — prompt 8. Le libellé de chaque
+      // onglet décrit son contenu ; l'ordre est celui du handoff.
+      ongletsResultat: ['Coût, poste par poste', 'Réserve individuelle',
+        "Main d'œuvre et charges", 'Ce qui est replanté', 'Rajeunissement du vignoble']
+        .map((label, i) => ({
+          label, id: 'onglet-btn-' + i, panneau: 'onglet-panneau-' + i,
+          aria: s.ongletResultat === i ? 'true' : 'false',
+          // Un seul onglet dans l'ordre de tabulation (motif « tabs » ARIA) :
+          // on entre dans la barre par Tab, on s'y déplace par les flèches.
+          tabindex: s.ongletResultat === i ? '0' : '-1',
+          bg: s.ongletResultat === i ? '#fff' : '#FAF9F5',
+          fg: s.ongletResultat === i ? '#20291F' : '#5C6157',
+          poids: s.ongletResultat === i ? '600' : '400',
+          souligne: s.ongletResultat === i ? '#A97F26' : 'transparent',
+          go: () => this.setState({ ongletResultat: i })
+        })),
+      onglet0: s.ongletResultat === 0, onglet1: s.ongletResultat === 1,
+      onglet2: s.ongletResultat === 2, onglet3: s.ongletResultat === 3,
+      onglet4: s.ongletResultat === 4,
+      // Navigation au clavier : flèches gauche/droite en boucle, Origine et
+      // Fin aux extrémités. Le focus suit la sélection, sans quoi la flèche
+      // déplacerait l'onglet actif en laissant le curseur derrière.
+      ongletsClavier: (ev) => {
+        const n = 5;
+        const cible = ev.key === 'ArrowRight' ? (s.ongletResultat + 1) % n
+          : ev.key === 'ArrowLeft' ? (s.ongletResultat + n - 1) % n
+          : ev.key === 'Home' ? 0
+          : ev.key === 'End' ? n - 1
+          : null;
+        if (cible === null) return;
+        ev.preventDefault();
+        this.setState({ ongletResultat: cible }, () => {
+          const el = document.getElementById('onglet-btn-' + cible);
+          if (el) el.focus();
+        });
+      },
       imprimerFiche: () => window.print(),
       printDateTxt: new Date().toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
     };
@@ -2923,6 +3019,15 @@ class Component extends DCLogic {
     out.chargesProdResumeTxt = nf(+v.coutSurfaceProdHaAn || 0, 0) + ' €/ha/an à la surface · '
       + nf(+v.coutRdtParKg || 0, 2) + ' €/kg à la vendange';
     out.voletProdTotalTxt = nf(voletProdTotalEuroHa, 0) + ' €/ha';
+    /* prompt 9 — replier ne doit enterrer aucun chiffre : l'en-tête de chaque
+       volet de détail annonce ce qu'il contient et le total de sa colonne
+       principale, pour qu'on sache ce qu'on laisse fermé. */
+    out.voletProdEnteteTxt = voletProdLignes.length + ' opérations · '
+      + nf(voletProdTotalEuroHa, 0) + ' €/ha au total';
+    out.voletReposEnteteTxt = voletReposLignes.length + ' opérations · '
+      + nf(voletReposTotalEuroHa, 0) + ' €/ha au total';
+    out.voletPlantierEnteteTxt = voletPlantierLignes.length + ' opérations · '
+      + nf(voletPlantierTotalEuroHa, 0) + ' €/ha au total';
     out.voletProdHeuresTxt = nf(voletProdHeuresManuellesHa, 1) + ' h/ha';
     out.voletProdHeuresMecaTxt = nf(voletProdHeuresMecaniseHa, 1) + ' h/ha';
     out.voletReposTotalTxt = nf(voletReposTotalEuroHa, 0) + ' €/ha';
@@ -3219,6 +3324,7 @@ class Component extends DCLogic {
         // qu'un chiffre faux en 36 px.
         teteRetour: kpiVide, teteEffort: kpiVide, teteAge: kpiVide,
         friseTrajectoire: null, friseLegendeTxt: '',
+        detailEnteteTxt: '…', magEnteteTxt: '…',
         ageAvantTxt: '…', ageApresArrTxt: '…', ageApresSQTxt: '…',
         chartStock: null, chartAge: null, ageLegendItems: [], detailRows: [], magRows: [], lectureTreso: '',
         syntheseCouvTxt: '…', syntheseCouvSuffixTxt: '', syntheseAbsorptionTxt: '',
@@ -3519,11 +3625,17 @@ class Component extends DCLogic {
       stockHa: this.fmtKg(r.stockHa), cashNet: this.fmtE(eurRows[i].cashNet)
     }));
     out.detailRows = buildDetailRows(sc.arrachage.kg, sc.arrachage.eur);
+    // prompt 9 — le seul tableau de plus de six lignes encore présent sur
+    // l'écran 5 ; son en-tête dit sa hauteur et le chiffre qui le résume.
+    out.detailEnteteTxt = out.detailRows.length + ' années · trésorerie cumulée à '
+      + out.horizonTxt + ' : ' + this.fmtE0(arrParcelle[inp.horizon]) + ' sur la parcelle';
     // chantier C1 — colonne « Complantation » retirée (scénario @deprecated, hors
     // interface) ; la colonne « Statu quo » l'était déjà codée en dur à 0 € (elle se
     // compare à elle-même par construction) plutôt que réellement calculée.
     const magA = OAD.manqueAGagner(sc.arrachage, sc.statuquo, inp.prixKg);
     out.magRows = magA.map((val, i) => ({ t: String(i), arr: this.fmtE(val) }));
+    out.magEnteteTxt = magA.length + ' années · '
+      + this.fmtE0(magA.reduce((a, b) => a + b, 0)) + ' cumulés';
 
     // Fiche d'audit imprimable — détail annuel du seul scénario arrachage
     // (chantier C1 : complantation et statu quo retirés de la fiche, alignée sur
