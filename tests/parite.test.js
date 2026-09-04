@@ -1568,6 +1568,48 @@ test('la saisie manuelle a bien disparu de l\'interface : plus de bouton, défau
     'plus aucune branche « hors mode registre » ne doit subsister dans le gabarit');
 });
 
+section('20. Synthèse du registre pour le bandeau replié (prompt 3)');
+
+test('synthetiseRegistre : nombre de lignes, surface totale, cépages distincts triés', () => {
+  const rows = [
+    { idu: 'A', cepage: 'CHARDONNAY B', surface: 0.05, situation: 'plantee' },
+    { idu: 'B', cepage: 'MEUNIER N', surface: 0.21, situation: 'arrachee' },
+    { idu: 'C', cepage: 'CHARDONNAY B', surface: 0.14, situation: 'plantee' },
+    { idu: 'D', cepage: 'PINOT NOIR N', surface: 0.10, situation: 'plantee' }
+  ];
+  const r = OAD.synthetiseRegistre(rows);
+  assert.strictEqual(r.nbLignes, 4);
+  assert.ok(Math.abs(r.surfaceTotale - 0.5) < 1e-9,
+    'la surface totale compte les lignes Arrachée, comme agregerRegistreExploitation : '
+    + 'le bandeau doit annoncer la même surface que le champ « Surface totale » au-dessus de lui');
+  assert.deepStrictEqual(r.cepages, ['CHARDONNAY B', 'MEUNIER N', 'PINOT NOIR N'],
+    'cépages dédoublonnés et triés — un ordre stable évite que le bandeau se réécrive '
+    + 'à chaque frappe dans une cellule sans rapport');
+});
+
+test('synthetiseRegistre : registre vide, cellules en cours de saisie, cépage absent', () => {
+  assert.deepStrictEqual(OAD.synthetiseRegistre([]), { nbLignes: 0, surfaceTotale: 0, cepages: [] });
+  assert.deepStrictEqual(OAD.synthetiseRegistre(undefined), { nbLignes: 0, surfaceTotale: 0, cepages: [] });
+  // Une cellule que l'utilisateur est en train de vider porte '' ou '0,' :
+  // elle ne doit ni rendre la surface NaN, ni ajouter un cépage vide.
+  const r = OAD.synthetiseRegistre([
+    { idu: 'A', cepage: '', surface: '', situation: 'plantee' },
+    { idu: 'B', cepage: '   ', surface: '0,', situation: 'plantee' },
+    { idu: 'C', cepage: 'MEUNIER N', surface: 0.3, situation: 'plantee' }
+  ]);
+  assert.strictEqual(r.nbLignes, 3);
+  assert.ok(Number.isFinite(r.surfaceTotale) && Math.abs(r.surfaceTotale - 0.3) < 1e-9);
+  assert.deepStrictEqual(r.cepages, ['MEUNIER N']);
+});
+
+test("le registre de l'étape 1 est replié par défaut, hors instantané localStorage", () => {
+  assert.ok(/registreOuvert:\s*false/.test(INDEX_HTML),
+    "state.registreOuvert doit exister et valoir false au chargement — c'est tout l'objet du prompt 3");
+  const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,600}?\n\}/);
+  assert.ok(ecriture && !/registreOuvert/.test(ecriture[0]),
+    "l'état d'ouverture du volet ne doit pas entrer dans l'instantané localStorage");
+});
+
 // ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------

@@ -319,6 +319,32 @@ function agregerRegistreParcelle(rows, campagne) {
   };
 }
 
+// Synthèse du registre pour le bandeau replié de l'étape 1 — prompt 3.
+//
+// Le registre est refermé par défaut : le bandeau doit donc dire ce qu'il
+// contient, sinon replier revient à cacher. Trois grandeurs suffisent à
+// reconnaître son propre registre sans l'ouvrir : combien de lignes, quelle
+// surface, quels cépages.
+//
+// `surfaceTotale` compte TOUTES les lignes, Plantée et Arrachée, exactement
+// comme `agregerRegistreExploitation` : le bandeau doit annoncer la même
+// surface que le champ « Surface totale » juste au-dessus de lui, sans quoi
+// l'utilisateur lit deux chiffres contradictoires sur le même écran.
+// `cepages` est dédoublonné et trié par ordre alphabétique — une liste de
+// cépages n'a pas d'ordre naturel, et un ordre stable évite que le bandeau
+// se réécrive à chaque frappe dans une cellule sans rapport.
+function synthetiseRegistre(rows) {
+  const lignes = rows || [];
+  let surfaceTotale = 0;
+  const vus = {};
+  lignes.forEach(r => {
+    surfaceTotale += +(r && r.surface) || 0;
+    const c = String((r && r.cepage) || '').trim();
+    if (c) vus[c] = true;
+  });
+  return { nbLignes: lignes.length, surfaceTotale, cepages: Object.keys(vus).sort() };
+}
+
 /* =====================================================================
    Édition manuelle du registre — prompt B8 (arbitrage du 01/09/2026).
 
@@ -976,7 +1002,7 @@ if (typeof module !== 'undefined') module.exports =
     coutProtectionPlant, PRIX_PROTECTION_PLANT, preconPorteGreffe,
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
-    ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
+    ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, synthetiseRegistre, trajectoireAge,
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
     CLONES_CHAMPAGNE, clonesParCepage,
@@ -988,7 +1014,7 @@ if (typeof window !== 'undefined') window.OAD =
     coutProtectionPlant, PRIX_PROTECTION_PLANT, preconPorteGreffe,
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
-    ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, trajectoireAge,
+    ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, synthetiseRegistre, trajectoireAge,
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
     CLONES_CHAMPAGNE, clonesParCepage,

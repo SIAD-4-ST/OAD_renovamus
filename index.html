@@ -251,24 +251,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
              l'import CSV, sans condition d'affichage. -->
         <div style="margin-bottom:18px;padding:10px 14px;border-radius:6px;background:#F1E6CC;font-size:11.5px;line-height:1.5">Vos saisies sont conservées sur cet ordinateur uniquement. Rien n'est envoyé. Le registre ({{ registreNbLignes }} lignes) et les corrections que vous y apportez sont relus tels quels au prochain chargement.</div>
 
-        <!-- Import du registre réel — prompt B2. Le fichier est lu par le
-             navigateur (FileReader) et n'est jamais transmis : pas d'envoi,
-             pas d'URL. Champ de fichier natif et visible, plutôt qu'un input
-             masqué derrière un faux bouton — il reste ainsi utilisable au
-             clavier avec un focus visible. -->
-        <div style="margin-bottom:18px;padding:14px 16px;border:1px solid #DDD9CE;border-radius:8px;background:#fff">
-          <div style="font-size:13.5px;font-weight:600;margin-bottom:6px">Importer mon registre</div>
-          <div style="font-size:11.5px;color:#5C6157;line-height:1.5;margin-bottom:10px">Export du portail CIVC, au format CSV séparé par des points-virgules. Le fichier est lu sur cet ordinateur : rien n'est envoyé.</div>
-          <input type="file" accept=".csv,text/csv" onChange="{{ onFichierRegistre }}" style="font-size:11.5px;max-width:100%">
-          <div style="font-size:11.5px;color:#5C6157;margin-top:8px">Colonnes attendues : {{ colonnesAttenduesTxt }}</div>
-          <sc-if value="{{ importErreur }}" hint-placeholder-val="{{ false }}">
-            <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:#F7E9E7;border:1px solid #A5433A;color:#A5433A;font-size:11.5px;line-height:1.5">{{ importErreurTxt }}</div>
-          </sc-if>
-          <sc-if value="{{ importOk }}" hint-placeholder-val="{{ false }}">
-            <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:#E3EDE5;border:1px solid #4C7A57;color:#2F5B3C;font-size:11.5px;line-height:1.5">{{ importOkTxt }}</div>
-          </sc-if>
-        </div>
-
         <!-- prompt B8 — état bloquant. Surface totale et âge moyen ne sont plus
              saisissables : ils sont DÉRIVÉS du registre. Un registre sans
              aucune surface ne donne donc pas « 0 ha » et des ratios
@@ -400,8 +382,49 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           </sc-if>
         </div>
 
-        <div style="margin-top:22px;background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;overflow-x:auto">
-          <h3 style="font-family:'Fraunces',serif;font-size:13.5px;margin:0 0 4px">{{ registreTitre }} ({{ registreNbLignes }} lignes)</h3>
+        <!-- Registre parcellaire replié en bandeau de synthèse — prompt 3.
+
+             Le contenu le plus intimidant de l'outil — un tableau éditable de
+             douze lignes — occupait le bas du premier écran que voit
+             l'utilisateur. Il est désormais refermé par défaut, derrière un
+             bandeau qui dit ce qu'il contient : combien de parcelles, quelle
+             surface, quels cépages. Replier ne doit jamais revenir à cacher.
+
+             L'import de fichier reste atteignable SANS ouvrir le registre :
+             c'est un geste de mise en route, pas une correction de détail. Il
+             a son propre volet, à côté.
+
+             L'état d'ouverture ne va PAS dans l'instantané localStorage : le
+             registre doit être refermé à chaque chargement, c'est tout l'objet
+             du prompt. -->
+        <div class="fold" style="margin-top:22px">
+          <div style="display:flex;align-items:center;gap:16px;padding:12px 16px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+              <div class="n3" style="font-weight:600">{{ registreTitre }}</div>
+              <div class="n4">{{ registreResumeTxt }}</div>
+            </div>
+            <div style="display:flex;gap:8px;margin-left:auto;flex-wrap:wrap">
+              <button onClick="{{ toggleRegistre }}" aria-expanded="{{ registreAria }}" style="font-size:11.5px;padding:8px 14px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:#fff;color:#20291F">{{ registreBoutonTxt }} <span class="mono" style="color:#A97F26">{{ registreChevron }}</span></button>
+              <button onClick="{{ toggleImportRegistre }}" aria-expanded="{{ importAria }}" style="font-size:11.5px;padding:8px 14px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:#fff;color:#20291F">Importer un fichier <span class="mono" style="color:#A97F26">{{ importChevron }}</span></button>
+            </div>
+          </div>
+
+          <sc-if value="{{ importOuvert }}" hint-placeholder-val="{{ false }}">
+            <div class="fold-body" style="border-top:1px solid #DDD9CE;padding-top:14px">
+              <div class="n4" style="margin-bottom:10px">Export du portail CIVC, au format CSV séparé par des points-virgules. Le fichier est lu sur cet ordinateur : rien n'est envoyé.</div>
+              <input type="file" accept=".csv,text/csv" onChange="{{ onFichierRegistre }}" style="font-size:11.5px;max-width:100%">
+              <div class="n4" style="margin-top:8px">Colonnes attendues : {{ colonnesAttenduesTxt }}</div>
+              <sc-if value="{{ importErreur }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:#F7E9E7;border:1px solid #A5433A;color:#A5433A;font-size:11.5px;line-height:1.5">{{ importErreurTxt }}</div>
+              </sc-if>
+              <sc-if value="{{ importOk }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:10px;padding:9px 12px;border-radius:6px;background:#E3EDE5;border:1px solid #4C7A57;color:#2F5B3C;font-size:11.5px;line-height:1.5">{{ importOkTxt }}</div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ registreOuvert }}" hint-placeholder-val="{{ false }}">
+          <div class="fold-body" style="border-top:1px solid #DDD9CE;padding-top:14px;overflow-x:auto">
           <!-- Édition des cellules — prompt B2 (arbitrage 2), RÉVISÉ au prompt
                B8. Le commentaire précédent disait « ni ajout, ni suppression de
                lignes ici » : ce n'est plus vrai, et c'est délibéré. Depuis que
@@ -442,6 +465,8 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                ailleurs, et l'instantané local n'est de toute façon pas
                versionné. -->
           <button onClick="{{ onAjouterLigneRegistre }}" style="margin-top:14px;padding:8px 14px;border:1px solid #20291F;border-radius:6px;cursor:pointer;font-size:13.5px;font-weight:600;background:#fff;color:#20291F">+ Ajouter une ligne</button>
+          </div>
+          </sc-if>
         </div>
       </sc-if>
 
@@ -1709,6 +1734,12 @@ class Component extends DCLogic {
       accueilOuvert: !(instantane && instantane.accueilVu),
       // Volets « Ajuster » (prompt B4) — repliés par défaut sur chaque écran.
       ajusterOuvert1: false, ajusterOuvert2: false, ajusterOuvert3: false, ajusterOuvert4: false,
+      // prompt 3 — le registre parcellaire et l'import de fichier sont deux
+      // volets refermés au chargement. Volontairement HORS instantané
+      // localStorage : rouvrir l'outil doit redonner un écran 1 court, quel
+      // que soit l'état où on l'a laissé. C'est un état de navigation, pas
+      // une donnée de l'utilisateur — même règle que `step` ou `aideOuverte`.
+      registreOuvert: false, importOuvert: false,
       parcelleIdu: iduPlanteesInit[0] || null,
       parcelleLignesExclues: {},
       // prompt B1 — la restauration ne peut que remplacer des clés existantes
@@ -2786,6 +2817,26 @@ class Component extends DCLogic {
         + (r.commune ? ' — ' + r.commune : '')
     }));
     out.onAjouterLigneRegistre = () => this.ajouterLigneRegistre();
+    // Bandeau de synthèse du registre — prompt 3. Le comptage vient du moteur
+    // (OAD.synthetiseRegistre), pas d'ici : c'est un calcul, même simple.
+    // Il porte sur `registreRows` NORMALISÉ, comme les agrégats ci-dessus,
+    // pour que le bandeau annonce la même surface que le champ « Surface
+    // totale » de la grille du haut.
+    const synthReg = OAD ? OAD.synthetiseRegistre(registreRows)
+      : { nbLignes: registreRows.length, surfaceTotale: 0, cepages: [] };
+    const pluriel = (n, mot) => n + ' ' + mot + (n > 1 ? 's' : '');
+    out.registreResumeTxt = pluriel(synthReg.nbLignes, 'parcelle')
+      + ' · ' + nf(synthReg.surfaceTotale, 2) + ' ha'
+      + ' · ' + pluriel(synthReg.cepages.length, 'cépage');
+    out.registreOuvert = s.registreOuvert;
+    out.registreAria = s.registreOuvert ? 'true' : 'false';
+    out.registreChevron = s.registreOuvert ? '−' : '+';
+    out.registreBoutonTxt = s.registreOuvert ? 'Fermer le registre' : 'Ouvrir le registre';
+    out.toggleRegistre = () => this.setState(st => ({ registreOuvert: !st.registreOuvert }));
+    out.importOuvert = s.importOuvert;
+    out.importAria = s.importOuvert ? 'true' : 'false';
+    out.importChevron = s.importOuvert ? '−' : '+';
+    out.toggleImportRegistre = () => this.setState(st => ({ importOuvert: !st.importOuvert }));
     // Import du registre CIVC — prompt B2.
     out.registreTitre = s.registreImporte ? 'Registre parcellaire' : 'Registre parcellaire — exemple';
     out.colonnesAttenduesTxt = COLONNES_CIVC.join(', ');
