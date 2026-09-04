@@ -922,6 +922,61 @@ function regimesTravailArrachage(scArr, scSQ, inp, opsManuel = REF_OPS_MANUEL, f
 // à jour ensemble : le VolCo change à chaque campagne (8 800 en 2026), celui-ci
 // non. Ne jamais dériver l'un de l'autre, ni les remplacer par une constante
 // unique. Voir README §19.
+/* =====================================================================
+   Phases de la parcelle renouvelée — prompts 5 et 7.
+
+   Le temps est partout dans l'outil (« années 3-4 », « repos », « plantier »,
+   « à 10 ans ») et n'était jamais dessiné. Pour le dessiner il faut d'abord
+   le NOMMER, année par année, et une seule fois : ces deux fonctions portent
+   la découpe, l'interface ne fait que la colorier.
+
+   La découpe suit exactement la convention de `simulerReserveKg` (§7), elle
+   ne la réinterprète pas :
+     t = 0                      arrachage — le chantier lui-même, sol nu
+     1 <= t < repos             repos du sol (vide si repos = 1)
+     repos <= t < repos + 3     plantier — la vigne est en terre, elle ne
+                                produit pas encore
+     t >= repos + 3             en production
+   `repos` est donc bien la durée pendant laquelle le sol reste nu, année
+   d'arrachage comprise : la plantation a lieu à t = repos (c'est là que
+   `construireScenarios` place invArr[repos]), et l'entrée en production à
+   t = repos + 3 (`returnYear`, la 3e feuille).
+   ===================================================================== */
+const DELAI_PLANTIER = 3;   // années entre la plantation et la 3e feuille
+
+// Année de retour en production, comptée depuis l'arrachage.
+function anneeRetourProduction(repos) {
+  return DELAI_PLANTIER + Math.max(0, +repos || 0);
+}
+
+// Segments de phase sur l'axe 0..horizon, bornes [debut, fin[ en années.
+// Un segment de durée nulle (le repos quand repos = 1) n'est pas renvoyé :
+// une bande de largeur zéro n'a rien à dire à l'écran.
+function phasesParcelle(repos, horizon) {
+  const r = Math.max(0, +repos || 0);
+  const h = Math.max(0, +horizon || 0);
+  const brut = [
+    { id: 'arrachage',  lib: 'arrachage',      debut: 0,     fin: 1 },
+    { id: 'repos',      lib: 'repos du sol',   debut: 1,     fin: r },
+    { id: 'plantier',   lib: 'plantier',       debut: r,     fin: r + DELAI_PLANTIER },
+    { id: 'production', lib: 'en production',  debut: r + DELAI_PLANTIER, fin: h + 1 }
+  ];
+  return brut
+    .map(p => ({ ...p, debut: Math.min(p.debut, h + 1), fin: Math.min(p.fin, h + 1) }))
+    .filter(p => p.fin > p.debut);
+}
+
+// La même découpe, ramenée à un identifiant de phase par année — c'est ce que
+// consomment les pistes alignées sur l'axe des années (prompt 7).
+function phaseParAnnee(repos, horizon) {
+  const segs = phasesParcelle(repos, horizon);
+  const h = Math.max(0, +horizon || 0);
+  return Array.from({ length: h + 1 }, (_, t) => {
+    const seg = segs.find(p => t >= p.debut && t < p.fin);
+    return seg ? seg.id : 'production';
+  });
+}
+
 const VOL_SORTIE_ARRACHAGE = 9000; // kg/ha/an, inchangé depuis avant ce chantier — voir README §19
 const NB_SORTIE_PAR_REPOS = { 1: 3, 2: 4, 3: 5 }; // repos (ans) -> nb d'années de déblocage
 function nbSortiePourRepos(repos) {
@@ -1005,6 +1060,7 @@ if (typeof module !== 'undefined') module.exports =
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, synthetiseRegistre, trajectoireAge,
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
+    DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee,
     CLONES_CHAMPAGNE, clonesParCepage,
     PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,
     stressEstDeficitaire };
@@ -1017,6 +1073,7 @@ if (typeof window !== 'undefined') window.OAD =
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, synthetiseRegistre, trajectoireAge,
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
+    DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee,
     CLONES_CHAMPAGNE, clonesParCepage,
     PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,
     stressEstDeficitaire };

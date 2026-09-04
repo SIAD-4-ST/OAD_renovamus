@@ -1610,6 +1610,52 @@ test("le registre de l'étape 1 est replié par défaut, hors instantané localS
     "l'état d'ouverture du volet ne doit pas entrer dans l'instantané localStorage");
 });
 
+section('21. Phases de la parcelle renouvelée (prompts 5 et 7)');
+
+test('anneeRetourProduction : repos + 3, exactement le returnYear de simulerReserveKg', () => {
+  assert.strictEqual(OAD.anneeRetourProduction(1), 4);
+  assert.strictEqual(OAD.anneeRetourProduction(2), 5);
+  assert.strictEqual(OAD.anneeRetourProduction(3), 6);
+  // Le chiffre de tête « Retour en production » ne doit jamais annoncer une
+  // autre année que celle où le moteur remet la parcelle en production.
+  [1, 2, 3].forEach(repos => {
+    const sc = OAD.construireScenarios({ ...INP_A, repos, nbSortie: OAD.nbSortiePourRepos(repos) });
+    const retour = OAD.anneeRetourProduction(repos);
+    assert.strictEqual(sc.arrachage.kg[retour - 1].recolteParcelle, 0,
+      `année ${retour - 1} : la parcelle ne produit pas encore`);
+    assert.ok(sc.arrachage.kg[retour].recolteParcelle > 0,
+      `année ${retour} : la parcelle produit`);
+  });
+});
+
+test('phasesParcelle : découpe conforme à la convention de simulerReserveKg', () => {
+  assert.deepStrictEqual(OAD.phasesParcelle(3, 10), [
+    { id: 'arrachage', lib: 'arrachage', debut: 0, fin: 1 },
+    { id: 'repos', lib: 'repos du sol', debut: 1, fin: 3 },
+    { id: 'plantier', lib: 'plantier', debut: 3, fin: 6 },
+    { id: 'production', lib: 'en production', debut: 6, fin: 11 }
+  ]);
+  // repos = 1 : la plantation a lieu dès l'année 1, il n'y a aucune année de
+  // sol nu après celle de l'arrachage — le segment de durée nulle disparaît
+  // plutôt que de produire une bande de largeur zéro à l'écran.
+  const p1 = OAD.phasesParcelle(1, 10);
+  assert.deepStrictEqual(p1.map(x => x.id), ['arrachage', 'plantier', 'production']);
+  assert.strictEqual(p1[1].debut, 1);
+  assert.strictEqual(p1[2].debut, 4);
+});
+
+test('phaseParAnnee : un identifiant par année, sur toute la largeur de l\'axe', () => {
+  assert.deepStrictEqual(OAD.phaseParAnnee(3, 10),
+    ['arrachage', 'repos', 'repos', 'plantier', 'plantier', 'plantier',
+     'production', 'production', 'production', 'production', 'production']);
+  assert.strictEqual(OAD.phaseParAnnee(2, 10).length, 11,
+    'autant d\'entrées que de colonnes d\'année : la frise doit s\'aligner sur la graduation');
+  // Horizon plus court que la transition : rien ne dépasse, rien ne manque.
+  assert.strictEqual(OAD.phaseParAnnee(3, 4).length, 5);
+  assert.deepStrictEqual(OAD.phasesParcelle(3, 4).map(x => x.id),
+    ['arrachage', 'repos', 'plantier']);
+});
+
 // ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------

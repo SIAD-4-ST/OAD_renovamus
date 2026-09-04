@@ -1023,6 +1023,36 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         </sc-if>
         <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:22px;margin:4px 0 6px">Ce que représente votre projet, sur {{ horizonTxt }}</h2>
 
+        <!-- ============ TROIS CHIFFRES DE TÊTE — prompt 5 ============
+             L'écran 5 commençait par un bandeau d'aléa, un bouton
+             d'impression, un paragraphe de synthèse de soixante mots portant
+             huit valeurs en gras, puis des réglages d'affichage. Rien
+             n'attirait le regard, et à trois mètres d'un vidéoprojecteur rien
+             ne se lisait.
+
+             Trois valeurs, et trois seulement, passent en N1 (36 px) : une
+             année, un montant, une durée. Elles ne sont pas recalculées ici —
+             elles viennent de `construireScenarios`, de `trajectoireAge` et de
+             `anneeRetourProduction`. Le paragraphe de synthèse descend sous
+             elles : il devient leur commentaire, pas leur substitut. -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid #DDD9CE;border-radius:10px;overflow:hidden;margin:16px 0 4px">
+          <div style="padding:20px 22px;background:#F1E6CC;display:flex;flex-direction:column;gap:4px;border-right:1px solid #E3D3AA">
+            <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Retour en production</div>
+            <div class="n1">{{ teteRetour.val }}</div>
+            <div class="n4">{{ teteRetour.det }}</div>
+          </div>
+          <div style="padding:20px 22px;background:#F1E6CC;display:flex;flex-direction:column;gap:4px;border-right:1px solid #E3D3AA">
+            <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Effort net à financer</div>
+            <div class="n1">{{ teteEffort.val }}</div>
+            <div class="n4">{{ teteEffort.det }}</div>
+          </div>
+          <div style="padding:20px 22px;background:#F1E6CC;display:flex;flex-direction:column;gap:4px">
+            <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Vignoble rajeuni de</div>
+            <div class="n1">{{ teteAge.val }}</div>
+            <div class="n4">{{ teteAge.det }}</div>
+          </div>
+        </div>
+
         <!-- prompt B3 (arbitrage 8) — le test de résistance est actif PAR DÉFAUT.
              Ce bandeau n'est pas repliable : le scénario climatique retenu change
              la nature de tout ce qui est affiché dessous, l'utilisateur ne doit
@@ -3052,6 +3082,10 @@ class Component extends DCLogic {
         creuxTxt: '…', creuxT: '…', creuxAbsTxt: '…', creuxAbsT: '…', stockMinTxt: '…', stockMinC: '#A97F26', tMin: '…',
         kpiInvestTotal: kpiVide, kpiPointBas: kpiVide, kpiAmortisseur: kpiVide, kpiEffortNet: kpiVide,
         kpiReserveMin: kpiVide, kpiEcartAge: kpiVide, kpiStockReserve: kpiVide, regimesTravail: [],
+        // prompt 5 — les trois chiffres de tête ont le même repli que les KPI :
+        // sans moteur ou sur une saisie incohérente, ils ne montrent rien plutôt
+        // qu'un chiffre faux en 36 px.
+        teteRetour: kpiVide, teteEffort: kpiVide, teteAge: kpiVide,
         ageAvantTxt: '…', ageApresArrTxt: '…', ageApresSQTxt: '…',
         chartStock: null, chartAge: null, ageLegendItems: [], detailRows: [], magRows: [], lectureTreso: '',
         syntheseCouvTxt: '…', syntheseCouvSuffixTxt: '', syntheseAbsorptionTxt: '',
@@ -3173,6 +3207,34 @@ class Component extends DCLogic {
     out.reserveReelleTxt = this.fmtE0(reserveReelle);
     out.reserveTheoTxt = this.fmtE0(reserveTheo);
     out.effortNetTxt = this.fmtE0(effortNet);
+
+    /* Trois chiffres de tête — prompt 5.
+       Une année, un montant, une durée : les trois grandeurs qu'un vigneron
+       retient de l'entretien. Aucune n'est recalculée ici — l'année vient de
+       OAD.anneeRetourProduction, le montant de l'investissement rendu par
+       construireScenarios diminué de la réserve réellement mobilisée, la
+       durée de OAD.trajectoireAge. Le détail sous chaque chiffre dit d'où il
+       vient : un chiffre de 36 px ne doit jamais être un chiffre nu. */
+    const retourProd = OAD.anneeRetourProduction(inp.repos);
+    const ans = (n) => nf(n, 0) + (n > 1 ? ' ans' : ' an');
+    out.teteRetour = {
+      val: 'année ' + nf(retourProd, 0),
+      det: (inp.repos > 0 ? ans(inp.repos) + ' de repos du sol, puis ' : '')
+        + ans(OAD.DELAI_PLANTIER) + ' de plantier'
+    };
+    out.teteEffort = {
+      val: this.fmtE0(effortNet),
+      det: effortNet > 0
+        ? 'Investissement ' + this.fmtE0(invest) + ' moins ' + this.fmtE0(reserveReelle)
+          + ' absorbés par la réserve'
+        : 'Investissement ' + this.fmtE0(invest) + ' entièrement absorbé par les '
+          + this.fmtE0(reserveReelle) + ' mobilisés sur la réserve'
+    };
+    out.teteAge = {
+      val: nf(gainAgeHorizon, 1) + (gainAgeHorizon >= 2 ? ' ans' : ' an'),
+      det: 'Âge moyen ' + nf(trajAge.statuquo[inp.horizon], 1) + ' ans au statu quo, '
+        + nf(trajAge.arrachage[inp.horizon], 1) + ' ans après renouvellement'
+    };
     out.creuxTxt = this.fmtE0(creux.v);
     out.creuxT = String(creux.t);
     out.creuxAbsTxt = this.fmtE0(creuxAbs.v);
