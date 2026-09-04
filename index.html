@@ -34,7 +34,10 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 .inp:hover,.sel:hover{border-color:#A97F26}
 /* valeur dérivée, non saisissable — fond ambré = « calculé pour vous » */
 .ro{padding:9px 11px;border:1px solid #DDD9CE;border-radius:6px;background:#F1E6CC;font-family:'JetBrains Mono',monospace;font-size:13.5px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px 20px}
+/* Deux colonnes FIXES (prompt 2). auto-fill produisait des rangées de
+   largeur imprévisible : d'un champ à l'autre, les libellés et les aides ne
+   se calaient pas sur les mêmes lignes de base. */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 30px}
 
 /* --- blocs ------------------------------------------------------------ */
 .card{background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:20px 22px}
@@ -78,7 +81,12 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 .n4{font-size:11.5px;color:#5C6157;line-height:1.45}
 .n4.mono{font-family:'JetBrains Mono',monospace}
 
-/* --- écrans étroits : la mise en page 3 colonnes se replie ------------- */
+/* --- écrans étroits --------------------------------------------------- */
+/* La grille de champs se replie à une colonne avant la mise en page générale :
+   deux colonnes de champs sous 900 px écrasent les libellés. */
+@media (max-width:900px){
+  .grid{grid-template-columns:1fr}
+}
 @media (max-width:1080px){
   #appGrid{grid-template-columns:1fr !important}
   #appGrid > nav{position:static !important;flex-direction:row !important;flex-wrap:wrap !important;padding:16px 20px 0 !important}
@@ -340,7 +348,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           <div style="background:#E3EDE5;border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.55;max-width:72ch;margin-bottom:14px">
             Ce que coûte, chaque année, un hectare de vigne en production chez vous. Ces montants servent à l'étape 5 : sans eux, ne rien faire paraîtrait gratuit et la comparaison serait faussée. N'y mettre que des charges <b>réellement évitables</b> quand la parcelle ne produit pas. Valeurs par défaut : Cerfrance 2024.
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px">
+          <div class="grid">
             <div class="field">
               <label class="lbl" for="f-coutSurfaceProdHaAn">Charge liée à la surface (vigne en production)</label>
               <div class="row"><input id="f-coutSurfaceProdHaAn" type="number" step="100" min="0" value="{{ v.coutSurfaceProdHaAn }}" onInput="{{ on.coutSurfaceProdHaAn }}" class="inp"><span class="unit">€/ha/an</span></div>
@@ -448,7 +456,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
              conformité AOC restent des valeurs affichées, jamais saisies. -->
         <div class="card" style="margin-bottom:20px">
           <h3 class="card-h" style="margin-bottom:14px">Géométrie de la parcelle</h3>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px 18px">
+          <div class="grid">
             <!-- prompt B8 — la surface arrachée n'est plus saisissable : elle
                  vient du registre, seule source depuis l'arbitrage du
                  01/09/2026. Elle reste la grandeur qui commande la géométrie
@@ -699,7 +707,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               </div>
             </div>
 
-            <div style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px">
+            <div class="grid" style="margin-top:16px">
               <div class="field">
                 <label class="lbl" for="f-materiel">Matériel végétal</label>
                 <select id="f-materiel" value="{{ v.materiel }}" onChange="{{ on.materiel }}" class="sel">
@@ -803,7 +811,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
              seul des 11 repères qui se saisit ici. Elle commande le nombre de
              déblocages de réserve, donc l'essentiel de la trajectoire. -->
         <div class="card" style="margin-bottom:20px">
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px 18px">
+          <div class="grid">
             <div class="field">
               <label class="lbl" for="f-repos">Durée de repos du sol</label>
               <select id="f-repos" value="{{ v.repos }}" onChange="{{ on.repos }}" class="sel">
@@ -831,7 +839,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           <div class="fold-body">
           <div class="card">
             <h3 class="card-h" style="margin-bottom:14px">Investissements liés à la parcelle arrachée puis replantée</h3>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px">
+            <div class="grid">
               <div class="field">
                 <label class="lbl" for="f-coutArrachageHa">Prestations d'arrachage et préparation de la parcelle (tout compris — MHCS)</label>
                 <div class="row"><input id="f-coutArrachageHa" type="number" step="100" value="{{ v.coutArrachageHa }}" onInput="{{ on.coutArrachageHa }}" class="inp"><span class="unit">€/ha</span></div>
@@ -856,7 +864,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             </div>
             <div style="margin-top:18px;padding-top:14px;border-top:1px dotted #DDD9CE">
               <div style="font-size:13.5px;font-weight:600;margin-bottom:10px">Options de coût à l'installation</div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px">
+              <div class="grid">
                 <!-- Arrosage du plantier — prompt B7. Rétabli sous ce libellé, et
                      non « ferti-irrigation » : ce dont il s'agit ici est l'arrosage
                      du jeune plant. Le badge « interdite en AOC » est remplacé par
@@ -885,7 +893,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <div style="background:#F3E0DD;border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.55;max-width:72ch;margin-bottom:14px;color:#A5433A">
               <b>Ne pas inclure l'installation</b> (arrachage, préparation, plants, palissage) : déjà comptée en coûts ponctuels. Ce volet ne couvre que l'entretien récurrent, pendant le repos puis le plantier.
             </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px">
+            <div class="grid">
               <div class="field">
                 <label class="lbl" for="f-coutReposHaAn">B.1 — Entretien de la parcelle au repos</label>
                 <div class="row"><input id="f-coutReposHaAn" type="number" step="100" min="0" value="{{ v.coutReposHaAn }}" onInput="{{ on.coutReposHaAn }}" class="inp"><span class="unit">€/ha/an</span></div>
