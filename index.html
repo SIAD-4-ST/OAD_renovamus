@@ -10,7 +10,7 @@
 <x-dc>
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,650&amp;family=Archivo:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&amp;family=Archivo:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
 <style>
 /* Feuille de style unique du simulateur. Les classes ci-dessous remplacent
    les styles inline qui étaient répétés à l'identique des dizaines de fois
@@ -41,7 +41,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
 /* --- blocs ------------------------------------------------------------ */
 .card{background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:20px 22px}
-.card-h{font-family:'Fraunces',serif;font-size:22px;margin:0 0 6px}
+.card-h{font-family:'Newsreader',serif;font-size:22px;margin:0 0 6px}
 
 /* --- volets repliables (« en savoir plus », réglages avancés) ---------- */
 .fold{background:#fff;border:1px solid #DDD9CE;border-radius:8px;overflow:hidden}
@@ -79,8 +79,8 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
      N2 · titre d'écran/bloc   22 px
      N3 · libellé, texte       13,5 px (libellé de champ en 600)
      N4 · aide, surtitre       11,5 px ; chiffres et surtitres en mono   */
-.n1{font-family:'Fraunces',serif;font-weight:650;font-size:36px;line-height:1;white-space:nowrap}
-.n2{font-family:'Fraunces',serif;font-weight:650;font-size:22px;margin:0}
+.n1{font-family:'Newsreader',serif;font-weight:600;font-size:36px;line-height:1;white-space:nowrap}
+.n2{font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:0}
 .n3{font-size:13.5px}
 .n4{font-size:11.5px;color:#5C6157;line-height:1.45}
 .n4.mono{font-family:'JetBrains Mono',monospace}
@@ -116,7 +116,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
   <header style="border-bottom:3px solid #20291F;background:#FAF9F5;position:sticky;top:0;z-index:50">
     <div style="max-width:1360px;margin:0 auto;padding:14px 28px;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap">
-      <div style="font-family:'Fraunces',serif;font-weight:650;font-size:22px;line-height:1.1">Renouvellement du vignoble</div>
+      <div style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;line-height:1.1">Renouvellement du vignoble</div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.08em">SIMULATEUR · IMPACT ARRACHAGE-REPLANTATION</div>
       <button onClick="{{ toggleLexique }}" style="margin-left:auto;font-size:11.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:{{ lexiqueBg }};color:{{ lexiqueFg }}">{{ lexiqueLabel }}</button>
       <!-- prompt B6 — point d'entrée PERMANENT vers le panneau d'accueil, à côté
@@ -152,7 +152,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
     <div role="dialog" aria-modal="false" aria-label="Comment lire cet outil" onKeyDown="{{ onAccueilTouche }}" style="background:#FAF9F5;border-bottom:3px solid #20291F">
       <div style="max-width:1360px;margin:0 auto;padding:26px 28px 30px">
         <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:6px">
-          <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:22px;margin:0">Ce que fait cet outil</h2>
+          <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:0">Ce que fait cet outil</h2>
           <button id="accueil-fermer" onClick="{{ fermerAccueil }}" style="margin-left:auto;font-size:13.5px;padding:8px 16px;border:1px solid #20291F;background:#20291F;color:#FAF9F5;border-radius:6px;cursor:pointer">Commencer ✕</button>
         </div>
         <p style="font-size:13.5px;line-height:1.6;max-width:76ch;margin:0 0 4px;color:#20291F">Vous désignez une parcelle et l'outil <b>simule l'impact de son renouvellement</b> : ce que la transition coûte, ce que la réserve individuelle absorbe, et en combien de temps la parcelle revient en production. Il ne vous dit pas quoi faire.</p>
@@ -219,7 +219,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <sc-if value="{{ erreurSurface }}" hint-placeholder-val="{{ false }}">
           <div style="margin:8px 0;font-size:13.5px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">⚠ {{ erreurSurface }}</div>
         </sc-if>
-        <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:22px;margin:4px 0 6px">Votre exploitation</h2>
+        <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Votre exploitation</h2>
         <p style="color:#5C6157;font-size:13.5px;max-width:60ch;margin:0 0 20px">Ces repères décrivent tout votre domaine. Ils servent de point de comparaison à la parcelle que vous renouvellerez.</p>
 
         <!-- Panneau d'accueil — ouvert au premier affichage, repliable ensuite :
@@ -478,7 +478,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
       <sc-if value="{{ estEtape1 }}" hint-placeholder-val="{{ false }}">
         <div class="eyebrow">ÉTAPE 2 SUR 5</div>
-        <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:22px;margin:4px 0 6px">La parcelle que vous désignez</h2>
+        <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">La parcelle que vous désignez</h2>
         <p style="color:#5C6157;font-size:13.5px;max-width:60ch;margin:0 0 24px">Décrivez la parcelle candidate au renouvellement, telle qu'elle produit aujourd'hui.</p>
 
         <!-- chantier B2 — géométrie de la parcelle, en tête de l'écran 2 (déplacée
@@ -566,7 +566,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <span class="hint warn">ce que la parcelle produit aujourd'hui, selon vous</span>
           </div>
         </div>
-        <h3 style="font-family:'Fraunces',serif;font-size:22px;margin:28px 0 12px">Faire-valoir de la parcelle</h3>
+        <h3 style="font-family:'Newsreader',serif;font-size:22px;margin:28px 0 12px">Faire-valoir de la parcelle</h3>
         <div class="grid">
           <div class="field">
             <label class="lbl" for="f-regime">Régime de <span class="lex" title="{{ lex.fairevaloir.def }}">faire-valoir</span></label>
@@ -629,7 +629,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
       <sc-if value="{{ estEtape2 }}" hint-placeholder-val="{{ false }}">
         <div class="eyebrow">ÉTAPE 3 SUR 5</div>
-        <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:22px;margin:4px 0 6px">Votre projet de replantation</h2>
+        <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Votre projet de replantation</h2>
         <p style="color:#5C6157;font-size:13.5px;max-width:62ch;margin:0 0 24px">Ce que vous allez replanter, et comment la vigne sera conduite. Le coût du palissage se calcule tout seul à partir de la géométrie saisie à l'étape 2.</p>
 
         <!-- Volet « Ajuster » de l'écran 3 — prompt B4. Aucun des champs de cet
@@ -651,7 +651,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
             <div style="border:1px solid #DDD9CE;border-radius:8px;overflow:hidden">
               <button onClick="{{ toggleAide }}" class="fold-btn">
-                <span style="font-family:'Fraunces',serif;font-size:13.5px;font-weight:600">Simulateur d'aide au choix</span>
+                <span style="font-family:'Newsreader',serif;font-size:13.5px;font-weight:600">Simulateur d'aide au choix</span>
                 <span style="font-size:11.5px;color:#5C6157">(information, hors calcul · Guide 2025)</span>
                 <span class="fold-sign">{{ aideChevron }}</span>
               </button>
@@ -836,7 +836,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
       <sc-if value="{{ estEtape3 }}" hint-placeholder-val="{{ false }}">
         <div class="eyebrow">ÉTAPE 4 SUR 5</div>
-        <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:22px;margin:4px 0 6px">Coûts et charges</h2>
+        <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Coûts et charges</h2>
         <p style="color:#5C6157;font-size:13.5px;max-width:62ch;margin:0 0 24px">D'abord ce que vous investissez une fois pour toutes, puis ce que la parcelle coûte chaque année pendant la transition. Tous les montants sont modifiables — <span style="color:#A5433A">les valeurs par défaut sont des ordres de grandeur, à valider avant tout usage réel</span>.</p>
 
         <!-- Chemin court de l'écran 4 — prompt B4 : la durée de repos est le
@@ -1021,7 +1021,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <sc-if value="{{ erreurSurface }}" hint-placeholder-val="{{ false }}">
           <div style="margin:8px 0;font-size:13.5px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">⚠ {{ erreurSurface }}</div>
         </sc-if>
-        <h2 style="font-family:'Fraunces',serif;font-weight:650;font-size:22px;margin:4px 0 6px">Ce que représente votre projet, sur {{ horizonTxt }}</h2>
+        <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Ce que représente votre projet, sur {{ horizonTxt }}</h2>
 
         <!-- ============ TROIS CHIFFRES DE TÊTE — prompt 5 ============
              L'écran 5 commençait par un bandeau d'aléa, un bouton
@@ -1135,17 +1135,17 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px">
             <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiEcartAge.lib }}</div>
-              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin:3px 0;line-height:1.1;color:#5C4B1F">{{ kpiEcartAge.val }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#5C4B1F">{{ kpiEcartAge.val }}</div>
               <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiEcartAge.det }}</div>
             </div>
             <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiStockReserve.lib }}</div>
-              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiStockReserve.val }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiStockReserve.val }}</div>
               <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiStockReserve.det }}</div>
             </div>
             <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiReserveMin.lib }}</div>
-              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiReserveMin.val }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiReserveMin.val }}</div>
               <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiReserveMin.det }}</div>
             </div>
           </div>
@@ -1188,15 +1188,15 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
             <div>
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Surface renouvelée</div>
-              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin-top:2px">{{ recapSurfaceTxt }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapSurfaceTxt }}</div>
             </div>
             <div>
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Densité de plantation</div>
-              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin-top:2px">{{ recapDensiteTxt }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapDensiteTxt }}</div>
             </div>
             <div>
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Matériel végétal</div>
-              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin-top:2px">{{ recapPiedsTxt }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapPiedsTxt }}</div>
               <div style="font-size:11.5px;color:#5C6157;margin-top:2px">{{ recapMaterielTxt }}</div>
             </div>
             <div>
@@ -1220,12 +1220,12 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:16px">
             <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiInvestTotal.lib }}</div>
-              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiInvestTotal.val }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiInvestTotal.val }}</div>
               <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiInvestTotal.det }}</div>
             </div>
             <div style="background:#fff;border:1px solid #DDD9CE;border-left:4px solid #A5433A;border-radius:6px;padding:14px 16px">
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiPointBas.lib }}</div>
-              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin:3px 0;line-height:1.1;color:#A5433A">{{ kpiPointBas.val }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#A5433A">{{ kpiPointBas.val }}</div>
               <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiPointBas.det }}</div>
             </div>
           </div>
@@ -1238,7 +1238,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
             <div style="background:#F1E6CC;border-radius:6px;padding:14px 16px">
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiAmortisseur.lib }}</div>
-              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiAmortisseur.val }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiAmortisseur.val }}</div>
               <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiAmortisseur.det }}</div>
             </div>
           </div>
@@ -1251,7 +1251,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <sc-if value="{{ effortNetOuvert }}" hint-placeholder-val="{{ false }}">
               <div style="max-width:280px;margin-top:10px;background:#fff;border:1px solid #DDD9CE;border-left:4px solid #4C7A57;border-radius:6px;padding:14px 16px">
                 <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">{{ kpiEffortNet.lib }}</div>
-                <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiEffortNet.val }}</div>
+                <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:#20291F">{{ kpiEffortNet.val }}</div>
                 <div style="font-size:11.5px;color:#5C6157;line-height:1.45">{{ kpiEffortNet.det }}</div>
               </div>
             </sc-if>
@@ -1313,20 +1313,20 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <!-- ============ BLOC 5 — Rajeunissement du vignoble ============ -->
         <figure style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
           <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Bloc 5 · Rajeunissement du vignoble</div>
-          <figcaption style="font-family:'Fraunces',serif;font-weight:600;font-size:22px">Âge moyen du vignoble, avant / après</figcaption>
+          <figcaption style="font-family:'Newsreader',serif;font-weight:600;font-size:22px">Âge moyen du vignoble, avant / après</figcaption>
           <div style="font-size:11.5px;color:#5C6157;margin:2px 0 12px;max-width:74ch">Âge moyen de l'exploitation (parcelle désignée + reste), en années. Pendant le repos du sol, la parcelle sort du calcul : aucun rajeunissement affiché avant qu'une vigne ne soit effectivement replantée.</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:14px">
             <div>
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Aujourd'hui</div>
-              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin-top:2px">{{ ageAvantTxt }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ ageAvantTxt }}</div>
             </div>
             <div>
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">À {{ horizonTxt }} · statu quo</div>
-              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin-top:2px;color:#9A9E97">{{ ageApresSQTxt }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px;color:#9A9E97">{{ ageApresSQTxt }}</div>
             </div>
             <div>
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">À {{ horizonTxt }} · arrachage</div>
-              <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:650;margin-top:2px;color:#A97F26">{{ ageApresArrTxt }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px;color:#A97F26">{{ ageApresArrTxt }}</div>
             </div>
           </div>
         </figure>
@@ -1405,7 +1405,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <p style="font-size:11.5px;color:#5C6157;max-width:78ch;margin-top:24px;border-top:1px solid #DDD9CE;padding-top:14px;line-height:1.6">Simulation pédagogique construite sur vos seules saisies — hypothèses, sources et formule de chaque chiffre : fiche imprimable ci-dessus (« 🖨 Imprimer la fiche »).</p>
 
         <div class="print-sheet">
-          <h2 style="font-family:'Fraunces',serif;font-size:22px;margin:0 0 4px">Fiche d'hypothèses et de résultats — OAD Renouvellement du vignoble</h2>
+          <h2 style="font-family:'Newsreader',serif;font-size:22px;margin:0 0 4px">Fiche d'hypothèses et de résultats — OAD Renouvellement du vignoble</h2>
           <div style="font-size:11.5px;margin-bottom:16px">Imprimé le {{ printDateTxt }} · toutes les hypothèses ci-dessous pilotent les résultats affichés — aucune n'est masquée.</div>
 
           <h3 style="font-size:13.5px;margin:16px 0 8px">1. Paramètres de la simulation — saisis, dérivés, câblés en dur</h3>
@@ -1496,7 +1496,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
            réapparaît dès l'écran 3. -->
       <sc-if value="{{ syntheseVisible }}" hint-placeholder-val="{{ true }}">
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:10px;overflow:hidden">
-          <div style="background:#20291F;color:#FAF9F5;padding:12px 16px;font-family:'Fraunces',serif;font-weight:600;font-size:13.5px">Synthèse en continu</div>
+          <div style="background:#20291F;color:#FAF9F5;padding:12px 16px;font-family:'Newsreader',serif;font-weight:600;font-size:13.5px">Synthèse en continu</div>
           <div style="padding:14px 16px">
             <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#9A9E97;letter-spacing:0.08em;margin-bottom:6px">PARCELLE</div>
             <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted #DDD9CE"><span style="color:#5C6157">Surface</span><b class="mono">{{ sySurf }}</b></div>
