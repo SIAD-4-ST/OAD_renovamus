@@ -62,6 +62,10 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 .th.r{text-align:right}
 
 .mono{font-family:'JetBrains Mono',monospace}
+/* Terme de métier glosé au contact du champ (prompt 4). Le soulignement
+   pointillé signale « ce mot a une définition », le title la donne au survol,
+   et l'aide en dessous la donne à qui ne survole pas. */
+.lex{border-bottom:1px dotted #A97F26;cursor:help}
 .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.08em}
 
 /* --- échelle typographique (prompt 1) ---------------------------------
@@ -274,8 +278,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             </div>
           </sc-if>
           <div class="field">
-            <label class="lbl" for="f-volco">Volume commercialisable (VolCo)</label>
+            <label class="lbl" for="f-volco">Volume commercialisable (<span class="lex" title="{{ lex.volco.def }}">VolCo</span>)</label>
             <div class="row"><input id="f-volco" type="number" step="100" min="0" value="{{ v.volco }}" onInput="{{ on.volco }}" class="inp"><span class="unit">kg/ha</span></div>
+            <span class="hint">{{ lex.volco.court }}</span>
             <span class="hint warn">Valeur annuelle : 8 800 kg/ha pour la campagne 2026 (décision du 22/07/2026). Elle est refixée à chaque campagne — vérifiez-la avant d'exploiter les résultats.</span>
           </div>
           <div class="field">
@@ -304,7 +309,8 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               </div>
             </div>
             <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px">
-              <label class="lbl" for="f-riPct">Réserve individuelle actuelle</label>
+              <label class="lbl" for="f-riPct"><span class="lex" title="{{ lex.reserve.def }}">Réserve individuelle</span> actuelle</label>
+              <div class="hint" style="margin-top:4px">{{ lex.reserve.court }}</div>
               <div style="display:flex;align-items:center;gap:16px;margin-top:10px">
                 <input id="f-riPct" type="range" min="0" max="100" value="{{ v.riPct }}" onInput="{{ on.riPct }}" style="flex:1;accent-color:#A97F26">
                 <div style="font-family:'JetBrains Mono',monospace;font-size:13.5px;flex:none;min-width:170px;text-align:right"><b>{{ riPctTxt }}</b> du plafond ≈ <b>{{ riKgTxt }}</b> kg/ha</div>
@@ -563,12 +569,13 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <h3 style="font-family:'Fraunces',serif;font-size:22px;margin:28px 0 12px">Faire-valoir de la parcelle</h3>
         <div class="grid">
           <div class="field">
-            <label class="lbl" for="f-regime">Régime</label>
+            <label class="lbl" for="f-regime">Régime de <span class="lex" title="{{ lex.fairevaloir.def }}">faire-valoir</span></label>
             <select id="f-regime" value="{{ v.regime }}" onChange="{{ on.regime }}" class="sel">
               <option value="propriete">Propriété (faire-valoir direct)</option>
               <option value="fermage">Fermage (loyer fixe)</option>
               <option value="metayage">Métayage (part de récolte)</option>
             </select>
+            <span class="hint">{{ lex.fairevaloir.court }}</span>
           </div>
         </div>
         <sc-if value="{{ estFermage }}" hint-placeholder-val="{{ false }}">
@@ -838,12 +845,13 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <div class="card" style="margin-bottom:20px">
           <div class="grid">
             <div class="field">
-              <label class="lbl" for="f-repos">Durée de repos du sol</label>
+              <label class="lbl" for="f-repos">Durée de <span class="lex" title="{{ lex.repos.def }}">repos du sol</span></label>
               <select id="f-repos" value="{{ v.repos }}" onChange="{{ on.repos }}" class="sel">
                 <option value="1">1 an de repos — 3 déblocages de réserve</option>
                 <option value="2">2 ans de repos — 4 déblocages de réserve</option>
                 <option value="3">3 ans de repos — 5 déblocages de réserve</option>
               </select>
+              <span class="hint">{{ lex.repos.court }}</span>
               <span class="hint">détermine automatiquement le nombre d'années de déblocage de réserve</span>
               <span class="hint warn">Règle de déblocage sous réserve de publication de la décision CIVC</span>
             </div>
@@ -925,8 +933,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                 <span class="hint warn">sol nu ou enherbé entre l'arrachage et la plantation — à renseigner, détail par opération ci-dessous</span>
               </div>
               <div class="field">
-                <label class="lbl" for="f-coutPlantierHaAn">B.2 — Entretien du plantier</label>
+                <label class="lbl" for="f-coutPlantierHaAn">B.2 — Entretien du <span class="lex" title="{{ lex.plantier.def }}">plantier</span></label>
                 <div class="row"><input id="f-coutPlantierHaAn" type="number" step="100" min="0" value="{{ v.coutPlantierHaAn }}" onInput="{{ on.coutPlantierHaAn }}" class="inp"><span class="unit">€/ha/an</span></div>
+                <span class="hint">{{ lex.plantier.court }}</span>
                 <span class="hint">MHCS — taille de formation + remplacement des plants morts. Voir le détail par opération ci-dessous.</span>
               </div>
             </div>
@@ -1431,12 +1440,22 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         </div>
       </sc-if>
 
-      <div style="display:flex;gap:12px;margin-top:32px;align-items:center">
+      <!-- Pied d'écran — prompt 4, partie B. Aucun écran n'avait de sortie
+           explicite : l'utilisateur ne savait pas où était l'action suivante,
+           et la seule route vers les résultats était la barre latérale, en
+           texte. Le pied porte donc l'action principale, nommée par l'étape
+           qu'elle atteint, plus le raccourci vers les résultats. Les deux
+           réutilisent les handlers de la barre latérale (`suivant`,
+           `allerResultats`) : la logique de navigation n'est pas dupliquée. -->
+      <div style="display:flex;gap:12px;margin-top:32px;align-items:center;border-top:1px solid #EDEAE1;padding-top:18px">
         <sc-if value="{{ aPrecedent }}" hint-placeholder-val="{{ false }}">
           <button onClick="{{ precedent }}" style="font-size:13.5px;padding:11px 20px;border:1px solid #DDD9CE;background:#fff;border-radius:7px;cursor:pointer;color:#20291F">← {{ labelPrecedent }}</button>
         </sc-if>
+        <sc-if value="{{ raccourciResultats }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ allerResultats }}" style="font-size:13.5px;padding:11px 20px;border:1px solid #DDD9CE;background:#fff;border-radius:7px;cursor:pointer;color:#5C6157;margin-left:auto">Aller aux résultats</button>
+        </sc-if>
         <sc-if value="{{ aSuivant }}" hint-placeholder-val="{{ true }}">
-          <button onClick="{{ suivant }}" style="font-size:13.5px;font-weight:600;padding:11px 24px;border:0;background:#20291F;color:#FAF9F5;border-radius:7px;cursor:pointer" style-hover="background:#3A4538">{{ labelSuivant }} →</button>
+          <button onClick="{{ suivant }}" style="font-size:13.5px;font-weight:600;padding:11px 24px;border:0;background:#20291F;color:#FAF9F5;border-radius:7px;cursor:pointer;margin-left:{{ margeSuivant }}" style-hover="background:#3A4538">{{ labelSuivant }} →</button>
         </sc-if>
       </div>
     </main>
@@ -2461,7 +2480,16 @@ class Component extends DCLogic {
       estFermage: v.regime === 'fermage', estMetayage: v.regime === 'metayage',
       aPrecedent: s.step > 0, aSuivant: s.step < 4,
       labelPrecedent: s.step > 0 ? labels[s.step - 1] : '',
-      labelSuivant: s.step < 4 ? (s.step === 3 ? 'Voir les résultats' : labels[s.step + 1]) : '',
+      // prompt 4 — l'action principale nomme l'étape qu'elle atteint, pas
+      // seulement son titre : « Étape 3 — Plantation » se comprend sans avoir
+      // à compter les pavés de la barre latérale.
+      labelSuivant: s.step < 4 ? 'Étape ' + (s.step + 2) + ' — ' + labels[s.step + 1] : '',
+      // Le raccourci vers les résultats ne s'affiche pas sur l'étape 4, où il
+      // ferait doublon avec l'action principale, ni sur l'étape 5.
+      raccourciResultats: s.step < 3,
+      // Sans raccourci à gauche de lui, c'est le bouton principal qui pousse
+      // le pied à droite.
+      margeSuivant: s.step < 3 ? '0' : 'auto',
       precedent: () => this.setState(st => ({ step: Math.max(0, st.step - 1) })),
       suivant: () => this.setState(st => ({ step: Math.min(4, st.step + 1) })),
       allerResultats: () => this.setState({ step: 4 }),
@@ -2518,12 +2546,17 @@ class Component extends DCLogic {
       // Définitions des termes de métier employés dans l'outil — un vigneron
       // champenois les connaît, mais l'outil s'adresse aussi à des conseillers
       // et des étudiants qui butent dessus dès l'étape 1.
+      // prompt 4 — chaque entrée porte désormais une CLÉ et une glose d'une
+      // ligne (`court`). L'accordéon du haut affiche `def` comme avant ; les
+      // champs de saisie affichent `court`, au contact du mot. Une seule
+      // source de vérité : réécrire une définition ici la corrige aux deux
+      // endroits, et l'accordéon ne porte plus seul la charge pédagogique.
       lexiqueEntrees: [
-        { mot: 'Réserve individuelle', def: "stock de kilos de raisin mis de côté les bonnes années, plafonné à 10 000 kg/ha, dans lequel on puise les mauvaises. L'arrachage autorise à en sortir plus vite que d'ordinaire." },
-        { mot: 'VolCo', def: 'volume commercialisable : les kilos par hectare que le CIVC autorise à vendre pour la campagne. Au-delà, la récolte part en réserve.' },
-        { mot: 'Repos du sol', def: "années pendant lesquelles la parcelle arrachée reste vide avant d'être replantée — 1, 2 ou 3 ans selon votre choix." },
-        { mot: 'Plantier', def: 'la jeune vigne, de la plantation à sa pleine production. Elle demande du travail mais ne produit encore rien, ou peu.' },
-        { mot: 'Faire-valoir', def: "qui exploite la parcelle et à quel titre : propriété (vous), fermage (loyer fixe au bailleur) ou métayage (part de récolte au bailleur)." },
+        { cle: 'reserve', mot: 'Réserve individuelle', court: 'stock de kilos mis de côté les bonnes années, plafonné à 10 000 kg/ha, dans lequel on puise les mauvaises', def: "stock de kilos de raisin mis de côté les bonnes années, plafonné à 10 000 kg/ha, dans lequel on puise les mauvaises. L'arrachage autorise à en sortir plus vite que d'ordinaire." },
+        { cle: 'volco', mot: 'VolCo', court: 'ce que vous êtes autorisé à commercialiser cette année, par hectare — au-delà, la récolte part en réserve', def: 'volume commercialisable : les kilos par hectare que le CIVC autorise à vendre pour la campagne. Au-delà, la récolte part en réserve.' },
+        { cle: 'repos', mot: 'Repos du sol', court: "années pendant lesquelles la parcelle arrachée reste vide avant d'être replantée", def: "années pendant lesquelles la parcelle arrachée reste vide avant d'être replantée — 1, 2 ou 3 ans selon votre choix." },
+        { cle: 'plantier', mot: 'Plantier', court: 'la jeune vigne, de la plantation à sa pleine production : elle demande du travail et ne produit encore rien, ou peu', def: 'la jeune vigne, de la plantation à sa pleine production. Elle demande du travail mais ne produit encore rien, ou peu.' },
+        { cle: 'fairevaloir', mot: 'Faire-valoir', court: 'qui exploite la parcelle et à quel titre : propriété, fermage (loyer fixe) ou métayage (part de récolte)', def: "qui exploite la parcelle et à quel titre : propriété (vous), fermage (loyer fixe au bailleur) ou métayage (part de récolte au bailleur)." },
         { mot: 'Statu quo', def: "le scénario de référence : vous ne renouvelez pas la parcelle et elle continue de vieillir, avec le déclin de rendement que vous avez saisi." },
         { mot: 'Densité', def: "nombre de pieds par hectare, déduit des écartements entre rangs et entre pieds. Elle commande le nombre de plants à acheter." },
         // prompt B6 — l'entrée « Complantation » est retirée du lexique visible :
@@ -2532,6 +2565,10 @@ class Component extends DCLogic {
         // renvoie toujours les trois scénarios) et le README le documente ; ce
         // qui disparaît, c'est la promesse faite à l'écran, pas le calcul.
       ],
+      // prompt 4 — glose et définition longue, indexées par clé, pour que le
+      // template les cite au contact du champ ({{ lex.volco.court }}) sans
+      // recopier un mot du lexique.
+      lex: {},
       chargesProdOuvert: s.chargesProdOuvert, toggleChargesProd: () => this.setState(st => ({ chargesProdOuvert: !st.chargesProdOuvert })),
       chargesProdChevron: s.chargesProdOuvert ? '−' : '+',
       aideOuverte: s.aideOuverte, toggleAide: () => this.setState(st => ({ aideOuverte: !st.aideOuverte })),
@@ -2573,6 +2610,11 @@ class Component extends DCLogic {
       imprimerFiche: () => window.print(),
       printDateTxt: new Date().toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
     };
+
+    // prompt 4 — le lexique s'éclate au contact des champs. Indexé par clé
+    // depuis la MÊME liste que l'accordéon du haut : rien n'est recopié, donc
+    // rien ne peut diverger.
+    out.lexiqueEntrees.forEach(e => { if (e.cle) out.lex[e.cle] = e; });
 
     // Fiche d'audit imprimable — chantier "auditabilité des hypothèses" :
     // toutes les valeurs de `inp` doivent être traçables (saisi / défaut /
