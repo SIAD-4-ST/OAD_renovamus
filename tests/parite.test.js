@@ -1728,6 +1728,41 @@ test('prompt 9 : les graphiques sont ouverts par défaut, leurs boutons de repli
     'les boutons de repli restent : ouvert par défaut ne veut pas dire imposé');
 });
 
+section('24. Panneau « Hypothèses » (prompt 10)');
+
+test('les 36 contrôles liés à state.v sont toujours présents, une fois et une seule', () => {
+  const cles = ['volco', 'prixKg', 'campagne', 'riPct', 'coutSurfaceProdHaAn', 'coutRdtParKg',
+    'tauxHoraire', 'ecartRang', 'ecartPied', 'rendEstime', 'regime', 'nbRangs', 'loyerHa',
+    'partRecolte', 'partCouts', 'cepage', 'calcaireActif', 'profondeurSol', 'drainageSol',
+    'materiel', 'porteGreffe', 'typeTaille', 'nbFils', 'espPiquet', 'anneePleineProd',
+    'repos', 'coutArrachageHa', 'coutPlant', 'coutPalissageHa', 'coutProtectionHa',
+    'irrigation', 'coutIrrigHa', 'coutReposHaAn', 'coutPlantierHaAn', 'sequence', 'declinSQ'];
+  cles.forEach(k => {
+    const n = (INDEX_HTML.match(new RegExp('on\\.' + k + ' \\}\\}', 'g')) || []).length;
+    assert.strictEqual(n, 1, 'le contrôle « ' + k + ' » doit rester saisissable, exactement une fois');
+  });
+});
+
+test("le panneau Hypothèses est un état d'interface ; ses valeurs restent dans state.v", () => {
+  assert.ok(/hypothesesOuvert:\s*false/.test(INDEX_HTML),
+    'state.hypothesesOuvert doit exister et démarrer fermé');
+  const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,600}?\n\}/);
+  assert.ok(ecriture && !/hypothesesOuvert/.test(ecriture[0]),
+    "l'ouverture du panneau ne doit pas entrer dans l'instantané localStorage");
+  assert.ok(/id="hypotheses-ouvrir"/.test(INDEX_HTML) && /id="hypotheses-fermer"/.test(INDEX_HTML),
+    'le panneau doit avoir un point d\'entrée permanent et un bouton de fermeture, pour la discipline de focus');
+});
+
+test('reprendre les valeurs de référence ne porte que sur les postes préréglés', () => {
+  const bloc = INDEX_HTML.match(/const HYPOTHESES_SECTIONS = \{[\s\S]*?\};/);
+  assert.ok(bloc, 'les sections du panneau doivent être déclarées en un seul endroit');
+  ['surfArr', 'ageParc', 'rendEstime', 'volco', 'prixKg', 'repos'].forEach(k => {
+    assert.ok(bloc[0].indexOf("'" + k + "'") < 0,
+      'une saisie qui décrit la parcelle ou le projet (' + k + ') ne doit jamais être remise '
+      + 'à zéro par « Reprendre les valeurs de référence »');
+  });
+});
+
 // ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------

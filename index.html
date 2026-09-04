@@ -121,6 +121,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
       <button onClick="{{ toggleLexique }}" style="margin-left:auto;font-size:11.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:{{ lexiqueBg }};color:{{ lexiqueFg }}">{{ lexiqueLabel }}</button>
       <!-- prompt B6 — point d'entrée PERMANENT vers le panneau d'accueil, à côté
            du Lexique : l'aide ne doit pas être réservée à la première visite. -->
+      <!-- prompt 10 — point d'entrée PERMANENT vers le panneau Hypothèses,
+           à côté du Lexique et de « Comment lire cet outil ». -->
+      <button id="hypotheses-ouvrir" onClick="{{ ouvrirHypotheses }}" style="font-size:11.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:{{ hypBg }};color:{{ hypFg }}">Hypothèses</button>
       <button id="accueil-ouvrir" onClick="{{ ouvrirAccueil }}" style="font-size:11.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:#fff;color:#20291F">Comment lire cet outil</button>
       <!-- prompt B1 — les saisies sont désormais persistées localement ; il faut
            donc un moyen visible et permanent de les reprendre à zéro. -->
@@ -175,6 +178,163 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <b>Aucune actualisation des flux</b> — un euro de l'année 9 y pèse autant qu'un euro d'aujourd'hui.
             <b>Aucune valeur patrimoniale</b> — ni celle du vignoble rajeuni, ni celle de la réserve reconstituée. Les résultats sont donc structurellement pessimistes sur la fin de l'horizon.
           </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+
+  <!-- Panneau « Hypothèses » — prompt 10.
+
+       Tout ce qui est PRÉRÉGLÉ ET SOURCÉ sort du parcours : les écrans ne
+       gardent que ce que le vigneron dicte. Avant ce prompt, les charges
+       Cerfrance vivaient à l'étape 1, les tarifs de palissage et de
+       protection à l'étape 4, les paramètres de faire-valoir à l'étape 2,
+       chacun dans son propre volet « Ajuster » — quatre endroits pour une
+       même nature de donnée, et aucun ne portait sa source à côté de sa
+       valeur.
+
+       AUCUN champ ne disparaît de l'application : chacun reste saisissable,
+       ici. Les valeurs saisies restent dans state.v, donc persistées comme
+       avant ; seul l'état d'ouverture du panneau est de l'interface, et il ne
+       va pas dans l'instantané.
+
+       Comme le panneau d'accueil, il est DANS LE FLUX du document : pas de
+       position fixed, pas de superposition. Un panneau fixe qui recouvre la
+       page est un piège à focus. -->
+  <sc-if value="{{ hypothesesOuvert }}" hint-placeholder-val="{{ false }}">
+    <div role="dialog" aria-modal="false" aria-label="Hypothèses" onKeyDown="{{ onHypothesesTouche }}" style="background:#FAF9F5;border-bottom:3px solid #20291F">
+      <div style="max-width:1360px;margin:0 auto;padding:26px 28px 30px">
+        <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap">
+          <h2 class="n2">Hypothèses</h2>
+          <div class="n4" style="max-width:70ch">Les valeurs de référence, sourcées et datées, que l'outil préremplit pour vous. Elles pilotent les résultats sans décrire votre parcelle : c'est pourquoi elles ne sont plus dans le parcours.</div>
+          <button id="hypotheses-fermer" onClick="{{ fermerHypotheses }}" style="margin-left:auto;font-size:13.5px;padding:8px 16px;border:1px solid #20291F;background:#20291F;color:#FAF9F5;border-radius:6px;cursor:pointer">Fermer</button>
+        </div>
+        <div class="n4" style="margin-top:6px">Appuyez sur <b>Échap</b> pour fermer. {{ hypResumeTxt }}</div>
+
+        <div style="border-top:1px solid #DDD9CE;padding-top:18px;margin-top:18px">
+          <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+            <div class="n2" style="font-size:13.5px;font-weight:600;font-family:'Archivo',sans-serif">Charges annuelles de référence</div>
+            <div class="n4">Cerfrance 2024 · {{ chargesProdResumeTxt }}</div>
+            <button onClick="{{ hypReprise.charges }}" style="margin-left:auto;font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre les valeurs de référence</button>
+          </div>
+<div style="background:#E3EDE5;border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.55;max-width:72ch;margin-bottom:14px">
+            Ce que coûte, chaque année, un hectare de vigne en production chez vous. Ces montants servent à l'étape 5 : sans eux, ne rien faire paraîtrait gratuit et la comparaison serait faussée. N'y mettre que des charges <b>réellement évitables</b> quand la parcelle ne produit pas. Valeurs par défaut : Cerfrance 2024.
+          </div>
+          <div class="grid">
+            <div class="field">
+              <label class="lbl" for="f-coutSurfaceProdHaAn">Charge liée à la surface (vigne en production) <span style="font-weight:400;color:#A97F26">{{ hypBadge.coutSurfaceProdHaAn }}</span></label>
+              <div class="row"><input id="f-coutSurfaceProdHaAn" type="number" step="100" min="0" value="{{ v.coutSurfaceProdHaAn }}" onInput="{{ on.coutSurfaceProdHaAn }}" class="inp"><span class="unit">€/ha/an</span></div>
+              <span class="hint">Cerfrance 2024 : 15 300 €/ha de charges de structure, moins 3 900 €/ha d'amortissement — celui-ci est déjà compté dans l'investissement de plantation.</span>
+            </div>
+            <div class="field">
+              <label class="lbl" for="f-coutRdtParKg">Coût de la vendange <span style="font-weight:400;color:#A97F26">{{ hypBadge.coutRdtParKg }}</span></label>
+              <div class="row"><input id="f-coutRdtParKg" type="number" step="0.01" min="0" value="{{ v.coutRdtParKg }}" onInput="{{ on.coutRdtParKg }}" class="inp"><span class="unit">€/kg</span></div>
+              <span class="hint">Cerfrance 2024 : vendange, transport et prestations de récolte, ramenés à 10 000 kg/ha. Exprimé en €/kg — cette charge suit les kilos récoltés, elle disparaît donc quand la parcelle ne produit pas.</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #DDD9CE;padding-top:18px;margin-top:18px">
+          <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+            <div class="n2" style="font-size:13.5px;font-weight:600;font-family:'Archivo',sans-serif">Référentiel de temps de travaux et taux horaire chargé</div>
+            <div class="n4">Avenant 217 · SMIC 2026 chargé</div>
+            <button onClick="{{ hypReprise.referentiel }}" style="margin-left:auto;font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre les valeurs de référence</button>
+          </div>
+<div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:14px;overflow:hidden">
+            <button onClick="{{ toggleVoletProd }}" class="fold-btn">
+              <span style="font-size:13.5px;font-weight:600">Détail par opération — heures manuelles et mécanisées à l'hectare</span>
+              <span class="hint">— {{ voletProdEnteteTxt }}</span>
+              <span class="fold-sign">{{ voletProdChevron }}</span>
+            </button>
+            <sc-if value="{{ voletProdOuvert }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:0 16px 16px">
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px">
+                  <label style="font-size:11.5px;font-weight:600">Taux horaire chargé <span style="font-weight:400;color:#A97F26">{{ hypBadge.tauxHoraire }}</span></label>
+                  <div style="display:flex;align-items:center;gap:6px"><input type="number" step="0.5" min="0" value="{{ v.tauxHoraire }}" onInput="{{ on.tauxHoraire }}" style="width:90px;padding:7px 9px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:13.5px"><span style="font-size:11.5px;color:#5C6157">€/h</span></div>
+                  <span class="hint">SMIC 2026 chargé ≈ 17 €/h — à ajuster</span>
+                </div>
+                <div style="overflow-x:auto">
+                  <div style="display:grid;grid-template-columns:1.8fr 0.9fr 0.9fr 1fr 1.6fr;gap:0;font-size:11.5px;min-width:600px">
+                    <div class="th">Opération</div>
+                    <div class="th">Type</div>
+                    <div class="th r">h/ha</div>
+                    <div class="th r">€/ha</div>
+                    <div class="th">Source</div>
+                    <sc-for list="{{ voletProdLignes }}" as="l" hint-placeholder-count="5">
+                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1">{{ l.lib }}</div>
+                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1;color:#5C6157">{{ l.type }}</div>
+                      <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
+                      <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
+                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1;font-size:11.5px;color:#5C6157">{{ l.src }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px">
+                  <span style="font-size:13.5px">Total : <b class="mono">{{ voletProdTotalTxt }}</b> <span style="color:#5C6157">({{ voletProdHeuresTxt }} manuelles · {{ voletProdHeuresMecaTxt }} mécanisées)</span></span>
+                  <button onClick="{{ reprendreVoletProd }}" style="font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre cette estimation</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #DDD9CE;padding-top:18px;margin-top:18px">
+          <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+            <div class="n2" style="font-size:13.5px;font-weight:600;font-family:'Archivo',sans-serif">Tarifs de palissage et de protection du matériel végétal</div>
+            <div class="n4">relevé fournisseur et pose · LutEnVi 2025 — à réactualiser</div>
+            <button onClick="{{ hypReprise.tarifs }}" style="margin-left:auto;font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre les valeurs de référence</button>
+          </div>
+            <div class="grid">
+              <div class="field">
+                <label class="lbl" for="f-coutPalissageHa">Matériel de palissage à acheter <span style="font-weight:400;color:#A97F26">{{ palisBadge }}</span></label>
+                <div class="row"><input id="f-coutPalissageHa" type="number" step="500" value="{{ coutPalissageAffiche }}" onInput="{{ on.coutPalissageHa }}" class="inp"><span class="unit">€/ha</span></div>
+                <button onClick="{{ reportPalis }}" style="align-self:start;font-size:11.5px;padding:5px 10px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre la valeur dérivée de la géométrie</button>
+              </div>
+              <div class="field">
+                <label class="lbl" for="f-coutProtectionHa">Protection du matériel végétal à acheter (tuteur + cache-plant) <span style="font-weight:400;color:#A97F26">{{ protectionBadge }}</span></label>
+                <div class="row"><input id="f-coutProtectionHa" type="number" step="250" value="{{ coutProtectionAffiche }}" onInput="{{ on.coutProtectionHa }}" class="inp"><span class="unit">€/ha</span></div>
+                <button onClick="{{ reportProtection }}" style="align-self:start;font-size:11.5px;padding:5px 10px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre la valeur dérivée de la densité</button>
+                <span class="hint">{{ protectionDetailTxt }}</span>
+                <span class="hint warn">distinct du palissage, qui est la structure du rang, et de l'entretien du plantier, qui ne compte que la main d'œuvre</span>
+              </div>
+            </div>
+        </div>
+
+        <div style="border-top:1px solid #DDD9CE;padding-top:18px;margin-top:18px">
+          <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+            <div class="n2" style="font-size:13.5px;font-weight:600;font-family:'Archivo',sans-serif">Paramètres de faire-valoir</div>
+            <div class="n4">contractuel · à vérifier dans votre bail</div>
+            <button onClick="{{ hypReprise.fv }}" style="margin-left:auto;font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre les valeurs de référence</button>
+          </div>
+            <div class="grid">
+              <sc-if value="{{ estFermage }}" hint-placeholder-val="{{ false }}">
+                <div class="field">
+                  <label class="lbl" for="f-loyerHa">Loyer annuel <span style="font-weight:400;color:#A97F26">{{ hypBadge.loyerHa }}</span></label>
+                  <div class="row"><input id="f-loyerHa" type="number" step="100" value="{{ v.loyerHa }}" onInput="{{ on.loyerHa }}" class="inp"><span class="unit">€/ha/an</span></div>
+                  <span class="hint warn">un bail viticole fixe souvent le loyer en kilos ou en bouteilles — à convertir en € ici</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ estMetayage }}" hint-placeholder-val="{{ false }}">
+                <div class="field">
+                  <label class="lbl" for="f-partRecolte">Part de récolte au propriétaire <span style="font-weight:400;color:#A97F26">{{ hypBadge.partRecolte }}</span></label>
+                  <div class="row"><input id="f-partRecolte" type="number" step="1" min="0" max="100" value="{{ v.partRecolte }}" onInput="{{ on.partRecolte }}" class="inp"><span class="unit">%</span></div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ estMetayage }}" hint-placeholder-val="{{ false }}">
+                <div class="field">
+                  <label class="lbl" for="f-partCouts">Part des coûts au propriétaire <span style="font-weight:400;color:#A97F26">{{ hypBadge.partCouts }}</span></label>
+                  <div class="row"><input id="f-partCouts" type="number" step="1" min="0" max="100" value="{{ v.partCouts }}" onInput="{{ on.partCouts }}" class="inp"><span class="unit">%</span></div>
+                  <span class="hint warn">selon le bail — possibilité de partage des coûts de renouvellement</span>
+                  <span class="hint warn">part de l'investissement de replantation portée par le propriétaire — hypothèse contractuelle forte, à vérifier dans votre bail</span>
+                </div>
+              </sc-if>
+            </div>
+        </div>
+
+        <div style="border-top:1px solid #DDD9CE;padding-top:16px;margin-top:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <div class="n4" style="max-width:70ch">Reprendre les valeurs de référence remet ces seuls postes à leur valeur d'origine. Vos saisies de parcelle, de projet et de registre ne sont pas touchées.</div>
+          <button onClick="{{ hypReprise.tout }}" style="margin-left:auto;font-size:13.5px;padding:9px 16px;border:1px solid #A97F26;background:#F1E6CC;border-radius:6px;cursor:pointer">↻ Reprendre toutes les valeurs de référence</button>
         </div>
       </div>
     </div>
@@ -317,74 +477,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               </div>
               <div style="font-size:11.5px;color:#5C6157;margin-top:6px">estimation par défaut — remplacez par votre relevé</div>
             </div>
-          </div>
-          </sc-if>
-        </div>
-
-        <!-- Charges de production — repliées par défaut : ce sont des
-             paramètres de référence déjà calés (Cerfrance 2024) que la plupart
-             des utilisateurs n'ont pas à toucher au premier passage. Repliées,
-             elles laissent l'étape 1 tenir sur un écran ; le contenu est
-             intégralement conservé derrière le volet. -->
-        <div class="fold" style="margin-top:22px">
-          <button onClick="{{ toggleChargesProd }}" class="fold-btn">
-            <span><b style="font-size:13.5px">Charges de production à l'hectare</b> <span class="hint">— {{ chargesProdResumeTxt }}</span></span>
-            <span class="fold-sign">{{ chargesProdChevron }}</span>
-          </button>
-          <sc-if value="{{ chargesProdOuvert }}" hint-placeholder-val="{{ false }}">
-          <div class="fold-body">
-          <div style="background:#E3EDE5;border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.55;max-width:72ch;margin-bottom:14px">
-            Ce que coûte, chaque année, un hectare de vigne en production chez vous. Ces montants servent à l'étape 5 : sans eux, ne rien faire paraîtrait gratuit et la comparaison serait faussée. N'y mettre que des charges <b>réellement évitables</b> quand la parcelle ne produit pas. Valeurs par défaut : Cerfrance 2024.
-          </div>
-          <div class="grid">
-            <div class="field">
-              <label class="lbl" for="f-coutSurfaceProdHaAn">Charge liée à la surface (vigne en production)</label>
-              <div class="row"><input id="f-coutSurfaceProdHaAn" type="number" step="100" min="0" value="{{ v.coutSurfaceProdHaAn }}" onInput="{{ on.coutSurfaceProdHaAn }}" class="inp"><span class="unit">€/ha/an</span></div>
-              <span class="hint">Cerfrance 2024 : 15 300 €/ha de charges de structure, moins 3 900 €/ha d'amortissement — celui-ci est déjà compté dans l'investissement de plantation.</span>
-            </div>
-            <div class="field">
-              <label class="lbl" for="f-coutRdtParKg">Coût de la vendange</label>
-              <div class="row"><input id="f-coutRdtParKg" type="number" step="0.01" min="0" value="{{ v.coutRdtParKg }}" onInput="{{ on.coutRdtParKg }}" class="inp"><span class="unit">€/kg</span></div>
-              <span class="hint">Cerfrance 2024 : vendange, transport et prestations de récolte, ramenés à 10 000 kg/ha. Exprimé en €/kg — cette charge suit les kilos récoltés, elle disparaît donc quand la parcelle ne produit pas.</span>
-            </div>
-          </div>
-
-          <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;margin-top:14px;overflow:hidden">
-            <button onClick="{{ toggleVoletProd }}" class="fold-btn">
-              <span style="font-size:13.5px;font-weight:600">Détail par opération — heures manuelles et mécanisées à l'hectare</span>
-              <span class="hint">— {{ voletProdEnteteTxt }}</span>
-              <span class="fold-sign">{{ voletProdChevron }}</span>
-            </button>
-            <sc-if value="{{ voletProdOuvert }}" hint-placeholder-val="{{ false }}">
-              <div style="padding:0 16px 16px">
-                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px">
-                  <label style="font-size:11.5px;font-weight:600">Taux horaire chargé</label>
-                  <div style="display:flex;align-items:center;gap:6px"><input type="number" step="0.5" min="0" value="{{ v.tauxHoraire }}" onInput="{{ on.tauxHoraire }}" style="width:90px;padding:7px 9px;border:1px solid #DDD9CE;border-radius:6px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:13.5px"><span style="font-size:11.5px;color:#5C6157">€/h</span></div>
-                  <span class="hint">SMIC 2026 chargé ≈ 17 €/h — à ajuster</span>
-                </div>
-                <div style="overflow-x:auto">
-                  <div style="display:grid;grid-template-columns:1.8fr 0.9fr 0.9fr 1fr 1.6fr;gap:0;font-size:11.5px;min-width:600px">
-                    <div class="th">Opération</div>
-                    <div class="th">Type</div>
-                    <div class="th r">h/ha</div>
-                    <div class="th r">€/ha</div>
-                    <div class="th">Source</div>
-                    <sc-for list="{{ voletProdLignes }}" as="l" hint-placeholder-count="5">
-                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1">{{ l.lib }}</div>
-                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1;color:#5C6157">{{ l.type }}</div>
-                      <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
-                      <div style="padding:4px 6px;border-bottom:1px solid #EDEAE1;text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid #DDD9CE;border-radius:5px;background:#fff;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
-                      <div style="padding:6px 6px;border-bottom:1px solid #EDEAE1;font-size:11.5px;color:#5C6157">{{ l.src }}</div>
-                    </sc-for>
-                  </div>
-                </div>
-                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px">
-                  <span style="font-size:13.5px">Total : <b class="mono">{{ voletProdTotalTxt }}</b> <span style="color:#5C6157">({{ voletProdHeuresTxt }} manuelles · {{ voletProdHeuresMecaTxt }} mécanisées)</span></span>
-                  <button onClick="{{ reprendreVoletProd }}" style="font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre cette estimation</button>
-                </div>
-              </div>
-            </sc-if>
-          </div>
           </div>
           </sc-if>
         </div>
@@ -601,27 +693,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
                 <label class="lbl" for="f-nbRangs">Nombre de rangs</label>
                 <div class="row"><input id="f-nbRangs" type="number" step="1" min="1" value="{{ v.nbRangs }}" onInput="{{ on.nbRangs }}" class="inp"><span class="unit">rangs</span></div>
               </div>
-              <sc-if value="{{ estFermage }}" hint-placeholder-val="{{ false }}">
-                <div class="field">
-                  <label class="lbl" for="f-loyerHa">Loyer annuel</label>
-                  <div class="row"><input id="f-loyerHa" type="number" step="100" value="{{ v.loyerHa }}" onInput="{{ on.loyerHa }}" class="inp"><span class="unit">€/ha/an</span></div>
-                  <span class="hint warn">un bail viticole fixe souvent le loyer en kilos ou en bouteilles — à convertir en € ici</span>
-                </div>
-              </sc-if>
-              <sc-if value="{{ estMetayage }}" hint-placeholder-val="{{ false }}">
-                <div class="field">
-                  <label class="lbl" for="f-partRecolte">Part de récolte au propriétaire</label>
-                  <div class="row"><input id="f-partRecolte" type="number" step="1" min="0" max="100" value="{{ v.partRecolte }}" onInput="{{ on.partRecolte }}" class="inp"><span class="unit">%</span></div>
-                </div>
-              </sc-if>
-              <sc-if value="{{ estMetayage }}" hint-placeholder-val="{{ false }}">
-                <div class="field">
-                  <label class="lbl" for="f-partCouts">Part des coûts au propriétaire</label>
-                  <div class="row"><input id="f-partCouts" type="number" step="1" min="0" max="100" value="{{ v.partCouts }}" onInput="{{ on.partCouts }}" class="inp"><span class="unit">%</span></div>
-                  <span class="hint warn">selon le bail — possibilité de partage des coûts de renouvellement</span>
-                  <span class="hint warn">part de l'investissement de replantation portée par le propriétaire — hypothèse contractuelle forte, à vérifier dans votre bail</span>
-                </div>
-              </sc-if>
             </div>
           </div>
           </sc-if>
@@ -882,18 +953,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               <div class="field">
                 <label class="lbl" for="f-coutPlant">Matériel végétal à acheter (plant)</label>
                 <div class="row"><input id="f-coutPlant" type="number" step="0.1" value="{{ v.coutPlant }}" onInput="{{ on.coutPlant }}" class="inp"><span class="unit">€/pied</span></div>
-              </div>
-              <div class="field">
-                <label class="lbl" for="f-coutPalissageHa">Matériel de palissage à acheter <span style="font-weight:400;color:#A97F26">{{ palisBadge }}</span></label>
-                <div class="row"><input id="f-coutPalissageHa" type="number" step="500" value="{{ coutPalissageAffiche }}" onInput="{{ on.coutPalissageHa }}" class="inp"><span class="unit">€/ha</span></div>
-                <button onClick="{{ reportPalis }}" style="align-self:start;font-size:11.5px;padding:5px 10px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre la valeur dérivée de la géométrie</button>
-              </div>
-              <div class="field">
-                <label class="lbl" for="f-coutProtectionHa">Protection du matériel végétal à acheter (tuteur + cache-plant) <span style="font-weight:400;color:#A97F26">{{ protectionBadge }}</span></label>
-                <div class="row"><input id="f-coutProtectionHa" type="number" step="250" value="{{ coutProtectionAffiche }}" onInput="{{ on.coutProtectionHa }}" class="inp"><span class="unit">€/ha</span></div>
-                <button onClick="{{ reportProtection }}" style="align-self:start;font-size:11.5px;padding:5px 10px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre la valeur dérivée de la densité</button>
-                <span class="hint">{{ protectionDetailTxt }}</span>
-                <span class="hint warn">distinct du palissage, qui est la structure du rang, et de l'entretien du plantier, qui ne compte que la main d'œuvre</span>
               </div>
             </div>
             <div style="margin-top:18px;padding-top:14px;border-top:1px dotted #DDD9CE">
@@ -1672,6 +1731,23 @@ const REPERES_CHEMIN_COURT = [
    le KPI doit le dire. Dès qu'un seul est touché, le total devient celui de
    l'utilisateur et le libellé bascule. Sur le modèle de palisManuel /
    protectionManuel, qui existaient déjà pour deux de ces quatre champs. */
+/* Panneau « Hypothèses » — prompt 10.
+
+   Les postes PRÉRÉGLÉS ET SOURCÉS, regroupés par section. Ce sont les seuls
+   que le bouton « Reprendre les valeurs de référence » remet à leur valeur
+   d'origine : les saisies qui décrivent la parcelle, le projet ou le registre
+   ne sont jamais touchées par ce geste. La valeur de référence d'un poste est
+   celle de V_DEFAUTS — une seule source, celle-là même que « Effacer mes
+   données » emploie. */
+const HYPOTHESES_SECTIONS = {
+  charges:     ['coutSurfaceProdHaAn', 'coutRdtParKg'],
+  referentiel: ['tauxHoraire'],
+  tarifs:      ['coutPalissageHa', 'coutProtectionHa'],
+  fv:          ['loyerHa', 'partRecolte', 'partCouts']
+};
+const HYPOTHESES_TOUS = Object.keys(HYPOTHESES_SECTIONS)
+  .reduce((acc, k) => acc.concat(HYPOTHESES_SECTIONS[k]), []);
+
 const CHAMPS_INVESTISSEMENT = ['coutArrachageHa', 'coutPlant', 'coutPalissageHa', 'coutProtectionHa'];
 
 const CLE_STOCKAGE = 'oad-renovamus-v1';
@@ -1810,7 +1886,7 @@ class Component extends DCLogic {
       // prompt B6 — l'encart de l'écran 1 n'est plus ouvert au premier
       // affichage : c'est le panneau d'accueil qui accueille désormais. L'encart
       // reste en place, replié, pour qui veut relire le déroulé des 5 étapes.
-      introOuvert: false, lexiqueOuvert: false, chargesProdOuvert: false,
+      introOuvert: false, lexiqueOuvert: false,
       aideOuverte: false, detailOuvert: false, magOuvert: false,
       effortNetOuvert: false,
       // prompt 9 — inversion. Les deux seuls graphiques de l'écran 5 étaient
@@ -1858,6 +1934,9 @@ class Component extends DCLogic {
       // prompt 8 — onglet visible de l'écran de résultats. État d'interface :
       // hors instantané localStorage, comme l'étape courante et les volets.
       ongletResultat: 0,
+      // prompt 10 — panneau « Hypothèses ». État d'interface, hors instantané :
+      // les VALEURS qu'il porte vivent dans state.v et restent persistées.
+      hypothesesOuvert: false,
       parcelleIdu: iduPlanteesInit[0] || null,
       parcelleLignesExclues: {},
       // prompt B1 — la restauration ne peut que remplacer des clés existantes
@@ -1971,6 +2050,26 @@ class Component extends DCLogic {
       importErreur: null, importOk: null,
       parcelleIdu: idus[0] || null,
       parcelleLignesExclues: {}
+    });
+  }
+
+  /* Reprise des valeurs de référence — prompt 10.
+     Remet les postes demandés à leur valeur de V_DEFAUTS et efface leur
+     marque « touché » : un poste repris n'a plus été regardé, l'indicateur du
+     chemin court et le libellé de l'investissement doivent le refléter.
+     Les deux postes dérivés (palissage, protection) repassent en outre en
+     mode « prérempli » : leur valeur de référence n'est pas un nombre figé,
+     c'est celle que la géométrie et la densité produisent. */
+  reprendreReferences(cles, viderReferentiel) {
+    this.setState(st => {
+      const v = { ...st.v };
+      const champsTouches = { ...st.champsTouches };
+      cles.forEach(k => { v[k] = V_DEFAUTS[k]; delete champsTouches[k]; });
+      const extra = {};
+      if (cles.indexOf('coutPalissageHa') >= 0) extra.palisManuel = false;
+      if (cles.indexOf('coutProtectionHa') >= 0) extra.protectionManuel = false;
+      if (viderReferentiel) extra.voletProdOverrides = {};
+      return { v, champsTouches, ...extra };
     });
   }
 
@@ -2786,8 +2885,6 @@ class Component extends DCLogic {
       // template les cite au contact du champ ({{ lex.volco.court }}) sans
       // recopier un mot du lexique.
       lex: {},
-      chargesProdOuvert: s.chargesProdOuvert, toggleChargesProd: () => this.setState(st => ({ chargesProdOuvert: !st.chargesProdOuvert })),
-      chargesProdChevron: s.chargesProdOuvert ? '−' : '+',
       aideOuverte: s.aideOuverte, toggleAide: () => this.setState(st => ({ aideOuverte: !st.aideOuverte })),
       aideChevron: s.aideOuverte ? '−' : '+',
       detailOuvert: s.detailOuvert, toggleDetail: () => this.setState(st => ({ detailOuvert: !st.detailOuvert })),
@@ -2865,6 +2962,35 @@ class Component extends DCLogic {
           if (el) el.focus();
         });
       },
+      // Panneau « Hypothèses » — prompt 10. Même discipline de focus que le
+      // panneau d'accueil : le focus entre sur le bouton de fermeture, Échap
+      // ferme, et le focus revient au bouton qui a ouvert.
+      hypothesesOuvert: s.hypothesesOuvert,
+      hypBg: s.hypothesesOuvert ? '#20291F' : '#fff',
+      hypFg: s.hypothesesOuvert ? '#FAF9F5' : '#20291F',
+      ouvrirHypotheses: () => this.setState({ hypothesesOuvert: true }, () => {
+        const el = document.getElementById('hypotheses-fermer');
+        if (el) el.focus();
+      }),
+      fermerHypotheses: () => this.setState({ hypothesesOuvert: false }, () => {
+        const el = document.getElementById('hypotheses-ouvrir');
+        if (el) el.focus();
+      }),
+      onHypothesesTouche: (ev) => {
+        if (ev.key !== 'Escape' && ev.key !== 'Esc') return;
+        ev.stopPropagation();
+        this.setState({ hypothesesOuvert: false }, () => {
+          const el = document.getElementById('hypotheses-ouvrir');
+          if (el) el.focus();
+        });
+      },
+      hypReprise: {
+        charges: () => this.reprendreReferences(HYPOTHESES_SECTIONS.charges),
+        referentiel: () => this.reprendreReferences(HYPOTHESES_SECTIONS.referentiel, true),
+        tarifs: () => this.reprendreReferences(HYPOTHESES_SECTIONS.tarifs),
+        fv: () => this.reprendreReferences(HYPOTHESES_SECTIONS.fv),
+        tout: () => this.reprendreReferences(HYPOTHESES_TOUS, true)
+      },
       imprimerFiche: () => window.print(),
       printDateTxt: new Date().toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
     };
@@ -2873,6 +2999,23 @@ class Component extends DCLogic {
     // depuis la MÊME liste que l'accordéon du haut : rien n'est recopié, donc
     // rien ne peut diverger.
     out.lexiqueEntrees.forEach(e => { if (e.cle) out.lex[e.cle] = e; });
+
+    /* Badge ambre des hypothèses modifiées — prompt 10. Le test porte sur la
+       VALEUR, pas sur `champsTouches` : dans ce panneau la question est « ce
+       chiffre est-il encore celui de la source ? », et remettre soi-même la
+       valeur de référence doit faire disparaître le badge. C'est l'inverse du
+       chemin court, où l'on suit « ce chiffre a-t-il été regardé ». */
+    out.hypBadge = {};
+    let nbHypModifiees = 0;
+    HYPOTHESES_TOUS.forEach(k => {
+      const modifie = String(v[k]) !== String(V_DEFAUTS[k]);
+      if (modifie) nbHypModifiees++;
+      out.hypBadge[k] = modifie ? '· modifié' : '';
+    });
+    out.hypResumeTxt = nbHypModifiees === 0
+      ? 'Toutes ces valeurs sont encore celles de leur source.'
+      : nbHypModifiees + (nbHypModifiees > 1 ? ' valeurs ont été modifiées' : ' valeur a été modifiée')
+        + ' par rapport à la source ; elles portent le badge ambre.';
 
     // Fiche d'audit imprimable — chantier "auditabilité des hypothèses" :
     // toutes les valeurs de `inp` doivent être traçables (saisi / défaut /
@@ -2950,11 +3093,10 @@ class Component extends DCLogic {
     out.ajusterOuvert2 = s.ajusterOuvert2;
     out.toggleAjuster2 = () => this.setState(st => ({ ajusterOuvert2: !st.ajusterOuvert2 }));
     out.ajusterChevron2 = s.ajusterOuvert2 ? '−' : '+';
-    out.ajusterResume2 = nf(+v.nbRangs || 0, 0) + ' rangs · '
-      + nf(+v.manquants || 0, 0) + ' % de pieds manquants'
-      + (v.regime === 'fermage' ? ' · loyer ' + eur0(v.loyerHa) + '/ha/an' : '')
-      + (v.regime === 'metayage' ? ' · métayage ' + nf(+v.partRecolte || 0, 0) + ' % récolte / '
-        + nf(+v.partCouts || 0, 0) + ' % coûts' : '');
+    // prompt 10 — le loyer et les parts de métayage sont partis dans le
+    // panneau Hypothèses : l'en-tête ne doit plus annoncer ce qu'il ne cache
+    // plus. Il ne reste ici que le nombre de rangs.
+    out.ajusterResume2 = nf(+v.nbRangs || 0, 0) + ' rangs';
 
     out.ajusterOuvert3 = s.ajusterOuvert3;
     out.toggleAjuster3 = () => this.setState(st => ({ ajusterOuvert3: !st.ajusterOuvert3 }));
@@ -2967,9 +3109,11 @@ class Component extends DCLogic {
     out.ajusterOuvert4 = s.ajusterOuvert4;
     out.toggleAjuster4 = () => this.setState(st => ({ ajusterOuvert4: !st.ajusterOuvert4 }));
     out.ajusterChevron4 = s.ajusterOuvert4 ? '−' : '+';
+    // prompt 10 — palissage et protection sont partis dans le panneau
+    // Hypothèses (ce sont des tarifs sourcés, pas des choix de projet) ;
+    // l'en-tête n'annonce plus que ce qu'il cache réellement.
     out.ajusterResume4 = 'arrachage ' + eur0(v.coutArrachageHa) + '/ha · plant '
-      + nf(+v.coutPlant || 0, 2) + ' €/pied · palissage ' + eur0(v.coutPalissageHa)
-      + '/ha · protection ' + eur0(v.coutProtectionHa) + '/ha · entretien plantier '
+      + nf(+v.coutPlant || 0, 2) + ' €/pied · entretien plantier '
       + eur0(v.coutPlantierHaAn) + '/ha/an'
       + (String(v.irrigation) === '1' ? ' · arrosage ' + eur0(v.coutIrrigHa) + '/ha' : '');
 
@@ -3016,6 +3160,9 @@ class Component extends DCLogic {
     // Résumé affiché sur l'en-tête du volet « charges de production » replié :
     // les deux montants restent lisibles sans avoir à ouvrir le volet, pour que
     // le repli n'enterre pas une valeur que l'utilisateur doit pouvoir vérifier.
+    // prompt 10 — ce résumé annonçait l'en-tête du volet replié de l'étape 1 ;
+    // le volet a migré dans le panneau Hypothèses, le résumé le suit et sert
+    // de sous-titre à sa section « charges annuelles de référence ».
     out.chargesProdResumeTxt = nf(+v.coutSurfaceProdHaAn || 0, 0) + ' €/ha/an à la surface · '
       + nf(+v.coutRdtParKg || 0, 2) + ' €/kg à la vendange';
     out.voletProdTotalTxt = nf(voletProdTotalEuroHa, 0) + ' €/ha';
