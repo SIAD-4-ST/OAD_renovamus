@@ -1053,6 +1053,20 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           </div>
         </div>
 
+        <!-- ============ FRISE DE TRAJECTOIRE — prompt 7 ============
+             Une seule image, trois échelles, un axe de temps commun. Le
+             graphique est construit dans renderVals() (React.createElement) :
+             les trois pistes doivent partager exactement la même géométrie de
+             colonnes, ce qui suppose de la calculer une fois. -->
+        <div style="background:#fff;border:1px solid #DDD9CE;border-radius:10px;padding:20px 22px;margin:16px 0 4px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+            <div class="n2">La trajectoire de la parcelle, année par année</div>
+            <div class="n4">phases, kilos et euros sur un seul axe de temps</div>
+          </div>
+          {{ friseTrajectoire }}
+          <div class="n4" style="max-width:88ch">{{ friseLegendeTxt }}</div>
+        </div>
+
         <!-- prompt B3 (arbitrage 8) — le test de résistance est actif PAR DÉFAUT.
              Ce bandeau n'est pas repliable : le scénario climatique retenu change
              la nature de tout ce qui est affiché dessous, l'utilisateur ne doit
@@ -2239,6 +2253,124 @@ class Component extends DCLogic {
     }, ch);
   }
 
+  /* Frise de trajectoire — prompt 7.
+
+     Le cœur de la refonte. Le temps est partout dans l'outil (« années 3-4 »,
+     « repos », « plantier », « à 10 ans ») et n'était jamais dessiné : il se
+     lisait dans six blocs séparés, chacun avec son unité — années, kilos,
+     euros, heures. Il est dessiné ici une seule fois, avec les trois échelles
+     alignées sur le MÊME axe horizontal, pour que le lien de cause à effet
+     — récolte courte, creux de réserve, point bas de trésorerie décalé — se
+     voie sans être expliqué.
+
+     Construit avec React.createElement (pas dans le gabarit) : les trois
+     pistes doivent partager exactement la même géométrie de colonnes, ce qui
+     suppose de la calculer une fois et de la distribuer.
+
+     Aucune interpolation, aucun lissage : les valeurs tracées sont celles du
+     moteur, année par année. Les points de la courbe tombent au CENTRE de
+     leur colonne d'année — x = (i + 0,5) x largeur / nombre d'années — et non
+     à ses bords, sans quoi la courbe se décalerait d'une demi-colonne par
+     rapport aux barres et à la graduation. */
+  friseTrajectoire(d) {
+    const e = React.createElement;
+    const N = d.annees.length;              // nombre de colonnes d'année
+    const COUL_PHASE = {
+      arrachage:  { fond: '#A5433A', encre: '#FAF9F5' },
+      repos:      { fond: '#CFC6B0', encre: '#42473F' },
+      plantier:   { fond: '#B8D3BC', encre: '#2F5B3C' },
+      production: { fond: '#4C7A57', encre: '#FAF9F5' }
+    };
+    const libelle = (k, principal, secondaire) => e('div', { key: k,
+      style: { fontSize: '11.5px', color: '#42473F', textAlign: 'right', lineHeight: 1.35 } },
+      principal, e('br', { key: 'br' }),
+      e('span', { key: 'sec', style: { color: '#8E6A1F' } }, secondaire));
+
+    /* ---- piste 1 : phase de la parcelle ---------------------------------
+       Segments proportionnels aux durées RÉELLES (flexGrow = nombre
+       d'années), donc calés sur les mêmes colonnes que les deux pistes du
+       dessous. Un segment d'une seule année est trop étroit pour porter son
+       nom : il affiche « an N » et garde son nom en title. */
+    const bandes = d.segments.map((seg, i) => {
+      const duree = seg.fin - seg.debut;
+      const c = COUL_PHASE[seg.id] || COUL_PHASE.production;
+      const titre = seg.lib + (duree > 1 ? ' — années ' + seg.debut + ' à ' + (seg.fin - 1)
+                                         : ' — année ' + seg.debut);
+      return e('div', { key: 'ph' + i, title: titre,
+        style: { flexGrow: duree, flexBasis: 0, background: c.fond, borderRadius: '4px',
+          display: 'grid', placeItems: 'center', color: c.encre, fontSize: '11.5px',
+          overflow: 'hidden', whiteSpace: 'nowrap', padding: '0 4px' } },
+        duree >= 2 ? seg.lib : 'an ' + seg.debut);
+    });
+    const piste1 = e('div', { key: 'p1', style: { display: 'flex', gap: '3px', height: '38px' } }, bandes);
+
+    /* ---- piste 2 : stock de réserve --------------------------------------
+       preserveAspectRatio="none" : la piste occupe toute la largeur
+       disponible quelle qu'elle soit, comme les deux autres. C'est aussi
+       pourquoi l'annotation du creux n'est PAS dans le SVG — un texte y
+       serait étiré horizontalement — mais dans un div positionné au-dessus.
+       L'échelle monte jusqu'au plafond de réserve : un creux se juge par
+       rapport au plafond, pas par rapport au maximum de la courbe. */
+    const W = 1000, H = 88;
+    const X = (i) => (i + 0.5) * W / N;
+    const yMax = Math.max(d.plafond, Math.max.apply(null, d.stock), 1);
+    const Y = (v) => H - 6 - (H - 12) * (v / yMax);
+    const pts = d.stock.map((v, i) => X(i).toFixed(1) + ',' + Y(v).toFixed(1));
+    const bordG = '0,' + Y(d.stock[0]).toFixed(1);
+    const bordD = W + ',' + Y(d.stock[N - 1]).toFixed(1);
+    const svgStock = e('svg', { key: 'svg', viewBox: '0 0 ' + W + ' ' + H,
+      preserveAspectRatio: 'none', role: 'img',
+      'aria-label': 'Stock de réserve individuelle en kilos par hectare, année par année ; creux de '
+        + d.creuxTxt + ' en année ' + d.creuxT + '.',
+      style: { width: '100%', height: H + 'px', display: 'block' } }, [
+      e('polygon', { key: 'aire', points: [bordG].concat(pts, [bordD, W + ',' + H, '0,' + H]).join(' '), fill: '#F1E6CC' }),
+      e('polyline', { key: 'ligne', points: [bordG].concat(pts, [bordD]).join(' '), fill: 'none', stroke: '#A97F26', strokeWidth: 2.5 }),
+      e('circle', { key: 'creux', cx: X(d.creuxT), cy: Y(d.stock[d.creuxT]), r: 4.5, fill: '#A5433A' })
+    ]);
+    const aDroite = d.creuxT > (N - 1) * 0.7;   // l'étiquette ne doit pas sortir de la piste
+    const piste2 = e('div', { key: 'p2', style: { height: H + 'px', borderBottom: '1px solid #DDD9CE', position: 'relative' } }, [
+      svgStock,
+      e('div', { key: 'lbl', style: { position: 'absolute', left: (X(d.creuxT) / W * 100) + '%',
+        top: Math.min(H - 22, Y(d.stock[d.creuxT]) + 8) + 'px', fontSize: '11.5px', color: '#A5433A',
+        background: '#fff', padding: '0 5px', whiteSpace: 'nowrap',
+        transform: aDroite ? 'translateX(-100%)' : 'none' } },
+        'creux ' + d.creuxTxt)
+    ]);
+
+    /* ---- piste 3 : trésorerie cumulée -------------------------------------
+       Une barre par année, suspendue à la règle du haut : le déficit se lit
+       comme ce qu'il est, une descente. Quatre couleurs, dans cet ordre de
+       priorité : le retour au positif, puis le point bas, puis la remontée
+       encore négative, puis la descente. */
+    const HB = 74;
+    const maxAbs = Math.max(1, Math.max.apply(null, d.treso.map(v => Math.abs(v))));
+    const barres = d.treso.map((v, i) => {
+      const h = Math.max(2, Math.round(HB * Math.abs(v) / maxAbs));
+      const c = v >= 0 ? '#B8D3BC'
+        : i === d.pointBasT ? '#8E3A32'
+        : i > d.pointBasT ? '#C98178'
+        : '#A5433A';
+      return e('div', { key: 'tb' + i, title: 'année ' + i + ' : ' + d.tresoTxt[i],
+        style: { flex: '1', display: 'flex', flexDirection: 'column' } },
+        e('div', { style: { height: h + 'px', background: c, borderRadius: '0 0 3px 3px' } }));
+    });
+    const piste3 = e('div', { key: 'p3', style: { display: 'flex', alignItems: 'flex-start', gap: '3px',
+      height: HB + 'px', borderTop: '1px solid #DDD9CE' } }, barres);
+
+    /* ---- graduation : mêmes colonnes flex:1 et même gap que les barres --- */
+    const graduation = e('div', { key: 'grad', style: { display: 'flex', gap: '3px',
+      fontFamily: "'JetBrains Mono',monospace", fontSize: '11.5px', color: '#5C6157' } },
+      d.annees.map(t => e('div', { key: 'g' + t, style: { flex: '1', textAlign: 'center' } }, String(t))));
+
+    return e('div', { style: { display: 'grid', gridTemplateColumns: '118px 1fr',
+      gap: '10px 14px', alignItems: 'center' } }, [
+      libelle('l1', 'Phase de la', 'parcelle'), piste1,
+      libelle('l2', 'Stock de réserve', 'kg/ha'), piste2,
+      libelle('l3', 'Trésorerie cumulée', 'parcelle seule'), piste3,
+      e('div', { key: 'vide' }), graduation
+    ]);
+  }
+
   renderVals() {
     const s = this.state, v = s.v;
     const OAD = (typeof window !== 'undefined' && window.OAD) ? window.OAD : null;
@@ -3086,6 +3218,7 @@ class Component extends DCLogic {
         // sans moteur ou sur une saisie incohérente, ils ne montrent rien plutôt
         // qu'un chiffre faux en 36 px.
         teteRetour: kpiVide, teteEffort: kpiVide, teteAge: kpiVide,
+        friseTrajectoire: null, friseLegendeTxt: '',
         ageAvantTxt: '…', ageApresArrTxt: '…', ageApresSQTxt: '…',
         chartStock: null, chartAge: null, ageLegendItems: [], detailRows: [], magRows: [], lectureTreso: '',
         syntheseCouvTxt: '…', syntheseCouvSuffixTxt: '', syntheseAbsorptionTxt: '',
@@ -3094,15 +3227,16 @@ class Component extends DCLogic {
       return out;
     }
     const sc = OAD.construireScenarios(inp);
-    const serieRep = (scn) => scn.eur.map(row => {
-      if (s.vueFV === '1') return row.cashNet;
-      const p = OAD.repartir(row, inp.fv);
-      return s.vueFV === 'exp' ? p.exp : p.prop;
-    });
-    const cum = arr => { let acc = 0; return arr.map(x => (acc += x)); };
-    const arr = cum(serieRep(sc.arrachage));
-    const compl = cum(serieRep(sc.complantation));
-    const sq = cum(serieRep(sc.statuquo));
+    // prompt 7 — l'assemblage de la trésorerie cumulée (report de la vue de
+    // faire-valoir, puis cumul) est parti dans le moteur : la frise la dessine
+    // désormais, et une courbe qui divergerait du tableau d'un arrondi serait
+    // impossible à départager à l'écran. Un test fige que le déplacement n'a
+    // rien changé aux chiffres.
+    const cumTreso = (scn, parcelleSeule) =>
+      OAD.tresorerieCumulee(scn, inp.fv, s.vueFV, { parcelleSeule }).cumulee;
+    const arr = cumTreso(sc.arrachage, false);
+    const compl = cumTreso(sc.complantation, false);
+    const sq = cumTreso(sc.statuquo, false);
     let creux = { v: Infinity, t: 0 };
     arr.forEach((val, t) => { const d = val - sq[t]; if (d < creux.v) creux = { v: d, t }; });
     // Point bas de trésorerie ABSOLU de la PARCELLE seule (pas relatif au statu quo,
@@ -3115,12 +3249,7 @@ class Component extends DCLogic {
     // (aucune logique nouvelle dans moteur-oad.js) en neutralisant le flux du reste
     // (venteRaisinReste/coutsReste à 0) — même procédé que `cashRI:0` employé plus haut
     // dans le code pour simuler « sans réserve ».
-    const serieRepParcelle = (scn) => scn.eur.map(row => {
-      if (s.vueFV === '1') return row.venteRaisinParcelle + row.cashRI - row.coutsParcelle;
-      const p = OAD.repartir({ ...row, venteRaisinReste: 0, coutsReste: 0 }, inp.fv);
-      return s.vueFV === 'exp' ? p.exp : p.prop;
-    });
-    const arrParcelle = cum(serieRepParcelle(sc.arrachage));
+    const arrParcelle = cumTreso(sc.arrachage, true);
     let creuxAbs = { v: Infinity, t: 0 };
     arrParcelle.forEach((val, t) => { if (val < creuxAbs.v) creuxAbs = { v: val, t }; });
     const invest = sc.arrachage.investissement;
@@ -3235,6 +3364,40 @@ class Component extends DCLogic {
       det: 'Âge moyen ' + nf(trajAge.statuquo[inp.horizon], 1) + ' ans au statu quo, '
         + nf(trajAge.arrachage[inp.horizon], 1) + ' ans après renouvellement'
     };
+
+    /* Frise de trajectoire — prompt 7.
+       Les trois séries viennent du moteur, aucune n'est recomposée ici : les
+       phases de OAD.phasesParcelle, le stock de la couche kg du scénario
+       arrachage (la MÊME que le graphique « trajectoire du stock »), la
+       trésorerie de OAD.tresorerieCumulee (la MÊME que le KPI « point bas »).
+       Le creux et le point bas affichés sont donc, par construction, les
+       années que la synthèse textuelle annonce. */
+    const anneesFrise = sc.arrachage.kg.map(r => r.t);
+    const stockFrise = sc.arrachage.kg.map(r => r.stockHa);
+    out.friseTrajectoire = this.friseTrajectoire({
+      annees: anneesFrise,
+      segments: OAD.phasesParcelle(inp.repos, inp.horizon),
+      stock: stockFrise,
+      plafond: inp.plafond,
+      creuxT: tMin,
+      creuxTxt: this.fmtKg(stockMin) + ' kg/ha',
+      treso: arrParcelle,
+      tresoTxt: arrParcelle.map(v => this.fmtE0(v)),
+      pointBasT: creuxAbs.t
+    });
+    /* La légende dit la CAUSALITÉ, pas la lecture du graphique : c'est la
+       phrase de synthèse actuelle, rendue en image. Elle nomme l'aléa
+       effectivement simulé — sans lui, la chaîne « récolte courte → creux de
+       réserve → point bas de trésorerie » n'a pas de premier maillon. */
+    out.friseLegendeTxt = (nbAnneesStress === 2
+        ? 'Les deux récoltes courtes des années 3 et 4 se lisent au même endroit que leur effet : '
+        : nbAnneesStress === 1
+          ? 'La récolte courte de l’année 1 se lit au même endroit que son effet : '
+          : 'Sans aléa climatique simulé, seule la transition creuse la trajectoire : ')
+      + 'le creux de réserve en année ' + tMin + ' (' + this.fmtKg(stockMin) + ' kg/ha), '
+      + 'puis le point bas de trésorerie en année ' + creuxAbs.t + ' ('
+      + this.fmtE0(creuxAbs.v) + '), et le retour en production en année '
+      + nf(retourProd, 0) + '.';
     out.creuxTxt = this.fmtE0(creux.v);
     out.creuxT = String(creux.t);
     out.creuxAbsTxt = this.fmtE0(creuxAbs.v);

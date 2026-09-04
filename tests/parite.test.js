@@ -1656,6 +1656,48 @@ test('phaseParAnnee : un identifiant par année, sur toute la largeur de l\'axe'
     ['arrachage', 'repos', 'plantier']);
 });
 
+section('22. Trésorerie cumulée exposée par le moteur (prompt 7)');
+
+test('tresorerieCumulee : mêmes valeurs que le cumul assemblé jusqu\'ici dans index.html', () => {
+  const sc = OAD.construireScenarios(INP_A);
+  const fv = INP_A.fv;
+  // Reproduction littérale de l'ancien code d'index.html, avant qu'il ne soit
+  // remplacé par l'appel au moteur. C'est le seul but de ce test : figer que
+  // le déplacement n'a rien changé au chiffre.
+  const cum = a => { let acc = 0; return a.map(x => (acc += x)); };
+  ['1', 'exp', 'prop'].forEach(vue => {
+    const ancienEnsemble = cum(sc.arrachage.eur.map(row => {
+      if (vue === '1') return row.cashNet;
+      const p = OAD.repartir(row, fv);
+      return vue === 'exp' ? p.exp : p.prop;
+    }));
+    assert.deepStrictEqual(OAD.tresorerieCumulee(sc.arrachage, fv, vue).cumulee, ancienEnsemble,
+      `vue ${vue} — trésorerie de l'ensemble de l'exploitation`);
+
+    const ancienParcelle = cum(sc.arrachage.eur.map(row => {
+      if (vue === '1') return row.venteRaisinParcelle + row.cashRI - row.coutsParcelle;
+      const p = OAD.repartir({ ...row, venteRaisinReste: 0, coutsReste: 0 }, fv);
+      return vue === 'exp' ? p.exp : p.prop;
+    }));
+    assert.deepStrictEqual(
+      OAD.tresorerieCumulee(sc.arrachage, fv, vue, { parcelleSeule: true }).cumulee, ancienParcelle,
+      `vue ${vue} — parcelle seule`);
+  });
+});
+
+test('tresorerieCumulee : le cumul est bien le cumul de l\'annuelle, et rien n\'est muté', () => {
+  const sc = OAD.construireScenarios(INP_A);
+  const avant = JSON.stringify(sc.arrachage.eur);
+  const r = OAD.tresorerieCumulee(sc.arrachage, INP_A.fv, '1', { parcelleSeule: true });
+  assert.strictEqual(r.cumulee.length, sc.arrachage.eur.length);
+  r.cumulee.forEach((v, t) => {
+    const attendu = r.annuelle.slice(0, t + 1).reduce((a, b) => a + b, 0);
+    assert.ok(Math.abs(v - attendu) < 1e-6, `cumul de l'année ${t}`);
+  });
+  assert.strictEqual(JSON.stringify(sc.arrachage.eur), avant,
+    'tresorerieCumulee ne doit muter ni le scénario ni ses lignes');
+});
+
 // ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------

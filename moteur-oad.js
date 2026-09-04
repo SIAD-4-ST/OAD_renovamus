@@ -923,6 +923,54 @@ function regimesTravailArrachage(scArr, scSQ, inp, opsManuel = REF_OPS_MANUEL, f
 // non. Ne jamais dériver l'un de l'autre, ni les remplacer par une constante
 // unique. Voir README §19.
 /* =====================================================================
+   Trésorerie cumulée d'un scénario — prompt 7.
+
+   Cette série existait, mais elle était assemblée dans index.html (`serieRep`
+   / `serieRepParcelle` / `cum`). Elle passe ici parce que la frise de
+   trajectoire la dessine : une courbe et un tableau qui divergeraient d'un
+   arrondi seraient impossibles à départager à l'écran.
+
+   `vue` est la vue de faire-valoir affichée : '1' ensemble, 'exp' part
+   exploitant, 'prop' part propriétaire.
+
+   `parcelleSeule` neutralise le flux du reste de l'exploitation
+   (venteRaisinReste et coutsReste à 0) pour répondre à « combien cette
+   opération me coûte-t-elle à financer, et quand ». C'est nécessaire : sur la
+   trésorerie de toute l'exploitation, le revenu du reste du domaine masque
+   presque toujours l'effort propre à l'opération. Le procédé est le même que
+   celui déjà employé pour simuler « sans réserve » (cashRI à 0) et
+   `repartir()` est réutilisée telle quelle, sans règle nouvelle.
+
+   Pure : ne mute ni `scen` ni ses lignes (l'objet passé à `repartir` est une
+   copie).
+   ===================================================================== */
+function tresorerieCumulee(scen, fv, vue, opt) {
+  const parcelleSeule = !!(opt && opt.parcelleSeule);
+  let acc = 0;
+  const annuelle = [], cumulee = [];
+  (scen.eur || []).forEach(row => {
+    let v;
+    if (parcelleSeule) {
+      if (vue === 'exp' || vue === 'prop') {
+        const part = repartir({ ...row, venteRaisinReste: 0, coutsReste: 0 }, fv);
+        v = vue === 'exp' ? part.exp : part.prop;
+      } else {
+        v = row.venteRaisinParcelle + row.cashRI - row.coutsParcelle;
+      }
+    } else if (vue === 'exp' || vue === 'prop') {
+      const part = repartir(row, fv);
+      v = vue === 'exp' ? part.exp : part.prop;
+    } else {
+      v = row.cashNet;
+    }
+    annuelle.push(v);
+    acc += v;
+    cumulee.push(acc);
+  });
+  return { annuelle, cumulee };
+}
+
+/* =====================================================================
    Phases de la parcelle renouvelée — prompts 5 et 7.
 
    Le temps est partout dans l'outil (« années 3-4 », « repos », « plantier »,
@@ -1060,7 +1108,7 @@ if (typeof module !== 'undefined') module.exports =
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, synthetiseRegistre, trajectoireAge,
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
-    DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee,
+    DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee, tresorerieCumulee,
     CLONES_CHAMPAGNE, clonesParCepage,
     PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,
     stressEstDeficitaire };
@@ -1073,7 +1121,7 @@ if (typeof window !== 'undefined') window.OAD =
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, synthetiseRegistre, trajectoireAge,
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
-    DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee,
+    DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee, tresorerieCumulee,
     CLONES_CHAMPAGNE, clonesParCepage,
     PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,
     stressEstDeficitaire };
