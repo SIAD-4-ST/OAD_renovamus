@@ -1873,6 +1873,46 @@ test('le thème entre dans l\'instantané localStorage, le mode clair reste le d
     'un instantané antérieur à ce prompt, ou porteur d\'une valeur inconnue, retombe sur le clair');
 });
 
+section('28. Deux sorties d\'impression (prompt 14)');
+
+test('deux sorties distinctes, désignées par data-print sur la racine', () => {
+  assert.ok(/class="print-remise"/.test(INDEX_HTML) && /class="print-sheet"/.test(INDEX_HTML),
+    'la remise au vigneron et la fiche d\'audit sont deux blocs distincts');
+  assert.ok(/imprimerRemise/.test(INDEX_HTML) && /imprimerAudit/.test(INDEX_HTML),
+    'deux boutons, deux publics');
+  assert.ok(!/imprimerFiche/.test(INDEX_HTML), 'le bouton unique d\'avant a disparu');
+  assert.ok(/:root\[data-print="vigneron"\] \.print-remise/.test(INDEX_HTML)
+    && /:root:not\(\[data-print="vigneron"\]\) \.print-sheet/.test(INDEX_HTML),
+    'une sortie à la fois ; sans attribut (Ctrl+P au clavier) c\'est la fiche exhaustive');
+});
+
+test('la remise au vigneron tient sur une page, en vectoriel et en couleur', () => {
+  const bloc = INDEX_HTML.match(/:root\[data-print="vigneron"\] \.print-remise \{[\s\S]*?\}/)[0];
+  assert.ok(/page-break-inside:avoid/.test(bloc) && /break-inside:avoid/.test(bloc),
+    'une seule page, c\'est sa contrainte de conception');
+  assert.ok(/print-color-adjust:exact/.test(bloc),
+    'la frise est son contenu : en niveaux de gris elle ne dit plus rien');
+  assert.ok(/@page \{ size: A4 portrait/.test(INDEX_HTML), 'A4 portrait');
+  // La frise est un SVG construit en React, jamais une image : elle s'imprime
+  // donc en vectoriel sans qu'on ait rien à demander.
+  const remise = INDEX_HTML.slice(INDEX_HTML.indexOf('class="print-remise"'));
+  assert.ok(remise.indexOf('{{ friseTrajectoire }}') >= 0
+    && remise.indexOf('{{ friseTrajectoire }}') < remise.indexOf('class="print-sheet"'),
+    'la frise doit être présente dans la sortie remise');
+});
+
+test('la synthèse imprimée est assemblée des mêmes morceaux que celle de l\'écran', () => {
+  const debut = INDEX_HTML.indexOf('out.syntheseTxt =');
+  assert.ok(debut > 0, "la version texte plat de la synthèse doit exister");
+  const bloc = INDEX_HTML.slice(debut, debut + 900);
+  ['syntheseCouvTxt', 'syntheseCouvSuffixTxt', 'syntheseAbsorptionTxt',
+   'syntheseStockLeadTxt', 'syntheseStockTailTxt', 'syntheseHorizonTxt',
+   'reserveReelleTxt', 'investTxt', 'effortNetTxt', 'stockMinTxt'].forEach(k => {
+    assert.ok(bloc.indexOf('out.' + k) >= 0,
+      'la fiche remise au vigneron ne doit pas raconter autre chose que l\'écran : ' + k);
+  });
+});
+
 // ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------

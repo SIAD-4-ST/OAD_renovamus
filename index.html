@@ -162,18 +162,39 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
   #appGrid > main{padding:20px 20px 40px !important}
 }
 
-/* --- impression ------------------------------------------------------- */
-.print-sheet{display:none}
+/* --- impression — prompt 14 -------------------------------------------
+   Deux sorties, jamais les deux à la fois : `data-print` sur la racine dit
+   laquelle a été demandée. Sans cet attribut, une impression déclenchée au
+   clavier (Ctrl+P) donne la fiche d'audit, qui est la sortie exhaustive.
+
+   La sortie « remise au vigneron » GARDE ses couleurs : sa frise est son
+   contenu, une frise en niveaux de gris ne dit plus rien. La fiche d'audit,
+   elle, reste monochrome — ce sont trois tableaux. */
+.print-sheet,.print-remise{display:none}
 @media print {
   /* prompt 13 — l'impression reste en thème clair quel que soit le thème
-     actif : les deux règles ci-dessous forcent noir sur blanc et écrasent
-     donc les jetons, sombres compris. */
-  :root { color-scheme: light; }
-  nav, aside, button { display:none !important; }
-  #appGrid { grid-template-columns: 1fr !important; }
-  header { position:static !important; top:auto !important; }
-  body, body * { color:#000 !important; background:#fff !important; }
-  .print-sheet { display:block !important; }
+     actif : les jetons sont ramenés à leurs valeurs claires. */
+  :root { color-scheme: light;
+    --fond:#fff; --surface-basse:#fff; --surface-haute:#fff;
+    --encre:#20291F; --encre-2:#42473F; --encre-3:#5C6157; --encre-4:#9A9E97;
+    --bordure:#DDD9CE; --bordure-claire:#EDEAE1;
+    --accent:#A97F26; --accent-fonce:#8E6A1F; --accent-fond:#F1E6CC;
+    --accent-fond-bordure:#E3D3AA; --accent-encre:#5C4B1F;
+    --alerte:#A5433A; --alerte-fond:#F3E0DD; --alerte-fond-2:#F7E9E7;
+    --vegetal:#4C7A57; --vegetal-fonce:#2F5B3C; --vegetal-fond:#E3EDE5;
+    --cellule-fond:#fff; --encre-inverse:#fff; --encre-survol:#3A4538;
+  }
+  @page { size: A4 portrait; margin: 12mm; }
+  header, nav, #appGrid, button { display:none !important; }
+  /* La sortie « remise » tient sur une page : c'est sa contrainte de
+     conception, pas un espoir. Rien n'y est coupé entre deux pages. */
+  :root[data-print="vigneron"] .print-remise {
+    display:block !important; page-break-inside:avoid; break-inside:avoid;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  :root:not([data-print="vigneron"]) .print-sheet { display:block !important; }
+  :root:not([data-print="vigneron"]) body,
+  :root:not([data-print="vigneron"]) body * { color:#000 !important; background:#fff !important; }
   .print-sheet table { width:100%; border-collapse:collapse; margin-bottom:14px; }
   .print-sheet th, .print-sheet td { border:1px solid #000 !important; padding:3px 6px; }
 }
@@ -1231,8 +1252,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
         </div>
 
         <div style="margin:10px 0 4px">
-          <button onClick="{{ imprimerFiche }}" style="font-size:13.5px;padding:9px 16px;border:1px solid var(--encre);background:var(--surface-haute);border-radius:6px;cursor:pointer;color:var(--encre)">🖨 Imprimer la fiche d'hypothèses et de résultats</button>
-          <span style="font-size:11.5px;color:var(--encre-3);margin-left:10px">ouvre l'aperçu avant impression du navigateur — inclut une fiche d'audit exhaustive (hypothèses, KPI, détail des 3 scénarios)</span>
+          <button onClick="{{ imprimerRemise }}" style="font-size:13.5px;font-weight:600;padding:9px 16px;border:0;background:var(--encre);color:var(--encre-inverse);border-radius:6px;cursor:pointer">🖨 Remettre au vigneron</button>
+          <button onClick="{{ imprimerAudit }}" style="font-size:13.5px;padding:9px 16px;margin-left:10px;border:1px solid var(--encre);background:var(--surface-haute);border-radius:6px;cursor:pointer;color:var(--encre)">🖨 Fiche d'audit</button>
+          <div class="n4" style="margin-top:6px;max-width:78ch">La première tient sur <b>une page</b> : identification de la parcelle, les trois chiffres de tête, la frise, la synthèse et les limites de l'outil. La seconde est la fiche exhaustive — hypothèses, KPI et formules, détail annuel.</div>
         </div>
 
         <div style="background:var(--encre);color:var(--surface-basse);border-radius:10px;padding:20px 24px;margin:16px 0;font-size:13.5px;line-height:1.65">
@@ -1614,70 +1636,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
 
         <p style="font-size:11.5px;color:var(--encre-3);max-width:78ch;margin-top:24px;border-top:1px solid var(--bordure);padding-top:14px;line-height:1.6">Simulation pédagogique construite sur vos seules saisies — hypothèses, sources et formule de chaque chiffre : fiche imprimable ci-dessus (« 🖨 Imprimer la fiche »).</p>
 
-        <div class="print-sheet">
-          <h2 style="font-family:'Newsreader',serif;font-size:22px;margin:0 0 4px">Fiche d'hypothèses et de résultats — OAD Renouvellement du vignoble</h2>
-          <div style="font-size:11.5px;margin-bottom:16px">Imprimé le {{ printDateTxt }} · toutes les hypothèses ci-dessous pilotent les résultats affichés — aucune n'est masquée.</div>
-
-          <h3 style="font-size:13.5px;margin:16px 0 8px">1. Paramètres de la simulation — saisis, dérivés, câblés en dur</h3>
-          <table>
-            <thead><tr>
-              <th style="text-align:left">Paramètre</th>
-              <th style="text-align:right">Valeur</th>
-              <th style="text-align:left">Unité</th>
-              <th style="text-align:left">Origine</th>
-            </tr></thead>
-            <tbody>
-              <sc-for list="{{ printInpRows }}" as="pr" hint-placeholder-count="6">
-                <tr>
-                  <td>{{ pr.lib }}</td>
-                  <td style="text-align:right;font-family:'JetBrains Mono',monospace">{{ pr.val }}</td>
-                  <td>{{ pr.unite }}</td>
-                  <td>{{ pr.origine }}</td>
-                </tr>
-              </sc-for>
-            </tbody>
-          </table>
-
-          <h3 style="font-size:13.5px;margin:16px 0 8px">2. KPI — valeur et formule</h3>
-          <table>
-            <thead><tr>
-              <th style="text-align:left">KPI</th>
-              <th style="text-align:right">Valeur</th>
-              <th style="text-align:left">Formule</th>
-            </tr></thead>
-            <tbody>
-              <sc-for list="{{ printKpiRows }}" as="pk" hint-placeholder-count="8">
-                <tr>
-                  <td>{{ pk.lib }}</td>
-                  <td style="text-align:right;font-family:'JetBrains Mono',monospace">{{ pk.val }}</td>
-                  <td>{{ pk.formule }}</td>
-                </tr>
-              </sc-for>
-            </tbody>
-          </table>
-
-          <h3 style="font-size:13.5px;margin:16px 0 8px">3. Détail annuel — scénario Arrachage-replantation</h3>
-          <table>
-            <thead><tr>
-              <th style="text-align:left">t</th><th style="text-align:right">Surf. prod (ha)</th><th style="text-align:right">Récolte (kg)</th>
-              <th style="text-align:right">VolCo vendu (kg)</th><th style="text-align:right">Mise rés. (kg)</th><th style="text-align:right">Sortie insuff. (kg)</th>
-              <th style="text-align:right">Sortie arr. (kg)</th><th style="text-align:right">Stock (kg/ha)</th><th style="text-align:right">Cash net (€)</th>
-            </tr></thead>
-            <tbody>
-              <sc-for list="{{ printDetailArr }}" as="r" hint-placeholder-count="4">
-                <tr>
-                  <td>{{ r.t }}</td><td style="text-align:right">{{ r.surfProd }}</td><td style="text-align:right">{{ r.recolte }}</td>
-                  <td style="text-align:right">{{ r.volcoVendu }}</td><td style="text-align:right">{{ r.mise }}</td><td style="text-align:right">{{ r.sortieInsuff }}</td>
-                  <td style="text-align:right">{{ r.sortieArr }}</td><td style="text-align:right">{{ r.stockHa }}</td><td style="text-align:right">{{ r.cashNet }}</td>
-                </tr>
-              </sc-for>
-            </tbody>
-          </table>
-
-          <div style="margin-top:16px;padding-top:10px;border-top:1px solid #000;font-size:11.5px">
-            Imprimé le {{ printDateTxt }} — OAD Renouvellement v1.2 — maquette, référentiel de coûts en cours de validation.
-          </div>
-        </div>
       </sc-if>
 
       <!-- Pied d'écran — prompt 4, partie B. Aucun écran n'avait de sortie
@@ -1733,6 +1691,130 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
     </aside>
 
   </div>
+
+  <!-- Les deux sorties d'impression — prompt 14.
+
+       La fiche imprimable était un document d'audit en trois tableaux
+       monochromes : elle ne reprenait ni la synthèse ni les chiffres de tête,
+       on ne pouvait pas la laisser au vigneron en fin d'entretien.
+
+       Deux sorties, deux boutons, deux publics :
+         « Remettre au vigneron » — UNE page, en couleur, avec la frise ;
+         « Fiche d'audit »        — la fiche exhaustive, inchangée.
+
+       Elles vivent au niveau du document, hors de <main> : ce sont des pages
+       à part entière, pas des annexes de l'écran. La feuille d'impression
+       masque tout le reste et n'affiche que celle qu'on a demandée, désignée
+       par l'attribut data-print de la racine. -->
+  <sc-if value="{{ estEtape4 }}" hint-placeholder-val="{{ false }}">
+  <div>
+    <div class="print-remise">
+      <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-bottom:2px solid var(--encre);padding-bottom:10px;margin-bottom:14px">
+        <div class="n2">Renouvellement — parcelle {{ parcelleIdu }}</div>
+        <div class="n4" style="margin-left:auto">{{ recapSurfaceTxt }} · sur {{ horizonTxt }} · imprimé le {{ printDateTxt }}</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--bordure);border-radius:10px;overflow:hidden;margin-bottom:16px">
+        <div style="padding:14px 16px;background:var(--accent-fond);border-right:1px solid var(--accent-fond-bordure)">
+          <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Retour en production</div>
+          <div class="n1" style="font-size:28px">{{ teteRetour.val }}</div>
+          <div class="n4">{{ teteRetour.det }}</div>
+        </div>
+        <div style="padding:14px 16px;background:var(--accent-fond);border-right:1px solid var(--accent-fond-bordure)">
+          <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Effort net à financer</div>
+          <div class="n1" style="font-size:28px">{{ teteEffort.val }}</div>
+          <div class="n4">{{ teteEffort.det }}</div>
+        </div>
+        <div style="padding:14px 16px;background:var(--accent-fond)">
+          <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Vignoble rajeuni de</div>
+          <div class="n1" style="font-size:28px">{{ teteAge.val }}</div>
+          <div class="n4">{{ teteAge.det }}</div>
+        </div>
+      </div>
+
+      <div class="n2" style="font-size:16px;margin-bottom:8px">La trajectoire de la parcelle, année par année</div>
+      {{ friseTrajectoire }}
+      <div class="n4" style="margin:6px 0 14px">{{ friseLegendeTxt }}</div>
+
+      <div style="font-size:12px;line-height:1.55;border:1px solid var(--bordure);border-radius:8px;padding:12px 14px;margin-bottom:12px">{{ syntheseTxt }}</div>
+
+      <div style="font-size:11px;line-height:1.5;border-top:1px solid var(--bordure);padding-top:10px">
+        <b>Ce que cet outil ne fait pas.</b> Aucune recommandation — il ne conclut jamais qu'il faut arracher ou attendre.
+        Aucune actualisation des flux — un euro de l'année 9 y pèse autant qu'un euro d'aujourd'hui.
+        Aucune valeur patrimoniale, ni celle du vignoble rajeuni, ni celle de la réserve reconstituée :
+        les montants affichés sont donc structurellement pessimistes en fin d'horizon.
+        Simulation pédagogique établie sur vos seules saisies — une décision d'investissement s'instruit
+        avec votre conseil comptable et, le cas échéant, votre bailleur.
+      </div>
+    </div>
+
+    <div class="print-sheet">
+      <h2 style="font-family:'Newsreader',serif;font-size:22px;margin:0 0 4px">Fiche d'hypothèses et de résultats — OAD Renouvellement du vignoble</h2>
+      <div style="font-size:11.5px;margin-bottom:16px">Imprimé le {{ printDateTxt }} · toutes les hypothèses ci-dessous pilotent les résultats affichés — aucune n'est masquée.</div>
+
+      <h3 style="font-size:13.5px;margin:16px 0 8px">1. Paramètres de la simulation — saisis, dérivés, câblés en dur</h3>
+      <table>
+        <thead><tr>
+          <th style="text-align:left">Paramètre</th>
+          <th style="text-align:right">Valeur</th>
+          <th style="text-align:left">Unité</th>
+          <th style="text-align:left">Origine</th>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{ printInpRows }}" as="pr" hint-placeholder-count="6">
+            <tr>
+              <td>{{ pr.lib }}</td>
+              <td style="text-align:right;font-family:'JetBrains Mono',monospace">{{ pr.val }}</td>
+              <td>{{ pr.unite }}</td>
+              <td>{{ pr.origine }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+
+      <h3 style="font-size:13.5px;margin:16px 0 8px">2. KPI — valeur et formule</h3>
+      <table>
+        <thead><tr>
+          <th style="text-align:left">KPI</th>
+          <th style="text-align:right">Valeur</th>
+          <th style="text-align:left">Formule</th>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{ printKpiRows }}" as="pk" hint-placeholder-count="8">
+            <tr>
+              <td>{{ pk.lib }}</td>
+              <td style="text-align:right;font-family:'JetBrains Mono',monospace">{{ pk.val }}</td>
+              <td>{{ pk.formule }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+
+      <h3 style="font-size:13.5px;margin:16px 0 8px">3. Détail annuel — scénario Arrachage-replantation</h3>
+      <table>
+        <thead><tr>
+          <th style="text-align:left">t</th><th style="text-align:right">Surf. prod (ha)</th><th style="text-align:right">Récolte (kg)</th>
+          <th style="text-align:right">VolCo vendu (kg)</th><th style="text-align:right">Mise rés. (kg)</th><th style="text-align:right">Sortie insuff. (kg)</th>
+          <th style="text-align:right">Sortie arr. (kg)</th><th style="text-align:right">Stock (kg/ha)</th><th style="text-align:right">Cash net (€)</th>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{ printDetailArr }}" as="r" hint-placeholder-count="4">
+            <tr>
+              <td>{{ r.t }}</td><td style="text-align:right">{{ r.surfProd }}</td><td style="text-align:right">{{ r.recolte }}</td>
+              <td style="text-align:right">{{ r.volcoVendu }}</td><td style="text-align:right">{{ r.mise }}</td><td style="text-align:right">{{ r.sortieInsuff }}</td>
+              <td style="text-align:right">{{ r.sortieArr }}</td><td style="text-align:right">{{ r.stockHa }}</td><td style="text-align:right">{{ r.cashNet }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+
+      <div style="margin-top:16px;padding-top:10px;border-top:1px solid #000;font-size:11.5px">
+        Imprimé le {{ printDateTxt }} — OAD Renouvellement v1.2 — maquette, référentiel de coûts en cours de validation.
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
@@ -2137,6 +2219,27 @@ class Component extends DCLogic {
   }
 
   componentDidMount() { this.appliquerTheme(); }
+
+  /* Impression — prompt 14. La sortie demandée est désignée par un attribut
+     sur la racine, posé le temps de l'impression puis retiré : l'état
+     d'impression n'a pas à survivre au dialogue, et surtout pas à l'écran.
+     Le retrait passe par `afterprint` plutôt que par la ligne suivant
+     `print()` : selon le navigateur, `print()` rend la main avant que
+     l'aperçu ait fini de composer la page, et retirer l'attribut trop tôt
+     imprimerait une page vide. Le délai de repli couvre les navigateurs qui
+     n'émettent pas l'événement. */
+  imprimer(mode) {
+    if (typeof document === 'undefined' || !document.documentElement) return;
+    const racine = document.documentElement;
+    racine.setAttribute('data-print', mode);
+    const nettoyer = () => {
+      racine.removeAttribute('data-print');
+      window.removeEventListener('afterprint', nettoyer);
+    };
+    window.addEventListener('afterprint', nettoyer);
+    window.setTimeout(nettoyer, 60000);
+    window.print();
+  }
 
   /* Le thème est porté par un attribut sur l'ÉLÉMENT RACINE — c'est là que
      les jetons sont déclarés, et c'est le seul nœud qui englobe aussi bien le
@@ -3189,7 +3292,8 @@ class Component extends DCLogic {
         fv: () => this.reprendreReferences(HYPOTHESES_SECTIONS.fv),
         tout: () => this.reprendreReferences(HYPOTHESES_TOUS, true)
       },
-      imprimerFiche: () => window.print(),
+      imprimerRemise: () => this.imprimer('vigneron'),
+      imprimerAudit: () => this.imprimer('audit'),
       printDateTxt: new Date().toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
     };
 
@@ -3671,6 +3775,7 @@ class Component extends DCLogic {
         chartStock: null, chartAge: null, ageLegendItems: [], detailRows: [], magRows: [], lectureTreso: '',
         syntheseCouvTxt: '…', syntheseCouvSuffixTxt: '', syntheseAbsorptionTxt: '',
         syntheseStockLeadTxt: '…', syntheseStockTailTxt: '…', syntheseHorizonTxt: '…',
+        syntheseTxt: '…',
         printKpiRows: [], printDetailArr: [] });
       return out;
     }
@@ -3888,6 +3993,20 @@ class Component extends DCLogic {
     } else {
       out.syntheseHorizonTxt = `À ${out.horizonTxt}, l'arrachage-replantation devance le statu quo en trésorerie cumulée, de ${this.fmtE0(arr[h] - sq[h])}.`;
     }
+
+    /* prompt 14 — la même phrase, en texte plat, pour la sortie « remise au
+       vigneron ». Assemblée des MÊMES morceaux que le bloc sombre de l'écran :
+       une fiche qu'on laisse au vigneron ne doit pas raconter autre chose que
+       ce qu'il vient de lire, et deux rédactions parallèles finiraient par
+       diverger. Seul le gras disparaît — une page imprimée n'a pas besoin de
+       huit valeurs en gras pour se lire. */
+    out.syntheseTxt = `Sur ${out.horizonTxt}, l'arrachage-replantation est une opération de transition. `
+      + `La réserve mobilisable — ${out.reserveReelleTxt} réellement mobilisés `
+      + `(${out.reserveTheoTxt} théoriques) — ${out.syntheseCouvTxt} ${out.investTxt}`
+      + `${out.syntheseCouvSuffixTxt}. L'effort net à financer ressort à ${out.effortNetTxt}. `
+      + `Tension de trésorerie maximale en année ${out.creuxT} (${out.creuxTxt})`
+      + `${out.syntheseAbsorptionTxt}. ${out.syntheseStockLeadTxt} ${out.stockMinTxt} kg/ha `
+      + `${out.syntheseStockTailTxt} ${out.syntheseHorizonTxt}`;
 
     // Famille 1 — décision financière (€), toujours visible. Le taux de couverture
     // sort du % au-delà de 100 % (point 2 du chantier P6) : illisible et trompeur en
