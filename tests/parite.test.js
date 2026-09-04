@@ -1768,11 +1768,6 @@ section('25. Parcours en trois temps (prompt 11)');
 test('le parcours compte trois temps, et state.step ne dépasse plus 2', () => {
   assert.ok(/const labels = \['La parcelle', 'Le projet', 'La trajectoire'\]/.test(INDEX_HTML),
     'trois temps, nommés par le moment d\'entretien auquel ils correspondent');
-<<<<<<< Updated upstream
-  assert.ok(/aSuivant: s\.step < 2/.test(INDEX_HTML) && /step: Math\.min\(2, st\.step \+ 1\)/.test(INDEX_HTML),
-    'la navigation doit être bornée à 2, pas à 4');
-  assert.ok(/allerResultats: \(\) => this\.setState\(\{ step: 2 \}\)/.test(INDEX_HTML),
-=======
   // La borne a déménagé : tout changement de temps passe désormais par
   // allerEtape(), qui borne à 0..2 en un seul endroit et remonte la page en
   // haut. C'est là que le plafond 2 doit être vérifié, plus dans chaque appelant.
@@ -1780,13 +1775,10 @@ test('le parcours compte trois temps, et state.step ne dépasse plus 2', () => {
     && /Math\.max\(0, Math\.min\(2, n\)\)/.test(INDEX_HTML),
     'la navigation doit être bornée à 2, pas à 4');
   assert.ok(/allerResultats: \(\) => this\.allerEtape\(2\)/.test(INDEX_HTML),
->>>>>>> Stashed changes
     'le raccourci « aller aux résultats » doit viser le temps 3');
   assert.ok(!/SUR 5</.test(INDEX_HTML), 'plus aucun « ÉTAPE N SUR 5 » à l\'écran');
 });
 
-<<<<<<< Updated upstream
-=======
 test('changer de temps ramène la page en haut', () => {
   const meth = INDEX_HTML.match(/allerEtape\(n\) \{[\s\S]*?\n  \}/);
   assert.ok(meth, 'allerEtape doit exister');
@@ -1802,7 +1794,6 @@ test('changer de temps ramène la page en haut', () => {
     'précédent, suivant et les pavés de la barre latérale passent tous par allerEtape');
 });
 
->>>>>>> Stashed changes
 test("l'instantané localStorage ne contient pas step : aucune migration nécessaire", () => {
   const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,600}?\n\}/);
   assert.ok(ecriture, 'ecrireInstantane doit exister');
