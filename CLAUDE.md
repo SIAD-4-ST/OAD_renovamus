@@ -83,14 +83,29 @@ avant toute modification. Pour le détail complet, voir `README.md`
   `index.html`) ré-exécuté en entier → construit l'objet `inp` →
   `OAD.construireScenarios(inp)` (dans `moteur-oad.js`) calcule les 3
   scénarios (arrachage / complantation / statu quo) sur `kg` puis `€`
-  → `renderVals()` en dérive KPI, textes et graphiques SVG → l'objet
-  résultat alimente les `{{ }}` du template au rendu suivant. Aucun
-  debounce : chaque frappe recalcule tout, sur 10 ans, pour les 3
-  scénarios.
+  → `renderVals()` en dérive KPI, textes, graphiques SVG et la **frise
+  de trajectoire** → l'objet résultat alimente les `{{ }}` du template
+  au rendu suivant. Aucun debounce : chaque frappe recalcule tout, sur
+  10 ans, pour les 3 scénarios.
+- **Parcours** : **trois temps** (`state.step` de 0 à 2) — la parcelle,
+  le projet, la trajectoire. Les cinq anciens écrans sont conservés
+  comme sections et remappés (`estEtape0 = estEtape1 = step === 0`,
+  `estEtape2 = estEtape3 = step === 1`, `estEtape4 = step === 2`).
+  Les préréglages sourcés vivent hors du parcours, dans le **panneau
+  Hypothèses**. Voir README §3ter et §4.
+- **Couleurs** : le template ne porte **aucune couleur littérale**. Tout
+  passe par des jetons `var(--…)` déclarés sur `:root` et basculés par
+  `data-theme` (thème sombre de projection). Une couleur choisie dans
+  `renderVals()` mais affichée par le template désigne le jeton, pas la
+  teinte. Seules les couleurs de *série* des graphiques restent
+  littérales — elles ne changent pas d'un thème à l'autre.
+- **Typographie** : quatre niveaux et pas un de plus (`.n1` à `.n4`,
+  36 / 22 / 13,5 / 11,5 px). Aucune taille intermédiaire.
 - **Où changer quoi** : une formule de calcul (rendement, coût,
-  répartition) → `moteur-oad.js`. Un champ, un libellé, une mise en
-  page, l'ordre des étapes → le template `<x-dc>` d'`index.html`. Le
-  comportement d'un bouton, le calcul d'un KPI, un texte affiché → le
+  répartition, découpe des phases, conformité réglementaire) →
+  `moteur-oad.js`. Un champ, un libellé, une mise en page, l'ordre des
+  temps → le template `<x-dc>` d'`index.html`. Le comportement d'un
+  bouton, le calcul d'un KPI, un texte affiché, un graphique SVG → le
   bloc `<script data-dc-script>` d'`index.html`. `support.js` ne
   devrait jamais avoir besoin d'être touché.
 
