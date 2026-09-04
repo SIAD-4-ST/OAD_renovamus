@@ -93,7 +93,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 }
 @media (max-width:1080px){
   #appGrid{grid-template-columns:1fr !important}
-  #appGrid > nav{position:static !important;flex-direction:row !important;flex-wrap:wrap !important;padding:16px 20px 0 !important}
   #appGrid > aside{position:static !important;padding:0 20px 28px !important}
   #appGrid > main{padding:20px 20px 40px !important}
 }
@@ -121,9 +120,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
       <button onClick="{{ toggleLexique }}" style="margin-left:auto;font-size:11.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:{{ lexiqueBg }};color:{{ lexiqueFg }}">{{ lexiqueLabel }}</button>
       <!-- prompt B6 — point d'entrée PERMANENT vers le panneau d'accueil, à côté
            du Lexique : l'aide ne doit pas être réservée à la première visite. -->
-      <!-- prompt 10 — point d'entrée PERMANENT vers le panneau Hypothèses,
-           à côté du Lexique et de « Comment lire cet outil ». -->
-      <button id="hypotheses-ouvrir" onClick="{{ ouvrirHypotheses }}" style="font-size:11.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:{{ hypBg }};color:{{ hypFg }}">Hypothèses</button>
       <button id="accueil-ouvrir" onClick="{{ ouvrirAccueil }}" style="font-size:11.5px;padding:6px 13px;border:1px solid #DDD9CE;border-radius:6px;cursor:pointer;background:#fff;color:#20291F">Comment lire cet outil</button>
       <!-- prompt B1 — les saisies sont désormais persistées localement ; il faut
            donc un moyen visible et permanent de les reprendre à zéro. -->
@@ -163,7 +159,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:16px 18px;margin-bottom:16px">
           <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#A97F26;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:2px">Le mécanisme, en une image</div>
-          <div style="font-size:11.5px;color:#5C6157;margin-bottom:10px;max-width:76ch">Dessin illustratif : il montre la <b>forme</b> du phénomène, pas le résultat de vos saisies. Vos chiffres sont à l'étape 5.</div>
+          <div style="font-size:11.5px;color:#5C6157;margin-bottom:10px;max-width:76ch">Dessin illustratif : il montre la <b>forme</b> du phénomène, pas le résultat de vos saisies. Vos chiffres sont au temps 3, « La trajectoire ».</div>
           {{ friseAccueil }}
         </div>
 
@@ -219,7 +215,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <button onClick="{{ hypReprise.charges }}" style="margin-left:auto;font-size:11.5px;padding:6px 12px;border:1px solid #A97F26;background:#F1E6CC;border-radius:5px;cursor:pointer">↻ Reprendre les valeurs de référence</button>
           </div>
 <div style="background:#E3EDE5;border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.55;max-width:72ch;margin-bottom:14px">
-            Ce que coûte, chaque année, un hectare de vigne en production chez vous. Ces montants servent à l'étape 5 : sans eux, ne rien faire paraîtrait gratuit et la comparaison serait faussée. N'y mettre que des charges <b>réellement évitables</b> quand la parcelle ne produit pas. Valeurs par défaut : Cerfrance 2024.
+            Ce que coûte, chaque année, un hectare de vigne en production chez vous. Ces montants servent au temps 3 : sans eux, ne rien faire paraîtrait gratuit et la comparaison serait faussée. N'y mettre que des charges <b>réellement évitables</b> quand la parcelle ne produit pas. Valeurs par défaut : Cerfrance 2024.
           </div>
           <div class="grid">
             <div class="field">
@@ -340,47 +336,60 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
     </div>
   </sc-if>
 
-  <div id="appGrid" style="max-width:1360px;margin:0 auto;width:100%;flex:1;display:grid;grid-template-columns:216px minmax(0,1fr) 296px;gap:0;align-items:start">
+  <!-- Parcours en trois temps — prompt 11.
 
-    <nav style="padding:28px 0 28px 28px;position:sticky;top:64px;display:flex;flex-direction:column;gap:2px">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#9A9E97;letter-spacing:0.1em;margin-bottom:10px">VOTRE PARCOURS</div>
-      <sc-for list="{{ etapes }}" as="et" hint-placeholder-count="5">
-        <button onClick="{{ et.go }}" aria-current="{{ et.courante }}" style="display:flex;align-items:flex-start;gap:10px;padding:9px 10px;border:0;background: {{ et.bg }};border-radius:6px;cursor:pointer;text-align:left;width:100%">
-          <span style="width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-family:'JetBrains Mono',monospace;font-size:11.5px;flex:none;background:{{ et.numBg }};color:{{ et.numFg }};border:1px solid {{ et.numBorder }}">{{ et.num }}</span>
-          <span style="display:flex;flex-direction:column;gap:1px;min-width:0">
-            <span style="font-size:13.5px;font-weight:{{ et.poids }};color:{{ et.fg }}">{{ et.label }}</span>
-            <span style="font-size:11.5px;line-height:1.3;color:#9A9E97">{{ et.sub }}</span>
-          </span>
-        </button>
-      </sc-for>
-      <!-- Indicateur des 11 repères — prompt B4. Discret et permanent : il vit
-           dans la navigation, donc visible à toutes les étapes. Cliquable, il
-           emmène au premier repère encore à sa valeur d'exemple et lui donne le
-           focus. Ce n'est pas un blocage : l'outil reste parfaitement utilisable
-           sans avoir touché un seul champ, c'est même sa promesse. -->
-      <sc-if value="{{ reperesTousFaits }}" hint-placeholder-val="{{ false }}">
-        <div style="margin-top:22px;padding:10px 12px;background:#E3EDE5;border-radius:6px;font-size:11.5px;line-height:1.45;color:#2F5B3C">✓ {{ reperesTxt }}</div>
-      </sc-if>
-      <sc-if value="{{ !reperesTousFaits }}" hint-placeholder-val="{{ true }}">
-        <button onClick="{{ allerPremierRepere }}" style="margin-top:22px;padding:10px 12px;background:#fff;border:1px dashed #A97F26;border-radius:6px;font-size:11.5px;line-height:1.45;color:#5C6157;cursor:pointer;text-align:left;width:100%">
-          {{ reperesTxt }}<br><span style="color:#A97F26">{{ reperesSuivantTxt }}</span>
-        </button>
-      </sc-if>
+       Les cinq étapes suivaient la structure du CALCUL (exploitation,
+       parcelle, plantation, coûts, résultats), pas la conversation entre le
+       conseiller et le vigneron. Elles deviennent trois moments d'entretien :
+       décrire ce qu'on a, décider ce qu'on fait, regarder ce que ça donne.
 
-      <div style="margin-top:14px;padding:12px 12px;background:#F1E6CC;border-radius:6px;font-size:11.5px;line-height:1.5;color:#5C6157">
-        Toutes les valeurs sont préremplies et le calcul se refait à chaque frappe : vous pouvez avancer, revenir, ou sauter directement aux résultats.
+       La barre passe de la colonne de gauche à un bandeau horizontal de trois
+       pavés égaux : trois pavés larges se lisent en projection, une liste
+       verticale de cinq lignes non. À droite, l'indicateur des repères et le
+       point d'entrée du panneau Hypothèses. -->
+  <nav aria-label="Votre parcours" style="border-bottom:1px solid #DDD9CE;background:#FAF9F5">
+    <div style="max-width:1360px;margin:0 auto;padding:16px 28px;display:flex;gap:18px;align-items:stretch;flex-wrap:wrap">
+      <div style="display:flex;flex:1;min-width:320px;border:1px solid #DDD9CE;border-radius:8px;overflow:hidden">
+        <sc-for list="{{ etapes }}" as="et" hint-placeholder-count="3">
+          <button onClick="{{ et.go }}" aria-current="{{ et.courante }}" style="flex:1;min-width:0;padding:14px 18px;border:0;border-right:1px solid {{ et.sep }};background:{{ et.bg }};cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px">
+            <span class="mono" style="font-size:11.5px;letter-spacing:0.08em;color:{{ et.surtitreFg }}">{{ et.surtitre }}</span>
+            <span class="n2" style="color:{{ et.fg }}">{{ et.label }}</span>
+            <span style="font-size:11.5px;line-height:1.35;color:{{ et.subFg }}">{{ et.sub }}</span>
+          </button>
+        </sc-for>
       </div>
-    </nav>
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:240px">
+        <button id="hypotheses-ouvrir" onClick="{{ ouvrirHypotheses }}" style="font-size:13.5px;padding:9px 15px;border:1px solid #A97F26;border-radius:6px;cursor:pointer;background:{{ hypBg }};color:{{ hypFg }};text-align:left">Hypothèses →</button>
+        <!-- Indicateur des 11 repères — prompt B4. Discret et permanent : il
+             vit dans la navigation, donc visible à tous les temps. Cliquable,
+             il emmène au premier repère encore à sa valeur d'exemple et lui
+             donne le focus. Ce n'est pas un blocage : l'outil reste
+             parfaitement utilisable sans avoir touché un seul champ, c'est
+             même sa promesse. -->
+        <sc-if value="{{ reperesTousFaits }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:9px 12px;background:#E3EDE5;border-radius:6px;font-size:11.5px;line-height:1.45;color:#2F5B3C">✓ {{ reperesTxt }}</div>
+        </sc-if>
+        <sc-if value="{{ !reperesTousFaits }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ allerPremierRepere }}" style="padding:9px 12px;background:#fff;border:1px dashed #A97F26;border-radius:6px;font-size:11.5px;line-height:1.45;color:#5C6157;cursor:pointer;text-align:left">
+            {{ reperesTxt }}<br><span style="color:#A97F26">{{ reperesSuivantTxt }}</span>
+          </button>
+        </sc-if>
+      </div>
+    </div>
+  </nav>
 
-    <main style="padding:28px 30px 90px;min-width:0">
+  <div id="appGrid" style="max-width:1360px;margin:0 auto;width:100%;flex:1;display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:0;align-items:start">
+
+
+    <main style="padding:28px 30px 90px;min-width:0;grid-column:1">
 
       <sc-if value="{{ estEtape0 }}" hint-placeholder-val="{{ true }}">
-        <div class="eyebrow">ÉTAPE 1 SUR 5</div>
+        <div class="eyebrow">TEMPS 1 · VOTRE EXPLOITATION</div>
         <sc-if value="{{ erreurSurface }}" hint-placeholder-val="{{ false }}">
           <div style="margin:8px 0;font-size:13.5px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">⚠ {{ erreurSurface }}</div>
         </sc-if>
         <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Votre exploitation</h2>
-        <p style="color:#5C6157;font-size:13.5px;max-width:60ch;margin:0 0 20px">Ces repères décrivent tout votre domaine. Ils servent de point de comparaison à la parcelle que vous renouvellerez.</p>
+        <p style="color:#5C6157;font-size:13.5px;max-width:60ch;margin:0 0 20px">Ces repères décrivent tout votre domaine. Ils servent de point de comparaison à la parcelle que vous renouvellerez, décrite juste en dessous.</p>
 
         <!-- Panneau d'accueil — ouvert au premier affichage, repliable ensuite :
              c'est le seul endroit qui dit à quoi sert l'outil et ce qu'on en
@@ -395,11 +404,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
             <div class="fold-body" style="font-size:13.5px;line-height:1.6;max-width:78ch">
               <p style="margin:0 0 12px">Vous désignez <b>une parcelle</b> de votre exploitation et l'outil simule <b>l'impact de son renouvellement</b> : l'arracher, laisser le sol se reposer, replanter. Il chiffre ce que la transition coûte, ce que la réserve individuelle permet d'absorber, et en combien de temps la parcelle revient en production. Le maintien en l'état sert de <b>repère de comparaison</b> pour mesurer cet impact — l'outil ne recommande ni l'un ni l'autre.</p>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px 20px;margin-bottom:12px">
-                <div><b>1 · Exploitation</b><br><span style="color:#5C6157">votre domaine dans son ensemble</span></div>
-                <div><b>2 · Parcelle</b><br><span style="color:#5C6157">celle que vous voulez renouveler</span></div>
-                <div><b>3 · Plantation</b><br><span style="color:#5C6157">ce que vous replantez, et comment</span></div>
-                <div><b>4 · Coûts</b><br><span style="color:#5C6157">investissement et entretien</span></div>
-                <div><b>5 · Résultats</b><br><span style="color:#5C6157">trésorerie, réserve, âge du vignoble</span></div>
+                <div><b>Temps 1 · La parcelle</b><br><span style="color:#5C6157">registre, surface, âge, faire-valoir</span></div>
+                <div><b>Temps 2 · Le projet</b><br><span style="color:#5C6157">cépage, densité, palissage, coûts</span></div>
+                <div><b>Temps 3 · La trajectoire</b><br><span style="color:#5C6157">réserve, trésorerie, âge, fiche</span></div>
               </div>
               <p style="margin:0 0 8px"><b>Tous les champs sont déjà préremplis</b> avec des valeurs plausibles : vous pouvez aller directement aux résultats, puis revenir affiner ce qui compte pour vous. Le calcul se refait à chaque frappe, il n'y a rien à valider.</p>
               <p style="margin:0"><b>Vos saisies sont conservées sur cet ordinateur uniquement. Rien n'est envoyé.</b> Vous les retrouverez au prochain chargement de la page ; le bouton <b>Effacer mes données</b>, en haut à droite, les remplace par les valeurs d'exemple. Le bouton <b>Lexique</b>, à côté, définit les termes de métier employés dans l'outil.</p>
@@ -570,7 +577,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
       </sc-if>
 
       <sc-if value="{{ estEtape1 }}" hint-placeholder-val="{{ false }}">
-        <div class="eyebrow">ÉTAPE 2 SUR 5</div>
+        <div class="eyebrow" style="margin-top:40px;padding-top:28px;border-top:1px solid #DDD9CE;display:block">TEMPS 1 · LA PARCELLE DÉSIGNÉE</div>
         <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">La parcelle que vous désignez</h2>
         <p style="color:#5C6157;font-size:13.5px;max-width:60ch;margin:0 0 24px">Décrivez la parcelle candidate au renouvellement, telle qu'elle produit aujourd'hui.</p>
 
@@ -700,9 +707,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
       </sc-if>
 
       <sc-if value="{{ estEtape2 }}" hint-placeholder-val="{{ false }}">
-        <div class="eyebrow">ÉTAPE 3 SUR 5</div>
+        <div class="eyebrow">TEMPS 2 · CE QUE VOUS REPLANTEZ</div>
         <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Votre projet de replantation</h2>
-        <p style="color:#5C6157;font-size:13.5px;max-width:62ch;margin:0 0 24px">Ce que vous allez replanter, et comment la vigne sera conduite. Le coût du palissage se calcule tout seul à partir de la géométrie saisie à l'étape 2.</p>
+        <p style="color:#5C6157;font-size:13.5px;max-width:62ch;margin:0 0 24px">Ce que vous allez replanter, et comment la vigne sera conduite. Le coût du palissage se calcule tout seul à partir de la géométrie saisie au temps 1.</p>
 
         <!-- Volet « Ajuster » de l'écran 3 — prompt B4. Aucun des champs de cet
              écran n'appartient aux 11 repères du chemin court : cépage,
@@ -841,9 +848,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
 
           <div class="card" style="margin-top:16px">
             <h3 class="card-h" style="margin-bottom:4px">Palissage et conduite</h3>
-            <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px">calculé d'après la géométrie saisie à l'étape 2 · tarifs fournisseur et pose (LutEnVi 2025) à réactualiser</div>
+            <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px">calculé d'après la géométrie saisie au temps 1 · tarifs fournisseur et pose (LutEnVi 2025) à réactualiser</div>
             <sc-if value="{{ longueurManquante }}" hint-placeholder-val="{{ false }}">
-              <div style="font-size:13.5px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">Saisissez une surface arrachée et un nombre de rangs à l'étape 2 pour calculer la géométrie.</div>
+              <div style="font-size:13.5px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">Saisissez une surface arrachée et un nombre de rangs au temps 1 pour calculer la géométrie.</div>
             </sc-if>
             <sc-if value="{{ !longueurManquante }}" hint-placeholder-val="{{ true }}">
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
@@ -907,7 +914,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
       </sc-if>
 
       <sc-if value="{{ estEtape3 }}" hint-placeholder-val="{{ false }}">
-        <div class="eyebrow">ÉTAPE 4 SUR 5</div>
+        <div class="eyebrow" style="margin-top:40px;padding-top:28px;border-top:1px solid #DDD9CE;display:block">TEMPS 2 · CE QUE CELA COÛTE</div>
         <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Coûts et charges</h2>
         <p style="color:#5C6157;font-size:13.5px;max-width:62ch;margin:0 0 24px">D'abord ce que vous investissez une fois pour toutes, puis ce que la parcelle coûte chaque année pendant la transition. Tous les montants sont modifiables — <span style="color:#A5433A">les valeurs par défaut sont des ordres de grandeur, à valider avant tout usage réel</span>.</p>
 
@@ -1079,7 +1086,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
       </sc-if>
 
       <sc-if value="{{ estEtape4 }}" hint-placeholder-val="{{ false }}">
-        <div class="eyebrow">ÉTAPE 5 SUR 5 · RÉSULTATS</div>
+        <div class="eyebrow">TEMPS 3 · LA TRAJECTOIRE</div>
         <sc-if value="{{ erreurSurface }}" hint-placeholder-val="{{ false }}">
           <div style="margin:8px 0;font-size:13.5px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">⚠ {{ erreurSurface }}</div>
         </sc-if>
@@ -1362,7 +1369,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <div role="tabpanel" id="onglet-panneau-2" aria-labelledby="onglet-btn-2">
         <!-- ============ BLOC 4 — Main d'œuvre et charges ============ -->
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:76ch">La parcelle renouvelée reste entretenue tout au long de la transition — mais pas de la même façon selon la phase : le repos n'engage quasiment aucun travail, le plantier en engage un réel (formation, protection, remplacement des manquants, désherbage), seule la vendange est franchement économisée tant qu'il n'y a rien à récolter. Charges de surface reprises de vos saisies à l'écran 1.</div>
+          <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:76ch">La parcelle renouvelée reste entretenue tout au long de la transition — mais pas de la même façon selon la phase : le repos n'engage quasiment aucun travail, le plantier en engage un réel (formation, protection, remplacement des manquants, désherbage), seule la vendange est franchement économisée tant qu'il n'y a rien à récolter. Charges de surface reprises du panneau Hypothèses.</div>
           <div style="display:grid;grid-template-columns:1.6fr repeat(4,auto);gap:2px 14px;font-size:11.5px;align-items:center">
             <div style="font-size:11.5px;text-transform:uppercase;color:#5C6157;padding:5px 0;border-bottom:1px solid #DDD9CE">Régime</div>
             <div style="font-size:11.5px;text-transform:uppercase;color:#5C6157;padding:5px 0;border-bottom:1px solid #DDD9CE;text-align:right">Durée</div>
@@ -1400,7 +1407,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
         <div role="tabpanel" id="onglet-panneau-3" aria-labelledby="onglet-btn-3">
         <!-- ============ BLOC 1 — Récapitulatif technique ============ -->
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:74ch">Récapitulatif technique de l'opération, sur la parcelle désignée à l'écran 2.</div>
+          <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px;max-width:74ch">Récapitulatif technique de l'opération, sur la parcelle désignée au temps 1.</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
             <div>
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:#5C6157">Surface renouvelée</div>
@@ -1712,18 +1719,21 @@ const COLONNES_CIVC = ['idu', 'commune', 'num_civc', 'mode_explo', 'cepage', 'an
    Les deux variantes de l'écran 1 et 2 (saisie manuelle / dérivé du registre)
    partagent le même repère : en mode registre le champ est dérivé, donc déjà
    renseigné par le fichier de l'exploitant. */
+/* prompt 11 — `etape` désigne désormais un TEMPS (0, 1 ou 2), plus un écran
+   sur cinq : c'est la valeur donnée à state.step pour emmener l'utilisateur
+   au repère resté à sa valeur d'exemple. */
 const REPERES_CHEMIN_COURT = [
   { cle: 'surfTot',    etape: 0, id: 'f-surfTot',    lib: 'surface totale' },
   { cle: 'ageMoy',     etape: 0, id: 'f-ageMoy',     lib: 'âge moyen du vignoble' },
   { cle: 'volco',      etape: 0, id: 'f-volco',      lib: 'VolCo' },
   { cle: 'prixKg',     etape: 0, id: 'f-prixKg',     lib: 'prix du raisin' },
-  { cle: 'surfArr',    etape: 1, id: 'f-surfArr',    lib: 'surface arrachée' },
-  { cle: 'ageParc',    etape: 1, id: 'f-ageParc',    lib: 'âge de la parcelle' },
-  { cle: 'rendEstime', etape: 1, id: 'f-rendEstime', lib: 'rendement estimé' },
-  { cle: 'regime',     etape: 1, id: 'f-regime',     lib: 'régime de faire-valoir' },
-  { cle: 'ecartRang',  etape: 1, id: 'f-ecartRang',  lib: 'écart entre rangs' },
-  { cle: 'ecartPied',  etape: 1, id: 'f-ecartPied',  lib: 'écart entre pieds' },
-  { cle: 'repos',      etape: 3, id: 'f-repos',      lib: 'durée de repos' }
+  { cle: 'surfArr',    etape: 0, id: 'f-surfArr',    lib: 'surface arrachée' },
+  { cle: 'ageParc',    etape: 0, id: 'f-ageParc',    lib: 'âge de la parcelle' },
+  { cle: 'rendEstime', etape: 0, id: 'f-rendEstime', lib: 'rendement estimé' },
+  { cle: 'regime',     etape: 0, id: 'f-regime',     lib: 'régime de faire-valoir' },
+  { cle: 'ecartRang',  etape: 0, id: 'f-ecartRang',  lib: 'écart entre rangs' },
+  { cle: 'ecartPied',  etape: 0, id: 'f-ecartPied',  lib: 'écart entre pieds' },
+  { cle: 'repos',      etape: 1, id: 'f-repos',      lib: 'durée de repos' }
 ];
 
 /* Les quatre postes d'investissement (arbitrage 11). Tant qu'AUCUN des quatre
@@ -2587,29 +2597,31 @@ class Component extends DCLogic {
       ? OAD.geometrieAgronomique(surfArrChoisi, +v.ecartRang || 1, +v.ecartPied || 1, nbRangsChoisi)
       : { surf: surfArrChoisi, eR: +v.ecartRang || 1, eP: +v.ecartPied || 1, nbRangs: nbRangsChoisi,
           densite: 0, L: 0, W: 0, pieds: 0, aoc: { rang: true, pied: true, somme: true } };
-    const labels = ['Exploitation', 'Parcelle', 'Plantation', 'Coûts', 'Résultats'];
-    // Sous-titre de chaque étape dans le sommaire : le seul libellé
-    // ('Plantation', 'Coûts'…) ne dit pas ce qu'on va y saisir, ce qui oblige
-    // à ouvrir les cinq écrans pour comprendre le parcours.
+    /* Trois temps — prompt 11. Chacun correspond à un moment de l'entretien :
+       décrire ce qu'on a, décider ce qu'on fait, regarder ce que ça donne. Le
+       sous-titre liste ce que le temps contient : le seul libellé (« Le
+       projet ») ne dit pas ce qu'on va y saisir. */
+    const labels = ['La parcelle', 'Le projet', 'La trajectoire'];
     const sousTitres = [
-      'votre domaine dans son ensemble',
-      'celle que vous voulez renouveler',
-      'ce que vous replantez, et comment',
-      'investissement et entretien',
-      'trésorerie, réserve, âge du vignoble'
+      'registre, surface, âge, faire-valoir',
+      'cépage, densité, palissage, coûts',
+      'réserve, trésorerie, âge, fiche'
     ];
     const etapes = labels.map((label, i) => ({
       num: String(i + 1), label, sub: sousTitres[i],
-      // aria-current : l'étape active était signalée par la seule couleur de
+      surtitre: 'TEMPS ' + (i + 1),
+      // aria-current : le temps actif était signalé par la seule couleur de
       // fond, invisible pour un lecteur d'écran.
       courante: s.step === i ? 'step' : undefined,
       go: () => this.setState({ step: i }),
-      bg: s.step === i ? '#F1E6CC' : 'transparent',
-      fg: s.step === i ? '#20291F' : '#5C6157',
-      poids: s.step === i ? 600 : 400,
-      numBg: s.step === i ? '#A97F26' : (i < s.step ? '#E3EDE5' : '#fff'),
-      numFg: s.step === i ? '#fff' : (i < s.step ? '#4C7A57' : '#9A9E97'),
-      numBorder: s.step === i ? '#A97F26' : '#DDD9CE'
+      bg: s.step === i ? '#F1E6CC' : '#FAF9F5',
+      fg: s.step === i ? '#20291F' : '#42473F',
+      subFg: s.step === i ? '#5C6157' : '#9A9E97',
+      surtitreFg: s.step === i ? '#8E6A1F' : '#A97F26',
+      // Le dernier pavé n'a pas de séparateur à droite : il touche déjà la
+      // bordure du conteneur.
+      sep: i === labels.length - 1 ? 'transparent' : '#DDD9CE',
+      poids: s.step === i ? 600 : 400
     }));
 
     // chantier B4 — la pénalité VSL est retirée de l'interface (champ de saisie
@@ -2788,27 +2800,33 @@ class Component extends DCLogic {
       etapes, v, on: this.on,
       horizonTxt: inp.horizon + ' ans',
       rampeProgressionTxt,
-      estEtape0: s.step === 0, estEtape1: s.step === 1, estEtape2: s.step === 2,
-      estEtape3: s.step === 3, estEtape4: s.step === 4,
+      /* prompt 11 — les cinq écrans deviennent cinq SECTIONS réparties sur
+         trois temps : rien n'est supprimé, deux écrans se retrouvent
+         simplement sur la même page. Les noms `estEtapeN` sont conservés pour
+         ne pas réécrire cinq blocs de gabarit qui n'ont pas changé. */
+      estEtape0: s.step === 0, estEtape1: s.step === 0, estEtape2: s.step === 1,
+      estEtape3: s.step === 1, estEtape4: s.step === 2,
       // chantier B2 — bloc synthèse retiré des écrans 1 ET 2 (déjà fait pour
       // l'écran 1 au chantier B1) ; réapparaît à partir de l'écran 3.
-      syntheseVisible: s.step > 1,
+      // La synthèse latérale reste masquée pendant qu'on décrit la parcelle
+      // (temps 1) et réapparaît dès qu'on décide le projet (temps 2).
+      syntheseVisible: s.step > 0,
       estFermage: v.regime === 'fermage', estMetayage: v.regime === 'metayage',
-      aPrecedent: s.step > 0, aSuivant: s.step < 4,
+      aPrecedent: s.step > 0, aSuivant: s.step < 2,
       labelPrecedent: s.step > 0 ? labels[s.step - 1] : '',
       // prompt 4 — l'action principale nomme l'étape qu'elle atteint, pas
       // seulement son titre : « Étape 3 — Plantation » se comprend sans avoir
       // à compter les pavés de la barre latérale.
-      labelSuivant: s.step < 4 ? 'Étape ' + (s.step + 2) + ' — ' + labels[s.step + 1] : '',
-      // Le raccourci vers les résultats ne s'affiche pas sur l'étape 4, où il
-      // ferait doublon avec l'action principale, ni sur l'étape 5.
-      raccourciResultats: s.step < 3,
+      labelSuivant: s.step < 2 ? 'Temps ' + (s.step + 2) + ' — ' + labels[s.step + 1] : '',
+      // Le raccourci vers la trajectoire ne s'affiche pas sur le temps 2, où
+      // il ferait doublon avec l'action principale, ni sur le temps 3.
+      raccourciResultats: s.step < 1,
       // Sans raccourci à gauche de lui, c'est le bouton principal qui pousse
       // le pied à droite.
-      margeSuivant: s.step < 3 ? '0' : 'auto',
+      margeSuivant: s.step < 1 ? '0' : 'auto',
       precedent: () => this.setState(st => ({ step: Math.max(0, st.step - 1) })),
-      suivant: () => this.setState(st => ({ step: Math.min(4, st.step + 1) })),
-      allerResultats: () => this.setState({ step: 4 }),
+      suivant: () => this.setState(st => ({ step: Math.min(2, st.step + 1) })),
+      allerResultats: () => this.setState({ step: 2 }),
       riPctTxt: (+v.riPct || 0) + ' %',
       riKgTxt: this.fmtKg(inp.reserveInit),
       syDens: this.fmtKg(g.densite) + ' pieds/ha',
@@ -3045,7 +3063,7 @@ class Component extends DCLogic {
     out.investLibelleCap = investEdite ? 'Votre investissement' : 'Coût de référence Champagne';
     out.investLibelleNote = investEdite
       ? 'établi sur les montants que vous avez saisis'
-      : 'montants de référence Champagne, non modifiés — ouvrez « Ajuster » à l’étape 4 pour y mettre vos devis';
+      : 'montants de référence Champagne, non modifiés — ouvrez « Ajuster » au temps 2 pour y mettre vos devis';
 
     /* Indicateur des 11 repères. Un repère « encore d'exemple » est un repère
        jamais édité. En mode registre, les repères dérivés du fichier de
@@ -3189,7 +3207,7 @@ class Component extends DCLogic {
       { lib: 'Âge de la parcelle', val: nf(inp.ageParc, 0), unite: 'ans', origine: modeRegistre ? `Dérivé du registre — moyenne pondérée par surface de la sélection (idu ${s.parcelleIdu}), campagne ${campagne}` : 'Saisi' },
       { lib: 'Pieds manquants', val: nf(inp.manquants * 100, 1), unite: '%', origine: modeRegistre ? 'Dérivé du registre — moyenne pondérée par surface de la sélection' : 'Saisi' },
       { lib: 'Rendement estimé de la parcelle', val: nf(inp.rendEstime, 0), unite: 'kg/ha', origine: 'Saisi' },
-      { lib: 'Déclin annuel en statu quo', val: nf(inp.declinSQ * 100, 2), unite: '%/an', origine: 'Saisi — volet « hypothèses de comparaison » de l’écran 5 (prompt C1)' },
+      { lib: 'Déclin annuel en statu quo', val: nf(inp.declinSQ * 100, 2), unite: '%/an', origine: 'Saisi — volet « hypothèses de comparaison » du temps 3 (prompt C1)' },
       { lib: 'Régime de faire-valoir', val: v.regime, unite: '—', origine: 'Saisi' },
       { lib: 'Loyer annuel (fermage)', val: nf(+v.loyerHa || 0, 0), unite: '€/ha/an', origine: 'Saisi — utilisé si régime = fermage' },
       { lib: 'Loyer annuel × surface parcelle', val: nf(inp.fv.loyerAn, 0), unite: '€/an', origine: 'Dérivé — loyer/ha × surface réelle de la parcelle' },

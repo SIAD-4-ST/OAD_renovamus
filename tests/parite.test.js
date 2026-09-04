@@ -1763,6 +1763,38 @@ test('reprendre les valeurs de référence ne porte que sur les postes prérégl
   });
 });
 
+section('25. Parcours en trois temps (prompt 11)');
+
+test('le parcours compte trois temps, et state.step ne dépasse plus 2', () => {
+  assert.ok(/const labels = \['La parcelle', 'Le projet', 'La trajectoire'\]/.test(INDEX_HTML),
+    'trois temps, nommés par le moment d\'entretien auquel ils correspondent');
+  assert.ok(/aSuivant: s\.step < 2/.test(INDEX_HTML) && /step: Math\.min\(2, st\.step \+ 1\)/.test(INDEX_HTML),
+    'la navigation doit être bornée à 2, pas à 4');
+  assert.ok(/allerResultats: \(\) => this\.setState\(\{ step: 2 \}\)/.test(INDEX_HTML),
+    'le raccourci « aller aux résultats » doit viser le temps 3');
+  assert.ok(!/SUR 5</.test(INDEX_HTML), 'plus aucun « ÉTAPE N SUR 5 » à l\'écran');
+});
+
+test("l'instantané localStorage ne contient pas step : aucune migration nécessaire", () => {
+  const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,600}?\n\}/);
+  assert.ok(ecriture, 'ecrireInstantane doit exister');
+  assert.ok(!/\bstep\b/.test(ecriture[0]),
+    "step n'entre pas dans l'instantané — un instantané écrit par la version à cinq "
+    + "étapes se recharge donc tel quel, sans valeur de step à ramener dans 0..2");
+});
+
+test('les cinq écrans deviennent cinq sections réparties sur trois temps', () => {
+  assert.ok(/estEtape0: s\.step === 0, estEtape1: s\.step === 0, estEtape2: s\.step === 1,/.test(INDEX_HTML)
+    && /estEtape3: s\.step === 1, estEtape4: s\.step === 2,/.test(INDEX_HTML),
+    'exploitation + parcelle sur le temps 1, plantation + coûts sur le temps 2, résultats sur le temps 3');
+  // Les onze repères pointent vers un temps, plus vers un écran sur cinq :
+  // un repère qui viserait l'étape 3 emmènerait désormais hors du parcours.
+  const bloc = INDEX_HTML.match(/const REPERES_CHEMIN_COURT = \[[\s\S]*?\];/)[0];
+  const etapes = (bloc.match(/etape: (\d)/g) || []).map(x => +x.slice(-1));
+  assert.strictEqual(etapes.length, 11, 'onze repères');
+  assert.ok(etapes.every(e => e >= 0 && e <= 2), 'aucun repère ne doit viser un temps inexistant');
+});
+
 // ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------
