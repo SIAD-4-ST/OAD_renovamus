@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="sombre">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -24,9 +24,10 @@
    le thème sombre ne fait que redéfinir leurs valeurs — il n'y a donc qu'un
    seul endroit à relire pour vérifier un contraste.
 
-   Le mode clair reste le défaut et la version de travail. Les couleurs de
-   série des graphiques (végétal, ambre, alerte) ne changent pas d'un thème à
-   l'autre : elles sont choisies dans renderVals et passées au SVG.
+   Le mode sombre est le défaut ; le clair reste accessible d'un clic. Les
+   couleurs de série des graphiques (végétal, ambre, alerte) ne changent pas
+   d'un thème à l'autre : elles sont choisies dans renderVals et passées au
+   SVG.
 
    La feuille d'impression, plus bas, force noir sur blanc quel que soit le
    thème actif : on n'imprime pas un aplat sombre. */
@@ -55,6 +56,17 @@
   --encre-inverse:#FAF9F5;
   --encre-survol:#3A4538;
 }
+/* Hauteur du bandeau figé (en-tête + parcours) — hors du bloc des jetons de
+   couleur : ce n'est pas une teinte, elle ne change pas d'un thème à l'autre,
+   et les deux thèmes doivent déclarer exactement les mêmes jetons. La valeur
+   ci-dessous n'est qu'un repli : `mesurerBarre()` la remplace par la hauteur
+   réellement rendue, qui varie avec le lexique déplié et la largeur de la
+   fenêtre.
+
+   `scroll-padding-top` : un champ atteint par un lien d'ancre ou par la mise
+   au point clavier (« reprendre au premier repère ») ne doit pas se ranger
+   derrière le bandeau figé. */
+html{ --barre-h:152px; scroll-padding-top:calc(var(--barre-h) + 16px) }
 :root[data-theme="sombre"]{
   --fond:#20291F;
   --surface-basse:#161C15;
@@ -185,7 +197,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
     --cellule-fond:#fff; --encre-inverse:#fff; --encre-survol:#3A4538;
   }
   @page { size: A4 portrait; margin: 12mm; }
-  header, nav, #appGrid, button { display:none !important; }
+  header, nav, #barre-fixe, #appGrid, button { display:none !important; }
   /* La sortie « remise » tient sur une page : c'est sa contrainte de
      conception, pas un espoir. Rien n'y est coupé entre deux pages. */
   :root[data-print="vigneron"] .print-remise {
@@ -203,75 +215,93 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
 </helmet>
 <div style="min-height:100vh;font-family:'Archivo',sans-serif;color:var(--encre);background:var(--fond);display:flex;flex-direction:column">
 
-  <header style="border-bottom:3px solid var(--encre);background:var(--surface-basse);position:sticky;top:0;z-index:50">
-    <div style="max-width:1360px;margin:0 auto;padding:14px 28px;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap">
-      <div style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;line-height:1.1">Renouvellement du vignoble</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);letter-spacing:0.08em">SIMULATEUR · IMPACT ARRACHAGE-REPLANTATION</div>
-      <button onClick="{{ toggleLexique }}" style="margin-left:auto;font-size:11.5px;padding:6px 13px;border:1px solid var(--bordure);border-radius:6px;cursor:pointer;background:{{ lexiqueBg }};color:{{ lexiqueFg }}">{{ lexiqueLabel }}</button>
-      <!-- prompt B6 — point d'entrée PERMANENT vers le panneau d'accueil, à côté
-           du Lexique : l'aide ne doit pas être réservée à la première visite. -->
-      <button id="accueil-ouvrir" onClick="{{ ouvrirAccueil }}" style="font-size:11.5px;padding:6px 13px;border:1px solid var(--bordure);border-radius:6px;cursor:pointer;background:var(--surface-haute);color:var(--encre)">Comment lire cet outil</button>
-      <!-- prompt B1 — les saisies sont désormais persistées localement ; il faut
-           donc un moyen visible et permanent de les reprendre à zéro. -->
-      <!-- prompt 13 — bascule du thème de projection. Le mode clair reste le
-           défaut et la version de travail ; le sombre est là pour la salle. -->
-      <button onClick="{{ basculerTheme }}" aria-pressed="{{ themeAria }}" style="font-size:11.5px;padding:6px 13px;border:1px solid var(--bordure);border-radius:6px;cursor:pointer;background:var(--surface-haute);color:var(--encre)">{{ themeLabel }}</button>
-      <button onClick="{{ effacerDonnees }}" title="Remplace vos saisies et le registre par les valeurs d'exemple" style="font-size:11.5px;padding:6px 13px;border:1px solid var(--bordure);border-radius:6px;cursor:pointer;background:var(--surface-haute);color:var(--alerte)">Effacer mes données</button>
-      <div style="font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase;border:1px solid var(--accent);color:var(--accent);padding:3px 9px;border-radius:2px">Outil pédagogique — hypothèses à ajuster</div>
-    </div>
-    <!-- Lexique — accessible depuis n'importe quelle étape : les cinq mots de
-         métier sans lesquels l'outil est illisible pour qui découvre le sujet
-         (réserve individuelle, VolCo, repos, plantier, faire-valoir). -->
-    <sc-if value="{{ lexiqueOuvert }}" hint-placeholder-val="{{ false }}">
-      <div style="border-top:1px solid var(--bordure);background:var(--accent-fond)">
-        <div style="max-width:1360px;margin:0 auto;padding:16px 28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px 26px">
-          <sc-for list="{{ lexiqueEntrees }}" as="lx" hint-placeholder-count="6">
-            <div style="font-size:11.5px;line-height:1.5"><b>{{ lx.mot }}</b> — {{ lx.def }}</div>
+  <!-- Barre fixe — en-tête + parcours.
+
+       Les deux ne font qu'un bloc collant : le titre et le bandeau des trois
+       temps restent visibles pendant tout le défilement, y compris au temps 3
+       où les résultats sont longs. C'est le PARCOURS qu'il fallait figer — se
+       déplacer d'un temps à l'autre ne doit jamais demander de remonter.
+
+       Un seul conteneur `sticky` plutôt que deux collants empilés : la hauteur
+       de l'en-tête varie (lexique déplié, boutons qui passent à la ligne sur
+       écran étroit), un `top:` chiffré pour le bandeau serait faux dès qu'elle
+       change. Le panneau Hypothèses, lui, est passé SOUS ce bloc : il reste
+       dans le flux du document, comme voulu au prompt 10, sans quoi il
+       occuperait à lui seul tout l'écran figé.
+
+       La hauteur réelle du bloc est mesurée après chaque rendu et publiée dans
+       `--barre-h` (voir `mesurerBarre()`) : la colonne latérale collante et le
+       défilement vers un champ ciblé s'y calent. -->
+  <div id="barre-fixe" style="position:sticky;top:0;z-index:50">
+    <header style="border-bottom:3px solid var(--encre);background:var(--surface-basse)">
+      <div style="max-width:1360px;margin:0 auto;padding:14px 28px;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap">
+        <div style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;line-height:1.1">Renouvellement du vignoble</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);letter-spacing:0.08em">SIMULATEUR · IMPACT ARRACHAGE-REPLANTATION</div>
+        <button onClick="{{ toggleLexique }}" style="margin-left:auto;font-size:11.5px;padding:6px 13px;border:1px solid var(--bordure);border-radius:6px;cursor:pointer;background:{{ lexiqueBg }};color:{{ lexiqueFg }}">{{ lexiqueLabel }}</button>
+        <!-- prompt 13 — bascule du thème de projection. Le sombre est le
+             défaut (salle, vidéoprojecteur) ; le clair reste à un clic. -->
+        <button onClick="{{ basculerTheme }}" aria-pressed="{{ themeAria }}" style="font-size:11.5px;padding:6px 13px;border:1px solid var(--bordure);border-radius:6px;cursor:pointer;background:var(--surface-haute);color:var(--encre)">{{ themeLabel }}</button>
+        <!-- prompt B1 — les saisies sont persistées localement ; il faut donc un
+             moyen visible et permanent de les reprendre à zéro. -->
+        <button onClick="{{ effacerDonnees }}" title="Remplace vos saisies et le registre par les valeurs d'exemple" style="font-size:11.5px;padding:6px 13px;border:1px solid var(--bordure);border-radius:6px;cursor:pointer;background:var(--surface-haute);color:var(--alerte)">Effacer mes données</button>
+        <div style="font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase;border:1px solid var(--accent);color:var(--accent);padding:3px 9px;border-radius:2px">Outil pédagogique — hypothèses à ajuster</div>
+      </div>
+      <!-- Lexique — accessible depuis n'importe quelle étape : les cinq mots de
+           métier sans lesquels l'outil est illisible pour qui découvre le sujet
+           (réserve individuelle, VolCo, repos, plantier, faire-valoir). -->
+      <sc-if value="{{ lexiqueOuvert }}" hint-placeholder-val="{{ false }}">
+        <div style="border-top:1px solid var(--bordure);background:var(--accent-fond)">
+          <div style="max-width:1360px;margin:0 auto;padding:16px 28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px 26px">
+            <sc-for list="{{ lexiqueEntrees }}" as="lx" hint-placeholder-count="6">
+              <div style="font-size:11.5px;line-height:1.5"><b>{{ lx.mot }}</b> — {{ lx.def }}</div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </header>
+
+    <!-- Parcours en trois temps — prompt 11.
+
+         Les cinq étapes suivaient la structure du CALCUL (exploitation,
+         parcelle, plantation, coûts, résultats), pas la conversation entre le
+         conseiller et le vigneron. Elles deviennent trois moments d'entretien :
+         décrire ce qu'on a, décider ce qu'on fait, regarder ce que ça donne.
+
+         La barre passe de la colonne de gauche à un bandeau horizontal de trois
+         pavés égaux : trois pavés larges se lisent en projection, une liste
+         verticale de cinq lignes non. À droite, l'indicateur des repères et le
+         point d'entrée du panneau Hypothèses. -->
+    <nav aria-label="Votre parcours" style="border-bottom:1px solid var(--bordure);background:var(--surface-basse)">
+      <div style="max-width:1360px;margin:0 auto;padding:16px 28px;display:flex;gap:18px;align-items:stretch;flex-wrap:wrap">
+        <div style="display:flex;flex:1;min-width:320px;border:1px solid var(--bordure);border-radius:8px;overflow:hidden">
+          <sc-for list="{{ etapes }}" as="et" hint-placeholder-count="3">
+            <button onClick="{{ et.go }}" aria-current="{{ et.courante }}" style="flex:1;min-width:0;padding:14px 18px;border:0;border-right:1px solid {{ et.sep }};background:{{ et.bg }};cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px">
+              <span class="mono" style="font-size:11.5px;letter-spacing:0.08em;color:{{ et.surtitreFg }}">{{ et.surtitre }}</span>
+              <span class="n2" style="color:{{ et.fg }}">{{ et.label }}</span>
+              <span style="font-size:11.5px;line-height:1.35;color:{{ et.subFg }}">{{ et.sub }}</span>
+            </button>
           </sc-for>
         </div>
-      </div>
-    </sc-if>
-  </header>
-
-  <!-- Panneau d'accueil — prompt B6.
-
-       Volontairement DANS LE FLUX du document : pas de `position: fixed`, pas de
-       superposition. Un panneau fixe qui recouvre la page est un piège à focus
-       classique — on tabule derrière lui sans le voir. Ici le panneau est le
-       premier contenu de la page ; le focus y entre naturellement, Échap le
-       ferme, et le focus revient au bouton qui l'a ouvert. -->
-  <sc-if value="{{ accueilOuvert }}" hint-placeholder-val="{{ true }}">
-    <div role="dialog" aria-modal="false" aria-label="Comment lire cet outil" onKeyDown="{{ onAccueilTouche }}" style="background:var(--surface-basse);border-bottom:3px solid var(--encre)">
-      <div style="max-width:1360px;margin:0 auto;padding:26px 28px 30px">
-        <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:6px">
-          <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:0">Ce que fait cet outil</h2>
-          <button id="accueil-fermer" onClick="{{ fermerAccueil }}" style="margin-left:auto;font-size:13.5px;padding:8px 16px;border:1px solid var(--encre);background:var(--encre);color:var(--surface-basse);border-radius:6px;cursor:pointer">Commencer ✕</button>
-        </div>
-        <p style="font-size:13.5px;line-height:1.6;max-width:76ch;margin:0 0 4px;color:var(--encre)">Vous désignez une parcelle et l'outil <b>simule l'impact de son renouvellement</b> : ce que la transition coûte, ce que la réserve individuelle absorbe, et en combien de temps la parcelle revient en production. Il ne vous dit pas quoi faire.</p>
-        <p style="font-size:11.5px;color:var(--encre-3);margin:0 0 14px">Appuyez sur <b>Échap</b> pour fermer. Vous retrouverez ce panneau à tout moment par le bouton <b>« Comment lire cet outil »</b>, en haut de la page.</p>
-
-        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:16px 18px;margin-bottom:16px">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:2px">Le mécanisme, en une image</div>
-          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:10px;max-width:76ch">Dessin illustratif : il montre la <b>forme</b> du phénomène, pas le résultat de vos saisies. Vos chiffres sont au temps 3, « La trajectoire ».</div>
-          {{ friseAccueil }}
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
-          <div style="background:var(--vegetal-fond);border-radius:8px;padding:14px 16px;font-size:13.5px;line-height:1.55">
-            <b style="display:block;margin-bottom:6px">Ce que l'outil fait</b>
-            Il chiffre la trajectoire physique et financière du renouvellement d'<b>une</b> parcelle, sur 10 ans : coût de l'opération, kilos de réserve mobilisés puis reconstitués, âge du vignoble, trésorerie année par année. Tous les champs sont préremplis : vous pouvez aller droit aux résultats, puis revenir affiner.
-          </div>
-          <div style="background:var(--alerte-fond);border-radius:8px;padding:14px 16px;font-size:13.5px;line-height:1.55">
-            <b style="display:block;margin-bottom:6px">Ce que l'outil ne fait pas</b>
-            <b>Aucune recommandation</b> — il ne conclut jamais qu'il faut arracher ou attendre.
-            <b>Aucune actualisation des flux</b> — un euro de l'année 9 y pèse autant qu'un euro d'aujourd'hui.
-            <b>Aucune valeur patrimoniale</b> — ni celle du vignoble rajeuni, ni celle de la réserve reconstituée. Les résultats sont donc structurellement pessimistes sur la fin de l'horizon.
-          </div>
+        <div style="display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:240px">
+          <button id="hypotheses-ouvrir" onClick="{{ ouvrirHypotheses }}" style="font-size:13.5px;padding:9px 15px;border:1px solid var(--accent);border-radius:6px;cursor:pointer;background:{{ hypBg }};color:{{ hypFg }};text-align:left">Hypothèses →</button>
+          <!-- Indicateur des 11 repères — prompt B4. Discret et permanent : il
+               vit dans la navigation, donc visible à tous les temps. Cliquable,
+               il emmène au premier repère encore à sa valeur d'exemple et lui
+               donne le focus. Ce n'est pas un blocage : l'outil reste
+               parfaitement utilisable sans avoir touché un seul champ, c'est
+               même sa promesse. -->
+          <sc-if value="{{ reperesTousFaits }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:9px 12px;background:var(--vegetal-fond);border-radius:6px;font-size:11.5px;line-height:1.45;color:var(--vegetal-fonce)">✓ {{ reperesTxt }}</div>
+          </sc-if>
+          <sc-if value="{{ !reperesTousFaits }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ allerPremierRepere }}" style="padding:9px 12px;background:var(--surface-haute);border:1px dashed var(--accent);border-radius:6px;font-size:11.5px;line-height:1.45;color:var(--encre-3);cursor:pointer;text-align:left">
+              {{ reperesTxt }}<br><span style="color:var(--accent)">{{ reperesSuivantTxt }}</span>
+            </button>
+          </sc-if>
         </div>
       </div>
-    </div>
-  </sc-if>
-
+    </nav>
+  </div>
 
   <!-- Panneau « Hypothèses » — prompt 10.
 
@@ -288,9 +318,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
        avant ; seul l'état d'ouverture du panneau est de l'interface, et il ne
        va pas dans l'instantané.
 
-       Comme le panneau d'accueil, il est DANS LE FLUX du document : pas de
-       position fixed, pas de superposition. Un panneau fixe qui recouvre la
-       page est un piège à focus. -->
+       Il est DANS LE FLUX du document : pas de position fixed, pas de
+       superposition. Un panneau fixe qui recouvre la page est un piège à
+       focus. -->
   <sc-if value="{{ hypothesesOuvert }}" hint-placeholder-val="{{ false }}">
     <div role="dialog" aria-modal="false" aria-label="Hypothèses" onKeyDown="{{ onHypothesesTouche }}" style="background:var(--surface-basse);border-bottom:3px solid var(--encre)">
       <div style="max-width:1360px;margin:0 auto;padding:26px 28px 30px">
@@ -429,48 +459,6 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
     </div>
   </sc-if>
 
-  <!-- Parcours en trois temps — prompt 11.
-
-       Les cinq étapes suivaient la structure du CALCUL (exploitation,
-       parcelle, plantation, coûts, résultats), pas la conversation entre le
-       conseiller et le vigneron. Elles deviennent trois moments d'entretien :
-       décrire ce qu'on a, décider ce qu'on fait, regarder ce que ça donne.
-
-       La barre passe de la colonne de gauche à un bandeau horizontal de trois
-       pavés égaux : trois pavés larges se lisent en projection, une liste
-       verticale de cinq lignes non. À droite, l'indicateur des repères et le
-       point d'entrée du panneau Hypothèses. -->
-  <nav aria-label="Votre parcours" style="border-bottom:1px solid var(--bordure);background:var(--surface-basse)">
-    <div style="max-width:1360px;margin:0 auto;padding:16px 28px;display:flex;gap:18px;align-items:stretch;flex-wrap:wrap">
-      <div style="display:flex;flex:1;min-width:320px;border:1px solid var(--bordure);border-radius:8px;overflow:hidden">
-        <sc-for list="{{ etapes }}" as="et" hint-placeholder-count="3">
-          <button onClick="{{ et.go }}" aria-current="{{ et.courante }}" style="flex:1;min-width:0;padding:14px 18px;border:0;border-right:1px solid {{ et.sep }};background:{{ et.bg }};cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px">
-            <span class="mono" style="font-size:11.5px;letter-spacing:0.08em;color:{{ et.surtitreFg }}">{{ et.surtitre }}</span>
-            <span class="n2" style="color:{{ et.fg }}">{{ et.label }}</span>
-            <span style="font-size:11.5px;line-height:1.35;color:{{ et.subFg }}">{{ et.sub }}</span>
-          </button>
-        </sc-for>
-      </div>
-      <div style="display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:240px">
-        <button id="hypotheses-ouvrir" onClick="{{ ouvrirHypotheses }}" style="font-size:13.5px;padding:9px 15px;border:1px solid var(--accent);border-radius:6px;cursor:pointer;background:{{ hypBg }};color:{{ hypFg }};text-align:left">Hypothèses →</button>
-        <!-- Indicateur des 11 repères — prompt B4. Discret et permanent : il
-             vit dans la navigation, donc visible à tous les temps. Cliquable,
-             il emmène au premier repère encore à sa valeur d'exemple et lui
-             donne le focus. Ce n'est pas un blocage : l'outil reste
-             parfaitement utilisable sans avoir touché un seul champ, c'est
-             même sa promesse. -->
-        <sc-if value="{{ reperesTousFaits }}" hint-placeholder-val="{{ false }}">
-          <div style="padding:9px 12px;background:var(--vegetal-fond);border-radius:6px;font-size:11.5px;line-height:1.45;color:var(--vegetal-fonce)">✓ {{ reperesTxt }}</div>
-        </sc-if>
-        <sc-if value="{{ !reperesTousFaits }}" hint-placeholder-val="{{ true }}">
-          <button onClick="{{ allerPremierRepere }}" style="padding:9px 12px;background:var(--surface-haute);border:1px dashed var(--accent);border-radius:6px;font-size:11.5px;line-height:1.45;color:var(--encre-3);cursor:pointer;text-align:left">
-            {{ reperesTxt }}<br><span style="color:var(--accent)">{{ reperesSuivantTxt }}</span>
-          </button>
-        </sc-if>
-      </div>
-    </div>
-  </nav>
-
   <div id="appGrid" style="max-width:1360px;margin:0 auto;width:100%;flex:1;display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:0;align-items:start">
 
 
@@ -484,10 +472,10 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
         <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Votre exploitation</h2>
         <p style="color:var(--encre-3);font-size:13.5px;max-width:60ch;margin:0 0 20px">Ces repères décrivent tout votre domaine. Ils servent de point de comparaison à la parcelle que vous renouvellerez, décrite juste en dessous.</p>
 
-        <!-- Panneau d'accueil — ouvert au premier affichage, repliable ensuite :
-             c'est le seul endroit qui dit à quoi sert l'outil et ce qu'on en
-             obtient. Sans lui, on arrive directement sur un formulaire de
-             chiffres sans savoir ce qu'on est en train de préparer. -->
+        <!-- Encart de mise en route, replié par défaut : le seul endroit qui
+             dit à quoi sert l'outil et ce qu'on en obtient. Sans lui, on
+             arrive directement sur un formulaire de chiffres sans savoir ce
+             qu'on est en train de préparer. -->
         <div class="fold" style="margin-bottom:24px;background:var(--accent-fond);border-color:var(--accent-fond-bordure)">
           <button onClick="{{ toggleIntro }}" class="fold-btn">
             <span style="font-weight:600">Première visite ? Comment fonctionne ce simulateur</span>
@@ -511,9 +499,8 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
              devenu la SEULE source des surfaces et des âges. Les deux boutons
              de bascule « Saisie manuelle » / « Registre parcellaire » ont
              disparu : il n'y a plus de mode à choisir, donc plus rien à
-             basculer. Ce qui reste ici, c'est le bandeau de persistance et
-             l'import CSV, sans condition d'affichage. -->
-        <div style="margin-bottom:18px;padding:10px 14px;border-radius:6px;background:var(--accent-fond);font-size:11.5px;line-height:1.5">Vos saisies sont conservées sur cet ordinateur uniquement. Rien n'est envoyé. Le registre ({{ registreNbLignes }} lignes) et les corrections que vous y apportez sont relus tels quels au prochain chargement.</div>
+             basculer. Ce qui reste ici, c'est l'import CSV, sans condition
+             d'affichage. -->
 
         <!-- prompt B8 — état bloquant. Surface totale et âge moyen ne sont plus
              saisissables : ils sont DÉRIVÉS du registre. Un registre sans
@@ -1661,7 +1648,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
       </div>
     </main>
 
-    <aside style="padding:28px 28px 28px 0;position:sticky;top:64px">
+    <aside style="padding:28px 28px 28px 0;position:sticky;top:calc(var(--barre-h) + 16px)">
       <!-- chantiers B1/B2 — bloc synthèse retiré des écrans 1 (données
            générales de l'exploitation) et 2 (parcelle + géométrie) ;
            réapparaît dès l'écran 3. -->
@@ -1945,11 +1932,11 @@ function lireInstantane() {
     return o;
   } catch (e) { return null; }
 }
-function ecrireInstantane(v, registreRows, registreImporte, champsTouches, accueilVu, theme) {
+function ecrireInstantane(v, registreRows, registreImporte, champsTouches, theme) {
   try {
     window.localStorage.setItem(CLE_STOCKAGE,
       JSON.stringify({ version: VERSION_STOCKAGE, v, registreRows, registreImporte,
-        champsTouches, accueilVu, theme }));
+        champsTouches, theme }));
     return true;
   } catch (e) { return false; }
 }
@@ -2065,12 +2052,10 @@ class Component extends DCLogic {
       // chantier A5 — ids des lignes OPTIONNELLES de palissage décochées par
       // l'utilisateur ; vide par défaut (tout inclus, comme avant ce chantier).
       palisOptionnelsExclus: [],
-      // Panneaux d'aide : le mode d'emploi est ouvert au premier affichage
-      // (première visite), le lexique et les charges de production sont
-      // repliés — accessibles à tout moment, mais hors du chemin par défaut.
-      // prompt B6 — l'encart de l'écran 1 n'est plus ouvert au premier
-      // affichage : c'est le panneau d'accueil qui accueille désormais. L'encart
-      // reste en place, replié, pour qui veut relire le déroulé des 5 étapes.
+      // Panneaux d'aide : tous repliés au premier affichage — accessibles à
+      // tout moment, mais hors du chemin par défaut. L'encart « Première
+      // visite ? » du temps 1 reste en place, replié, pour qui veut relire le
+      // déroulé des trois temps.
       introOuvert: false, lexiqueOuvert: false,
       aideOuverte: false, detailOuvert: false, magOuvert: false,
       effortNetOuvert: false,
@@ -2104,14 +2089,11 @@ class Component extends DCLogic {
       // l'investissement repartiraient à zéro à chaque rechargement, alors même
       // que les valeurs saisies, elles, seraient bien restaurées.
       champsTouches: (instantane && instantane.champsTouches) || {},
-      // prompt B6 — le panneau d'accueil ne s'ouvre de lui-même qu'à la PREMIÈRE
-      // visite. Ensuite il reste atteignable en permanence depuis l'en-tête.
-      accueilVu: !!(instantane && instantane.accueilVu),
-      accueilOuvert: !(instantane && instantane.accueilVu),
-      // prompt 13 — thème de projection. Clair par défaut : c'est la version
-      // de travail. Un instantané antérieur à ce prompt n'en porte pas, d'où
-      // le repli explicite plutôt qu'un `||` qui accepterait n'importe quoi.
-      theme: (instantane && instantane.theme === THEMES.sombre) ? THEMES.sombre : THEMES.clair,
+      // prompt 13 — thème de projection. SOMBRE par défaut : l'outil est
+      // d'abord montré au vidéoprojecteur, le clair devient le choix explicite.
+      // Un instantané antérieur n'en porte pas, d'où le repli explicite plutôt
+      // qu'un `||` qui accepterait n'importe quoi.
+      theme: (instantane && instantane.theme === THEMES.clair) ? THEMES.clair : THEMES.sombre,
       // Volets « Ajuster » (prompt B4) — repliés par défaut sur chaque écran.
       ajusterOuvert1: false, ajusterOuvert3: false, ajusterOuvert4: false,
       // prompt 3 — le registre parcellaire et l'import de fichier sont deux
@@ -2224,16 +2206,49 @@ class Component extends DCLogic {
   // volet, changement d'étape) qui ne modifie aucune donnée.
   componentDidUpdate() {
     this.appliquerTheme();
+    this.mesurerBarre();
     const instantane = JSON.stringify({ v: this.state.v, registreRows: this.state.registreRows,
       registreImporte: this.state.registreImporte, champsTouches: this.state.champsTouches,
-      accueilVu: this.state.accueilVu, theme: this.state.theme });
+      theme: this.state.theme });
     if (instantane === this.__dernierInstantane) return;
     this.__dernierInstantane = instantane;
     ecrireInstantane(this.state.v, this.state.registreRows, this.state.registreImporte,
-      this.state.champsTouches, this.state.accueilVu, this.state.theme);
+      this.state.champsTouches, this.state.theme);
   }
 
-  componentDidMount() { this.appliquerTheme(); }
+  componentDidMount() {
+    this.appliquerTheme();
+    this.mesurerBarre();
+    this.__surRedim = () => this.mesurerBarre();
+    window.addEventListener('resize', this.__surRedim);
+  }
+
+  componentWillUnmount() {
+    if (this.__surRedim) window.removeEventListener('resize', this.__surRedim);
+  }
+
+  /* Hauteur du bandeau figé (en-tête + parcours), publiée dans `--barre-h` sur
+     l'élément racine — le seul nœud qui englobe aussi bien le gabarit que la
+     feuille de style, comme pour le thème.
+
+     Mesurée et non chiffrée : l'en-tête grandit quand le lexique est déplié et
+     quand les boutons passent à la ligne sur écran étroit. Tout ce qui doit se
+     ranger SOUS la barre — la colonne latérale collante, le défilement vers un
+     champ ciblé — s'y réfère ; une valeur figée les décalerait dès que la
+     hauteur change.
+
+     Appelée après chaque rendu, donc après chaque frappe : on ne réécrit la
+     propriété que si la hauteur a réellement bougé, pour ne pas invalider la
+     mise en page à chaque caractère saisi. */
+  mesurerBarre() {
+    if (typeof document === 'undefined' || !document.documentElement) return;
+    const barre = document.getElementById('barre-fixe');
+    if (!barre) return;
+    const h = Math.round(barre.getBoundingClientRect().height);
+    if (!h || h === this.__barreH) return;
+    this.__barreH = h;
+    document.documentElement.style.setProperty('--barre-h', h + 'px');
+  }
 
   /* Impression — prompt 14. La sortie demandée est désignée par un attribut
      sur la racine, posé le temps de l'impression puis retiré : l'état
@@ -2280,7 +2295,6 @@ class Component extends DCLogic {
       registreRows,
       nextRowId: window.OAD.prochainIdRegistre(registreRows),
       champsTouches: {},
-      accueilVu: false, accueilOuvert: true,
       registreImporte: false,
       importErreur: null, importOk: null,
       parcelleIdu: idus[0] || null,
@@ -2541,105 +2555,6 @@ class Component extends DCLogic {
     else if (marker === 'triangle') ch.push(e('polygon', { key: 'm', points: `${cx},${cy - 3.4} ${cx - 3},${cy + 2.6} ${cx + 3},${cy + 2.6}`, fill: c }));
     else ch.push(e('circle', { key: 'm', cx, cy, r: 3, fill: c }));
     return e('svg', { width: w, height: h, viewBox: `0 0 ${w} ${h}` }, ch);
-  }
-
-  /* Frise d'accueil — prompt B6.
-
-     Le mécanisme que l'outil chiffre et que l'interface n'explique nulle part :
-     on arrache (année 0), le sol se repose, on replante, la 3e feuille donne une
-     première récolte, la pleine production revient. Pendant tout ce temps la
-     parcelle ne produit pas — et c'est la réserve individuelle qui comble le
-     trou, en se vidant.
-
-     SVG en ligne, construit comme les graphiques existants (React.createElement,
-     pas de JSX) : AUCUNE image externe. La page dépend déjà d'unpkg et de Google
-     Fonts, on n'y ajoute pas une dépendance de plus.
-
-     Le dessin est illustratif : ses courbes ne sont pas le résultat du calcul,
-     elles montrent la FORME du phénomène. Les chiffres, eux, sont à l'écran 5. */
-  friseAccueil() {
-    const e = React.createElement;
-    const W = 720, H = 260;
-    const mL = 46, mR = 14, mT = 26, mB = 54;
-    const x0 = mL, x1 = W - mR;
-    const yBase = H - mB;              // ligne de sol
-    const yHaut = mT;                  // plein rendement
-    const ch = [];
-
-    // Repères d'étape, en années depuis l'arrachage.
-    const etapes = [
-      { t: 0,  lib: 'Arrachage',        sous: 'année 0' },
-      { t: 1,  lib: 'Repos du sol',     sous: '1 à 3 ans' },
-      { t: 2,  lib: 'Plantation',       sous: 'après le repos' },
-      { t: 4,  lib: '3ᵉ feuille',       sous: 'première récolte' },
-      { t: 7,  lib: 'Pleine production', sous: 'régime normal' }
-    ];
-    const tMax = 8;
-    const X = t => x0 + (x1 - x0) * t / tMax;
-    const Y = r => yBase - (yBase - yHaut) * r;   // r = ratio de rendement 0..1
-
-    // Bandes de phase, pour que l'œil sépare les trois régimes.
-    const bandes = [
-      { a: 0, b: 2, c: '#F3E0DD', lib: 'sol au repos' },
-      { a: 2, b: 4, c: '#F1E6CC', lib: 'plantier' },
-      { a: 4, b: tMax, c: '#E3EDE5', lib: 'retour en production' }
-    ];
-    bandes.forEach((bd, i) => {
-      ch.push(e('rect', { key: 'bd' + i, x: X(bd.a), y: yHaut - 10,
-        width: X(bd.b) - X(bd.a), height: yBase - yHaut + 10, fill: bd.c }));
-      ch.push(e('text', { key: 'bdl' + i, x: (X(bd.a) + X(bd.b)) / 2, y: yHaut - 14,
-        textAnchor: 'middle', fontSize: 10.5, fill: 'var(--encre-3)',
-        fontFamily: 'JetBrains Mono, monospace' }, bd.lib));
-    });
-
-    // Barre de réserve individuelle : pleine avant l'arrachage, elle se vide
-    // pendant la fenêtre sans production, puis se reconstitue.
-    const reserve = [[0, 1], [1, 0.72], [2, 0.48], [3, 0.3], [4, 0.34], [5, 0.55], [6, 0.78], [7, 0.94], [8, 1]];
-    reserve.forEach(([t, r], i) => {
-      if (t === tMax) return;
-      const hb = (yBase - yHaut) * 0.30 * r;
-      ch.push(e('rect', { key: 'rs' + i, x: X(t) + 3, y: yBase - hb,
-        width: Math.max(6, X(1) - X(0) - 6), height: hb, fill: '#A97F26', opacity: 0.35 }));
-    });
-    ch.push(e('text', { key: 'rsl', x: X(0) + 4, y: yBase + 34, fontSize: 10.5,
-      fill: 'var(--accent-fonce)', fontFamily: 'JetBrains Mono, monospace' },
-      'réserve individuelle — elle se vide pour combler le trou, puis se reconstitue'));
-
-    // Courbe de rendement : elle tombe à zéro dès l'arrachage et ne remonte
-    // qu'à partir de la 3e feuille.
-    const rendement = [[0, 0.82], [0.35, 0], [2, 0], [4, 0.3], [5, 0.55], [6, 0.8], [7, 1], [8, 1]];
-    const d = rendement.map(([t, r], i) => (i ? 'L' : 'M') + X(t).toFixed(1) + ' ' + Y(r).toFixed(1)).join(' ');
-    ch.push(e('path', { key: 'rd', d, fill: 'none', stroke: 'var(--encre)', strokeWidth: 2.6,
-      strokeLinejoin: 'round', strokeLinecap: 'round' }));
-    ch.push(e('text', { key: 'rdl', x: X(6.1), y: Y(1) - 8, fontSize: 11, fill: 'var(--encre)',
-      fontFamily: 'JetBrains Mono, monospace' }, 'rendement'));
-
-    // Axes minimalistes.
-    ch.push(e('line', { key: 'ax', x1: x0, x2: x1, y1: yBase, y2: yBase, stroke: 'var(--encre)', strokeWidth: 1.2 }));
-    ch.push(e('text', { key: 'ay1', x: x0 - 8, y: yHaut + 4, textAnchor: 'end', fontSize: 10,
-      fill: 'var(--encre-3)', fontFamily: 'JetBrains Mono, monospace' }, '100 %'));
-    ch.push(e('text', { key: 'ay0', x: x0 - 8, y: yBase + 4, textAnchor: 'end', fontSize: 10,
-      fill: 'var(--encre-3)', fontFamily: 'JetBrains Mono, monospace' }, '0'));
-
-    // Jalons.
-    etapes.forEach((et, i) => {
-      ch.push(e('line', { key: 'jl' + i, x1: X(et.t), x2: X(et.t), y1: yHaut - 10, y2: yBase,
-        stroke: 'var(--encre)', strokeWidth: 1, strokeDasharray: '3 3', opacity: 0.45 }));
-      ch.push(e('circle', { key: 'jc' + i, cx: X(et.t), cy: yBase, r: 4, fill: 'var(--encre)' }));
-      ch.push(e('text', { key: 'jt' + i, x: X(et.t), y: yBase + 16, textAnchor: i === 0 ? 'start' : 'middle',
-        fontSize: 11, fontWeight: 600, fill: 'var(--encre)' }, et.lib));
-      ch.push(e('text', { key: 'js' + i, x: X(et.t), y: yBase + 28, textAnchor: i === 0 ? 'start' : 'middle',
-        fontSize: 10, fill: 'var(--encre-3)' }, et.sous));
-    });
-
-    return e('svg', {
-      viewBox: '0 0 ' + W + ' ' + H, width: '100%', style: { maxWidth: W + 'px', height: 'auto' },
-      role: 'img',
-      'aria-label': "Frise : à l'arrachage le rendement de la parcelle tombe à zéro ; il ne "
-        + "remonte qu'à partir de la 3e feuille, après le repos du sol et la plantation, "
-        + "jusqu'au retour en pleine production. Pendant cette fenêtre sans récolte, la "
-        + "réserve individuelle se vide pour combler le manque, puis se reconstitue."
-    }, ch);
   }
 
   /* Frise de trajectoire — prompt 7.
@@ -3137,27 +3052,6 @@ class Component extends DCLogic {
       introOuvert: s.introOuvert, toggleIntro: () => this.setState(st => ({ introOuvert: !st.introOuvert })),
       introChevron: s.introOuvert ? '−' : '+',
       lexiqueOuvert: s.lexiqueOuvert, toggleLexique: () => this.setState(st => ({ lexiqueOuvert: !st.lexiqueOuvert })),
-      // Panneau d'accueil — prompt B6. Le focus part au bouton de fermeture à
-      // l'ouverture, et revient au bouton d'ouverture à la fermeture : quel que
-      // soit le chemin (Échap ou clic), on ne perd jamais le curseur clavier.
-      accueilOuvert: s.accueilOuvert,
-      friseAccueil: this.friseAccueil(),
-      ouvrirAccueil: () => this.setState({ accueilOuvert: true }, () => {
-        const el = document.getElementById('accueil-fermer');
-        if (el) el.focus();
-      }),
-      fermerAccueil: () => this.setState({ accueilOuvert: false, accueilVu: true }, () => {
-        const el = document.getElementById('accueil-ouvrir');
-        if (el) el.focus();
-      }),
-      onAccueilTouche: (ev) => {
-        if (ev.key !== 'Escape' && ev.key !== 'Esc') return;
-        ev.stopPropagation();
-        this.setState({ accueilOuvert: false, accueilVu: true }, () => {
-          const el = document.getElementById('accueil-ouvrir');
-          if (el) el.focus();
-        });
-      },
       // prompt B1 — effacement des données locales, confirmation préalable :
       // l'action est irréversible et détruit des corrections de registre que
       // l'utilisateur a pu saisir ligne à ligne.
@@ -3278,9 +3172,9 @@ class Component extends DCLogic {
           if (el) el.focus();
         });
       },
-      // Panneau « Hypothèses » — prompt 10. Même discipline de focus que le
-      // panneau d'accueil : le focus entre sur le bouton de fermeture, Échap
-      // ferme, et le focus revient au bouton qui a ouvert.
+      // Panneau « Hypothèses » — prompt 10. Discipline de focus : le focus
+      // entre sur le bouton de fermeture, Échap ferme, et le focus revient au
+      // bouton qui a ouvert.
       hypothesesOuvert: s.hypothesesOuvert,
       hypBg: s.hypothesesOuvert ? 'var(--encre)' : 'var(--surface-haute)',
       hypFg: s.hypothesesOuvert ? 'var(--encre-inverse)' : 'var(--encre)',
@@ -3555,7 +3449,6 @@ class Component extends DCLogic {
     // mode a disparu au prompt B8 : le registre est la seule source, il n'y a
     // plus rien à choisir. Le registre et ses corrections sont conservés dans
     // le navigateur (localStorage, prompt B1) ; rien n'est jamais envoyé.
-    out.registreNbLignes = registreRows.length;
     out.registreSurfTotTxt = this.fmtHa(agregExploitation.surfTot) + ' ha';
     out.registreAgeMoyTxt = nf(agregExploitation.ageMoy, 1) + ' ans';
     // prompt B8 — état bloquant de l'écran 1. Le test porte sur la SURFACE, pas

@@ -424,7 +424,10 @@ littérale dans le gabarit**, `#000` de la fiche imprimée excepté ; un test
 l'interdit désormais. Le châssis des graphiques (grille, axes, graduations,
 filets) suit le thème ; les couleurs de **série** ne changent pas.
 
-Le mode clair reste le défaut et la version de travail. Le choix de thème entre
+Le mode **sombre est le défaut** (l'outil est d'abord montré au
+vidéoprojecteur) ; le clair reste à un clic, et `<html>` porte déjà
+`data-theme="sombre"` dans le fichier pour qu'aucun éclair de fond crème ne
+précède le montage de React. Le choix de thème entre
 dans l'instantané `localStorage` — on ne veut pas rebasculer à chaque ouverture
 en salle — mais vit **hors de `state.v`**, qui reste l'objet des saisies :
 « Effacer mes données » ne le remet donc pas à zéro.
@@ -463,6 +466,26 @@ La barre de parcours est un **bandeau horizontal de trois pavés égaux**
 pavés larges se lisent en projection, une liste verticale de cinq lignes non.
 À droite du bandeau, l'indicateur des onze repères (§6) et le point d'entrée du
 panneau **Hypothèses** (§3ter). `#appGrid` est passé de trois colonnes à deux.
+
+**Le bandeau est figé en haut de l'écran.** L'en-tête et la barre de parcours
+sont réunis dans un unique conteneur `#barre-fixe` en `position:sticky;top:0` :
+les trois temps et le bouton *Hypothèses* restent atteignables pendant tout le
+défilement, y compris au temps 3 où les résultats sont longs. Un seul conteneur
+collant plutôt que deux empilés, parce que la hauteur de l'en-tête varie
+(lexique déplié, boutons qui passent à la ligne) : un `top:` chiffré pour la
+barre serait faux dès qu'elle change. Le panneau **Hypothèses** est passé *sous*
+ce conteneur — il reste dans le flux du document, sinon il occuperait à lui seul
+tout l'écran figé.
+
+La hauteur réellement rendue du conteneur est mesurée après chaque rendu et à
+chaque redimensionnement (`mesurerBarre()`), puis publiée dans la propriété
+`--barre-h` de l'élément racine — la propriété n'est réécrite que si la hauteur
+a bougé. Deux choses s'y calent : la colonne latérale collante
+(`top:calc(var(--barre-h) + 16px)`) et le `scroll-padding-top` de `html`, qui
+empêche un champ atteint au clavier (« reprendre au premier repère », §6) de se
+ranger derrière la barre. `--barre-h` est déclarée **hors** du bloc des jetons
+de couleur : ce n'est pas une teinte, et les deux thèmes doivent déclarer
+exactement les mêmes jetons (§27).
 
 Le tout pilote un simple index `state.step` (0 à 2). Les booléens
 `estEtape0`…`estEtape4` sont **conservés** et remappés
@@ -899,7 +922,8 @@ navigateur, et un bandeau le rappelle à l'utilisateur.
 > rebasculer à chaque ouverture. Il vit **hors de `state.v`**, qui reste
 > l'objet des saisies — « Effacer mes données » ne le remet donc pas à zéro,
 > ce n'est pas une donnée de simulation. Un instantané écrit avant ce prompt,
-> ou porteur d'une valeur inconnue, retombe sur le clair. Ce qui n'entre
+> ou porteur d'une valeur inconnue, retombe sur le **sombre**, désormais le
+> défaut : seule la valeur `clair` explicitement enregistrée rend l'outil clair. Ce qui n'entre
 > toujours PAS dans l'instantané : l'étape courante, l'onglet de résultats, les
 > volets ouverts ou repliés, le panneau Hypothèses, le registre replié — ce
 > sont des états de navigation.

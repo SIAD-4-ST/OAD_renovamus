@@ -1884,12 +1884,19 @@ test('les jetons sont déclarés sur :root et basculés par data-theme', () => {
     'chaque jeton du thème clair doit avoir sa valeur sombre, et réciproquement');
 });
 
-test('le thème entre dans l\'instantané localStorage, le mode clair reste le défaut', () => {
+// Attente inversée volontairement : le thème par défaut passe de clair à
+// SOMBRE (demande « mode sombre par défaut »). L'outil est d'abord montré au
+// vidéoprojecteur ; le clair devient le choix explicite. Le repli reste écrit
+// en dur plutôt qu'en `||` : un instantané ancien, ou porteur d'une valeur
+// inconnue, doit retomber sur le défaut, pas sur n'importe quoi.
+test('le thème entre dans l\'instantané localStorage, le mode sombre est le défaut', () => {
   const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,700}?\n\}/);
   assert.ok(ecriture && /theme/.test(ecriture[0]),
     'on ne veut pas rebasculer le thème à chaque ouverture en salle');
-  assert.ok(/instantane\.theme === THEMES\.sombre\) \? THEMES\.sombre : THEMES\.clair/.test(INDEX_HTML),
-    'un instantané antérieur à ce prompt, ou porteur d\'une valeur inconnue, retombe sur le clair');
+  assert.ok(/instantane\.theme === THEMES\.clair\) \? THEMES\.clair : THEMES\.sombre/.test(INDEX_HTML),
+    'un instantané sans thème, ou porteur d\'une valeur inconnue, retombe sur le sombre');
+  assert.ok(/<html data-theme="sombre">/.test(INDEX_HTML),
+    'le thème est posé dès le document : pas d\'éclair de fond crème avant React');
 });
 
 section('28. Deux sorties d\'impression (prompt 14)');
