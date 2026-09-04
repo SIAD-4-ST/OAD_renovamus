@@ -1768,13 +1768,41 @@ section('25. Parcours en trois temps (prompt 11)');
 test('le parcours compte trois temps, et state.step ne dépasse plus 2', () => {
   assert.ok(/const labels = \['La parcelle', 'Le projet', 'La trajectoire'\]/.test(INDEX_HTML),
     'trois temps, nommés par le moment d\'entretien auquel ils correspondent');
+<<<<<<< Updated upstream
   assert.ok(/aSuivant: s\.step < 2/.test(INDEX_HTML) && /step: Math\.min\(2, st\.step \+ 1\)/.test(INDEX_HTML),
     'la navigation doit être bornée à 2, pas à 4');
   assert.ok(/allerResultats: \(\) => this\.setState\(\{ step: 2 \}\)/.test(INDEX_HTML),
+=======
+  // La borne a déménagé : tout changement de temps passe désormais par
+  // allerEtape(), qui borne à 0..2 en un seul endroit et remonte la page en
+  // haut. C'est là que le plafond 2 doit être vérifié, plus dans chaque appelant.
+  assert.ok(/aSuivant: s\.step < 2/.test(INDEX_HTML)
+    && /Math\.max\(0, Math\.min\(2, n\)\)/.test(INDEX_HTML),
+    'la navigation doit être bornée à 2, pas à 4');
+  assert.ok(/allerResultats: \(\) => this\.allerEtape\(2\)/.test(INDEX_HTML),
+>>>>>>> Stashed changes
     'le raccourci « aller aux résultats » doit viser le temps 3');
   assert.ok(!/SUR 5</.test(INDEX_HTML), 'plus aucun « ÉTAPE N SUR 5 » à l\'écran');
 });
 
+<<<<<<< Updated upstream
+=======
+test('changer de temps ramène la page en haut', () => {
+  const meth = INDEX_HTML.match(/allerEtape\(n\) \{[\s\S]*?\n  \}/);
+  assert.ok(meth, 'allerEtape doit exister');
+  assert.ok(/window\.scrollTo\(\{ top: 0/.test(meth[0]),
+    'arriver au milieu du temps atteint, à la hauteur laissée sur le précédent, '
+    + 'cache son titre et ne signale pas le changement d’écran');
+  assert.ok(/setState\(\{ step: cible \}, \(\) =>/.test(meth[0]),
+    'le défilement doit être demandé après le rendu, sinon il porte sur l’ancien écran');
+  // Tous les chemins de navigation, y compris les pavés de la barre latérale :
+  // un seul d'entre eux qui appellerait setState directement rouvrirait le trou.
+  assert.ok(!/setState\(\{ step: i \}\)/.test(INDEX_HTML)
+    && !/setState\(st => \(\{ step:/.test(INDEX_HTML),
+    'précédent, suivant et les pavés de la barre latérale passent tous par allerEtape');
+});
+
+>>>>>>> Stashed changes
 test("l'instantané localStorage ne contient pas step : aucune migration nécessaire", () => {
   const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,600}?\n\}/);
   assert.ok(ecriture, 'ecrireInstantane doit exister');

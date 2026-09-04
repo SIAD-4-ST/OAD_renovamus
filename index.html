@@ -674,10 +674,40 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
         <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">La parcelle que vous désignez</h2>
         <p style="color:var(--encre-3);font-size:13.5px;max-width:60ch;margin:0 0 24px">Décrivez la parcelle candidate au renouvellement, telle qu'elle produit aujourd'hui.</p>
 
-        <!-- chantier B2 — géométrie de la parcelle, en tête de l'écran 2 (déplacée
-             depuis l'écran 3) : surface arrachée, écartements et nombre de rangs
-             sont saisis ici ; longueur de rang, densité, pieds à planter et
-             conformité AOC restent des valeurs affichées, jamais saisies. -->
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin-bottom:20px">
+            <div style="display:flex;flex-direction:column;gap:5px;max-width:320px">
+              <label class="lbl" for="f-parcelleIdu">Parcelle (idu du registre)</label>
+              <select id="f-parcelleIdu" value="{{ parcelleIdu }}" onChange="{{ onParcelleIdu }}" class="sel">
+                <sc-for list="{{ iduOptions }}" as="o" hint-placeholder-count="3">
+                  <option value="{{ o.value }}">{{ o.value }}</option>
+                </sc-for>
+              </select>
+              <span class="hint">seules les lignes Plantée sont proposées</span>
+            </div>
+            <div style="display:grid;grid-template-columns:36px repeat(4,minmax(80px,1fr));gap:0;font-size:11.5px;margin-top:14px">
+              <div style="border-bottom:1px solid var(--bordure)"></div>
+              <div class="th wide">Cépage</div>
+              <div class="th wide">Planté</div>
+              <div class="th wide">Âge</div>
+              <div class="th wide">Surface</div>
+              <sc-for list="{{ parcelleLignesTable }}" as="r" hint-placeholder-count="2">
+                <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)"><input type="checkbox" checked="{{ r.coche }}" onChange="{{ r.toggle }}"></div>
+                <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.cepage }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.anneePlant }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.age }}</div>
+                <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.surfaceTxt }} ha</div>
+              </sc-for>
+            </div>
+            <div style="font-size:11.5px;color:var(--encre-3);margin-top:6px">décochez une ligne pour l'exclure de la parcelle désignée — la pondération (âge, pieds manquants) se recalcule automatiquement · surface retenue : <b>{{ surfParcRegistreTxt }}</b><sc-if value="{{ cepageMixteTxt }}" hint-placeholder-val="{{ false }}"><br>{{ cepageMixteTxt }}</sc-if></div>
+        </div>
+
+        <!-- chantier B2 — géométrie de la parcelle, déplacée depuis l'écran 3 :
+             surface arrachée, écartements et nombre de rangs sont saisis ici ;
+             longueur de rang, densité, pieds à planter et conformité AOC
+             restent des valeurs affichées, jamais saisies. Elle vient APRÈS le
+             choix de la parcelle au registre : la surface arrachée qui commande
+             toute la géométrie est dérivée des lignes cochées juste au-dessus,
+             on ne peut pas la lire avant de les avoir désignées. -->
         <div class="card" style="margin-bottom:20px">
           <h3 class="card-h" style="margin-bottom:4px">Géométrie de la parcelle</h3>
           <!-- prompt 12 — la géométrie se saisissait en chiffres alors qu'elle
@@ -730,6 +760,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
             <div style="margin-top:14px;font-size:13.5px;padding:9px 12px;border-radius:5px;background:var(--alerte-fond);color:var(--alerte)">Saisissez une surface arrachée et un nombre de rangs pour calculer la géométrie.</div>
           </sc-if>
           </div>
+<<<<<<< Updated upstream
 
           <!-- Schéma de la parcelle — prompt 12. Proportionnel, pas cadastral :
                il sert à vérifier d'un coup d'œil que la géométrie saisie est
@@ -769,6 +800,20 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
               </sc-for>
             </div>
             <div style="font-size:11.5px;color:var(--encre-3);margin-top:6px">décochez une ligne pour l'exclure de la parcelle désignée — la pondération (âge, pieds manquants) se recalcule automatiquement · surface retenue : <b>{{ surfParcRegistreTxt }}</b><sc-if value="{{ cepageMixteTxt }}" hint-placeholder-val="{{ false }}"><br>{{ cepageMixteTxt }}</sc-if></div>
+=======
+
+          <!-- Schéma de la parcelle — prompt 12. Proportionnel, pas cadastral :
+               il sert à vérifier d'un coup d'œil que la géométrie saisie est
+               plausible. Les bandes sont plafonnées à une vingtaine quel que
+               soit le nombre réel de rangs, sinon 200 rangs donneraient une
+               trame illisible et 5 rangs des bandes démesurées. -->
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="mono" style="font-size:11.5px;letter-spacing:0.08em;color:var(--accent)">SCHÉMA DE LA PARCELLE</div>
+            {{ schemaParcelle }}
+            <div class="n4" style="line-height:1.5">Schéma proportionnel, pas un plan cadastral : il sert à vérifier d'un coup d'œil que la géométrie saisie est plausible.</div>
+          </div>
+          </div>
+>>>>>>> Stashed changes
         </div>
 
         <div class="grid">
@@ -2198,6 +2243,18 @@ class Component extends DCLogic {
   fmtHa(v) { return v.toFixed(3).replace('.', ','); }
   fmtM(v) { return v.toFixed(1).replace('.', ','); }
 
+  /* Changement de temps — la page repart toujours en haut. Sans cela on arrive
+     au milieu du temps atteint, à la hauteur où on avait laissé le précédent :
+     son titre et ses premières cartes sont hors champ, et rien ne signale
+     qu’on a changé d’écran. Le défilement est demandé dans le rappel de
+     setState, donc après le rendu : le nouvel écran doit exister avant qu’on
+     le remonte. Pas de défilement animé — sur des pages de plusieurs écrans
+     de haut, il se verrait comme un à-coup plutôt que comme une transition. */
+  allerEtape(n) {
+    const cible = Math.max(0, Math.min(2, n));
+    this.setState({ step: cible }, () => window.scrollTo({ top: 0, behavior: 'auto' }));
+  }
+
   // Parseur du registre parcellaire — format d'export connu : CSV ';',
   // décimales à la virgule (fr-FR), BOM UTF-8 éventuel en tête de fichier.
   // Colonnes lues par nom d'en-tête (robuste à un réordonnancement des
@@ -2860,7 +2917,11 @@ class Component extends DCLogic {
       // aria-current : le temps actif était signalé par la seule couleur de
       // fond, invisible pour un lecteur d'écran.
       courante: s.step === i ? 'step' : undefined,
+<<<<<<< Updated upstream
       go: () => this.setState({ step: i }),
+=======
+      go: () => this.allerEtape(i),
+>>>>>>> Stashed changes
       bg: s.step === i ? 'var(--accent-fond)' : 'var(--surface-basse)',
       fg: s.step === i ? 'var(--encre)' : 'var(--encre-2)',
       subFg: s.step === i ? 'var(--encre-3)' : 'var(--encre-4)',
@@ -3077,9 +3138,15 @@ class Component extends DCLogic {
       // Sans raccourci à gauche de lui, c'est le bouton principal qui pousse
       // le pied à droite.
       margeSuivant: s.step < 1 ? '0' : 'auto',
+<<<<<<< Updated upstream
       precedent: () => this.setState(st => ({ step: Math.max(0, st.step - 1) })),
       suivant: () => this.setState(st => ({ step: Math.min(2, st.step + 1) })),
       allerResultats: () => this.setState({ step: 2 }),
+=======
+      precedent: () => this.allerEtape(s.step - 1),
+      suivant: () => this.allerEtape(s.step + 1),
+      allerResultats: () => this.allerEtape(2),
+>>>>>>> Stashed changes
       riPctTxt: (+v.riPct || 0) + ' %',
       riKgTxt: this.fmtKg(inp.reserveInit),
       syDens: this.fmtKg(g.densite) + ' pieds/ha',
