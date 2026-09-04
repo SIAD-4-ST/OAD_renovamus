@@ -90,6 +90,8 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
    deux colonnes de champs sous 900 px écrasent les libellés. */
 @media (max-width:900px){
   .grid{grid-template-columns:1fr}
+  /* Le schéma de parcelle passe sous les champs plutôt que de les écraser. */
+  #geoGrid{grid-template-columns:1fr !important}
 }
 @media (max-width:1080px){
   #appGrid{grid-template-columns:1fr !important}
@@ -586,8 +588,17 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
              sont saisis ici ; longueur de rang, densité, pieds à planter et
              conformité AOC restent des valeurs affichées, jamais saisies. -->
         <div class="card" style="margin-bottom:20px">
-          <h3 class="card-h" style="margin-bottom:14px">Géométrie de la parcelle</h3>
-          <div class="grid">
+          <h3 class="card-h" style="margin-bottom:4px">Géométrie de la parcelle</h3>
+          <!-- prompt 12 — la géométrie se saisissait en chiffres alors qu'elle
+               se dessine, et rien ne montrait à l'utilisateur si ce qu'il
+               venait de taper tenait debout. Le schéma est à droite des
+               champs, il se met à jour à chaque frappe, et la ligne de
+               vérification sous lui signale une densité hors bornes AOC avant
+               qu'on passe au temps suivant. -->
+          <div style="font-size:11.5px;color:#5C6157;margin-bottom:14px">Le schéma se met à jour à chaque frappe.</div>
+          <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:26px;align-items:start" id="geoGrid">
+          <div>
+          <div class="grid" style="grid-template-columns:1fr 1fr">
             <!-- prompt B8 — la surface arrachée n'est plus saisissable : elle
                  vient du registre, seule source depuis l'arbitrage du
                  01/09/2026. Elle reste la grandeur qui commande la géométrie
@@ -607,19 +618,39 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
               <div class="row"><input id="f-ecartPied" type="number" step="0.05" value="{{ v.ecartPied }}" onInput="{{ on.ecartPied }}" class="inp"><span class="unit">m</span></div>
               <span class="hint">0,70–1,50 · AOC</span>
             </div>
+            <div class="field">
+              <label class="lbl" for="f-nbRangs">Nombre de rangs</label>
+              <div class="row"><input id="f-nbRangs" type="number" step="1" min="1" value="{{ v.nbRangs }}" onInput="{{ on.nbRangs }}" class="inp"><span class="unit">rangs</span></div>
+            </div>
+            <!-- prompt 12 — la longueur de rang se DÉDUIT de la surface, du
+                 nombre de rangs et de l'écartement : elle est affichée en
+                 lecture seule (fond atténué), jamais saisie. -->
+            <div class="field">
+              <label class="lbl">Longueur de rang</label>
+              <div class="ro">{{ longueurRangTxt }} m</div>
+              <span class="hint">calculé — {{ metresRangTxt }} de rang au total</span>
+            </div>
           </div>
           <div style="margin-top:14px;font-size:13.5px;padding:9px 12px;border-radius:5px;background:{{ aocBg }};color:{{ aocFg }}">{{ aocTxt }}</div>
+          <!-- Ligne de vérification de la densité — prompt 12. Elle SIGNALE,
+               elle ne bloque pas : l'outil est pédagogique. -->
+          <div style="margin-top:10px;font-size:13.5px;line-height:1.5;padding:10px 14px;border-radius:6px;background:{{ densiteBg }};border:1px solid {{ densiteBd }};color:{{ densiteFg }}">{{ densiteTxt }}</div>
           <sc-if value="{{ longueurManquante }}" hint-placeholder-val="{{ false }}">
             <div style="margin-top:14px;font-size:13.5px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">Saisissez une surface arrachée et un nombre de rangs pour calculer la géométrie.</div>
           </sc-if>
-          <sc-if value="{{ !longueurManquante }}" hint-placeholder-val="{{ true }}">
-            <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px dotted #DDD9CE">
-              <div><div style="font-size:11.5px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Longueur de rang (déduite)</div><div style="font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:500">{{ longueurRangTxt }} m</div></div>
-              <div><div style="font-size:11.5px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Densité</div><div style="font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:500">{{ syDens }}</div></div>
-              <div><div style="font-size:11.5px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Pieds à planter</div><div style="font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:500">{{ syPieds }}</div></div>
-              <div><div style="font-size:11.5px;color:#5C6157;text-transform:uppercase;letter-spacing:0.05em">Surface</div><div style="font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:500">{{ sySurf }}</div></div>
-            </div>
-          </sc-if>
+          </div>
+
+          <!-- Schéma de la parcelle — prompt 12. Proportionnel, pas cadastral :
+               il sert à vérifier d'un coup d'œil que la géométrie saisie est
+               plausible. Les bandes sont plafonnées à une vingtaine quel que
+               soit le nombre réel de rangs, sinon 200 rangs donneraient une
+               trame illisible et 5 rangs des bandes démesurées. -->
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="mono" style="font-size:11.5px;letter-spacing:0.08em;color:#A97F26">SCHÉMA DE LA PARCELLE</div>
+            {{ schemaParcelle }}
+            <div class="n4" style="line-height:1.5">Schéma proportionnel, pas un plan cadastral : il sert à vérifier d'un coup d'œil que la géométrie saisie est plausible.</div>
+          </div>
+          </div>
         </div>
 
         <div style="background:#fff;border:1px solid #DDD9CE;border-radius:8px;padding:18px 20px;margin-bottom:20px">
@@ -682,28 +713,11 @@ input:focus,select:focus,button:focus-visible{outline:2px solid #A97F26;outline-
           <div style="margin-top:14px;font-size:13.5px;padding:9px 12px;border-radius:5px;background:#F3E0DD;color:#A5433A">⚠ L'arrachage et la replantation d'une parcelle louée supposent l'accord du bailleur (statut du fermage). L'outil suppose que le preneur porte l'investissement.</div>
         </sc-if>
 
-        <!-- Volet « Ajuster » de l'écran 2 — prompt B4. Chemin court au-dessus :
-             surface arrachée, écart entre rangs, écart entre pieds, âge de la
-             parcelle, rendement estimé, régime de faire-valoir. Les paramètres
-             du régime (loyer, parts de métayage) sont ici : ils ne concernent
-             qu'un régime sur trois, mais l'en-tête les affiche quand ils
-             s'appliquent. -->
-        <div class="fold" style="margin-top:24px">
-          <button onClick="{{ toggleAjuster2 }}" class="fold-btn">
-            <span><b style="font-size:13.5px">Ajuster</b> <span class="hint">— {{ ajusterResume2 }}</span></span>
-            <span class="fold-sign">{{ ajusterChevron2 }}</span>
-          </button>
-          <sc-if value="{{ ajusterOuvert2 }}" hint-placeholder-val="{{ false }}">
-          <div class="fold-body">
-            <div class="grid">
-              <div class="field">
-                <label class="lbl" for="f-nbRangs">Nombre de rangs</label>
-                <div class="row"><input id="f-nbRangs" type="number" step="1" min="1" value="{{ v.nbRangs }}" onInput="{{ on.nbRangs }}" class="inp"><span class="unit">rangs</span></div>
-              </div>
-            </div>
-          </div>
-          </sc-if>
-        </div>
+        <!-- prompt 10 puis 12 — le volet « Ajuster » de ce temps a disparu : le
+             loyer et les parts de métayage sont partis dans le panneau
+             Hypothèses, le nombre de rangs est remonté dans la carte
+             « Géométrie de la parcelle », à côté du schéma qu'il dessine. Un
+             volet qui n'a plus rien à contenir ne reste pas à l'écran. -->
       </sc-if>
 
       <sc-if value="{{ estEtape2 }}" hint-placeholder-val="{{ false }}">
@@ -1934,7 +1948,7 @@ class Component extends DCLogic {
       accueilVu: !!(instantane && instantane.accueilVu),
       accueilOuvert: !(instantane && instantane.accueilVu),
       // Volets « Ajuster » (prompt B4) — repliés par défaut sur chaque écran.
-      ajusterOuvert1: false, ajusterOuvert2: false, ajusterOuvert3: false, ajusterOuvert4: false,
+      ajusterOuvert1: false, ajusterOuvert3: false, ajusterOuvert4: false,
       // prompt 3 — le registre parcellaire et l'import de fichier sont deux
       // volets refermés au chargement. Volontairement HORS instantané
       // localStorage : rouvrir l'outil doit redonner un écran 1 court, quel
@@ -2535,6 +2549,43 @@ class Component extends DCLogic {
     ]);
   }
 
+  /* Schéma de la parcelle — prompt 12.
+
+     La géométrie (surface, nombre de rangs, écartement, longueur de rang) se
+     saisissait en chiffres alors qu'elle se dessine, et rien ne montrait à
+     l'utilisateur si ce qu'il venait de taper tenait debout. Le schéma se
+     redessine à chaque frappe et donne le seul contrôle qu'un tableau de
+     chiffres ne donne pas : un coup d'œil.
+
+     Il est PROPORTIONNEL, pas cadastral. Le nombre de bandes est plafonné :
+     au-delà d'une vingtaine, une trame de rangs n'est plus qu'un aplat, et en
+     dessous de cinq les bandes deviennent des colonnes. On dessine donc une
+     vingtaine de rangs quel que soit leur nombre réel, et les cotes sous le
+     dessin portent le nombre exact. */
+  schemaParcelle(d) {
+    const e = React.createElement;
+    const NB_BANDES_MAX = 21;
+    const n = Math.max(1, Math.min(NB_BANDES_MAX, d.nbRangs));
+    const bandes = Array.from({ length: n }, (_, i) => e('div', { key: 'r' + i,
+      style: { flex: '1', background: 'linear-gradient(180deg,#4C7A57,#3B5F43)', borderRadius: '2px' } }));
+    const cote = (txt, droite) => e('span', { key: droite ? 'cd' : 'cg',
+      style: { fontFamily: "'JetBrains Mono',monospace", fontSize: '11.5px', color: '#5C6157' } }, txt);
+    const pied = (k, txt, droite) => e('div', { key: k,
+      style: { textAlign: droite ? 'right' : 'left', fontSize: '11.5px', color: '#5C6157' } }, txt);
+    return e('div', { style: { background: '#FAF9F5', border: '1px solid #DDD9CE',
+      borderRadius: '8px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' } }, [
+      e('div', { key: 'rangs', title: d.titreRangs,
+        style: { display: 'flex', gap: '2px', height: '150px', alignItems: 'stretch' } }, bandes),
+      e('div', { key: 'cotes', style: { display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', gap: '10px' } }, [cote(d.coteRangs), cote(d.coteLongueur, true)]),
+      e('div', { key: 'pied', style: { borderTop: '1px solid #DDD9CE', paddingTop: '10px',
+        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' } }, [
+        pied('p1', d.metresRang), pied('p2', d.pieds, true),
+        pied('p3', d.surface), pied('p4', d.densite, true)
+      ])
+    ]);
+  }
+
   renderVals() {
     const s = this.state, v = s.v;
     const OAD = (typeof window !== 'undefined' && window.OAD) ? window.OAD : null;
@@ -2660,6 +2711,12 @@ class Component extends DCLogic {
     // ci-dessus, quel que soit le mode) : surfParcResolu n'a plus besoin
     // d'arbitrer entre plusieurs sources.
     const surfParcResolu = g.surf;
+    // prompt 12 — les deux grandeurs que le schéma affiche et que l'interface
+    // ne doit pas recalculer : mètres de rang du bloc, et conformité de la
+    // densité aux bornes AOC.
+    const metresRang = OAD ? OAD.metresDeRang(g) : g.nbRangs * g.L;
+    const confDensite = OAD ? OAD.conformiteDensiteAOC(g.densite)
+      : { densite: g.densite, ok: true, sens: null, min: 8000, max: 10000 };
     // Chantier A4 — comptage des pieds AGRONOMIQUE et lui seul (densité ×
     // surface), dans les deux modes : g.pieds n'est plus jamais le comptage
     // géométrique (nbRangs × pieds/rang) utilisé avant ce chantier — celui-ci
@@ -2840,6 +2897,32 @@ class Component extends DCLogic {
       // désormais aux deux modes (avant A4, réservé au mode registre).
       longueurManquante: !(g.L > 0),
       longueurRangTxt: this.fmtM(g.L),
+      // Schéma de la parcelle et contrôle de densité — prompt 12. Le contrôle
+      // vient du moteur (OAD.conformiteDensiteAOC) : comparer une densité à
+      // deux bornes réglementaires est un calcul, pas une mise en forme.
+      metresRangTxt: this.fmtKg(metresRang) + ' m',
+      densiteTxt: confDensite.ok
+        ? 'Densité obtenue : ' + this.fmtKg(g.densite) + ' pieds/ha — conforme à l\'AOC Champagne ('
+          + this.fmtKg(confDensite.min) + ' à ' + this.fmtKg(confDensite.max) + ').'
+        : 'Densité obtenue : ' + this.fmtKg(g.densite) + ' pieds/ha — '
+          + (confDensite.sens === 'sous'
+            ? 'sous la borne basse de l\'AOC Champagne (' + this.fmtKg(confDensite.min) + ' à '
+              + this.fmtKg(confDensite.max) + ' pieds/ha). Rapprochez les rangs ou les pieds.'
+            : 'au-dessus de la borne haute de l\'AOC Champagne (' + this.fmtKg(confDensite.min)
+              + ' à ' + this.fmtKg(confDensite.max) + ' pieds/ha). Écartez les rangs ou les pieds.'),
+      densiteBg: confDensite.ok ? '#E3EDE5' : '#F1E6CC',
+      densiteBd: confDensite.ok ? '#4C7A57' : '#A97F26',
+      densiteFg: confDensite.ok ? '#2F5B3C' : '#8E6A1F',
+      schemaParcelle: this.schemaParcelle({
+        nbRangs: g.nbRangs,
+        titreRangs: g.nbRangs + ' rangs · écart ' + this.fmtM(g.eR) + ' m',
+        coteRangs: '← ' + this.fmtKg(g.nbRangs) + ' rangs · écart ' + this.fmtM(g.eR) + ' m →',
+        coteLongueur: this.fmtM(g.L) + ' m',
+        metresRang: this.fmtKg(metresRang) + ' m de rang',
+        pieds: this.fmtKg(piedsAffiches) + ' pieds',
+        surface: this.fmtHa(surfParcResolu) + ' ha arrachés',
+        densite: this.fmtKg(g.densite) + ' pieds/ha'
+      }),
       introOuvert: s.introOuvert, toggleIntro: () => this.setState(st => ({ introOuvert: !st.introOuvert })),
       introChevron: s.introOuvert ? '−' : '+',
       lexiqueOuvert: s.lexiqueOuvert, toggleLexique: () => this.setState(st => ({ lexiqueOuvert: !st.lexiqueOuvert })),
@@ -3108,13 +3191,10 @@ class Component extends DCLogic {
     out.ajusterResume1 = 'réserve individuelle ' + nf(+v.riPct || 0, 0) + ' % du plafond'
       + (modeRegistre ? ' · campagne de référence ' + nf(+v.campagne || 0, 0) : '');
 
-    out.ajusterOuvert2 = s.ajusterOuvert2;
-    out.toggleAjuster2 = () => this.setState(st => ({ ajusterOuvert2: !st.ajusterOuvert2 }));
-    out.ajusterChevron2 = s.ajusterOuvert2 ? '−' : '+';
-    // prompt 10 — le loyer et les parts de métayage sont partis dans le
-    // panneau Hypothèses : l'en-tête ne doit plus annoncer ce qu'il ne cache
-    // plus. Il ne reste ici que le nombre de rangs.
-    out.ajusterResume2 = nf(+v.nbRangs || 0, 0) + ' rangs';
+    // prompt 12 — le volet « Ajuster » du temps 1 a disparu : le loyer et les
+    // parts de métayage sont dans le panneau Hypothèses, le nombre de rangs
+    // est remonté dans la carte « Géométrie de la parcelle ». Un volet vide
+    // ne reste pas à l'écran, et ses valeurs dérivées non plus.
 
     out.ajusterOuvert3 = s.ajusterOuvert3;
     out.toggleAjuster3 = () => this.setState(st => ({ ajusterOuvert3: !st.ajusterOuvert3 }));

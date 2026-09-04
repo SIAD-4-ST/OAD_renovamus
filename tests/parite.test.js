@@ -1795,6 +1795,48 @@ test('les cinq écrans deviennent cinq sections réparties sur trois temps', () 
   assert.ok(etapes.every(e => e >= 0 && e <= 2), 'aucun repère ne doit viser un temps inexistant');
 });
 
+section('26. Densité et bornes AOC, mètres de rang (prompt 12)');
+
+test('conformiteDensiteAOC : bornes 8 000 / 10 000 pieds/ha, inclusives', () => {
+  assert.deepStrictEqual(OAD.conformiteDensiteAOC(9000),
+    { densite: 9000, ok: true, sens: null, min: 8000, max: 10000 });
+  assert.strictEqual(OAD.conformiteDensiteAOC(8000).ok, true, 'la borne basse est incluse');
+  assert.strictEqual(OAD.conformiteDensiteAOC(10000).ok, true, 'la borne haute est incluse');
+  assert.strictEqual(OAD.conformiteDensiteAOC(7999).sens, 'sous');
+  assert.strictEqual(OAD.conformiteDensiteAOC(10001).sens, 'au-dessus');
+  // `sens` existe pour que l'écran puisse dire CE QUI CLOCHE, pas seulement
+  // « non conforme ». Le contrôle ne bloque pas la saisie.
+  assert.strictEqual(OAD.conformiteDensiteAOC(0).sens, 'sous');
+});
+
+test('la densité par défaut de l\'outil tombe bien dans les bornes AOC', () => {
+  // écart rang 1,00 m × écart pied 1,10 m -> 9 090 pieds/ha
+  const g = OAD.geometrieAgronomique(1, 1, 1.10, 100);
+  assert.strictEqual(g.densite, 9091);
+  assert.strictEqual(OAD.conformiteDensiteAOC(g.densite).ok, true);
+});
+
+test('metresDeRang : nombre de rangs × longueur de rang déduite', () => {
+  const g = OAD.geometrieAgronomique(1, 1, 1.10, 100);
+  assert.ok(Math.abs(OAD.metresDeRang(g) - g.nbRangs * g.L) < 1e-9);
+  assert.ok(Math.abs(OAD.metresDeRang(g) - 10000) < 1e-6,
+    '1 ha à 1 m d\'écart entre rangs : 10 000 m de rang, quel que soit le nombre de rangs');
+  assert.strictEqual(OAD.metresDeRang(null), 0, 'pas de géométrie, pas de longueur — et pas d\'exception');
+});
+
+test('le schéma de parcelle est branché, et le volet « Ajuster » vidé a disparu', () => {
+  assert.ok(/schemaParcelle\(d\)/.test(INDEX_HTML),
+    'le schéma est construit en React.createElement, pas dans le gabarit');
+  assert.ok(/\{\{ schemaParcelle \}\}/.test(INDEX_HTML), 'et il est bien affiché');
+  assert.ok(/\{\{ densiteTxt \}\}/.test(INDEX_HTML),
+    'la ligne de vérification de densité doit être à l\'écran');
+  assert.ok(!/ajusterOuvert2/.test(INDEX_HTML),
+    'un volet « Ajuster » qui n\'a plus rien à contenir ne reste pas à l\'écran, '
+    + 'et ses valeurs dérivées non plus');
+  assert.ok(/for="f-nbRangs"/.test(INDEX_HTML),
+    'le nombre de rangs reste saisissable — remonté dans la carte Géométrie');
+});
+
 // ----------------------------------------------------------------------
 // Bilan
 // ----------------------------------------------------------------------

@@ -557,6 +557,37 @@ function geometrieAgronomique(surf, eR, eP, nbRangs) {
    n'ont pas d'équivalent parmi ces 8 lignes — aucun prix n'est inventé
    pour eux, catégories vides tant qu'une source ne les documente pas.
    Prix et quantités des 8 lignes INCHANGÉS par ce chantier. */
+/* Densité de plantation et bornes AOC — prompt 12.
+
+   `geometrieAgronomique` contrôlait déjà les ÉCARTEMENTS (rang <= 2,00 m,
+   pied entre 0,70 et 1,50 m, somme <= 3,00 m). Elle ne disait rien de la
+   DENSITÉ obtenue, qui est pourtant ce que le schéma de parcelle donne à voir
+   et ce que le cahier des charges borne : 8 000 à 10 000 pieds/ha en
+   Champagne. Le contrôle est ici, pas dans l'interface, parce que c'en est
+   un : il compare un résultat de calcul à deux bornes réglementaires.
+
+   Il n'est pas bloquant, et ne doit pas l'être : l'outil est pédagogique, il
+   signale, il n'interdit pas. `ok` dit si la densité tient dans les bornes,
+   `sens` dit de quel côté elle en sort — c'est ce qui permet à l'écran de
+   dire CE QUI CLOCHE plutôt qu'un « non conforme » muet.
+   ===================================================================== */
+const DENSITE_AOC_MIN = 8000;   // pieds/ha — cahier des charges AOC Champagne
+const DENSITE_AOC_MAX = 10000;  // pieds/ha
+
+function conformiteDensiteAOC(densite) {
+  const d = +densite || 0;
+  const sens = d < DENSITE_AOC_MIN ? 'sous' : d > DENSITE_AOC_MAX ? 'au-dessus' : null;
+  return { densite: d, ok: sens === null, sens, min: DENSITE_AOC_MIN, max: DENSITE_AOC_MAX };
+}
+
+// Mètres de rang du bloc entier : c'est cette longueur, et non la surface,
+// qui commande le palissage (voir coutPalissage). Elle était recalculée à
+// plusieurs endroits sous la forme `nbRangs * L` ; elle a désormais un nom.
+function metresDeRang(geo) {
+  if (!geo) return 0;
+  return (+geo.nbRangs || 0) * (+geo.L || 0);
+}
+
 function coutPalissage(geo, prix, opt) {
   prix = Object.assign({}, PRIX_PALISSAGE, prix || {});
   opt = opt || {};
@@ -1109,6 +1140,7 @@ if (typeof module !== 'undefined') module.exports =
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
     DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee, tresorerieCumulee,
+    conformiteDensiteAOC, metresDeRang, DENSITE_AOC_MIN, DENSITE_AOC_MAX,
     CLONES_CHAMPAGNE, clonesParCepage,
     PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,
     stressEstDeficitaire };
@@ -1122,6 +1154,7 @@ if (typeof window !== 'undefined') window.OAD =
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
     DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee, tresorerieCumulee,
+    conformiteDensiteAOC, metresDeRang, DENSITE_AOC_MIN, DENSITE_AOC_MAX,
     CLONES_CHAMPAGNE, clonesParCepage,
     PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,
     stressEstDeficitaire };
