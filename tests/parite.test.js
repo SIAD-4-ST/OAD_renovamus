@@ -1818,11 +1818,11 @@ section('24. Panneau « Hypothèses » (prompt 10)');
    un contrôle perdu mais un contrôle déplacé, et rendu plus fin ; le test qui
    suit vérifie qu'il n'est pas rouvert ailleurs. `loyerHa`, `partRecolte` et
    `partCouts` restent des saisies : ce sont des montants, pas un régime. */
-test('les 34 contrôles liés à state.v sont toujours présents, une fois et une seule', () => {
+test('les 33 contrôles liés à state.v sont toujours présents, une fois et une seule', () => {
   const cles = ['volco', 'prixKg', 'riPct', 'coutSurfaceProdHaAn', 'coutRdtParKg',
     'tauxHoraire', 'ecartRang', 'ecartPied', 'rendEstime', 'nbRangs', 'loyerHa',
     'partRecolte', 'partCouts', 'cepage', 'calcaireActif', 'profondeurSol', 'drainageSol',
-    'materiel', 'porteGreffe', 'typeTaille', 'nbFils', 'espPiquet', 'anneePleineProd',
+    'porteGreffe', 'typeTaille', 'nbFils', 'espPiquet', 'anneePleineProd',
     'repos', 'coutArrachageHa', 'coutPlant', 'coutPalissageHa', 'coutProtectionHa',
     'irrigation', 'coutIrrigHa', 'coutReposHaAn', 'coutPlantierHaAn', 'sequence', 'declinSQ'];
   cles.forEach(k => {
@@ -1834,6 +1834,21 @@ test('les 34 contrôles liés à state.v sont toujours présents, une fois et un
   const defauts = INDEX_HTML.match(/const V_DEFAUTS = \{[\s\S]*?\n\};/);
   assert.ok(defauts && !/\bregime:/.test(defauts[0]),
     'rien à persister sous `regime` : la valeur est dérivée du registre à chaque rendu');
+  /* 34 → 33 : `materiel` a quitté state.v à son tour (chantier « matériel
+     végétal en une seule liste »). Le sélecteur « vinifera / Voltis » et le
+     sélecteur « cépage » vivaient côte à côte sans qu'aucun ne contraigne
+     l'autre : rien n'empêchait de retenir « vinifera » ET « Voltis ». Il n'y a
+     plus qu'une liste — les 11 variétés plantables — portée par `cepage`, et la
+     NATURE du matériel (vinifera / VIFA) en est dérivée par la table VARIETES.
+     Ce n'est donc pas un contrôle perdu mais deux contrôles fusionnés, et une
+     incohérence rendue impossible. Comme `regime`, le test qui suit vérifie
+     qu'il n'est pas rouvert ailleurs. */
+  assert.ok(!/on\.materiel \}\}/.test(INDEX_HTML) && !/id="f-materiel"/.test(INDEX_HTML),
+    'la nature du matériel végétal ne doit pas rouvrir un champ à elle : elle se déduit de la variété');
+  assert.ok(defauts && !/\bmateriel:/.test(defauts[0]),
+    'rien à persister sous `materiel` : la valeur est dérivée de la variété à chaque rendu');
+  assert.ok(/const VARIETES = \[/.test(INDEX_HTML) && /vifa: true/.test(INDEX_HTML),
+    'la table des variétés, et le drapeau VIFA dont la nature du matériel est dérivée');
 });
 
 /* Suite de la section 8 bis — faire-valoir porté par le registre. Ces deux

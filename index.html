@@ -160,6 +160,29 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
 .n4{font-size:11.5px;color:var(--encre-3);line-height:1.45}
 .n4.mono{font-family:'JetBrains Mono',monospace}
 
+/* --- temps 2 : « une décision par carte » -----------------------------
+   Le temps 2 s'ouvrait sur deux volets « Ajuster » refermés : hormis le
+   sélecteur de durée de repos, rien n'était visible et l'écran ne portait
+   aucun graphique, quand le temps 1 dessine sa parcelle et le temps 3 sa
+   frise. Les volets sont démontés et le même contenu se range en quatre
+   cartes de décision, chacune avec son dessin, puis les références.
+   Rayon 10 px pour les cartes de décision, 8 px pour les blocs et volets,
+   6 px pour les champs et encadrés, 3 px pour les segments et barres. */
+.dec-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.dec-large{grid-column:1/-1}
+.dec{background:var(--surface-haute);border:1px solid var(--bordure);border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.dec-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.dec-num{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent)}
+.dec-pied{border-top:1px dotted var(--bordure);padding-top:10px}
+/* Décision 3 : les contrôles à gauche, les huit lignes de palissage à droite. */
+.dec3{display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;align-items:start}
+/* Bandeau d'entrée — ce qui est déjà décidé, pas une navigation. */
+.jalons{display:flex;gap:2px;border:1px solid var(--bordure);border-radius:8px;overflow:hidden}
+.jalon{flex:1;padding:9px 12px;background:var(--surface-basse);border-right:1px solid var(--bordure);display:flex;flex-direction:column;gap:2px}
+/* Groupe de boutons segmentés (année de pleine production). */
+.seg-groupe{display:inline-flex;border:1px solid var(--bordure);border-radius:6px;overflow:hidden}
+.seg-btn{font-size:13.5px;padding:7px 13px;border:0;border-right:1px solid var(--bordure);cursor:pointer;white-space:nowrap}
+
 /* --- écrans étroits --------------------------------------------------- */
 /* La grille de champs se replie à une colonne avant la mise en page générale :
    deux colonnes de champs sous 900 px écrasent les libellés. */
@@ -167,6 +190,10 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
   .grid{grid-template-columns:1fr}
   /* Le schéma de parcelle passe sous les champs plutôt que de les écraser. */
   #geoGrid{grid-template-columns:1fr !important}
+  /* Les cartes de décision et la grille interne de la décision 3 se replient
+     au même seuil que les champs. */
+  .dec-grid{grid-template-columns:1fr}
+  .dec3{grid-template-columns:1fr}
 }
 @media (max-width:1080px){
   #appGrid{grid-template-columns:1fr !important}
@@ -840,44 +867,447 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
              volet qui n'a plus rien à contenir ne reste pas à l'écran. -->
       </sc-if>
 
+      <!-- ===================== TEMPS 2 · LE PROJET =====================
+           Chantier « une décision par carte » (direction 1c v2).
+
+           Les deux anciennes sections — « Ce que vous replantez » et « Ce que
+           cela coûte » — ne font plus qu'un seul flux : quatre décisions,
+           chacune portant son propre dessin, puis les références. Les deux
+           volets « Ajuster » sont démontés : leurs champs redeviennent
+           visibles, aucun n'est supprimé ni déplacé hors du temps 2.
+
+           `estEtape2` et `estEtape3` restent tous deux vrais quand
+           `step === 1` (remappage inchangé dans renderVals) ; tout le contenu
+           tient désormais sous le seul `estEtape2`, et le bloc `estEtape3` du
+           gabarit a disparu faute de contenu propre. -->
       <sc-if value="{{ estEtape2 }}" hint-placeholder-val="{{ false }}">
-        <div class="eyebrow">TEMPS 2 · CE QUE VOUS REPLANTEZ</div>
-        <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Votre projet de replantation</h2>
-        <p style="color:var(--encre-3);font-size:13.5px;max-width:62ch;margin:0 0 24px">Ce que vous allez replanter, et comment la vigne sera conduite. Le coût du palissage se calcule tout seul à partir de la géométrie saisie au temps 1.</p>
+        <div style="display:flex;flex-direction:column;gap:18px">
 
-        <!-- Volet « Ajuster » de l'écran 3 — prompt B4. Aucun des champs de cet
-             écran n'appartient aux 11 repères du chemin court : cépage,
-             porte-greffe, sol, conduite et année de pleine production sont des
-             choix agronomiques que l'outil sait préremplir. Ils sont donc tous
-             ici, avec les blocs d'aide qui les commentent — replier les champs
-             sans leur aide n'aurait aucun sens. Rien n'est supprimé. -->
-        <div class="fold">
-          <button onClick="{{ toggleAjuster3 }}" class="fold-btn">
-            <span><b style="font-size:13.5px">Ajuster</b> <span class="hint">— {{ ajusterResume3 }}</span></span>
-            <span class="fold-sign">{{ ajusterChevron3 }}</span>
-          </button>
-          <sc-if value="{{ ajusterOuvert3 }}" hint-placeholder-val="{{ false }}">
-          <div class="fold-body">
-          <div class="card">
-            <h3 class="card-h" style="margin-bottom:4px">Matériel végétal et aide au choix</h3>
-            <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px">information seule — n'entre pas dans le calcul économique</div>
+          <div>
+            <div class="eyebrow">TEMPS 2 · LE PROJET</div>
+            <h2 class="n2" style="margin:4px 0 6px">Quatre décisions, puis les références</h2>
+            <p class="n3" style="color:var(--encre-3);max-width:62ch;margin:0">Ce que vous décidez tient en quatre cartes, dans l'ordre où la question se pose. Tarifs, clones et arbre porte-greffe sont de la documentation : ils sont en bas de l'écran.</p>
+          </div>
 
-            <div style="border:1px solid var(--bordure);border-radius:8px;overflow:hidden">
-              <button onClick="{{ toggleAide }}" class="fold-btn">
-                <span style="font-family:'Newsreader',serif;font-size:13.5px;font-weight:600">Simulateur d'aide au choix</span>
-                <span style="font-size:11.5px;color:var(--encre-3)">(information, hors calcul · Guide 2025)</span>
-                <span class="fold-sign">{{ aideChevron }}</span>
-              </button>
-              <sc-if value="{{ aideOuverte }}" hint-placeholder-val="{{ false }}">
-                <div style="padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:20px">
-                  <div>
+          <!-- Bandeau des quatre décisions. Ce n'est PAS une navigation : il
+               dit ce qui est déjà décidé, et rien d'autre. -->
+          <div class="jalons">
+            <sc-for list="{{ jalons }}" as="ja" hint-placeholder-count="4">
+              <div class="jalon">
+                <span class="n4 mono" style="color:var(--accent)">{{ ja.num }}</span>
+                <span class="n4" style="color:var(--encre-2);line-height:1.3">{{ ja.lib }}</span>
+                <span class="n4 mono">{{ ja.val }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div class="dec-grid">
+
+            <!-- ===================== DÉCISION 1 ===================== -->
+            <div class="dec" id="decision-1">
+              <div class="dec-h">
+                <div class="dec-num">DÉCISION 1</div>
+                <div class="n2">Combien de temps laisser le sol au repos</div>
+              </div>
+              <!-- Axe des années, calé sur la largeur des frises (96 px de
+                   libellé à gauche + 11 colonnes égales). -->
+              <div style="display:flex;gap:2px;padding-left:96px">
+                <sc-for list="{{ friseAnnees }}" as="an" hint-placeholder-count="11">
+                  <div class="n4 mono" style="flex:1;text-align:center;color:var(--encre-4)">{{ an.court }}</div>
+                </sc-for>
+              </div>
+              <!-- Les trois durées, chacune dessinée : on choisit dans le
+                   dessin. Le sélecteur a disparu ; les boutons portent la même
+                   valeur que ses options et appellent le MÊME gestionnaire
+                   (`on.repos`), donc le même marquage de `champsTouches`.
+                   L'id `f-repos` suit la valeur courante : c'est la cible du
+                   chemin court « reprendre au premier repère ». -->
+              <div role="group" aria-label="Durée de repos du sol, de 1 à 3 ans" style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ choixRepos }}" as="cr" hint-placeholder-count="3">
+                  <button id="{{ cr.id }}" value="{{ cr.val }}" onClick="{{ on.repos }}" aria-pressed="{{ cr.actif }}" aria-label="{{ cr.aria }}" style="border:1px solid {{ cr.bd }};background:{{ cr.bg }};border-radius:8px;padding:9px 11px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;color:var(--encre)">
+                    <span style="width:74px;flex:none;font-size:13.5px;font-weight:600;white-space:nowrap">{{ cr.titre }}</span>
+                    <span style="flex:1;display:flex;gap:2px;height:22px;min-width:0">
+                      <sc-for list="{{ cr.segs }}" as="sg" hint-placeholder-count="4">
+                        <span title="{{ sg.titre }}" style="flex:{{ sg.flex }};min-width:0;background:{{ sg.bg }};border:1px solid {{ sg.bd }};border-radius:3px"></span>
+                      </sc-for>
+                    </span>
+                  </button>
+                </sc-for>
+              </div>
+              <!-- Les segments ne portent aucun libellé : à 1/11 de la largeur,
+                   un texte est systématiquement tronqué. La légende les nomme
+                   une fois pour les trois frises (même règle que la frise du
+                   temps 3). -->
+              <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--encre-3)">
+                <sc-for list="{{ friseLegende }}" as="lg" hint-placeholder-count="4">
+                  <span><span style="display:inline-block;width:10px;height:10px;background:{{ lg.bg }};border:1px solid {{ lg.bd }};border-radius:2px;margin-right:6px"></span>{{ lg.lib }}</span>
+                </sc-for>
+              </div>
+              <div class="dec-pied" style="display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;color:var(--encre-3)">
+                <span><b style="color:var(--encre-2)">{{ nbSortieTxt }}</b> déblocages de réserve</span>
+                <span>retour en production <b style="color:var(--encre-2)">an {{ anRetourTxt }}</b></span>
+                <span><span class="lex" title="{{ lex.repos.def }}">repos du sol</span></span>
+              </div>
+              <div class="hint warn">Règle de déblocage sous réserve de publication de la décision CIVC.</div>
+            </div>
+
+            <!-- ===================== DÉCISION 2 ===================== -->
+            <div class="dec" id="decision-2">
+              <div class="dec-h">
+                <div class="dec-num">DÉCISION 2</div>
+                <div class="n2">Quand la vigne produira à plein</div>
+              </div>
+              <!-- Profil de montée en charge. Les pourcentages sont ceux de
+                   OAD.rampeLineaire (inp.ramp), jamais recalculés ici. -->
+              <div style="display:flex;align-items:flex-end;gap:6px;height:104px;border-bottom:1px solid var(--bordure);padding-bottom:2px">
+                <sc-for list="{{ montee }}" as="mo" hint-placeholder-count="8">
+                  <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px">
+                    <div class="n4 mono" style="color:{{ mo.fg }};white-space:nowrap">{{ mo.pct }}</div>
+                    <div style="width:100%;height:{{ mo.h }};background:{{ mo.bg }};border-radius:3px 3px 0 0"></div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:6px">
+                <sc-for list="{{ montee }}" as="mo" hint-placeholder-count="8">
+                  <div class="n4 mono" style="flex:1;text-align:center;color:{{ mo.fgAn }}">{{ mo.an }}</div>
+                </sc-for>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <label class="lbl" for="f-anneePleineProd">Année de pleine production</label>
+                <div class="seg-groupe">
+                  <sc-for list="{{ choixApp }}" as="ca" hint-placeholder-count="4">
+                    <button onClick="{{ ca.go }}" aria-pressed="{{ ca.actif }}" aria-label="{{ ca.aria }}" class="seg-btn" style="background:{{ ca.bg }};color:{{ ca.fg }}">{{ ca.lib }}</button>
+                  </sc-for>
+                </div>
+                <input id="f-anneePleineProd" type="number" step="1" min="3" max="12" value="{{ v.anneePleineProd }}" onInput="{{ on.anneePleineProd }}" class="inp" style="width:74px">
+                <span class="unit">années</span>
+              </div>
+              <div class="dec-pied n4">Comptée depuis la plantation ; l'année 3 est l'entrée en production. Retour en production an {{ anRetourTxt }} · plein potentiel an {{ anPleineProdTxt }} · montée en charge <span class="mono">{{ rampeProgressionTxt }}</span>.</div>
+            </div>
+
+            <!-- ===================== DÉCISION 3 ===================== -->
+            <div class="dec dec-large" id="decision-3">
+              <div class="dec-h">
+                <div class="dec-num">DÉCISION 3</div>
+                <div class="n2">Comment le rang sera équipé</div>
+                <div class="n4">{{ geoRappelTxt }} · tarifs fournisseur et pose (LutEnVi 2025) à réactualiser</div>
+              </div>
+              <sc-if value="{{ longueurManquante }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:13.5px;padding:9px 12px;border-radius:5px;background:var(--alerte-fond);color:var(--alerte)">Saisissez une surface arrachée et un nombre de rangs au temps 1 pour calculer la géométrie.</div>
+              </sc-if>
+              <sc-if value="{{ !longueurManquante }}" hint-placeholder-val="{{ true }}">
+                <div class="dec3">
+                  <div style="display:flex;flex-direction:column;gap:12px">
+                    <div class="field">
+                      <label class="lbl" for="f-typeTaille">Mode de conduite</label>
+                      <select id="f-typeTaille" value="{{ v.typeTaille }}" onChange="{{ on.typeTaille }}" class="sel">
+                        <option value="guyot">Guyot simple (4 fils)</option>
+                        <option value="cordon">Cordon (4 fils)</option>
+                        <option value="arcure_simple">Arcure simple (4 fils)</option>
+                        <option value="arcure_double">Arcure double (5 fils)</option>
+                        <option value="chablis">Taille Chablis (5 fils)</option>
+                      </select>
+                    </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px">
                       <div class="field">
-                        <label class="lbl" for="f-cepage">Cépage</label>
-                        <select id="f-cepage" value="{{ cepageSel }}" onChange="{{ on.cepage }}" class="sel">
-                          <option>Pinot noir</option><option>Meunier</option><option>Chardonnay</option>
-                        </select>
+                        <label class="lbl" for="f-nbFils">Fils par rang</label>
+                        <input id="f-nbFils" type="number" step="1" min="2" max="8" value="{{ v.nbFils }}" onInput="{{ on.nbFils }}" class="inp">
                       </div>
+                      <div class="field">
+                        <label class="lbl" for="f-espPiquet">Espacement piquets</label>
+                        <div class="row"><input id="f-espPiquet" type="number" step="0.5" min="2" max="12" value="{{ v.espPiquet }}" onInput="{{ on.espPiquet }}" class="inp"><span class="unit">m</span></div>
+                      </div>
+                    </div>
+                    <!-- L'aide ne passe en rouge qu'au-delà de la référence :
+                         une valeur conforme n'a pas à être signalée comme un
+                         écart. -->
+                    <span class="hint" style="color:{{ espHintFg }}">{{ espHintTxt }}</span>
+                    <div style="border-top:1px dotted var(--bordure);padding-top:10px;display:flex;flex-direction:column;gap:8px">
+                      <sc-for list="{{ palisOptionnels }}" as="po" hint-placeholder-count="1">
+                        <label style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--encre-2);cursor:pointer">
+                          <input type="checkbox" checked="{{ po.inclus }}" onChange="{{ po.toggle }}">
+                          {{ po.libCase }}
+                        </label>
+                      </sc-for>
+                    </div>
+                    <div style="background:var(--accent-fond);border:1px solid var(--accent-fond-bordure);border-radius:6px;padding:10px 12px;display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+                      <span class="n4">Palissage, calculé</span>
+                      <b class="mono" style="font-size:13.5px;color:var(--accent-encre)">{{ palisTotalHaTxt }}</b>
+                    </div>
+                    <div class="n4">{{ palisDetailTxt }}</div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:7px">
+                    <sc-for list="{{ palisBarres }}" as="pl" hint-placeholder-count="8">
+                      <div style="display:grid;grid-template-columns:170px minmax(0,1fr) 86px 96px;gap:12px;align-items:center">
+                        <div style="font-size:11.5px;color:{{ pl.fg }}">{{ pl.lib }}</div>
+                        <div style="height:14px;background:var(--surface-basse);border-radius:3px;display:flex"><div style="width:{{ pl.largeur }};background:{{ pl.bg }};border-radius:3px"></div></div>
+                        <div class="n4 mono" style="color:var(--encre-4);text-align:right">×{{ pl.qte }}</div>
+                        <div class="n4 mono" style="color:{{ pl.fg }};text-align:right">{{ pl.eur }}</div>
+                      </div>
+                    </sc-for>
+                    <div class="n4" style="border-top:1px dotted var(--bordure);padding-top:8px;line-height:1.5">La protection du jeune plant (tuteur en U + cache-plant) est un poste distinct, calculé sur la densité : <b class="mono" style="color:var(--encre-2)">{{ protectionTotalHaTxt }}</b>.</div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+
+            <!-- ============ INVESTISSEMENTS PONCTUELS ============
+                 Ce que le volet « Ajuster » de l'ancien écran 4 cachait, hors
+                 entretien récurrent : les deux prix négociés et l'option
+                 d'arrosage. Ce n'est pas une cinquième décision — c'est ce
+                 qu'il reste à chiffrer une fois les quatre prises — d'où
+                 l'absence de surtitre « DÉCISION ». Les quatre postes
+                 d'investissement marquent `champsTouches` comme avant : c'est
+                 ce qui fait basculer le libellé du temps 3 de « coût de
+                 référence Champagne » à « votre investissement ». -->
+            <div class="dec dec-large">
+              <div class="dec-h">
+                <div class="dec-num" style="color:var(--encre-4)">INVESTISSEMENT</div>
+                <div class="n2">Ce que vous payez une fois pour toutes</div>
+                <div class="n4">arrachage et plant — le palissage et la protection du jeune plant sont calculés ci-dessus</div>
+              </div>
+              <div class="grid">
+                <div class="field">
+                  <label class="lbl" for="f-coutArrachageHa">Prestations d'arrachage et préparation de la parcelle (tout compris — MHCS)</label>
+                  <div class="row"><input id="f-coutArrachageHa" type="number" step="100" value="{{ v.coutArrachageHa }}" onInput="{{ on.coutArrachageHa }}" class="inp"><span class="unit">€/ha</span></div>
+                  <span class="hint">inclut arrachage, évacuation des souches, amendement calcaire et préparation du sol</span>
+                </div>
+                <div class="field">
+                  <label class="lbl" for="f-coutPlant">Matériel végétal à acheter (plant)</label>
+                  <div class="row"><input id="f-coutPlant" type="number" step="0.1" value="{{ v.coutPlant }}" onInput="{{ on.coutPlant }}" class="inp"><span class="unit">€/pied</span></div>
+                </div>
+              </div>
+              <div style="padding-top:14px;border-top:1px dotted var(--bordure)">
+                <div style="font-size:13.5px;font-weight:600;margin-bottom:10px">Options de coût à l'installation</div>
+                <div class="grid">
+                  <!-- Arrosage du plantier — prompt B7. Rétabli sous ce libellé, et
+                       non « ferti-irrigation » : ce dont il s'agit ici est l'arrosage
+                       du jeune plant. Le badge « interdite en AOC » est remplacé par
+                       un renvoi au cahier des charges, qui est la source à consulter.
+                       Ce champ ne porte volontairement AUCUN commentaire de
+                       provenance sur sa valeur (arbitrage du 01/09/2026) : c'est la
+                       seule dérogation du projet à la règle de sourçage — inutile
+                       d'en chercher une, ou d'en ajouter une. -->
+                  <div class="field">
+                    <label class="lbl" for="f-irrigation">Arrosage du plantier</label>
+                    <select id="f-irrigation" value="{{ v.irrigation }}" onChange="{{ on.irrigation }}" class="sel">
+                      <option value="0">Non</option><option value="1">Oui</option>
+                    </select>
+                    <span class="hint">conditions et limites : cahier des charges de l'AOC Champagne, chapitre I (conditions de production)</span>
+                  </div>
+                  <div class="field">
+                    <label class="lbl" for="f-coutIrrigHa">Arrosage du plantier (si oui)</label>
+                    <div class="row"><input id="f-coutIrrigHa" type="number" step="500" value="{{ v.coutIrrigHa }}" onInput="{{ on.coutIrrigHa }}" class="inp"><span class="unit">€/ha</span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <sc-for list="{{ conseqs }}" as="c" hint-placeholder-count="2">
+                  <div style="background:var(--accent-fond);border-radius:10px;padding:3px 10px;font-size:11.5px"><b>{{ c.titre }}</b> · {{ c.detail }}</div>
+                </sc-for>
+              </div>
+            </div>
+
+            <!-- ===================== DÉCISION 4 ===================== -->
+            <div class="dec dec-large" id="decision-4">
+              <div class="dec-h">
+                <div class="dec-num">DÉCISION 4</div>
+                <div class="n2">Ce que la parcelle coûte pendant la transition</div>
+                <div class="n4">entretien récurrent seulement — l'installation (arrachage, préparation, plants, palissage) est déjà comptée en coûts ponctuels</div>
+              </div>
+              <!-- Bande de durées : les largeurs sont les durées, les chiffres
+                   les charges annuelles. Le troisième bloc est un REPÈRE — la
+                   charge de référence du panneau Hypothèses — il n'ajoute rien
+                   au projet, d'où sa bordure pointillée. -->
+              <div style="display:flex;gap:10px;align-items:stretch;height:104px;flex-wrap:wrap">
+                <div style="flex:{{ flexRepos }};min-width:120px;background:var(--vegetal-fond);border:1px solid var(--bordure);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden">
+                  <div class="n4" style="line-height:1.35">B.1 · repos<br>{{ dureeReposTxt }}</div>
+                  <div class="mono" style="font-size:13.5px;color:var(--vegetal-fonce);white-space:nowrap">{{ chargeReposTxt }}</div>
+                </div>
+                <div style="flex:{{ flexPlantier }};min-width:120px;background:var(--accent-fond);border:1px solid var(--accent-fond-bordure);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden">
+                  <div class="n4" style="line-height:1.35">B.2 · plantier<br>{{ dureePlantierTxt }}</div>
+                  <div class="mono" style="font-size:13.5px;color:var(--accent-encre);white-space:nowrap">{{ chargePlantierTxt }}</div>
+                </div>
+                <div style="flex:{{ flexProd }};min-width:120px;background:var(--surface-basse);border:1px dashed var(--bordure);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden">
+                  <div class="n4" style="color:var(--encre-4);line-height:1.35">production<br>repère Hypothèses</div>
+                  <div class="mono n4" style="white-space:nowrap">{{ chargeProdTxt }}</div>
+                </div>
+              </div>
+              <div class="grid">
+                <div class="field">
+                  <label class="lbl" for="f-coutReposHaAn">B.1 — Entretien de la parcelle au repos</label>
+                  <div class="row"><input id="f-coutReposHaAn" type="number" step="100" min="0" value="{{ v.coutReposHaAn }}" onInput="{{ on.coutReposHaAn }}" class="inp"><span class="unit">€/ha/an</span></div>
+                  <span class="hint" style="color:{{ reposHintFg }}">{{ reposHintTxt }}</span>
+                </div>
+                <div class="field">
+                  <label class="lbl" for="f-coutPlantierHaAn">B.2 — Entretien du <span class="lex" title="{{ lex.plantier.def }}">plantier</span></label>
+                  <div class="row"><input id="f-coutPlantierHaAn" type="number" step="100" min="0" value="{{ v.coutPlantierHaAn }}" onInput="{{ on.coutPlantierHaAn }}" class="inp"><span class="unit">€/ha/an</span></div>
+                  <span class="hint">{{ lex.plantier.court }}</span>
+                  <span class="hint">MHCS — taille de formation + remplacement des plants morts. Voir le détail par opération ci-dessous.</span>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start">
+                <div class="fold" style="flex:1;min-width:260px">
+                  <button onClick="{{ toggleVoletRepos }}" class="fold-btn">
+                    <span style="font-size:13.5px;font-weight:600">B.1 — Détail par opération (repos)</span>
+                    <span class="hint">— {{ voletReposEnteteTxt }}</span>
+                    <span class="fold-sign">{{ voletReposChevron }}</span>
+                  </button>
+                  <sc-if value="{{ voletReposOuvert }}" hint-placeholder-val="{{ false }}">
+                    <div class="fold-body">
+                      <label style="display:flex;align-items:center;gap:8px;font-size:11.5px;cursor:pointer;margin-bottom:12px">
+                        <input type="checkbox" checked="{{ voletReposCourtNoue }}" onChange="{{ toggleReposCourtNoue }}">
+                        Inclure la dévitalisation court-noué (optionnel)
+                      </label>
+                      <div style="overflow-x:auto">
+                        <div style="display:grid;grid-template-columns:1.8fr 0.9fr 1fr 1.8fr;gap:0;font-size:11.5px;min-width:560px">
+                          <div class="th">Opération</div>
+                          <div class="th r">h/ha</div>
+                          <div class="th r">€/ha</div>
+                          <div class="th">Source</div>
+                          <sc-for list="{{ voletReposLignes }}" as="l" hint-placeholder-count="3">
+                            <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire)">{{ l.lib }}</div>
+                            <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
+                            <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
+                            <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire);font-size:11.5px;color:var(--encre-3)">{{ l.src }}</div>
+                          </sc-for>
+                        </div>
+                      </div>
+                      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px">
+                        <span style="font-size:13.5px">Total : <b class="mono">{{ voletReposTotalTxt }}</b></span>
+                        <button onClick="{{ reprendreVoletRepos }}" style="font-size:11.5px;padding:6px 12px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:5px;cursor:pointer;color:var(--encre)">↻ Reprendre cette estimation</button>
+                      </div>
+                    </div>
+                  </sc-if>
+                </div>
+
+                <div class="fold" style="flex:1;min-width:260px">
+                  <button onClick="{{ toggleVoletPlantier }}" class="fold-btn">
+                    <span style="font-size:13.5px;font-weight:600">B.2 — Détail par opération (plantier)</span>
+                    <span class="hint">— {{ voletPlantierEnteteTxt }}</span>
+                    <span class="fold-sign">{{ voletPlantierChevron }}</span>
+                  </button>
+                  <sc-if value="{{ voletPlantierOuvert }}" hint-placeholder-val="{{ false }}">
+                    <div class="fold-body">
+                      <!-- prompt C1 — la saisie « fraction de formation » est retirée de
+                           l'interface : c'est un coefficient de modélisation (part du
+                           travail d'une vigne adulte que représente la taille de
+                           formation), pas une donnée d'exploitation que l'utilisateur
+                           puisse relever chez lui. Il reste dans state.v, dans inp et
+                           dans le moteur à sa valeur par défaut, et reste affiché dans
+                           la fiche d'audit imprimable — donc auditable, mais plus
+                           proposé à la saisie. -->
+                      <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:12px">Fraction de formation retenue : <b class="mono">{{ fracFormationTxt }}</b> — coefficient de modélisation, détaillé dans la fiche imprimable.</div>
+                      <div style="overflow-x:auto">
+                        <div style="display:grid;grid-template-columns:1.8fr 0.9fr 1fr 1.8fr;gap:0;font-size:11.5px;min-width:560px">
+                          <div class="th">Opération</div>
+                          <div class="th r">h/ha</div>
+                          <div class="th r">€/ha</div>
+                          <div class="th">Source</div>
+                          <sc-for list="{{ voletPlantierLignes }}" as="l" hint-placeholder-count="4">
+                            <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire)">{{ l.lib }}</div>
+                            <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
+                            <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
+                            <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire);font-size:11.5px;color:var(--encre-3)">{{ l.src }}</div>
+                          </sc-for>
+                        </div>
+                      </div>
+                      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px">
+                        <span style="font-size:13.5px">Total : <b class="mono">{{ voletPlantierTotalTxt }}</b></span>
+                        <button onClick="{{ reprendreVoletPlantier }}" style="font-size:11.5px;padding:6px 12px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:5px;cursor:pointer;color:var(--encre)">↻ Reprendre cette estimation</button>
+                      </div>
+                    </div>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===================== RÉFÉRENCES =====================
+               Tout ce qui est information hors calcul descend ici : matériel
+               végétal, fiche du porte-greffe, arbre d'aide au choix, table des
+               42 clones. Trois volets, repliés par défaut, dont l'en-tête
+               annonce le contenu.
+
+               Le titre nomme le CONTENU du bloc (cépage, porte-greffe, clones)
+               et non « Matériel végétal », qui est déjà le libellé du premier
+               champ juste en dessous : un titre qui répète mot pour mot
+               l'étiquette d'un de ses champs ne dit rien de plus et laisse
+               croire que le bloc ne porte que ce champ.
+
+               « N'entre pas dans le calcul » n'est écrit qu'ICI, une fois pour
+               tout le bloc : la mention était répétée sous le porte-greffe et
+               dans le résumé des clones, et une réserve répétée trois fois
+               finit par ne plus se lire nulle part. -->
+          <div class="dec">
+            <div class="dec-h">
+              <div class="dec-num" style="color:var(--encre-4);letter-spacing:0.06em">RÉFÉRENCES</div>
+              <div class="n2">Cépage, porte-greffe et clones</div>
+              <div class="n4">information seule — rien de ce bloc n'entre dans le calcul économique</div>
+            </div>
+            <div class="grid">
+              <!-- Un seul sélecteur de matériel végétal : la variété. Il
+                   remplace l'ancien couple « vinifera / Voltis » + « cépage »,
+                   qui pouvait se contredire, et c'est lui qui commande la table
+                   de clones plus bas. La nature du matériel (vinifera ou
+                   variété résistante VIFA) en est dérivée — voir VARIETES. -->
+              <div class="field">
+                <label class="lbl" for="f-cepage">Matériel végétal</label>
+                <!-- Options écrites en dur, et non bouclées sur VARIETES : une
+                     interpolation est rendue dans un span, ce qu'une option
+                     n'a pas le droit de contenir. La liste est figée,
+                     elle n'a pas besoin d'une boucle ; VARIETES reste la source
+                     de la DÉRIVATION (vinifera / VIFA), côté script. -->
+                <select id="f-cepage" value="{{ cepageSel }}" onChange="{{ on.cepage }}" class="sel">
+                  <option value="Chardonnay">Chardonnay</option>
+                  <option value="Pinot noir">Pinot noir</option>
+                  <option value="Meunier">Meunier</option>
+                  <option value="Pinot blanc">Pinot blanc</option>
+                  <option value="Pinot gris">Pinot gris</option>
+                  <option value="Arbane">Arbane</option>
+                  <option value="Petit Meslier">Petit Meslier</option>
+                  <option value="Chardonnay rose">Chardonnay rose</option>
+                  <option value="Voltis">Voltis (VIFA)</option>
+                  <option value="Orellis">Orellis (VIFA)</option>
+                  <option value="Serelis">Serelis (VIFA)</option>
+                </select>
+                <span class="hint">{{ materielNatureTxt }}</span>
+              </div>
+              <div class="field">
+                <label class="lbl" for="f-porteGreffe">Porte-greffe</label>
+                <select id="f-porteGreffe" value="{{ v.porteGreffe }}" onChange="{{ on.porteGreffe }}" class="sel">
+                  <option>41 B</option><option>SO4</option><option>3309 C</option><option>161-49 C</option><option>Fercal</option><option>Riparia Gloire</option>
+                </select>
+                <!-- La fiche du porte-greffe retenu a été retirée du bloc. Cet
+                     avertissement-ci ne l'a pas suivie : il ne s'affiche que
+                     pour les porte-greffes qui en portent un (161-49 C et ses
+                     dépérissements), et l'arbre d'aide au choix ci-dessous ne
+                     le répète que si le porte-greffe figure dans SA liste — ce
+                     qui n'est justement pas le cas quand on retient un
+                     porte-greffe déconseillé. -->
+                <sc-if value="{{ pgAvertBloquant }}" hint-placeholder-val="{{ false }}">
+                  <span class="hint warn">{{ pgAvert }}</span>
+                </sc-if>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div class="fold">
+                <button onClick="{{ toggleRefAide }}" class="fold-btn">
+                  <span style="font-weight:600">Aide au choix du porte-greffe</span>
+                  <span class="hint">— {{ refAideResumeTxt }}</span>
+                  <span class="fold-sign">{{ refAideChevron }}</span>
+                </button>
+                <sc-if value="{{ refAideOuverte }}" hint-placeholder-val="{{ false }}">
+                  <div class="fold-body">
+                    <!-- Le cépage a quitté ce volet : il ne servait pas à
+                         l'arbre du Guide 2025, qui ne lit que le calcaire, la
+                         profondeur et le drainage (OAD.preconPorteGreffe). Il
+                         est remonté dans le sélecteur de matériel végétal, en
+                         tête du bloc, où il est retenu une fois pour tout
+                         l'écran. -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;max-width:62ch">
                       <div class="field">
                         <label class="lbl" for="f-calcaireActif">Calcaire actif sous-sol</label>
                         <div class="row"><input id="f-calcaireActif" type="number" step="1" min="0" max="60" value="{{ v.calcaireActif }}" onInput="{{ on.calcaireActif }}" class="inp"><span class="unit">%</span></div>
@@ -905,317 +1335,66 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
                       <div style="font-size:11.5px;color:var(--encre-3)">{{ preconMsg }}</div>
                     </div>
                   </div>
-                </div>
-              </sc-if>
-            </div>
+                </sc-if>
+              </div>
 
-            <!-- Table clones — prompt B7. Sortie de la colonne de droite du
-                 simulateur (~230 px, où elle était écrasée) pour occuper toute
-                 la largeur de la carte. Ordre FIXE par numéro de clone : la
-                 table n'est ni triable ni filtrable. Trier par production
-                 suggérerait un classement que les sources ne portent pas —
-                 l'échelle PlantGrape est qualitative, pas un rendement. -->
-            <div style="margin-top:16px;border:1px solid var(--bordure);border-radius:8px;padding:14px 16px">
-              <div style="font-size:13.5px;font-weight:600;margin-bottom:2px">{{ clonesTitre }}</div>
-              <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:10px;max-width:80ch">{{ clonesSourceTxt }}</div>
-              <div style="overflow-x:auto">
-                <div style="display:grid;grid-template-columns:52px 118px 118px 118px 130px 120px minmax(220px,1fr);gap:0;font-size:11.5px;min-width:836px">
-                  <div class="th">Clone</div>
-                  <div class="th" title="Échelle qualitative PlantGrape (inférieur / moyen / supérieur). Ce n'est PAS un rendement en kg/ha, et cela n'entre dans aucun calcul de l'outil.">Niveau de production ⓘ</div>
-                  <div class="th">Richesse en sucre</div>
-                  <div class="th">Fertilité</div>
-                  <div class="th">{{ clonesColCondLabel }}</div>
-                  <div class="th" title="Donnée absente des sources retenues sur 37 des 42 clones. Elle n'est pas comblée : se reporter aux données CIVC ou à plantgrape.fr.">Sensibilité Botrytis ⓘ</div>
-                  <div class="th">Remarque</div>
-                  <sc-for list="{{ clonesList }}" as="cl" hint-placeholder-count="8">
-                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);font-family:'JetBrains Mono',monospace;font-size:11.5px;display:flex;align-items:baseline;gap:5px">
-                      {{ cl.num }}<span title="{{ cl.origineTitre }}" style="font-size:11.5px;color:{{ cl.origineFg }};font-family:'JetBrains Mono',monospace">{{ cl.origineTxt }}</span>
+              <!-- Table clones — prompt B7. Ordre FIXE par numéro de clone : la
+                   table n'est ni triable ni filtrable. Trier par production
+                   suggérerait un classement que les sources ne portent pas —
+                   l'échelle PlantGrape est qualitative, pas un rendement. -->
+              <div class="fold">
+                <button onClick="{{ toggleRefClones }}" class="fold-btn">
+                  <span style="font-weight:600">{{ clonesTitre }}</span>
+                  <span class="hint">— {{ refClonesResumeTxt }}</span>
+                  <span class="fold-sign">{{ refClonesChevron }}</span>
+                </button>
+                <sc-if value="{{ refClonesOuverte }}" hint-placeholder-val="{{ false }}">
+                  <div class="fold-body">
+                    <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:10px;max-width:80ch">{{ clonesSourceTxt }}</div>
+                    <!-- Variété sans clone au référentiel : la table n'est pas
+                         affichée vide, et surtout elle n'est pas comblée. -->
+                    <sc-if value="{{ clonesAucun }}" hint-placeholder-val="{{ false }}">
+                      <div style="background:var(--alerte-fond);border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.55;max-width:80ch">{{ clonesAucunTxt }}</div>
+                    </sc-if>
+                    <sc-if value="{{ !clonesAucun }}" hint-placeholder-val="{{ true }}">
+                    <div style="overflow-x:auto">
+                      <div style="display:grid;grid-template-columns:52px 118px 118px 118px 130px 120px minmax(220px,1fr);gap:0;font-size:11.5px;min-width:836px">
+                        <div class="th">Clone</div>
+                        <div class="th" title="Échelle qualitative PlantGrape (inférieur / moyen / supérieur). Ce n'est PAS un rendement en kg/ha, et cela n'entre dans aucun calcul de l'outil.">Niveau de production ⓘ</div>
+                        <div class="th">Richesse en sucre</div>
+                        <div class="th">Fertilité</div>
+                        <div class="th">{{ clonesColCondLabel }}</div>
+                        <div class="th" title="Donnée absente des sources retenues sur 37 des 42 clones. Elle n'est pas comblée : se reporter aux données CIVC ou à plantgrape.fr.">Sensibilité Botrytis ⓘ</div>
+                        <div class="th">Remarque</div>
+                        <sc-for list="{{ clonesList }}" as="cl" hint-placeholder-count="8">
+                          <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);font-family:'JetBrains Mono',monospace;font-size:11.5px;display:flex;align-items:baseline;gap:5px">
+                            {{ cl.num }}<span title="{{ cl.origineTitre }}" style="font-size:11.5px;color:{{ cl.origineFg }};font-family:'JetBrains Mono',monospace">{{ cl.origineTxt }}</span>
+                          </div>
+                          <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.production }}</div>
+                          <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.sucre }}</div>
+                          <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.fertilite }}</div>
+                          <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.colCond }}</div>
+                          <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.botrytis }}</div>
+                          <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3);overflow-wrap:anywhere">
+                            <sc-if value="{{ cl.alerte }}" hint-placeholder-val="{{ false }}">
+                              <span style="display:inline-block;background:var(--alerte-fond);color:var(--alerte);border-radius:4px;padding:1px 6px;margin-right:5px;font-size:11.5px">⚠ {{ cl.alerteTxt }}</span>
+                            </sc-if>
+                            {{ cl.remarque }}
+                          </div>
+                        </sc-for>
+                      </div>
                     </div>
-                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.production }}</div>
-                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.sucre }}</div>
-                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.fertilite }}</div>
-                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.colCond }}</div>
-                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3)">{{ cl.botrytis }}</div>
-                    <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);color:var(--encre-3);overflow-wrap:anywhere">
-                      <sc-if value="{{ cl.alerte }}" hint-placeholder-val="{{ false }}">
-                        <span style="display:inline-block;background:var(--alerte-fond);color:var(--alerte);border-radius:4px;padding:1px 6px;margin-right:5px;font-size:11.5px">⚠ {{ cl.alerteTxt }}</span>
-                      </sc-if>
-                      {{ cl.remarque }}
+                    <div style="font-size:11.5px;color:var(--encre-3);margin-top:10px;line-height:1.5">
+                      <b>Niveau de production</b> : échelle qualitative PlantGrape — ce n'est pas un rendement en kg/ha et cela n'entre dans aucun calcul.<br>
+                      <b>Sensibilité Botrytis</b> : donnée absente des sources retenues sur 37 des 42 clones ; les cellules vides le restent. Se reporter aux données CIVC ou à plantgrape.fr.<br>
+                      <b>Origine</b> : <span style="font-family:'JetBrains Mono',monospace">G·P</span> Guide 2025 et PlantGrape · <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">G·P*</span> PlantGrape hors référence Champagne · <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">P</span> PlantGrape seul, absent du Guide.
                     </div>
-                  </sc-for>
-                </div>
-              </div>
-              <div style="font-size:11.5px;color:var(--encre-3);margin-top:10px;line-height:1.5">
-                <b>Niveau de production</b> : échelle qualitative PlantGrape — ce n'est pas un rendement en kg/ha et cela n'entre dans aucun calcul.<br>
-                <b>Sensibilité Botrytis</b> : donnée absente des sources retenues sur 37 des 42 clones ; les cellules vides le restent. Se reporter aux données CIVC ou à plantgrape.fr.<br>
-                <b>Origine</b> : <span style="font-family:'JetBrains Mono',monospace">G·P</span> Guide 2025 et PlantGrape · <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">G·P*</span> PlantGrape hors référence Champagne · <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">P</span> PlantGrape seul, absent du Guide.
-              </div>
-            </div>
-
-            <div class="grid" style="margin-top:16px">
-              <div class="field">
-                <label class="lbl" for="f-materiel">Matériel végétal</label>
-                <select id="f-materiel" value="{{ v.materiel }}" onChange="{{ on.materiel }}" class="sel">
-                  <option value="vinifera">Vitis vinifera (cépages AOC)</option>
-                  <option value="voltis">Voltis (variété résistante, VIFA)</option>
-                </select>
-              </div>
-              <div class="field">
-                <label class="lbl" for="f-porteGreffe">Porte-greffe</label>
-                <select id="f-porteGreffe" value="{{ v.porteGreffe }}" onChange="{{ on.porteGreffe }}" class="sel">
-                  <option>41 B</option><option>SO4</option><option>3309 C</option><option>161-49 C</option><option>Fercal</option><option>Riparia Gloire</option>
-                </select>
-                <span class="hint">information — n'entre pas dans le calcul</span>
-              </div>
-            </div>
-            <div style="margin-top:14px;background:{{ pgNoteBg }};border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.5">
-              <b>{{ pgTitre }}</b> — {{ pgDesc }}<br>
-              <span style="font-size:11.5px">{{ pgAvert }}</span>
-              <div style="font-size:11.5px;color:var(--encre-3);margin-top:4px">Guide pratique Viticulture durable en Champagne 2025, p. 38-39 — à valider par une analyse de terre.</div>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
-              <sc-for list="{{ conseqs }}" as="c" hint-placeholder-count="2">
-                <div style="background:var(--accent-fond);border-radius:10px;padding:3px 10px;font-size:11.5px"><b>{{ c.titre }}</b> · {{ c.detail }}</div>
-              </sc-for>
-            </div>
-          </div>
-
-          <div class="card" style="margin-top:16px">
-            <h3 class="card-h" style="margin-bottom:4px">Palissage et conduite</h3>
-            <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px">calculé d'après la géométrie saisie au temps 1 · tarifs fournisseur et pose (LutEnVi 2025) à réactualiser</div>
-            <sc-if value="{{ longueurManquante }}" hint-placeholder-val="{{ false }}">
-              <div style="font-size:13.5px;padding:9px 12px;border-radius:5px;background:var(--alerte-fond);color:var(--alerte)">Saisissez une surface arrachée et un nombre de rangs au temps 1 pour calculer la géométrie.</div>
-            </sc-if>
-            <sc-if value="{{ !longueurManquante }}" hint-placeholder-val="{{ true }}">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;align-content:start">
-                  <div style="display:flex;flex-direction:column;gap:5px;grid-column:1/-1">
-                    <label class="lbl" for="f-typeTaille">Mode de conduite</label>
-                    <select id="f-typeTaille" value="{{ v.typeTaille }}" onChange="{{ on.typeTaille }}" class="sel">
-                      <option value="guyot">Guyot simple (4 fils)</option>
-                      <option value="cordon">Cordon (4 fils)</option>
-                      <option value="arcure_simple">Arcure simple (4 fils)</option>
-                      <option value="arcure_double">Arcure double (5 fils)</option>
-                      <option value="chablis">Taille Chablis (5 fils)</option>
-                    </select>
+                    </sc-if>
                   </div>
-                  <div class="field">
-                    <label class="lbl" for="f-nbFils">Fils par rang</label>
-                    <input id="f-nbFils" type="number" step="1" min="2" max="8" value="{{ v.nbFils }}" onInput="{{ on.nbFils }}" style="padding:9px 11px;border:1px solid var(--bordure);border-radius:6px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:13.5px">
-                  </div>
-                  <div class="field">
-                    <label class="lbl" for="f-espPiquet">Espacement des piquets</label>
-                    <div class="row"><input id="f-espPiquet" type="number" step="0.5" min="2" max="12" value="{{ v.espPiquet }}" onInput="{{ on.espPiquet }}" class="inp"><span class="unit">m</span></div>
-                    <span class="hint warn">référence LutEnVi ≈ 4,3 m — à 6 m, le coût du palissage est sous-estimé d'environ 30 %</span>
-                  </div>
-                  <div style="display:flex;flex-direction:column;gap:5px;grid-column:1/-1">
-                    <label class="lbl" for="f-anneePleineProd">Année de pleine production</label>
-                    <div class="row"><input id="f-anneePleineProd" type="number" step="1" min="3" max="12" value="{{ v.anneePleineProd }}" onInput="{{ on.anneePleineProd }}" class="inp"><span class="unit">années</span></div>
-                    <span class="hint">comptée depuis la plantation ; l'année 3 est l'entrée en production</span>
-                    <span style="font-size:11.5px;color:var(--encre-3);font-family:'JetBrains Mono',monospace">{{ rampeProgressionTxt }}</span>
-                  </div>
-                </div>
-                <div style="border:1px solid var(--bordure);border-radius:6px;padding:14px 16px">
-                  <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:6px">Équipements de palissage</div>
-                  <sc-for list="{{ palisLignes }}" as="pl" hint-placeholder-count="6">
-                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)">
-                      <span style="display:flex;align-items:center;gap:6px">
-                        <sc-if value="{{ pl.optionnel }}" hint-placeholder-val="{{ false }}">
-                          <input type="checkbox" checked="{{ pl.inclus }}" onChange="{{ pl.toggle }}">
-                        </sc-if>
-                        {{ pl.lib }} <span style="color:var(--encre-4)">×{{ pl.qte }}</span>
-                        <sc-if value="{{ pl.optionnel }}" hint-placeholder-val="{{ false }}">
-                          <span style="font-size:11.5px;color:var(--accent)">optionnel</span>
-                        </sc-if>
-                        <sc-if value="{{ !pl.optionnel }}" hint-placeholder-val="{{ true }}">
-                          <span style="font-size:11.5px;color:var(--encre-3)">obligatoire</span>
-                        </sc-if>
-                      </span>
-                      <b class="mono">{{ pl.tot }}</b>
-                    </div>
-                  </sc-for>
-                  <div style="display:flex;justify-content:space-between;font-size:13.5px;padding-top:8px">
-                    <b>Total /ha</b><b class="mono">{{ palisTotalHa }}</b>
-                  </div>
-                  <div style="font-size:11.5px;color:var(--encre-3);margin-top:6px">{{ palisDetailTxt }}</div>
-                </div>
-              </div>
-            </sc-if>
-          </div>
-          </div>
-          </sc-if>
-        </div>
-      </sc-if>
-
-      <sc-if value="{{ estEtape3 }}" hint-placeholder-val="{{ false }}">
-        <div class="eyebrow" style="margin-top:40px;padding-top:28px;border-top:1px solid var(--bordure);display:block">TEMPS 2 · CE QUE CELA COÛTE</div>
-        <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Coûts et charges</h2>
-        <p style="color:var(--encre-3);font-size:13.5px;max-width:62ch;margin:0 0 24px">D'abord ce que vous investissez une fois pour toutes, puis ce que la parcelle coûte chaque année pendant la transition. Tous les montants sont modifiables — <span style="color:var(--alerte)">les valeurs par défaut sont des ordres de grandeur, à valider avant tout usage réel</span>.</p>
-
-        <!-- Chemin court de l'écran 4 — prompt B4 : la durée de repos est le
-             seul des 11 repères qui se saisit ici. Elle commande le nombre de
-             déblocages de réserve, donc l'essentiel de la trajectoire. -->
-        <div class="card" style="margin-bottom:20px">
-          <div class="grid">
-            <div class="field">
-              <label class="lbl" for="f-repos">Durée de <span class="lex" title="{{ lex.repos.def }}">repos du sol</span></label>
-              <select id="f-repos" value="{{ v.repos }}" onChange="{{ on.repos }}" class="sel">
-                <option value="1">1 an de repos — 3 déblocages de réserve</option>
-                <option value="2">2 ans de repos — 4 déblocages de réserve</option>
-                <option value="3">3 ans de repos — 5 déblocages de réserve</option>
-              </select>
-              <span class="hint">{{ lex.repos.court }}</span>
-              <span class="hint">détermine automatiquement le nombre d'années de déblocage de réserve</span>
-              <span class="hint warn">Règle de déblocage sous réserve de publication de la décision CIVC</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Volet « Ajuster » de l'écran 4 — prompt B4. Les quatre postes
-             d'investissement sont ici : tant qu'aucun n'est édité, le KPI de
-             l'écran 5 s'intitule « coût de référence Champagne » (arbitrage 11).
-             L'en-tête du volet montre les quatre montants, pour qu'on sache ce
-             qu'on laisse à sa valeur de référence sans avoir à l'ouvrir. -->
-        <div class="fold">
-          <button onClick="{{ toggleAjuster4 }}" class="fold-btn">
-            <span><b style="font-size:13.5px">Ajuster</b> <span class="hint">— {{ ajusterResume4 }}</span></span>
-            <span class="fold-sign">{{ ajusterChevron4 }}</span>
-          </button>
-          <sc-if value="{{ ajusterOuvert4 }}" hint-placeholder-val="{{ false }}">
-          <div class="fold-body">
-          <div class="card">
-            <h3 class="card-h" style="margin-bottom:14px">Investissements liés à la parcelle arrachée puis replantée</h3>
-            <div class="grid">
-              <div class="field">
-                <label class="lbl" for="f-coutArrachageHa">Prestations d'arrachage et préparation de la parcelle (tout compris — MHCS)</label>
-                <div class="row"><input id="f-coutArrachageHa" type="number" step="100" value="{{ v.coutArrachageHa }}" onInput="{{ on.coutArrachageHa }}" class="inp"><span class="unit">€/ha</span></div>
-                <span class="hint">inclut arrachage, évacuation des souches, amendement calcaire et préparation du sol</span>
-              </div>
-              <div class="field">
-                <label class="lbl" for="f-coutPlant">Matériel végétal à acheter (plant)</label>
-                <div class="row"><input id="f-coutPlant" type="number" step="0.1" value="{{ v.coutPlant }}" onInput="{{ on.coutPlant }}" class="inp"><span class="unit">€/pied</span></div>
-              </div>
-            </div>
-            <div style="margin-top:18px;padding-top:14px;border-top:1px dotted var(--bordure)">
-              <div style="font-size:13.5px;font-weight:600;margin-bottom:10px">Options de coût à l'installation</div>
-              <div class="grid">
-                <!-- Arrosage du plantier — prompt B7. Rétabli sous ce libellé, et
-                     non « ferti-irrigation » : ce dont il s'agit ici est l'arrosage
-                     du jeune plant. Le badge « interdite en AOC » est remplacé par
-                     un renvoi au cahier des charges, qui est la source à consulter.
-                     Ce champ ne porte volontairement AUCUN commentaire de
-                     provenance sur sa valeur (arbitrage du 01/09/2026) : c'est la
-                     seule dérogation du projet à la règle de sourçage — inutile
-                     d'en chercher une, ou d'en ajouter une. -->
-                <div class="field">
-                  <label class="lbl" for="f-irrigation">Arrosage du plantier</label>
-                  <select id="f-irrigation" value="{{ v.irrigation }}" onChange="{{ on.irrigation }}" class="sel">
-                    <option value="0">Non</option><option value="1">Oui</option>
-                  </select>
-                  <span class="hint">conditions et limites : cahier des charges de l'AOC Champagne, chapitre I (conditions de production)</span>
-                </div>
-                <div class="field">
-                  <label class="lbl" for="f-coutIrrigHa">Arrosage du plantier (si oui)</label>
-                  <div class="row"><input id="f-coutIrrigHa" type="number" step="500" value="{{ v.coutIrrigHa }}" onInput="{{ on.coutIrrigHa }}" class="inp"><span class="unit">€/ha</span></div>
-                </div>
+                </sc-if>
               </div>
             </div>
           </div>
-
-          <div class="card" style="margin-top:16px">
-            <h3 class="card-h">Entretien en deux temps</h3>
-            <div style="background:var(--alerte-fond);border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.55;max-width:72ch;margin-bottom:14px;color:var(--alerte)">
-              <b>Ne pas inclure l'installation</b> (arrachage, préparation, plants, palissage) : déjà comptée en coûts ponctuels. Ce volet ne couvre que l'entretien récurrent, pendant le repos puis le plantier.
-            </div>
-            <div class="grid">
-              <div class="field">
-                <label class="lbl" for="f-coutReposHaAn">B.1 — Entretien de la parcelle au repos</label>
-                <div class="row"><input id="f-coutReposHaAn" type="number" step="100" min="0" value="{{ v.coutReposHaAn }}" onInput="{{ on.coutReposHaAn }}" class="inp"><span class="unit">€/ha/an</span></div>
-                <span class="hint warn">sol nu ou enherbé entre l'arrachage et la plantation — à renseigner, détail par opération ci-dessous</span>
-              </div>
-              <div class="field">
-                <label class="lbl" for="f-coutPlantierHaAn">B.2 — Entretien du <span class="lex" title="{{ lex.plantier.def }}">plantier</span></label>
-                <div class="row"><input id="f-coutPlantierHaAn" type="number" step="100" min="0" value="{{ v.coutPlantierHaAn }}" onInput="{{ on.coutPlantierHaAn }}" class="inp"><span class="unit">€/ha/an</span></div>
-                <span class="hint">{{ lex.plantier.court }}</span>
-                <span class="hint">MHCS — taille de formation + remplacement des plants morts. Voir le détail par opération ci-dessous.</span>
-              </div>
-            </div>
-
-            <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;margin-top:14px;overflow:hidden">
-              <button onClick="{{ toggleVoletRepos }}" class="fold-btn">
-                <span style="font-size:13.5px;font-weight:600">B.1 — Détail par opération (repos)</span>
-                <span class="hint">— {{ voletReposEnteteTxt }}</span>
-                <span class="fold-sign">{{ voletReposChevron }}</span>
-              </button>
-              <sc-if value="{{ voletReposOuvert }}" hint-placeholder-val="{{ false }}">
-                <div style="padding:0 16px 16px">
-                  <label style="display:flex;align-items:center;gap:8px;font-size:11.5px;cursor:pointer;margin-bottom:12px">
-                    <input type="checkbox" checked="{{ voletReposCourtNoue }}" onChange="{{ toggleReposCourtNoue }}">
-                    Inclure la dévitalisation court-noué (optionnel)
-                  </label>
-                  <div style="overflow-x:auto">
-                    <div style="display:grid;grid-template-columns:1.8fr 0.9fr 1fr 1.8fr;gap:0;font-size:11.5px;min-width:560px">
-                      <div class="th">Opération</div>
-                      <div class="th r">h/ha</div>
-                      <div class="th r">€/ha</div>
-                      <div class="th">Source</div>
-                      <sc-for list="{{ voletReposLignes }}" as="l" hint-placeholder-count="3">
-                        <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire)">{{ l.lib }}</div>
-                        <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
-                        <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
-                        <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire);font-size:11.5px;color:var(--encre-3)">{{ l.src }}</div>
-                      </sc-for>
-                    </div>
-                  </div>
-                  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px">
-                    <span style="font-size:13.5px">Total : <b class="mono">{{ voletReposTotalTxt }}</b></span>
-                    <button onClick="{{ reprendreVoletRepos }}" style="font-size:11.5px;padding:6px 12px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:5px;cursor:pointer">↻ Reprendre cette estimation</button>
-                  </div>
-                </div>
-              </sc-if>
-            </div>
-
-            <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;margin-top:12px;overflow:hidden">
-              <button onClick="{{ toggleVoletPlantier }}" class="fold-btn">
-                <span style="font-size:13.5px;font-weight:600">B.2 — Détail par opération (plantier)</span>
-                <span class="hint">— {{ voletPlantierEnteteTxt }}</span>
-                <span class="fold-sign">{{ voletPlantierChevron }}</span>
-              </button>
-              <sc-if value="{{ voletPlantierOuvert }}" hint-placeholder-val="{{ false }}">
-                <div style="padding:0 16px 16px">
-                  <!-- prompt C1 — la saisie « fraction de formation » est retirée de
-                       l'interface : c'est un coefficient de modélisation (part du
-                       travail d'une vigne adulte que représente la taille de
-                       formation), pas une donnée d'exploitation que l'utilisateur
-                       puisse relever chez lui. Il reste dans state.v, dans inp et
-                       dans le moteur à sa valeur par défaut, et reste affiché dans
-                       la fiche d'audit imprimable — donc auditable, mais plus
-                       proposé à la saisie. -->
-                  <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:12px">Fraction de formation retenue : <b style="font-family:'JetBrains Mono',monospace">{{ fracFormationTxt }}</b> — coefficient de modélisation, détaillé dans la fiche imprimable.</div>
-                  <div style="overflow-x:auto">
-                    <div style="display:grid;grid-template-columns:1.8fr 0.9fr 1fr 1.8fr;gap:0;font-size:11.5px;min-width:560px">
-                      <div class="th">Opération</div>
-                      <div class="th r">h/ha</div>
-                      <div class="th r">€/ha</div>
-                      <div class="th">Source</div>
-                      <sc-for list="{{ voletPlantierLignes }}" as="l" hint-placeholder-count="4">
-                        <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire)">{{ l.lib }}</div>
-                        <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="0.1" min="0" value="{{ l.hHaVal }}" onInput="{{ l.onHInput }}" style="width:70px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
-                        <div style="padding:4px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right"><input type="number" step="1" min="0" value="{{ l.euroHaVal }}" onInput="{{ l.onEInput }}" style="width:80px;padding:5px 7px;border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right"></div>
-                        <div style="padding:6px 6px;border-bottom:1px solid var(--bordure-claire);font-size:11.5px;color:var(--encre-3)">{{ l.src }}</div>
-                      </sc-for>
-                    </div>
-                  </div>
-                  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px">
-                    <span style="font-size:13.5px">Total : <b class="mono">{{ voletPlantierTotalTxt }}</b></span>
-                    <button onClick="{{ reprendreVoletPlantier }}" style="font-size:11.5px;padding:6px 12px;border:1px solid var(--accent);background:var(--accent-fond);border-radius:5px;cursor:pointer">↻ Reprendre cette estimation</button>
-                  </div>
-                </div>
-              </sc-if>
-            </div>
-          </div>
-          </div>
-          </sc-if>
         </div>
       </sc-if>
 
@@ -1965,6 +2144,59 @@ const HYPOTHESES_TOUS = Object.keys(HYPOTHESES_SECTIONS)
 
 const CHAMPS_INVESTISSEMENT = ['coutArrachageHa', 'coutPlant', 'coutPalissageHa', 'coutProtectionHa'];
 
+/* Espacement de piquets sur lequel le relevé LutEnVi 2025 a été établi (2 174
+   piquets/ha). Ce n'est ni une borne réglementaire ni un paramètre de calcul —
+   OAD.coutPalissage compte les piquets à l'espacement RÉELLEMENT saisi, quel
+   qu'il soit. C'est un repère d'affichage : au-delà, le devis dérivé du relevé
+   sous-estime le poste, et l'aide sous le champ le dit. Il vivait jusqu'ici en
+   dur dans le libellé du gabarit ; il est nommé ici pour que l'aide et son
+   seuil ne puissent plus diverger. */
+const ESP_PIQUET_REF = 4.3;   // m
+
+/* Matériel végétal — les variétés plantables en Champagne.
+
+   Ce tableau REMPLACE deux contrôles qui pouvaient se contredire : l'ancien
+   sélecteur « Matériel végétal » (vinifera / Voltis) et l'ancien sélecteur
+   « Cépage » (Pinot noir / Meunier / Chardonnay) du simulateur d'aide au
+   choix. Rien n'empêchait de retenir « vinifera » et « Voltis » en même temps,
+   ou l'inverse. Il n'y a plus qu'une liste, et la nature du matériel —
+   *Vitis vinifera* ou variété résistante VIFA — en est DÉRIVÉE (`vifa`), plus
+   saisie : une variété ne peut plus être des deux natures à la fois.
+
+   `cle` est la valeur stockée dans `state.v.cepage` et la clé de recherche des
+   clones (`OAD.clonesParCepage`) ; `lib` est ce qui s'affiche. Les trois
+   variétés VIFA portent la mention dans leur libellé — c'est l'information qui
+   compte à la sélection, et elle n'a pas à être répétée dans un second champ.
+
+   Ordre : les trois cépages principaux d'abord (l'essentiel de la surface
+   champenoise), puis les variétés rares du cahier des charges, puis les VIFA.
+
+   Orthographe : « Arbane », celle du cahier des charges de l'AOC Champagne —
+   et non « Arbanne », qu'on rencontre aussi. `cepageAffichage()` reconnaît les
+   deux au registre (test sur « ARBAN »), l'écran n'en écrit qu'une.
+
+   Les trois variétés résistantes — Voltis, Orellis, Serelis — sont la liste
+   VIFA confirmée par le commanditaire le 07/09/2026. Cette liste ÉVOLUE : la
+   revérifier à chaque diffusion, c'est le seul entretien que ce tableau
+   demande.
+
+   Le référentiel de CLONES, lui, ne couvre que Chardonnay, Pinot noir et
+   Meunier (42 lignes, Guide 2025 + PlantGrape) : pour les huit autres
+   variétés la table est vide, et l'écran le dit plutôt que de la combler. */
+const VARIETES = [
+  { cle: 'Chardonnay',      lib: 'Chardonnay',           vifa: false },
+  { cle: 'Pinot noir',      lib: 'Pinot noir',           vifa: false },
+  { cle: 'Meunier',         lib: 'Meunier',              vifa: false },
+  { cle: 'Pinot blanc',     lib: 'Pinot blanc',          vifa: false },
+  { cle: 'Pinot gris',      lib: 'Pinot gris',           vifa: false },
+  { cle: 'Arbane',          lib: 'Arbane',               vifa: false },
+  { cle: 'Petit Meslier',   lib: 'Petit Meslier',        vifa: false },
+  { cle: 'Chardonnay rose', lib: 'Chardonnay rose',      vifa: false },
+  { cle: 'Voltis',          lib: 'Voltis (VIFA)',        vifa: true },
+  { cle: 'Orellis',         lib: 'Orellis (VIFA)',       vifa: true },
+  { cle: 'Serelis',         lib: 'Serelis (VIFA)',       vifa: true }
+];
+
 const CLE_STOCKAGE = 'oad-renovamus-v1';
 const VERSION_STOCKAGE = 1;
 
@@ -2075,7 +2307,11 @@ const V_DEFAUTS = {
   // vivent dans le panneau Hypothèses.
   loyerHa: 3000, partRecolte: 33, partCouts: 33,
   nbRangs: 100, ecartRang: 1, ecartPied: 1.10,
-  materiel: 'vinifera', porteGreffe: '41 B', irrigation: '0',
+  // `materiel` (vinifera / Voltis) a quitté state.v : il est DÉRIVÉ de la
+  // variété retenue (VARIETES, ci-dessus). Il n'y a plus rien à persister ni à
+  // restaurer sous cette clé — un instantané écrit par une version antérieure
+  // la porte encore, `fusionnerV` l'ignore sans bruit.
+  porteGreffe: '41 B', irrigation: '0',
   cepage: 'Pinot noir', calcaireActif: 18, profondeurSol: '30-60', drainageSol: 'drainant',
   typeTaille: 'guyot', nbFils: 4, espPiquet: 6,
   repos: '1', coutArrachageHa: 22500, coutPlant: 2.10,
@@ -2122,7 +2358,13 @@ class Component extends DCLogic {
       // visite ? » du temps 1 reste en place, replié, pour qui veut relire le
       // déroulé des trois temps.
       introOuvert: false, lexiqueOuvert: false,
-      aideOuverte: false, detailOuvert: false, magOuvert: false,
+      // Les deux volets du bloc « Références » du temps 2 : arbre d'aide au
+      // choix du porte-greffe, et table des clones du cépage retenu.
+      // `refAideOuverte` est l'ancien `aideOuverte`, renommé pour que les deux
+      // se lisent ensemble. Repliés par défaut, hors instantané localStorage
+      // comme les autres états de navigation.
+      refAideOuverte: false, refClonesOuverte: false,
+      detailOuvert: false, magOuvert: false,
       effortNetOuvert: false,
       // prompt 9 — inversion. Les deux seuls graphiques de l'écran 5 étaient
       // repliés derrière des boutons pendant que les tableaux de chiffres
@@ -2159,13 +2401,14 @@ class Component extends DCLogic {
       // Un instantané antérieur n'en porte pas, d'où le repli explicite plutôt
       // qu'un `||` qui accepterait n'importe quoi.
       theme: (instantane && instantane.theme === THEMES.clair) ? THEMES.clair : THEMES.sombre,
-      // Volets « Ajuster » (prompt B4) — repliés par défaut sur chaque écran.
-      ajusterOuvert3: false, ajusterOuvert4: false,
+      // Les deux volets « Ajuster » du temps 2 (prompt B4) ont été démontés par
+      // le chantier « une décision par carte » : leurs champs sont redevenus
+      // visibles, il n'y a plus d'état de repli à tenir.
       // prompt 3 — le registre parcellaire et l'import de fichier sont deux
       // volets refermés au chargement. Volontairement HORS instantané
       // localStorage : rouvrir l'outil doit redonner un écran 1 court, quel
       // que soit l'état où on l'a laissé. C'est un état de navigation, pas
-      // une donnée de l'utilisateur — même règle que `step` ou `aideOuverte`.
+      // une donnée de l'utilisateur — même règle que `step` ou `refAideOuverte`.
       registreOuvert: false, importOuvert: false,
       // prompt 8 — onglet visible de l'écran de résultats. État d'interface :
       // hors instantané localStorage, comme l'étape courante et les volets.
@@ -2183,7 +2426,13 @@ class Component extends DCLogic {
     this.on = {};
     Object.keys(this.state.v).forEach(k => {
       this.on[k] = (e) => {
-        const val = e.target.value;
+        // `currentTarget` et non `target` : depuis le chantier « une décision
+        // par carte », la durée de repos se choisit sur trois <button
+        // value="1|2|3">, dont le clic peut atterrir sur un enfant (le libellé,
+        // un segment de frise). `currentTarget` désigne toujours l'élément qui
+        // porte le gestionnaire ; pour un <input> ou un <select>, c'est
+        // exactement cet élément — comportement inchangé.
+        const val = (e.currentTarget || e.target).value;
         this.setState(s => {
           const v = { ...s.v, [k]: val };
           let extra = {};
@@ -2551,14 +2800,28 @@ class Component extends DCLogic {
   }
 
   // Les codes ampélographiques du registre (ex. "CHARDONNAY B", "MEUNIER N")
-  // ne correspondent pas aux 3 libellés du sélecteur cépage (Pinot noir /
-  // Meunier / Chardonnay, utilisés pour la fiche clones §15) — reprojection
-  // informative uniquement, sans effet sur le calcul économique.
+  // ne correspondent pas aux libellés du sélecteur de variété (VARIETES,
+  // utilisés pour la table de clones §15) — reprojection informative
+  // uniquement, sans effet sur le calcul économique.
+  //
+  // L'ORDRE DES TESTS COMPTE : « PINOT BLANC B » et « PINOT GRIS G »
+  // contiennent tous deux « PINOT », et « CHARDONNAY ROSE Rs » contient
+  // « CHARDONNAY ». Les cas particuliers passent donc avant les génériques,
+  // sans quoi un pinot blanc du registre s'afficherait en pinot noir.
   cepageAffichage(codeRegistre) {
     const c = String(codeRegistre || '').toUpperCase();
+    if (c.includes('CHARDONNAY') && c.includes('ROSE')) return 'Chardonnay rose';
     if (c.includes('CHARDONNAY')) return 'Chardonnay';
+    if (c.includes('MESLIER')) return 'Petit Meslier';
     if (c.includes('MEUNIER')) return 'Meunier';
+    if (c.includes('PINOT') && c.includes('BLANC')) return 'Pinot blanc';
+    if (c.includes('PINOT') && c.includes('GRIS')) return 'Pinot gris';
+    if (c.includes('FROMENTEAU')) return 'Pinot gris';
     if (c.includes('PINOT')) return 'Pinot noir';
+    if (c.includes('ARBAN')) return 'Arbane';
+    if (c.includes('VOLTIS')) return 'Voltis';
+    if (c.includes('ORELLIS')) return 'Orellis';
+    if (c.includes('SERELIS')) return 'Serelis';
     return codeRegistre || 'Pinot noir';
   }
 
@@ -2960,6 +3223,18 @@ class Component extends DCLogic {
       ? v.cepage
       : (modeRegistre ? this.cepageAffichage(agregParcelle.cepage) : v.cepage);
 
+    // Nature du matériel végétal — DÉRIVÉE de la variété, plus saisie. L'ancien
+    // sélecteur « vinifera / Voltis » vivait à côté du sélecteur de cépage sans
+    // qu'aucun des deux ne contraigne l'autre : on pouvait retenir « vinifera »
+    // et « Voltis » à la fois. Une variété ne peut plus être des deux natures.
+    // Variété inconnue de VARIETES (un code de registre non reprojeté, une
+    // saisie restaurée d'une version antérieure) : traitée comme vinifera,
+    // c'est le cas de très loin le plus probable, et rien de calculé n'en
+    // dépend — la nature du matériel n'entre dans aucun scénario.
+    const varieteRetenue = VARIETES.find(x => x.cle === cepageEffectif) || null;
+    const estVifa = !!(varieteRetenue && varieteRetenue.vifa);
+    const varieteLib = varieteRetenue ? varieteRetenue.lib : String(cepageEffectif || '—');
+
     // Chantier A4 — refonte de la géométrie de parcelle : la longueur/largeur
     // déclarées disparaissent. La surface (surfArr, manuel, ou surface du
     // registre, mode registre) et le nombre de rangs sont désormais SAISIS ;
@@ -3022,7 +3297,7 @@ class Component extends DCLogic {
     // total qu'avant ce chantier.
     let cp = null;
     if (OAD) cp = OAD.coutPalissage(g, null, { espacementPiquet: +v.espPiquet || 6, nbFils: +v.nbFils || 4,
-      optionnelsExclus: s.palisOptionnelsExclus || [] });
+      typeTaille: v.typeTaille, optionnelsExclus: s.palisOptionnelsExclus || [] });
     const coutPalisEffectif = s.palisManuel || !cp ? (+v.coutPalissageHa || 0) : Math.round(cp.totalHa);
 
     // protection du jeune plant dérivée (tuteur + cache-plant, chantier P8) —
@@ -3294,8 +3569,14 @@ class Component extends DCLogic {
       // template les cite au contact du champ ({{ lex.volco.court }}) sans
       // recopier un mot du lexique.
       lex: {},
-      aideOuverte: s.aideOuverte, toggleAide: () => this.setState(st => ({ aideOuverte: !st.aideOuverte })),
-      aideChevron: s.aideOuverte ? '−' : '+',
+      // Bloc « Références » du temps 2 — deux volets repliés par défaut. Le
+      // troisième, « Fiche du porte-greffe retenu », a été retiré : de sa fiche
+      // ne subsiste que l'avertissement, affiché sous le sélecteur de
+      // porte-greffe quand il y en a un (voir `pgAvertBloquant`).
+      refAideOuverte: s.refAideOuverte, toggleRefAide: () => this.setState(st => ({ refAideOuverte: !st.refAideOuverte })),
+      refAideChevron: s.refAideOuverte ? '−' : '+',
+      refClonesOuverte: s.refClonesOuverte, toggleRefClones: () => this.setState(st => ({ refClonesOuverte: !st.refClonesOuverte })),
+      refClonesChevron: s.refClonesOuverte ? '−' : '+',
       detailOuvert: s.detailOuvert, toggleDetail: () => this.setState(st => ({ detailOuvert: !st.detailOuvert })),
       detailChevron: s.detailOuvert ? '−' : '+',
       magOuvert: s.magOuvert, toggleMaG: () => this.setState(st => ({ magOuvert: !st.magOuvert })),
@@ -3455,7 +3736,7 @@ class Component extends DCLogic {
     out.investLibelleCap = investEdite ? 'Votre investissement' : 'Coût de référence Champagne';
     out.investLibelleNote = investEdite
       ? 'établi sur les montants que vous avez saisis'
-      : 'montants de référence Champagne, non modifiés — ouvrez « Ajuster » au temps 2 pour y mettre vos devis';
+      : 'montants de référence Champagne, non modifiés — revenez au temps 2 pour y mettre vos devis';
 
     /* Indicateur des 11 repères. Un repère « encore d'exemple » est un repère
        jamais édité. En mode registre, les repères dérivés du fichier de
@@ -3489,39 +3770,13 @@ class Component extends DCLogic {
       });
     };
 
-    /* Volets « Ajuster » — un par écran, repliés par défaut. Chaque en-tête
-       affiche en résumé les valeurs qu'il cache : replier ne doit jamais
-       enterrer un chiffre qui pilote le calcul (même principe que
-       chargesProdResumeTxt, qui existait déjà). */
+    /* Volets « Ajuster » — il n'en reste aucun. Le temps 1 avait perdu le sien
+       (loyer et parts de métayage dans le panneau Hypothèses, nombre de rangs
+       remonté dans la carte « Géométrie de la parcelle ») ; le chantier « une
+       décision par carte » a démonté les deux du temps 2, dont les champs sont
+       redevenus visibles. Un volet vide ne reste pas à l'écran, et ses valeurs
+       dérivées non plus. */
     const eur0 = (x) => nf(Math.round(+x || 0), 0) + ' €';
-    // Le volet « Ajuster » de l'écran 1 a disparu à son tour : la réserve
-    // individuelle était déjà remontée dans la carte « La composition de votre
-    // vignoble », et la campagne de référence n'est plus paramétrable
-    // (CAMPAGNE_COURANTE). Plus de volet, donc plus de résumé ni de chevron.
-
-    // prompt 12 — le volet « Ajuster » du temps 1 a disparu : le loyer et les
-    // parts de métayage sont dans le panneau Hypothèses, le nombre de rangs
-    // est remonté dans la carte « Géométrie de la parcelle ». Un volet vide
-    // ne reste pas à l'écran, et ses valeurs dérivées non plus.
-
-    out.ajusterOuvert3 = s.ajusterOuvert3;
-    out.toggleAjuster3 = () => this.setState(st => ({ ajusterOuvert3: !st.ajusterOuvert3 }));
-    out.ajusterChevron3 = s.ajusterOuvert3 ? '−' : '+';
-    out.ajusterResume3 = cepageEffectif + ' · ' + v.porteGreffe + ' · ' + v.materiel
-      + ' · ' + v.typeTaille + ', ' + nf(+v.nbFils || 0, 0) + ' fils'
-      + ' · pleine production en ' + nf(+v.anneePleineProd || 0, 0) + 'e année'
-      + ' · calcaire actif ' + nf(+v.calcaireActif || 0, 0) + ' %';
-
-    out.ajusterOuvert4 = s.ajusterOuvert4;
-    out.toggleAjuster4 = () => this.setState(st => ({ ajusterOuvert4: !st.ajusterOuvert4 }));
-    out.ajusterChevron4 = s.ajusterOuvert4 ? '−' : '+';
-    // prompt 10 — palissage et protection sont partis dans le panneau
-    // Hypothèses (ce sont des tarifs sourcés, pas des choix de projet) ;
-    // l'en-tête n'annonce plus que ce qu'il cache réellement.
-    out.ajusterResume4 = 'arrachage ' + eur0(v.coutArrachageHa) + '/ha · plant '
-      + nf(+v.coutPlant || 0, 2) + ' €/pied · entretien plantier '
-      + eur0(v.coutPlantierHaAn) + '/ha/an'
-      + (String(v.irrigation) === '1' ? ' · arrosage ' + eur0(v.coutIrrigHa) + '/ha' : '');
 
     // Bandeau climatique de l'écran 5 — prompt B3 (arbitrage 8).
     //
@@ -3609,7 +3864,8 @@ class Component extends DCLogic {
       { lib: 'Densité de plantation', val: nf(g.densite, 0), unite: 'pieds/ha', origine: 'Dérivé — 10 000 / (écart rang × écart pied), arrondi avant multiplication par la surface' },
       { lib: 'Surface réelle de la parcelle', val: nf(inp.surfParc, 4), unite: 'ha', origine: modeRegistre ? `Dérivé du registre — somme des lignes retenues (idu ${s.parcelleIdu})` : 'Saisi — v.surfArr' },
       { lib: 'Nombre de pieds à planter', val: nf(piedsAffiches, 0), unite: 'pieds', origine: 'Dérivé — densité × surface (comptage agronomique) ; distinct du comptage rang par rang utilisé pour le palissage' },
-      { lib: 'Matériel végétal', val: v.materiel, unite: '—', origine: 'Saisi' },
+      { lib: 'Matériel végétal (variété)', val: varieteLib, unite: '—', origine: s.champsTouches.cepage ? 'Saisi' : (modeRegistre ? 'Dérivé du registre — cépage dominant des lignes retenues, reprojeté' : 'Saisi') },
+      { lib: 'Nature du matériel végétal', val: estVifa ? 'Variété résistante (VIFA)' : 'Vitis vinifera', unite: '—', origine: 'Dérivé — table VARIETES ; n\'entre dans aucun scénario' },
       { lib: 'Porte-greffe', val: v.porteGreffe, unite: '—', origine: 'Saisi — information, hors calcul économique' },
       { lib: 'Arrosage du plantier', val: oui(inp.irrigation), unite: '—', origine: 'Saisi' },
       { lib: 'Année de pleine production', val: nf(anneePleineProd, 0), unite: 'années', origine: 'Saisi — borne basse 3 (entrée en production, 3e feuille)' },
@@ -3762,17 +4018,24 @@ class Component extends DCLogic {
       : '⚠ Hors cahier des charges : ' + [!g.aoc.rang ? 'rang > 2,00 m' : '', !g.aoc.pied ? 'pied hors 0,70–1,50 m' : '', !g.aoc.somme ? 'somme > 3,00 m' : ''].filter(Boolean).join(' · ');
     out.aocBadge = aocOK ? '✓ conforme' : '⚠ non conforme';
 
-    // PG info
+    // PG info — la fiche du porte-greffe retenu a été retirée du bloc
+    // Références. Ce qui en reste est le seul AVERTISSEMENT, affiché sous le
+    // sélecteur quand le porte-greffe en porte un : c'est le cas du 161-49 C,
+    // déconseillé (dépérissements signalés depuis 2008). L'arbre d'aide au
+    // choix ne le dit pas à sa place — il ne commente que les porte-greffes
+    // qu'il RECOMMANDE, et un porte-greffe déconseillé n'y figure pas.
+    // `PG_INFO` reste entier : c'en est la source, et la description longue
+    // sert de nouveau si la fiche revient un jour.
     const pgi = this.PG_INFO[v.porteGreffe] || ['', ''];
-    out.pgTitre = v.porteGreffe;
-    out.pgDesc = pgi[0];
     out.pgAvert = pgi[1];
-    out.pgNoteBg = pgi[1].startsWith('⚠') ? 'var(--alerte-fond)' : 'var(--vegetal-fond)';
+    out.pgAvertBloquant = pgi[1].startsWith('⚠');
 
     // conséquences — chantier B4 : VSL/Traditionnelle et Fil porteur retirés
     // (dépendaient du détecteur `vsl`, lui-même retiré de la géométrie)
+    // La conséquence VIFA n'est plus un badge : elle est dite sous le sélecteur
+    // de variété, au contact du choix qui la déclenche (materielNatureTxt).
+    // Elle serait ici à deux cartes de distance de ce qu'elle commente.
     const conseqs = [];
-    if (v.materiel === 'voltis') conseqs.push({ titre: 'Voltis (VIFA)', detail: '≤ 5 % encépagement · +10 % assemblage max · convention INAO/ODG' });
     // prompt B7 — le badge « interdite en AOC » est remplacé par le renvoi au
     // cahier des charges : c'est la source, et c'est elle qui fait foi.
     if (v.irrigation === '1') conseqs.push({ titre: 'Arrosage du plantier', detail: "cahier des charges de l'AOC Champagne, chapitre I — conditions de production" });
@@ -3814,10 +4077,32 @@ class Component extends DCLogic {
         alerteTxt: 'mutations réverses'
       };
     });
-    out.clonesTitre = `${cl.length} clones — ${cepageEffectif}`;
+    /* Le référentiel de clones ne couvre QUE les trois cépages principaux
+       (Guide 2025 + PlantGrape, 42 lignes). Les huit autres variétés du
+       sélecteur — pinot blanc, pinot gris, arbane, petit meslier, chardonnay
+       rose, et les trois VIFA — n'y ont aucune ligne. La table n'est alors ni
+       affichée vide, ni comblée : l'écran dit ce qui manque et où le chercher.
+       C'est la même règle que les cellules vides de la table elle-même. */
+    const clonesAucun = cl.length === 0;
+    out.clonesAucun = clonesAucun;
+    out.clonesTitre = clonesAucun
+      ? `Clones — ${varieteLib}`
+      : `${cl.length} clones — ${cepageEffectif}`;
+    out.refClonesResumeTxt = clonesAucun
+      ? 'aucune ligne au référentiel retenu'
+      : 'Guide 2025 (p. 42-44) et PlantGrape · échelle qualitative';
+    out.clonesAucunTxt = `Le référentiel retenu — Guide pratique Viticulture durable `
+      + `en Champagne 2025 (p. 42-44) et PlantGrape — ne documente que le Chardonnay, `
+      + `le Pinot noir et le Meunier. Aucune ligne n'est inventée pour ${varieteLib} : `
+      + `se reporter au catalogue officiel des variétés (FranceAgriMer / IFV), à `
+      + `plantgrape.fr, ou aux données du Comité Champagne.`;
+    // La réserve « information seule, hors calcul » est portée UNE fois, par
+    // l'en-tête du bloc Références : elle était répétée ici, sous le
+    // porte-greffe et dans le résumé du volet des clones. Ce qui reste ici est
+    // ce que l'en-tête ne dit pas — la source et sa datation incertaine.
     out.clonesSourceTxt = 'Union du Guide pratique Viticulture durable en Champagne 2025 (p. 42-44) '
       + 'et de PlantGrape (INRAE / IFV / Institut Agro Montpellier). Relevé PlantGrape non daté, '
-      + 'à confirmer avant diffusion. Information seule : aucune de ces colonnes n’entre dans le calcul économique.';
+      + 'à confirmer avant diffusion.';
     if (OAD) {
       const r = OAD.preconPorteGreffe(+v.calcaireActif, v.profondeurSol, v.drainageSol);
       if (r.match === 'incomplet') { out.preconPg = '—'; out.preconMsg = 'Renseignez le calcaire actif et la profondeur.'; out.preconBg = 'var(--vegetal-fond)'; }
@@ -3832,24 +4117,193 @@ class Component extends DCLogic {
     // palissage détail — chantier A5 : chaque ligne porte sa catégorie
     // (obligatoire/optionnel) ; seules les lignes optionnelles affichent une
     // case à cocher (obligatoires toujours comptées, non décochables).
+    //
+    // Chantier « une décision par carte » : les huit lignes se lisent en barres
+    // proportionnelles, triées par total décroissant — une liste de huit
+    // chiffres ne dit pas lequel pèse. Le tri et la largeur des barres sont de
+    // la MISE EN FORME ; quantités, prix unitaires et totaux viennent tous de
+    // OAD.coutPalissage, rien n'est recalculé ici.
     if (cp) {
-      out.palisLignes = cp.lignes.map(l => ({
-        lib: l.lib, qte: Math.round(l.qte).toLocaleString('fr-FR'), tot: this.fmtE0(l.total),
-        optionnel: l.categorie === 'optionnel', inclus: l.inclus,
+      const maxLigne = Math.max(1, ...cp.lignes.map(l => l.total));
+      out.palisBarres = cp.lignes.slice()
+        .sort((a, b) => b.total - a.total)
+        .map(l => ({
+          lib: l.lib,
+          qte: Math.round(l.qte).toLocaleString('fr-FR'),
+          eur: l.inclus ? this.fmtE0(l.total) : 'exclu',
+          largeur: Math.round(l.total / maxLigne * 100) + '%',
+          bg: l.categorie === 'optionnel' ? 'var(--accent-fonce)' : 'var(--vegetal)',
+          fg: l.inclus ? 'var(--encre-2)' : 'var(--encre-4)'
+        }));
+      const optionnelles = cp.lignes.filter(l => l.categorie === 'optionnel');
+      out.palisOptionnels = optionnelles.map(l => ({
+        libCase: 'Inclure les ' + l.lib.toLowerCase()
+          + (optionnelles.length === 1 ? ' (seule ligne optionnelle)' : ' (ligne optionnelle)'),
+        inclus: l.inclus,
         toggle: () => this.setState(st => ({
           palisOptionnelsExclus: st.palisOptionnelsExclus.includes(l.id)
             ? st.palisOptionnelsExclus.filter(id => id !== l.id)
             : [...st.palisOptionnelsExclus, l.id]
         }))
       }));
-      out.palisTotalHa = this.fmtE0(cp.totalHa);
+      out.palisTotalHaTxt = this.fmtE0(cp.totalHa) + '/ha';
       out.palisDetailTxt = `soit ${this.fmtE(coutPalisEffectif * surfParcResolu)} sur ${this.fmtHa(surfParcResolu)} ha · piquets tous les ${v.espPiquet} m · ${v.nbFils} fils/rang`;
-    } else { out.palisLignes = []; out.palisTotalHa = '—'; out.palisDetailTxt = ''; }
+    } else { out.palisBarres = []; out.palisOptionnels = []; out.palisTotalHaTxt = '—'; out.palisDetailTxt = ''; }
 
     // protection du jeune plant — détail (chantier P8)
     if (cprot) {
       out.protectionDetailTxt = `tuteur ${this.fmtE(cprot.tuteurHa)}/ha + cache-plant ${this.fmtE(cprot.cachePlantHa)}/ha à ${nf(g.densite, 0)} pieds/ha · soit ${this.fmtE(coutProtectionEffectif * surfParcResolu)} sur ${this.fmtHa(surfParcResolu)} ha`;
-    } else { out.protectionDetailTxt = ''; }
+      out.protectionTotalHaTxt = this.fmtE0(cprot.totalHa) + '/ha';
+    } else { out.protectionDetailTxt = ''; out.protectionTotalHaTxt = '—'; }
+
+    /* =================================================================
+       TEMPS 2 — « une décision par carte » : les valeurs des quatre
+       dessins.
+
+       MISE EN FORME UNIQUEMENT. Chronologie, déblocages, année de retour et
+       montée en charge viennent du moteur (phasesParcelle,
+       nbSortiePourRepos, anneeRetourProduction, rampeLineaire) ; ce bloc ne
+       fait qu'en dériver des largeurs, des couleurs et des libellés.
+       ================================================================= */
+
+    // Couleurs des quatre phases, en jetons : la frise de la décision 1 et sa
+    // légende lisent la même table, un segment ne peut donc pas prendre une
+    // teinte que la légende ne nomme pas.
+    const COUL_PHASE_T2 = {
+      arrachage:  { bg: 'var(--alerte-fond)',   bd: 'var(--alerte)' },
+      repos:      { bg: 'var(--surface-basse)', bd: 'var(--bordure)' },
+      plantier:   { bg: 'var(--accent-fond)',   bd: 'var(--accent-fond-bordure)' },
+      production: { bg: 'var(--vegetal-fond)',  bd: 'var(--vegetal)' }
+    };
+    out.friseAnnees = Array.from({ length: inp.horizon + 1 }, (_, t) => ({ court: String(t) }));
+    out.friseLegende = [
+      { lib: 'arrachage', ...COUL_PHASE_T2.arrachage },
+      { lib: 'repos', ...COUL_PHASE_T2.repos },
+      { lib: 'plantier', ...COUL_PHASE_T2.plantier },
+      { lib: 'production', ...COUL_PHASE_T2.production }
+    ];
+    // Une frise par durée possible, construite comme celle du temps 3 : mêmes
+    // segments, mêmes bornes, donc la même chronologie racontée deux fois.
+    // Les segments ne portent AUCUN libellé (à 1/11 de la largeur, un texte est
+    // tronqué) : leur nom est dans le title et dans la légende.
+    out.choixRepos = [1, 2, 3].map(r => {
+      const segs = (OAD ? OAD.phasesParcelle(r, inp.horizon) : []).map(p => {
+        const duree = p.fin - p.debut;
+        const c = COUL_PHASE_T2[p.id] || COUL_PHASE_T2.production;
+        return { flex: duree, bg: c.bg, bd: c.bd,
+          titre: p.lib + (duree > 1 ? ' — années ' + p.debut + ' à ' + (p.fin - 1)
+                                    : ' — année ' + p.debut) };
+      });
+      const nbS = OAD ? OAD.nbSortiePourRepos(r) : r + 2;
+      const retour = OAD ? OAD.anneeRetourProduction(r) : r + 3;
+      const titre = r === 1 ? '1 an' : r + ' ans';
+      return {
+        val: String(r), titre, segs,
+        actif: r === reposChoisi ? 'true' : 'false',
+        // L'id du chemin court suit la valeur courante : « reprendre au premier
+        // repère » doit atterrir sur un bouton visible et focusable.
+        id: r === reposChoisi ? 'f-repos' : 'f-repos-' + r,
+        aria: titre + ' de repos du sol — ' + nbS + ' déblocages de réserve, retour en production an ' + retour,
+        bg: r === reposChoisi ? 'var(--accent-fond)' : 'var(--surface-haute)',
+        bd: r === reposChoisi ? 'var(--accent)' : 'var(--bordure)'
+      };
+    });
+    const anRetourT2 = OAD ? OAD.anneeRetourProduction(reposChoisi) : reposChoisi + 3;
+    const anPleineProdT2 = reposChoisi + anneePleineProd;
+    out.nbSortieTxt = nf(inp.nbSortie, 0);
+    out.anRetourTxt = String(anRetourT2);
+    out.anPleineProdTxt = String(anPleineProdT2);
+
+    // Décision 2 — profil de montée en charge. `pct` n'est pas recalculé :
+    // c'est rampeProfil (OAD.rampeLineaire), indexé depuis l'année de retour en
+    // production. L'étiquette n'est écrite que sur les années de la montée :
+    // au-delà, une colonne de « 100 % » répétés n'ajoute rien et se chevauche.
+    const montee = [];
+    for (let t = reposChoisi; t <= Math.min(inp.horizon, anPleineProdT2 + 2); t++) {
+      const k = t - anRetourT2;
+      const pct = k < 0 ? 0 : (rampeProfil[k] !== undefined ? rampeProfil[k] : 1);
+      const dansRampe = t >= anRetourT2 && t <= anPleineProdT2;
+      montee.push({
+        an: 'an ' + t,
+        pct: dansRampe ? nf(pct * 100, 0) + ' %' : '',
+        h: Math.max(2, Math.round(pct * 86)) + 'px',
+        bg: pct >= 1 ? 'var(--vegetal)' : (pct > 0 ? 'var(--accent-fonce)' : 'var(--bordure-claire)'),
+        fg: pct > 0 ? 'var(--encre-3)' : 'var(--encre-4)',
+        fgAn: (t === anRetourT2 || t === anPleineProdT2) ? 'var(--accent)' : 'var(--encre-4)'
+      });
+    }
+    out.montee = montee;
+    // Les quatre valeurs usuelles en boutons, le champ numérique pour toutes
+    // les autres. Les deux écrivent `v.anneePleineProd` par le MÊME chemin —
+    // `this.on.anneePleineProd` — donc avec le même marquage de champsTouches.
+    out.choixApp = [4, 5, 6, 8].map(n => ({
+      lib: n + 'e',
+      aria: 'pleine production en ' + n + 'e année',
+      actif: n === anneePleineProd ? 'true' : 'false',
+      bg: n === anneePleineProd ? 'var(--accent-fond)' : 'var(--surface-haute)',
+      fg: n === anneePleineProd ? 'var(--encre)' : 'var(--encre-3)',
+      go: () => this.on.anneePleineProd({ currentTarget: { value: String(n) } })
+    }));
+
+    // Décision 3 — rappel de la géométrie active et garde-fou d'espacement.
+    // Les écartements se lisent toujours à deux décimales (1,00 × 1,10 m), même
+    // quand elles sont nulles : c'est la forme sous laquelle ils sont saisis au
+    // temps 1, et deux écritures différentes du même écartement se lisent comme
+    // deux valeurs.
+    const ecart = (x) => (+x || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    out.geoRappelTxt = `${nf(g.nbRangs, 0)} rangs de ${this.fmtM(g.L)} m, `
+      + `${ecart(g.eR)} × ${ecart(g.eP)} m — géométrie du temps 1`;
+    const espSaisi = +v.espPiquet || 0;
+    out.espHintTxt = espSaisi > ESP_PIQUET_REF
+      ? `référence LutEnVi ≈ ${nf(ESP_PIQUET_REF, 1)} m — à ${nf(espSaisi, 2)} m, le coût du palissage est sous-estimé`
+      : `référence LutEnVi ≈ ${nf(ESP_PIQUET_REF, 1)} m`;
+    out.espHintFg = espSaisi > ESP_PIQUET_REF ? 'var(--alerte)' : 'var(--encre-3)';
+
+    // Décision 4 — bande de durées. Les largeurs sont les durées des trois
+    // sous-phases telles que le moteur les facture (OAD.chargesEntretien :
+    // repos sur [0, repos[, plantier sur [repos, repos + rampYears[, production
+    // ensuite), les chiffres les charges annuelles saisies. Le troisième bloc
+    // est un REPÈRE : il montre la charge de référence du panneau Hypothèses,
+    // il n'ajoute aucun coût au projet.
+    const dureePlantier = inp.rampYears;
+    out.flexRepos = reposChoisi;
+    out.flexPlantier = dureePlantier;
+    out.flexProd = Math.max(1, inp.horizon - reposChoisi - dureePlantier);
+    const ansT2 = (n) => n <= 1 ? '1 an' : n + ' ans';
+    out.dureeReposTxt = ansT2(reposChoisi);
+    out.dureePlantierTxt = ansT2(dureePlantier);
+    out.chargeReposTxt = eur0(v.coutReposHaAn) + '/ha/an';
+    out.chargePlantierTxt = eur0(v.coutPlantierHaAn) + '/ha/an';
+    out.chargeProdTxt = eur0(v.coutSurfaceProdHaAn) + '/ha/an';
+    const reposRenseigne = (+v.coutReposHaAn || 0) > 0;
+    out.reposHintTxt = reposRenseigne
+      ? "sol nu ou enherbé entre l'arrachage et la plantation"
+      : "sol nu ou enherbé entre l'arrachage et la plantation — à renseigner, détail par opération ci-dessous";
+    out.reposHintFg = reposRenseigne ? 'var(--encre-3)' : 'var(--alerte)';
+
+    // Bandeau des quatre décisions — il dit ce qui est déjà décidé, rien de
+    // plus : aucun montant de synthèse au temps 2 (l'investissement, la réserve
+    // mobilisée et l'effort net restent au temps 3).
+    out.jalons = [
+      { num: '1', lib: 'Repos du sol', val: out.dureeReposTxt },
+      { num: '2', lib: 'Pleine production', val: anneePleineProd + 'e année' },
+      { num: '3', lib: 'Palissage', val: out.palisTotalHaTxt },
+      { num: '4', lib: 'Entretien', val: out.chargePlantierTxt }
+    ];
+
+    // Références — chaque en-tête de volet annonce son contenu, pour qu'on
+    // sache ce qu'on ouvre sans avoir à l'ouvrir.
+    //
+    // Nature du matériel végétal : dite sous le sélecteur, une ligne, plutôt
+    // que dans un second champ à tenir cohérent avec le premier.
+    out.materielNatureTxt = estVifa
+      ? 'variété résistante (VIFA) — ≤ 5 % de l’encépagement · +10 % d’assemblage au maximum · convention INAO/ODG'
+      : 'Vitis vinifera — cépage du cahier des charges de l’AOC Champagne';
+    const LIB_PROFONDEUR = { '<30': 'superficiel (< 30 cm)', '30-60': 'assez profond (30-60 cm)', '>60': 'profond (> 60 cm)' };
+    const LIB_DRAINAGE = { sec: 'sol sec', drainant: 'sol drainant', humide: 'humide au printemps' };
+    out.refAideResumeTxt = 'calcaire ' + nf(+v.calcaireActif || 0, 0) + ' % · sol '
+      + (LIB_PROFONDEUR[v.profondeurSol] || v.profondeurSol) + ' · '
+      + (LIB_DRAINAGE[v.drainageSol] || v.drainageSol) + ' → ' + out.preconPg;
 
     // Bloc 1 (écran 5, chantier B5) — récapitulatif technique : ce qui est
     // arraché puis replanté. Ne recalcule rien : reprend des grandeurs déjà
@@ -3858,7 +4312,7 @@ class Component extends DCLogic {
     out.recapSurfaceTxt = this.fmtHa(surfParcResolu) + ' ha';
     out.recapDensiteTxt = nf(g.densite, 0) + ' pieds/ha';
     out.recapPiedsTxt = nf(piedsAffiches, 0) + ' pieds à planter';
-    out.recapMaterielTxt = (v.materiel === 'voltis' ? 'Voltis' : 'Vinifera') + ' — porte-greffe ' + v.porteGreffe;
+    out.recapMaterielTxt = varieteLib + (estVifa ? '' : ' (Vitis vinifera)') + ' — porte-greffe ' + v.porteGreffe;
     out.recapPalissageTxt = cp
       ? `${v.nbFils} fils/rang · piquets tous les ${v.espPiquet} m · ${cp.lignes.filter(l => l.inclus).length}/${cp.lignes.length} postes comptés`
       : '—';

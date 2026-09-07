@@ -34,6 +34,7 @@ chiffrée se met à jour en continu dans la colonne de droite.
     - [3bis. Conventions d'interface — classes CSS et panneaux d'aide](#3bis-conventions-dinterface--classes-css-et-panneaux-daide)
     - [3ter. Refonte d'interface — les 14 prompts (lot 1a / 1b / 1c)](#3ter-refonte-dinterface--les-14-prompts-lot-1a--1b--1c)
 4. [Le parcours en 3 temps](#4-le-parcours-en-3-temps)
+    - [4bis. Le temps 2 — une décision par carte](#4bis-le-temps-2--une-décision-par-carte)
 5. [Le flux de données, de la frappe au résultat](#5-le-flux-de-données-de-la-frappe-au-résultat)
 6. [Glossaire des champs de saisie](#6-glossaire-des-champs-de-saisie)
     - [6bis. Le registre parcellaire — seule source des surfaces et des âges](#6bis-le-registre-parcellaire--seule-source-des-surfaces-et-des-âges)
@@ -242,6 +243,11 @@ d'attributs), donc la syntaxe HTML normale suffit — rien à adapter.
 | `.fold` / `.fold-btn` / `.fold-sign` / `.fold-body` | volet repliable (voir ci-dessous) |
 | `.th` / `.th.r` | en-tête de colonne d'un tableau en grille |
 | `.mono` / `.eyebrow` | chiffre en chasse fixe / surtitre d'étape |
+| `.dec-grid` / `.dec-large` | grille des cartes de décision du temps 2 (§4bis) ; `.dec-large` occupe toute la largeur |
+| `.dec` / `.dec-h` / `.dec-num` / `.dec-pied` | carte de décision, son en-tête, son surtitre `DÉCISION N`, son pied séparé d'un filet pointillé |
+| `.dec3` | grille interne de la décision 3 : contrôles à gauche, lignes de palissage à droite |
+| `.jalons` / `.jalon` | bandeau des quatre décisions et l'un de ses pavés |
+| `.seg-groupe` / `.seg-btn` | groupe de boutons segmentés et l'un de ses boutons |
 
 Les `style=` restants sont ceux qui sont **uniques à un élément** ou qui
 portent une **valeur calculée** `{{ }}` (couleurs d'état, largeurs de
@@ -503,7 +509,7 @@ l'ensemble des champs à tout moment.
 | # | Temps | Sections | Contenu |
 |---|---|---|---|
 | 1 | **La parcelle** | *Votre exploitation* + *La parcelle désignée* | Registre parcellaire (bandeau replié, importable, corrigeable et complétable ligne à ligne — §6bis), surface totale et âge moyen **dérivés du registre**, VolCo, prix du raisin. Puis la **géométrie de la parcelle** avec son **schéma dessiné pendant la saisie** (§16) : surface arrachée (du registre), écart entre rangs, écart entre pieds, nombre de rangs — seuls champs saisis ; longueur de rang, densité, pieds à planter, conformité des écartements et **conformité de la densité aux bornes AOC** en sont déduits, jamais saisis. Puis âge, taux de pieds manquants et **régime de faire-valoir**, tous trois **dérivés du registre** (§6ter), et rendement estimé. |
-| 2 | **Le projet** | *Ce que vous replantez* + *Ce que cela coûte* | Simulateur d'aide au choix du matériel végétal (cépage / calcaire / profondeur / drainage, arbre porte-greffe, table clones — informatif, §15), matériel végétal et porte-greffe, palissage et conduite dérivés de la géométrie du temps 1 (§14). Puis la durée de repos du sol, les investissements liés à la parcelle (arrachage et préparation, plants, arrosage du plantier) et l'entretien en deux temps (B.1 repos, B.2 plantier). Les **tarifs** de palissage et de protection sont dans le panneau Hypothèses, pas ici : ce sont des références sourcées, pas des choix de projet. |
+| 2 | **Le projet** | *Quatre décisions, puis les références* (§4bis) | **Quatre cartes de décision**, chacune portant son propre dessin : durée de repos du sol (trois frises), année de pleine production (profil de montée en charge), palissage et conduite dérivés de la géométrie du temps 1 (§14, huit lignes en barres), entretien de la transition (bande de durées B.1 repos / B.2 plantier). Puis les **investissements ponctuels** (arrachage et préparation, plants, arrosage du plantier) et le bloc **Références** — variété plantée (11 options, des trois cépages principaux aux variétés VIFA) et porte-greffe, arbre d'aide au choix (calcaire / profondeur / drainage), table des clones de la variété retenue (informatif, §15). Les **tarifs** de palissage et de protection sont dans le panneau Hypothèses, pas ici : ce sont des références sourcées, pas des choix de projet. |
 | 3 | **La trajectoire** | *Résultats* | **Trois chiffres de tête** en 36 px, puis la **frise de trajectoire** (§18bis), puis le bandeau climatique non repliable, les deux boutons d'impression, la synthèse rédigée et les réglages d'affichage (vue de faire-valoir, mode main d'œuvre, test de résistance). Le bloc « Ce que le renouvellement produit » garde les KPI physiques et les deux graphiques, **affichés par défaut**. Le détail descend dans **cinq onglets** (§3ter). Hors onglets, en bas : annexe technique (détail annuel), volet « hypothèses de comparaison » portant `declinSQ`, tableau du manque à gagner. |
 
 La colonne de droite (`<aside>`, « Synthèse en continu ») est masquée pendant
@@ -512,6 +518,111 @@ qu'on décrit la parcelle (temps 1) et réapparaît dès le temps 2
 résultats (surface, densité, pieds à planter, conformité AOC, investissement,
 réserve mobilisée, effort net, tension de trésorerie, réserve minimale) et
 propose un raccourci direct vers le temps 3.
+
+### 4bis. Le temps 2 — une décision par carte
+
+> **Chantier « une décision par carte » (direction 1c v2).** Le temps 2
+> s'ouvrait sur un titre, un paragraphe et **deux volets « Ajuster » refermés** :
+> hormis le sélecteur de durée de repos, aucun contenu n'était visible, et
+> l'écran ne portait **aucun graphique** — alors que le temps 1 dessine sa
+> parcelle et le temps 3 sa frise. Le même contenu se range désormais en
+> **quatre décisions, chacune portant son propre dessin**, suivies des
+> investissements ponctuels et d'un bloc « Références » qui accueille tout ce
+> qui est information hors calcul. **Aucun champ n'est supprimé ni rendu
+> inaccessible** ; un test de parité le vérifie clé par clé.
+
+Trois arbitrages tenus par cette refonte :
+
+1. **Les volets « Ajuster » sont démontés** — les cartes redeviennent visibles.
+   Il ne reste aucun volet « Ajuster » dans l'outil (celui du temps 1 avait
+   disparu au prompt 12) ; `ajusterOuvert3` / `ajusterOuvert4` et leurs valeurs
+   dérivées ont quitté `state` et `renderVals()`.
+2. **Aucun montant de synthèse au temps 2** : l'investissement total, la réserve
+   mobilisée et l'effort net restent au temps 3. Le temps 2 n'affiche que les
+   valeurs de ses propres champs et le total du palissage, qui y est calculé.
+3. **Rien n'a bougé dans le moteur.** Toutes les grandeurs de l'écran existaient
+   déjà ; aucune fonction n'a été ajoutée à `moteur-oad.js`, aucune formule n'a
+   été recodée dans `index.html`.
+
+Les deux anciennes sections (`estEtape2` « Ce que vous replantez » et
+`estEtape3` « Ce que cela coûte ») fusionnent en **un seul flux** rendu sous le
+seul `sc-if estEtape2`. Le remappage des booléens est **inchangé**
+(`estEtape2 = estEtape3 = step === 1`, §4) : c'est le bloc `estEtape3` du
+gabarit qui a disparu, faute de contenu propre.
+
+**Le bandeau d'entrée** — quatre pavés (numéro, libellé, valeur retenue) — dit
+ce qui est déjà décidé. Ce n'est pas une navigation, et il ne porte aucun lien :
+l'outil ne met jamais rien dans l'URL (§19bis).
+
+| Décision | Le dessin | Sa source dans le moteur |
+|---|---|---|
+| 1 · Combien de temps laisser le sol au repos | Trois frises de 11 années, une par durée : on choisit **dans** le dessin | `OAD.phasesParcelle(repos, horizon)` — la même découpe que la frise du temps 3 (§18bis), pour que les deux écrans racontent la même chronologie. Conséquences : `OAD.nbSortiePourRepos`, `OAD.anneeRetourProduction` |
+| 2 · Quand la vigne produira à plein | Profil de montée en charge en barres, de l'année de repos à la pleine production | `OAD.rampeLineaire(anneePleineProd)` — c'est `inp.ramp`, indexé depuis l'année de retour en production ; le pourcentage n'est **jamais** recalculé ici |
+| 3 · Comment le rang sera équipé | Les huit lignes de palissage en **barres proportionnelles**, triées par total décroissant | `OAD.coutPalissage(g, null, {espacementPiquet, nbFils, typeTaille, optionnelsExclus})` (§14). Le tri et la largeur des barres sont de la mise en forme ; quantités, prix unitaires et totaux viennent du moteur |
+| 4 · Ce que la parcelle coûte pendant la transition | Bande de trois durées (repos, plantier, production) : les **largeurs sont les durées**, les chiffres les charges annuelles | Les trois sous-phases telles que `OAD.chargesEntretien` les facture : repos sur `[0, repos[`, plantier sur `[repos, repos + rampYears[`, production ensuite. Le troisième bloc est un **repère** (charge de référence du panneau Hypothèses) : bordure pointillée, il n'ajoute aucun coût au projet |
+
+Les segments de frise ne portent **aucun libellé** : à 1/11 de la largeur, un
+texte est systématiquement tronqué. Leur nom est dans le `title` et dans la
+légende, rappelée une fois sous les trois frises — même règle que la frise du
+temps 3 (§18bis).
+
+**Deux points d'implémentation méritent d'être connus avant d'y toucher :**
+
+- **La durée de repos se choisit sur trois `<button value="1|2|3">`** qui
+  appellent le **même** gestionnaire que l'ancien `<select>` (`on.repos`), donc
+  le même marquage de `champsTouches`. Le gestionnaire générique lit désormais
+  `e.currentTarget.value` et non `e.target.value` : le clic peut atterrir sur un
+  enfant du bouton (le libellé, un segment de frise), alors que `currentTarget`
+  désigne toujours l'élément qui porte le gestionnaire — pour un `<input>` ou un
+  `<select>`, c'est exactement cet élément, comportement inchangé.
+  L'`id` **`f-repos` suit la valeur courante** (les deux autres boutons prennent
+  `f-repos-2`, `f-repos-3`) : c'est la cible du chemin court « reprendre au
+  premier repère » (§6), qui doit atterrir sur un contrôle visible et focusable.
+- **L'année de pleine production a deux contrôles pour un seul champ** : quatre
+  boutons segmentés (4ᵉ, 5ᵉ, 6ᵉ, 8ᵉ) et le champ numérique, pour toute autre
+  valeur. Les boutons passent par `this.on.anneePleineProd`, exactement comme la
+  frappe dans le champ — un seul chemin d'écriture, un seul marquage.
+
+Les deux volets du bloc **Références** (`refAideOuverte` — l'ancien
+`aideOuverte` — et `refClonesOuverte`) sont repliés
+par défaut et **hors instantané `localStorage`**, comme tous les états de
+navigation (§19bis). Chaque en-tête annonce son contenu en résumé : on doit
+savoir ce qu'on ouvre sans avoir à l'ouvrir.
+
+Quatre décisions de rédaction et de structure sur ce bloc, tranchées après coup
+et qui ne sont pas des broutilles :
+
+- son titre nomme le **contenu** (« Cépage, porte-greffe et clones ») et non
+  « Matériel végétal », qui est déjà le libellé du premier champ juste en
+  dessous. Un titre qui répète mot pour mot l'étiquette d'un de ses champs ne
+  dit rien de plus, et laisse croire que le bloc ne porte que ce champ ;
+- la réserve **« n'entre pas dans le calcul économique » n'est écrite qu'une
+  fois**, dans l'en-tête, pour tout le bloc. Elle l'était trois fois de plus —
+  sous le porte-greffe, dans le résumé du volet des clones et dans
+  `clonesSourceTxt` — et une réserve répétée quatre fois finit par ne plus se
+  lire nulle part. Reste en place la note de bas de table sur le **niveau de
+  production**, qui dit autre chose : que l'échelle PlantGrape est qualitative
+  et n'est pas un rendement en kg/ha ;
+- **un seul sélecteur de matériel végétal**, la variété, qui commande la table
+  de clones. Il remplace le couple `materiel` + `cepage`, qui pouvait se
+  contredire (§6). Options écrites en dur dans le gabarit et non bouclées sur
+  `VARIETES` : une interpolation est rendue dans un `<span>`, ce qu'un
+  `<option>` n'a pas le droit de contenir ;
+- **le volet « Fiche du porte-greffe retenu » a été retiré.** N'en subsiste que
+  l'**avertissement**, en `.hint.warn` sous le sélecteur, et seulement pour les
+  porte-greffes qui en portent un — en pratique le 161-49 C et ses
+  dépérissements signalés depuis 2008. Ce n'est pas un reliquat : l'arbre
+  d'aide au choix ne commente que les porte-greffes qu'il **recommande**, et un
+  porte-greffe déconseillé n'y figure justement pas. Sans cette ligne, retenir
+  le 161-49 C n'aurait plus rien affiché du tout. `PG_INFO` reste entier dans
+  `index.html` — c'en est la source, et la description longue resservira si la
+  fiche revient.
+
+Classes ajoutées à la feuille de style : `.dec-grid`, `.dec-large`, `.dec`,
+`.dec-h`, `.dec-num`, `.dec-pied`, `.dec3`, `.jalons`, `.jalon`, `.seg-groupe`,
+`.seg-btn` (§3bis). Sous 900 px, `.dec-grid` et `.dec3` passent à une colonne,
+au même seuil que `.grid`. **Aucun jeton de couleur nouveau**, et aucune couleur
+littérale dans le gabarit : un test l'interdit (§27).
 
 ## 5. Le flux de données, de la frappe au résultat
 
@@ -582,11 +693,19 @@ de problème de fluidité en pratique.
 ### Le chemin court — 11 repères (prompt B4, arbitrage 11)
 
 Les 53 contrôles de l'outil sont hiérarchisés depuis le 01/09/2026 : **11
-champs** restent au fil principal, tout le reste vit dans un volet `.fold`
+champs** restent au fil principal, le reste vivait dans un volet `.fold`
 « Ajuster » replié, **au sein de son écran d'origine**. Aucun champ n'a été
-supprimé ni rendu inaccessible ; chaque en-tête de volet affiche en résumé
-les valeurs qu'il cache, pour que replier n'enterre jamais un chiffre qui
+supprimé ni rendu inaccessible ; chaque en-tête de volet affichait en résumé
+les valeurs qu'il cachait, pour que replier n'enterre jamais un chiffre qui
 pilote le calcul.
+
+> **Il ne reste plus aucun volet « Ajuster ».** Celui du temps 1 a disparu au
+> prompt 12 (loyer et parts de métayage dans le panneau Hypothèses, nombre de
+> rangs remonté dans la carte « Géométrie de la parcelle ») ; les deux du temps
+> 2 ont été démontés par le chantier « une décision par carte » (§4bis), qui
+> rend leurs champs visibles dans quatre cartes de décision. La hiérarchie des
+> 11 repères, elle, est inchangée : c'est le moyen de replier qui a disparu,
+> pas la liste des repères.
 
 | Écran | Les 11 repères |
 |---|---|
@@ -706,14 +825,47 @@ VSL et son détecteur ont également été retirés (chantier B4, voir §11
 journal d'arbitrages) : ni champ de saisie, ni badge, dans aucun écran.
 
 **Bloc 1 — Matériel végétal et aide au choix.** Le simulateur d'aide au
-choix (`cepage`, `calcaireActif`, `profondeurSol`, `drainageSol`, purement
-informatif, alimente `OAD.preconPorteGreffe()`, §15, **hors calcul
-économique**) précède désormais la sélection définitive, qu'il éclaire :
+choix (`calcaireActif`, `profondeurSol`, `drainageSol`, purement informatif,
+alimente `OAD.preconPorteGreffe()`, §15, **hors calcul économique**) éclaire
+la sélection définitive.
+
+> Le **cépage a quitté ce volet** : il ne servait pas à l'arbre du Guide 2025,
+> qui ne lit que le calcaire, la profondeur et le drainage — la signature de
+> `preconPorteGreffe(calcaireActif, profondeurSol, drainageSol)` le dit. Il est
+> remonté dans le sélecteur de variété, en tête du bloc, où il est retenu une
+> fois pour tout l'écran.
 
 | champ | défaut | rôle |
 |---|---|---|
-| `materiel` | vinifera | vinifera / Voltis — badge d'information réglementaire seulement, n'entre pas dans le calcul |
-| `porteGreffe` | 41 B | affichage pur, alimente la fiche conseil (`PG_INFO`), **hors calcul** |
+| `cepage` | Pinot noir *(ou le cépage dominant du registre, §6bis)* | **la variété plantée**, choisie parmi les 11 de `VARIETES` — commande la table de clones (`OAD.clonesParCepage`), **hors calcul économique** |
+| `porteGreffe` | 41 B | affichage pur, alimente l'avertissement de `PG_INFO`, **hors calcul** |
+
+> **`materiel` a été supprimé de `state.v`.** Il valait « vinifera » ou
+> « Voltis » et vivait à côté de `cepage` sans qu'aucun des deux ne contraigne
+> l'autre : rien n'empêchait de retenir « vinifera » **et** « Voltis ». Les deux
+> sélecteurs ont fusionné en un seul, `cepage`, qui liste les **11 variétés
+> plantables** — Chardonnay, Pinot noir, Meunier, Pinot blanc, Pinot gris,
+> Arbane, Petit Meslier, Chardonnay rose, puis Voltis, Orellis et Serelis
+> (VIFA). La **nature** du matériel (*Vitis vinifera* ou variété résistante) en
+> est **dérivée** par la table `VARIETES` d'`index.html` et dite en une ligne
+> sous le sélecteur ; elle n'entre, comme avant, dans aucun scénario. Un
+> instantané `localStorage` antérieur porte encore `materiel` : `fusionnerV`
+> l'ignore sans bruit, aucune migration n'est nécessaire.
+>
+> **Orthographe : « Arbane »**, celle du cahier des charges de l'AOC Champagne,
+> et non « Arbanne » qu'on rencontre aussi. `cepageAffichage()` reconnaît les
+> deux dans les codes du registre (test sur « ARBAN ») ; l'écran n'en écrit
+> qu'une.
+>
+> **Liste VIFA — Voltis, Orellis, Serelis — confirmée par le commanditaire le
+> 07/09/2026.** ⚠ Elle **évolue** : la revérifier à chaque diffusion. C'est le
+> seul entretien que demande la table `VARIETES`.
+>
+> Le référentiel de **clones**, lui, n'a pas bougé : 42 lignes, Chardonnay,
+> Pinot noir et Meunier seulement (§15). Pour les huit autres variétés, la table
+> n'est ni affichée vide ni comblée — le volet dit qu'aucune ligne n'existe au
+> référentiel retenu et renvoie au catalogue officiel, à plantgrape.fr ou au
+> Comité Champagne. C'est la même règle que les cellules vides de la table.
 
 **Bloc 2 — Palissage et conduite.**
 
@@ -2006,6 +2158,21 @@ d'incertitude signalées plutôt que tranchées.
 est **~30 % plus faible** que le repère implicite LutEnVi (~1 piquet tous
 les 4 pieds, soit ≈ 4,3 m) — divergence assumée et affichée dans l'UI.
 
+> Ce repère de 4,3 m est nommé `ESP_PIQUET_REF` dans `index.html` (chantier
+> « une décision par carte », §4bis). Ce n'est **ni une borne réglementaire ni
+> un paramètre de calcul** : `coutPalissage()` compte les piquets à
+> l'espacement réellement saisi, quel qu'il soit. C'est un repère d'affichage,
+> et l'aide sous le champ ne passe en rouge qu'**au-delà** — jusqu'ici elle
+> était rouge en permanence, y compris quand la valeur était conforme, ce qui
+> apprenait à ne plus la lire.
+>
+> Depuis le même chantier, les huit lignes sont dessinées en **barres
+> proportionnelles triées par total décroissant** (§4bis) plutôt qu'en liste :
+> le tri et la largeur des barres sont de la mise en forme, les quantités, prix
+> unitaires et totaux viennent toujours de `coutPalissage()`. La case à cocher
+> des lignes optionnelles est conservée, `typeTaille` est désormais passé à la
+> fonction (sans effet sur le résultat, `nbFils` étant toujours fourni).
+
 **Mapping du relevé — hypothèses à confirmer** (voir journal §12) : le
 « piquet » (3,80 €) est traité comme piquet intermédiaire uniquement (la
 tête de rang est couverte par fiche de tête + kit bout de route) ; le
@@ -2122,6 +2289,14 @@ ligne (`cepage`, `clone`, `sources`, `refAgronomiques`, `production`,
 `multiplicationHa`, `remarqueGuide`, `remarquePlantGrape`).
 `OAD.clonesParCepage(cepage)` renvoie les lignes triées par **numéro** de
 clone croissant — tri numérique, pas lexicographique.
+
+> **Huit variétés du sélecteur n'ont aucune ligne ici** : pinot blanc, pinot
+> gris, arbane, petit meslier, chardonnay rose, et les trois VIFA (Voltis,
+> Orellis, Serelis). `clonesParCepage()` renvoie alors un tableau vide, et
+> l'écran (§4bis) affiche un message le disant, avec les pistes où chercher —
+> catalogue officiel des variétés (FranceAgriMer / IFV), plantgrape.fr, données
+> du Comité Champagne. Ni table vide, ni ligne inventée : c'est la même règle
+> que les cellules vides ci-dessous.
 
 Une copie de travail lisible est commitée sous `data/clones-champagne.json` ;
 le littéral du moteur en est la transcription (le projet n'a ni build ni
@@ -3064,8 +3239,7 @@ dire sur 10 ans.
 faire dans cet ordre :
    - ouvrir l'outil sans rien toucher → les trois emplacements (KPI de
      l'écran 5, synthèse latérale, fiche imprimable) doivent dire **« Coût
-     de référence Champagne »**, avec la mention renvoyant au volet
-     « Ajuster » de l'étape 4 ;
+     de référence Champagne »**, avec la mention renvoyant au temps 2 ;
    - modifier **un seul** des quatre postes (`coutArrachageHa`,
      `coutPlant`, `coutPalissageHa`, `coutProtectionHa`) → les trois
      emplacements doivent basculer **ensemble** sur « Votre
@@ -3118,3 +3292,48 @@ est revenu, puis « Effacer mes données » :
    - refaire le tout en navigation privée stricte, où `localStorage` peut
      être refusé : l'outil doit fonctionner normalement, simplement sans
      rien conserver, et **sans message d'erreur**.
+
+**7. Les quatre décisions du temps 2 (§4bis).** Rien de tout ceci ne se teste
+sans navigateur — ce sont des dessins, un ordre de tabulation et un focus :
+   - cliquer chacune des trois durées de repos : les **trois** frises se
+     redessinent (la sélectionnée prend le fond ambré et `aria-pressed="true"`),
+     la ligne de conséquences change de nombre de déblocages et d'année de
+     retour, la bande de durées de la décision 4 et le bandeau des quatre
+     décisions suivent ;
+   - **au clavier seulement** : atteindre les trois boutons par `Tab`, choisir
+     par `Entrée` puis par `Espace` — les deux doivent écrire la valeur ;
+   - depuis le temps 3, cliquer « reprendre au premier repère » quand `repos`
+     est le repère restant : l'outil doit emmener au temps 2 et donner le focus
+     au bouton **de la valeur courante** (`id="f-repos"`), visible à l'écran et
+     non caché derrière le bandeau figé ;
+   - survoler chaque segment de frise : le `title` doit nommer la phase et ses
+     années (« plantier — années 1 à 3 ») ;
+   - année de pleine production : alterner les boutons `4ᵉ`/`5ᵉ`/`6ᵉ`/`8ᵉ` et la
+     frappe dans le champ — le profil de montée en charge, le pied de carte et
+     la largeur du bloc « plantier » de la décision 4 doivent bouger dans les
+     deux cas, et le champ afficher la valeur choisie au bouton ;
+   - espacement des piquets : à 4 m l'aide LutEnVi est grise, à 6 m elle passe
+     en rouge et nomme l'espacement saisi ;
+   - décocher les kits bout de route : la ligne passe en gris, affiche `exclu`,
+     et le total ambré baisse ;
+   - réduire la fenêtre sous 900 px : les cartes passent à une colonne, la
+     décision 3 aussi, et les trois blocs de la bande de durées s'enroulent sans
+     tronquer leur montant.
+
+**8. Le matériel végétal en une seule liste (§4bis, §6).** Sans toucher au
+registre, dans le bloc Références du temps 2 :
+   - parcourir les **11 variétés** : les trois cépages principaux ouvrent la
+     table de clones (11 / 19 / 12 lignes) ; les huit autres — pinot blanc,
+     pinot gris, arbane, petit meslier, chardonnay rose, Voltis, Orellis,
+     Serelis — affichent le message « aucune ligne au référentiel retenu », et
+     **jamais** une table vide ou remplie ;
+   - retenir une variété VIFA : la ligne sous le sélecteur doit passer à
+     « variété résistante (VIFA) — ≤ 5 % de l'encépagement… ». Vérifier qu'il
+     n'existe **plus** de second champ « vinifera / Voltis » avec lequel elle
+     pourrait se contredire ;
+   - importer un registre dont le cépage dominant est un pinot blanc ou un
+     pinot gris : le sélecteur doit afficher cette variété-là, pas « Pinot
+     noir » (l'ordre des tests de `cepageAffichage` en dépend) ;
+   - retenir le porte-greffe **161-49 C** : l'avertissement de dépérissement
+     doit s'afficher sous le sélecteur, en rouge, alors même que l'arbre d'aide
+     au choix ne le recommande pas. Sur 41 B ou SO4, aucune ligne ne s'affiche.
