@@ -537,36 +537,54 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
           </div>
         </div>
 
-        <!-- Volet « Ajuster » de l'écran 1 — prompt B4. Ce qui reste au-dessus,
-             c'est le chemin court : surface totale, âge moyen, VolCo, prix du
-             raisin. Rien n'est supprimé, tout est ici, replié. L'en-tête montre
-             les valeurs cachées pour que replier n'enterre aucun chiffre. -->
-        <div class="fold" style="margin-top:22px">
-          <button onClick="{{ toggleAjuster1 }}" class="fold-btn">
-            <span><b style="font-size:13.5px">Ajuster</b> <span class="hint">— {{ ajusterResume1 }}</span></span>
-            <span class="fold-sign">{{ ajusterChevron1 }}</span>
-          </button>
-          <sc-if value="{{ ajusterOuvert1 }}" hint-placeholder-val="{{ false }}">
-          <div class="fold-body">
-            <div class="grid" style="margin-bottom:18px">
-              <div class="field">
-                <label class="lbl" for="f-campagne">Campagne de référence</label>
-                <div class="row"><input id="f-campagne" type="number" step="1" value="{{ v.campagne }}" onInput="{{ on.campagne }}" class="inp"></div>
-                <span class="hint">âge = campagne − année de plantation</span>
-              </div>
-            </div>
-            <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px">
-              <label class="lbl" for="f-riPct"><span class="lex" title="{{ lex.reserve.def }}">Réserve individuelle</span> actuelle</label>
-              <div class="hint" style="margin-top:4px">{{ lex.reserve.court }}</div>
-              <div style="display:flex;align-items:center;gap:16px;margin-top:10px">
-                <input id="f-riPct" type="range" min="0" max="100" value="{{ v.riPct }}" onInput="{{ on.riPct }}" style="flex:1;accent-color:var(--accent)">
-                <div style="font-family:'JetBrains Mono',monospace;font-size:13.5px;flex:none;min-width:170px;text-align:right"><b>{{ riPctTxt }}</b> du plafond ≈ <b>{{ riKgTxt }}</b> kg/ha</div>
-              </div>
-              <div style="font-size:11.5px;color:var(--encre-3);margin-top:6px">estimation par défaut — remplacez par votre relevé</div>
-            </div>
+        <!-- Composition du vignoble — graphique du temps 1.
+
+             Les deux champs dérivés ci-dessus (surface totale, âge moyen)
+             résument le registre en deux nombres et perdent tout le reste :
+             on ne voit ni la part déjà arrachée, ni la pyramide des âges.
+             C'est pourtant sur elles que se décide un renouvellement. Le
+             graphique les redonne, ici et pas ailleurs — il décompose les deux
+             chiffres juste au-dessus de lui, il doit rester à leur portée de
+             regard.
+
+             Construit dans renderVals() (React.createElement) comme la frise :
+             des barres proportionnelles ne se décrivent pas en gabarit.
+
+             Le graphique seul est masqué tant que le registre ne porte aucune
+             surface : l'écran affiche alors son état bloquant, un graphique
+             vide n'y ajouterait rien. La carte, elle, reste à l'écran — elle
+             porte aussi la réserve individuelle, qui est une saisie et ne doit
+             jamais disparaître.
+
+             La réserve individuelle a rejoint cette carte : c'est le stock de
+             kilos déjà constitué par ce vignoble, il se lit avec sa pyramide
+             des âges et non replié dans un volet « Ajuster » — lequel a
+             d'ailleurs disparu de cet écran. -->
+        <div style="margin-top:22px;background:var(--surface-haute);border:1px solid var(--bordure);border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+            <div class="n2">La composition de votre vignoble</div>
+            <sc-if value="{{ !registreSansSurface }}" hint-placeholder-val="{{ true }}">
+              <div class="n4">le détail des deux chiffres ci-dessus, parcelle par parcelle</div>
+            </sc-if>
           </div>
+          <sc-if value="{{ !registreSansSurface }}" hint-placeholder-val="{{ true }}">
+            {{ graphExploitation }}
           </sc-if>
+          <div style="border-top:1px solid var(--bordure);padding-top:16px">
+            <label class="lbl" for="f-riPct"><span class="lex" title="{{ lex.reserve.def }}">Réserve individuelle</span> actuelle</label>
+            <div class="hint" style="margin-top:4px">{{ lex.reserve.court }}</div>
+            <div style="display:flex;align-items:center;gap:16px;margin-top:10px">
+              <input id="f-riPct" type="range" min="0" max="100" value="{{ v.riPct }}" onInput="{{ on.riPct }}" style="flex:1;accent-color:var(--accent)">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:13.5px;flex:none;min-width:170px;text-align:right"><b>{{ riPctTxt }}</b> du plafond ≈ <b>{{ riKgTxt }}</b> kg/ha</div>
+            </div>
+            <div style="font-size:11.5px;color:var(--encre-3);margin-top:6px">estimation par défaut — remplacez par votre relevé</div>
+          </div>
         </div>
+
+        <!-- Le volet « Ajuster » de l'écran 1 a disparu : il ne portait plus que
+             la campagne de référence, qui n'est plus un paramètre — c'est
+             toujours l'année en cours (CAMPAGNE_COURANTE). Un volet vide ne
+             reste pas à l'écran. -->
 
         <!-- Registre parcellaire replié en bandeau de synthèse — prompt 3.
 
@@ -624,7 +642,16 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
                parcelle désignée reste un mécanisme de l'écran 2, distinct de
                la suppression pure et simple offerte ici. -->
           <div style="font-size:11.5px;color:var(--encre-3);margin:0 0 12px;line-height:1.45">Toutes les colonnes sont corrigeables directement dans le tableau ; l'âge en est déduit. Vous pouvez ajouter des lignes et en supprimer. Vos corrections sont conservées sur cet ordinateur.</div>
-          <div style="display:grid;grid-template-columns:repeat(8,minmax(88px,1fr)) 44px;gap:0;font-size:11.5px;min-width:804px">
+          <!-- Colonne « Faire-valoir » — le régime de faire-valoir se saisissait
+               dans un bloc à part, au bas du temps 1, et valait alors pour toute
+               la parcelle désignée. C'était une approximation : une exploitation
+               possède telle parcelle et loue telle autre. Le faire-valoir est
+               une propriété de la LIGNE, au même titre que le cépage ou la
+               situation — il tient donc dans la colonne `mode_explo` que le
+               format d'export CIVC porte déjà, et le bloc du bas a disparu.
+               Le régime qui entre dans le calcul en est dérivé (dominant en
+               surface sur les lignes retenues, voir OAD.agregerRegistreParcelle). -->
+          <div style="display:grid;grid-template-columns:repeat(9,minmax(88px,1fr)) 44px;gap:0;font-size:11.5px;min-width:920px">
             <div class="th wide">idu</div>
             <div class="th wide">Commune</div>
             <div class="th wide">Cépage</div>
@@ -633,6 +660,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
             <div class="th wide">Surface</div>
             <div class="th wide">Manquants</div>
             <div class="th wide">Situation</div>
+            <div class="th wide">Faire-valoir</div>
             <div class="th wide"></div>
             <sc-for list="{{ registreLignesTable }}" as="r" hint-placeholder-count="3">
               <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond)"><input type="text" value="{{ r.idu }}" onInput="{{ r.onIdu }}" class="cell" style="font-family:'JetBrains Mono',monospace" aria-label="Identifiant de parcelle (idu)"></div>
@@ -643,6 +671,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
               <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond)"><input type="number" step="0.01" min="0" value="{{ r.surface }}" onInput="{{ r.onSurface }}" class="cell" aria-label="Surface en hectares"></div>
               <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond)"><input type="number" step="1" min="0" max="100" value="{{ r.tauxManquant }}" onInput="{{ r.onTauxManquant }}" class="cell" aria-label="Taux de pieds manquants en pourcent"></div>
               <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond)"><select value="{{ r.situation }}" onChange="{{ r.onSituation }}" class="cell" aria-label="Situation de la parcelle"><option value="plantee">Plantée</option><option value="arrachee">Arrachée</option></select></div>
+              <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond)"><select value="{{ r.regimeFv }}" onChange="{{ r.onRegimeFv }}" class="cell" aria-label="Régime de faire-valoir de la parcelle"><option value="propriete">Propriété</option><option value="fermage">Fermage</option><option value="metayage">Métayage</option></select></div>
               <div style="padding:3px 5px;border-bottom:1px solid var(--accent-fond);text-align:center"><button onClick="{{ r.onSupprimer }}" title="{{ r.supprimerTitre }}" aria-label="{{ r.supprimerTitre }}" style="border:1px solid var(--bordure);border-radius:5px;background:var(--surface-haute);color:var(--alerte);cursor:pointer;font-size:13.5px;line-height:1;padding:5px 7px">✕</button></div>
             </sc-for>
           </div>
@@ -671,18 +700,26 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
               </select>
               <span class="hint">seules les lignes Plantée sont proposées</span>
             </div>
-            <div style="display:grid;grid-template-columns:36px repeat(4,minmax(80px,1fr));gap:0;font-size:11.5px;margin-top:14px">
+            <!-- La colonne « Faire-valoir » est en LECTURE ici : elle se corrige
+                 au registre, jamais deux fois. Elle est affichée quand même
+                 parce que c'est cette table qui décide des lignes retenues, et
+                 donc du régime qui entre dans le calcul — cocher ou décocher une
+                 ligne sans voir son faire-valoir reviendrait à changer le régime
+                 à l'aveugle. -->
+            <div style="display:grid;grid-template-columns:36px repeat(5,minmax(80px,1fr));gap:0;font-size:11.5px;margin-top:14px">
               <div style="border-bottom:1px solid var(--bordure)"></div>
               <div class="th wide">Cépage</div>
               <div class="th wide">Planté</div>
               <div class="th wide">Âge</div>
               <div class="th wide">Surface</div>
+              <div class="th wide">Faire-valoir</div>
               <sc-for list="{{ parcelleLignesTable }}" as="r" hint-placeholder-count="2">
                 <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)"><input type="checkbox" checked="{{ r.coche }}" onChange="{{ r.toggle }}"></div>
                 <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.cepage }}</div>
                 <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.anneePlant }}</div>
                 <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.age }}</div>
                 <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.surfaceTxt }} ha</div>
+                <div style="padding:5px 8px;border-bottom:1px solid var(--accent-fond)">{{ r.regimeFvTxt }}</div>
               </sc-for>
             </div>
             <div style="font-size:11.5px;color:var(--encre-3);margin-top:6px">décochez une ligne pour l'exclure de la parcelle désignée — la pondération (âge, pieds manquants) se recalcule automatiquement · surface retenue : <b>{{ surfParcRegistreTxt }}</b><sc-if value="{{ cepageMixteTxt }}" hint-placeholder-val="{{ false }}"><br>{{ cepageMixteTxt }}</sc-if></div>
@@ -777,19 +814,21 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
             <div class="row"><input id="f-rendEstime" type="number" step="100" min="0" value="{{ v.rendEstime }}" onInput="{{ on.rendEstime }}" class="inp"><span class="unit">kg/ha</span></div>
             <span class="hint warn">ce que la parcelle produit aujourd'hui, selon vous</span>
           </div>
-        </div>
-        <h3 style="font-family:'Newsreader',serif;font-size:22px;margin:28px 0 12px">Faire-valoir de la parcelle</h3>
-        <div class="grid">
+          <!-- Le régime de faire-valoir rejoint les deux autres grandeurs
+               dérivées du registre. Il ne se saisit plus ici : il se corrige
+               ligne par ligne dans le registre parcellaire, colonne
+               « Faire-valoir ». Ce champ dit seulement ce que la sélection
+               retenue produit, comme l'âge et les pieds manquants juste à
+               côté — voir OAD.agregerRegistreParcelle. -->
           <div class="field">
-            <label class="lbl" for="f-regime">Régime de <span class="lex" title="{{ lex.fairevaloir.def }}">faire-valoir</span></label>
-            <select id="f-regime" value="{{ v.regime }}" onChange="{{ on.regime }}" class="sel">
-              <option value="propriete">Propriété (faire-valoir direct)</option>
-              <option value="fermage">Fermage (loyer fixe)</option>
-              <option value="metayage">Métayage (part de récolte)</option>
-            </select>
-            <span class="hint">{{ lex.fairevaloir.court }}</span>
+            <label class="lbl">Régime de <span class="lex" title="{{ lex.fairevaloir.def }}">faire-valoir</span></label>
+            <div class="ro">{{ regimeParcRegistreTxt }}</div>
+            <span class="hint">dérivé du registre — régime dominant en surface</span>
           </div>
         </div>
+        <sc-if value="{{ regimeMixteTxt }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px;font-size:11.5px;color:var(--encre-3)">{{ regimeMixteTxt }}</div>
+        </sc-if>
         <sc-if value="{{ estFermage }}" hint-placeholder-val="{{ false }}">
           <div style="margin-top:14px;font-size:13.5px;padding:9px 12px;border-radius:5px;background:var(--alerte-fond);color:var(--alerte)">⚠ L'arrachage et la replantation d'une parcelle louée supposent l'accord du bailleur (statut du fermage). L'outil suppose que le preneur porte l'investissement.</div>
         </sc-if>
@@ -1812,19 +1851,25 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
 // parcellaire). Ne vient d'aucun import : préchargé pour tester le mode
 // "registre" avant que l'écran d'import de fichier ne soit branché. idu
 // fictifs, format des colonnes réel (commune Cuis, num_civc 1425).
+// `mode_explo` portait un champ vide sur toutes les lignes : la colonne
+// existait au format sans jamais rien dire. Elle porte désormais le
+// faire-valoir de chaque parcelle (prompt « faire-valoir au registre »).
+// Toutes les lignes d'exemple sont en FD (faire-valoir direct) : c'est le
+// régime qui ne prélève rien, donc celui qui laisse l'exemple lisible — un
+// fermage inventé sur une ligne changerait en silence le résultat par défaut.
 const REGISTRE_EXEMPLE_CSV = `idu;commune;num_civc;mode_explo;cepage;anneeplant;surface_ss_parcelle;productivite_moyenne;taux_manquant;enroulement;court_noue;situation
-510200000C1237;Cuis;1425;;CHARDONNAY B;2019;0,05;12000;5;0;0;Plantée
-510200000C1255;Cuis;1425;;CHARDONNAY B;2010;0,12;12000;5;0;0;Plantée
-510200000C1516;Cuis;1425;;CHARDONNAY B;2010;0,04;12000;5;0;0;Plantée
-510200000C1517;Cuis;1425;;CHARDONNAY B;2010;0,00;12000;5;0;0;Plantée
-510200000Z0068;Cuis;1425;;MEUNIER N;1954;0,21;12000;5;0;0;Arrachée
-510200000Z0068;Cuis;1425;;CHARDONNAY B;1951;0,14;12000;5;0;0;Plantée
-510200000Z0068;Cuis;1425;;CHARDONNAY B;1954;0,24;12000;5;0;0;Plantée
-510200000Z0068;Cuis;1425;;CHARDONNAY B;2006;0,02;12000;5;0;0;Plantée
-510200000Z0069;Cuis;1425;;MEUNIER N;1951;0,13;12000;5;0;0;Arrachée
-510200000Z0069;Cuis;1425;;CHARDONNAY B;1951;0,24;12000;5;0;0;Plantée
-510200000Z0157;Cuis;1425;;MEUNIER N;1954;0,13;12000;5;0;0;Arrachée
-510200000Z0157;Cuis;1425;;CHARDONNAY B;1954;0,18;12000;5;0;0;Plantée`;
+510200000C1237;Cuis;1425;FD;CHARDONNAY B;2019;0,05;12000;5;0;0;Plantée
+510200000C1255;Cuis;1425;FD;CHARDONNAY B;2010;0,12;12000;5;0;0;Plantée
+510200000C1516;Cuis;1425;FD;CHARDONNAY B;2010;0,04;12000;5;0;0;Plantée
+510200000C1517;Cuis;1425;FD;CHARDONNAY B;2010;0,00;12000;5;0;0;Plantée
+510200000Z0068;Cuis;1425;FD;MEUNIER N;1954;0,21;12000;5;0;0;Arrachée
+510200000Z0068;Cuis;1425;FD;CHARDONNAY B;1951;0,14;12000;5;0;0;Plantée
+510200000Z0068;Cuis;1425;FD;CHARDONNAY B;1954;0,24;12000;5;0;0;Plantée
+510200000Z0068;Cuis;1425;FD;CHARDONNAY B;2006;0,02;12000;5;0;0;Plantée
+510200000Z0069;Cuis;1425;FD;MEUNIER N;1951;0,13;12000;5;0;0;Arrachée
+510200000Z0069;Cuis;1425;FD;CHARDONNAY B;1951;0,24;12000;5;0;0;Plantée
+510200000Z0157;Cuis;1425;FD;MEUNIER N;1954;0,13;12000;5;0;0;Arrachée
+510200000Z0157;Cuis;1425;FD;CHARDONNAY B;1954;0,18;12000;5;0;0;Plantée`;
 
 /* =====================================================================
    Persistance locale — prompt B1.
@@ -1886,7 +1931,11 @@ const REPERES_CHEMIN_COURT = [
   { cle: 'surfArr',    etape: 0, id: 'f-surfArr',    lib: 'surface arrachée' },
   { cle: 'ageParc',    etape: 0, id: 'f-ageParc',    lib: 'âge de la parcelle' },
   { cle: 'rendEstime', etape: 0, id: 'f-rendEstime', lib: 'rendement estimé' },
-  { cle: 'regime',     etape: 0, id: 'f-regime',     lib: 'régime de faire-valoir' },
+  // Le régime de faire-valoir n'a plus de champ à lui : il se corrige au
+  // registre. Le repère vise donc le sélecteur de parcelle désignée, d'où l'on
+  // voit le faire-valoir des lignes retenues. Comme les autres repères dérivés
+  // du registre, il compte pour renseigné (voir `repereRenseigne`).
+  { cle: 'regime',     etape: 0, id: 'f-parcelleIdu', lib: 'régime de faire-valoir' },
   { cle: 'ecartRang',  etape: 0, id: 'f-ecartRang',  lib: 'écart entre rangs' },
   { cle: 'ecartPied',  etape: 0, id: 'f-ecartPied',  lib: 'écart entre pieds' },
   { cle: 'repos',      etape: 1, id: 'f-repos',      lib: 'durée de repos' }
@@ -1991,6 +2040,17 @@ function fusionnerRegistre(defaut, restaure) {
    vit à part de state.v pour ne pas polluer l'objet des saisies. */
 const THEMES = { clair: 'clair', sombre: 'sombre' };
 
+/* Campagne de référence des âges du registre (age = campagne − anneePlant).
+   Ce n'est plus un paramètre : on prend toujours l'année en cours. Le champ
+   « Campagne de référence » du volet « Ajuster » de l'écran 1 a été retiré —
+   personne n'a de raison de simuler le vignoble d'une autre année que
+   celle-ci, et le volet ne portait plus que lui. Volontairement HORS de
+   V_DEFAUTS : ce n'est pas une saisie, donc rien à persister, rien à
+   restaurer d'un instantané, rien à « reprendre ». Un instantané écrit par
+   une version antérieure porte encore `v.campagne` : fusionnerV l'ignore,
+   puisqu'il ne remplace que des clés existantes de V_DEFAUTS. */
+const CAMPAGNE_COURANTE = new Date().getFullYear();
+
 const V_DEFAUTS = {
   surfTot: 10, ageMoy: 38, riPct: 75,
   // prompt B3 — VolCo de la campagne 2026, décision du Bureau exécutif du
@@ -2001,14 +2061,19 @@ const V_DEFAUTS = {
   // soit là. Les deux doivent rester d'accord — un test le vérifie.
   volco: 8800,
   prixKg: 7,
-  campagne: new Date().getFullYear(),
   // chantier A4 : surfArr (ha) remplace la longueur/largeur déclarées
   // comme grandeur pilote de la géométrie — surfArr=1, nbRangs=100 (voir
   // plus bas) reproduisent exactement la surface (1 ha) et le nombre de
   // rangs de l'ancien défaut (longueur 100 m, largeur 100 m, écart rang 1 m).
   surfArr: 1,
   ageParc: 55, manquants: 15, rendEstime: 10500, declinSQ: 1,
-  regime: 'propriete', loyerHa: 3000, partRecolte: 33, partCouts: 33,
+  // `regime` a quitté V_DEFAUTS : le régime de faire-valoir se lit ligne par
+  // ligne dans le registre parcellaire (colonne « Faire-valoir », `mode_explo`)
+  // et celui de la parcelle désignée en est dérivé. Il n'y a plus rien à
+  // persister ni à restaurer sous cette clé. Le loyer et les parts de métayage,
+  // eux, restent des saisies : ce sont des MONTANTS, pas un régime, et ils
+  // vivent dans le panneau Hypothèses.
+  loyerHa: 3000, partRecolte: 33, partCouts: 33,
   nbRangs: 100, ecartRang: 1, ecartPied: 1.10,
   materiel: 'vinifera', porteGreffe: '41 B', irrigation: '0',
   cepage: 'Pinot noir', calcaireActif: 18, profondeurSol: '30-60', drainageSol: 'drainant',
@@ -2095,7 +2160,7 @@ class Component extends DCLogic {
       // qu'un `||` qui accepterait n'importe quoi.
       theme: (instantane && instantane.theme === THEMES.clair) ? THEMES.clair : THEMES.sombre,
       // Volets « Ajuster » (prompt B4) — repliés par défaut sur chaque écran.
-      ajusterOuvert1: false, ajusterOuvert3: false, ajusterOuvert4: false,
+      ajusterOuvert3: false, ajusterOuvert4: false,
       // prompt 3 — le registre parcellaire et l'import de fichier sont deux
       // volets refermés au chargement. Volontairement HORS instantané
       // localStorage : rouvrir l'outil doit redonner un écran 1 court, quel
@@ -2423,7 +2488,7 @@ class Component extends DCLogic {
   // utilisable sans autre geste.
   ajouterLigneRegistre() {
     this.setState(st => {
-      const campagne = +st.v.campagne || new Date().getFullYear();
+      const campagne = CAMPAGNE_COURANTE;
       const id = st.nextRowId;
       const registreRows = [...st.registreRows, window.OAD.ligneRegistreVierge(campagne, id)];
       return { registreRows, nextRowId: id + 1,
@@ -2675,6 +2740,130 @@ class Component extends DCLogic {
     ]);
   }
 
+
+  /* Composition du vignoble — part arrachée, part plantée, surface par
+     classe d'âge.
+
+     Le registre porte déjà ces trois chiffres, mais éparpillés sur douze
+     lignes d'un tableau replié par défaut : personne ne lit une pyramide des
+     âges dans une colonne « année de plantation ». Le graphique la dessine,
+     au seul endroit où elle éclaire quelque chose — juste sous la surface
+     totale et l'âge moyen, dont il est la décomposition.
+
+     La répartition vient du moteur (OAD.repartirRegistreParAge) : ici on ne
+     fait que la mettre en forme. Deux échelles distinctes, jamais confondues :
+     la barre du haut se lit sur la surface TOTALE (arrachée comprise), les
+     quatre barres du bas sur la seule surface PLANTÉE — une parcelle arrachée
+     n'a plus d'âge de vigne. Le libellé de chaque bloc le dit, sans quoi on
+     additionnerait cinq parts qui ne font pas cent.
+
+     Couleurs de série, donc littérales et identiques dans les deux thèmes
+     (comme la frise et le schéma de parcelle). Les classes d'âge portent une
+     rampe d'une SEULE teinte, du clair au foncé : l'âge est une grandeur
+     ordonnée, quatre couleurs franches lui inventeraient quatre catégories
+     sans rapport. Aucun jugement de valeur dans la teinte — l'outil ne dit
+     pas qu'une vigne de cinquante ans est un problème, il montre la surface
+     concernée. Les deux extrémités de la rampe ont été vérifiées lisibles sur
+     le fond clair ET sur le fond sombre.
+
+     Chaque barre porte son chiffre en clair à côté d'elle : la couleur ne
+     porte jamais seule l'information, et une barre courte reste lisible. */
+  graphExploitation(d) {
+    const e = React.createElement;
+    // Rampe ordinale d'une seule teinte (clair -> foncé = jeune -> vieux).
+    const RAMPE_AGE = ['#9BBEA7', '#74A084', '#547E64', '#365D46'];
+    const COUL_PLANTEE = '#4C7A57';
+    // Même beige que la phase « repos » de la frise de trajectoire : une
+    // parcelle arrachée EST une surface en repos, elle doit se reconnaître
+    // d'un graphique à l'autre.
+    const COUL_ARRACHEE = '#CFC6B0';
+    const pct = (x) => (x * 100).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' %';
+    const ha = (x) => this.fmtHa(x) + ' ha';
+
+    const titreBloc = (k, principal, precision) => e('div', { key: k,
+      style: { display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' } }, [
+      e('div', { key: 't', style: { fontSize: '13.5px', fontWeight: 600, color: 'var(--encre)' } }, principal),
+      e('div', { key: 'p', style: { fontSize: '11.5px', color: 'var(--encre-3)' } }, precision)
+    ]);
+
+    /* ---- barre du haut : plantée / arrachée sur la surface totale --------
+       Une seule piste, deux segments, séparés par un filet de fond de 2 px :
+       sans ce jeu, deux aplats voisins se lisent comme un seul. Un segment
+       nul disparaît complètement plutôt que de laisser un trait résiduel qui
+       ferait croire à une surface. */
+    const segment = (k, part, coul, encre, lib, valeur) => part <= 0 ? null
+      : e('div', { key: k, title: lib + ' — ' + valeur + ' · ' + pct(part),
+          style: { flexGrow: part, flexBasis: 0, minWidth: 0, background: coul, borderRadius: '4px',
+            height: '38px', display: 'flex', alignItems: 'center', padding: '0 10px',
+            overflow: 'hidden', whiteSpace: 'nowrap', color: encre, fontSize: '11.5px' } },
+          part >= 0.16 ? lib + ' · ' + pct(part) : pct(part));
+    const piste = e('div', { key: 'piste', role: 'img',
+      'aria-label': 'Répartition de la surface totale : ' + ha(d.surfPlantee) + ' plantés ('
+        + pct(d.partPlantee) + ') et ' + ha(d.surfArrachee) + ' arrachés (' + pct(d.partArrachee) + ').',
+      style: { display: 'flex', gap: '2px' } }, [
+      segment('pl', d.partPlantee, COUL_PLANTEE, '#FAF9F5', 'Plantée', ha(d.surfPlantee)),
+      segment('ar', d.partArrachee, COUL_ARRACHEE, '#42473F', 'Arrachée', ha(d.surfArrachee))
+    ].filter(Boolean));
+    // Légende sous la piste : les deux surfaces en hectares, que les segments
+    // ne peuvent pas toujours porter (un segment étroit n'affiche que sa part).
+    const cle = (k, coul, lib, valeur) => e('div', { key: k,
+      style: { display: 'flex', alignItems: 'center', gap: '7px', fontSize: '11.5px', color: 'var(--encre-2)' } }, [
+      e('span', { key: 'c', style: { width: '11px', height: '11px', borderRadius: '3px',
+        background: coul, flex: 'none' } }),
+      e('span', { key: 'l' }, lib),
+      e('span', { key: 'v', style: { fontFamily: "'JetBrains Mono',monospace", color: 'var(--encre)' } }, valeur)
+    ]);
+    const legende = e('div', { key: 'leg', style: { display: 'flex', gap: '18px',
+      flexWrap: 'wrap', marginTop: '8px' } }, [
+      cle('k1', COUL_PLANTEE, 'Plantée', ha(d.surfPlantee)),
+      cle('k2', COUL_ARRACHEE, 'Arrachée (en repos)', ha(d.surfArrachee))
+    ]);
+
+    /* ---- classes d'âge : quatre barres sur la seule surface plantée ------
+       Les longueurs sont des PARTS de la surface plantée, pas des parts du
+       maximum : la piste entière vaut cent pour cent, et les quatre barres
+       s'y ajoutent exactement. Mettre la plus grande classe à pleine largeur
+       ferait paraître dominante une classe qui ne l'est pas.
+       Une classe vide n'a pas de barre du tout — un moignon de deux pixels se
+       lirait comme « un peu », alors qu'il n'y a rien. */
+    const ligneClasse = (c, i) => [
+      e('div', { key: 'l' + i, style: { fontSize: '11.5px', color: 'var(--encre-2)', whiteSpace: 'nowrap' } }, c.lib),
+      // La piste de fond prend la surface BASSE, pas la bordure claire : dans
+      // le thème sombre, le dernier pas de la rampe est plus foncé qu'une
+      // bordure et la barre s'y lirait comme un creux, figure et fond
+      // inversés. Le filet qui la borde redonne l'étendue des cent pour cent,
+      // que le fond seul ne montre plus dans le thème clair.
+      e('div', { key: 'b' + i, title: c.lib + ' — ' + ha(c.surface) + ' · ' + pct(c.part),
+        style: { background: 'var(--surface-basse)', border: '1px solid var(--bordure)',
+          boxSizing: 'border-box', borderRadius: '4px', height: '18px' } },
+        c.surface > 0 ? e('div', { style: { width: (c.part * 100) + '%', height: '100%',
+          minWidth: '4px', background: RAMPE_AGE[i], borderRadius: '4px' } }) : null),
+      e('div', { key: 'v' + i, style: { fontFamily: "'JetBrains Mono',monospace", fontSize: '11.5px',
+        color: c.surface > 0 ? 'var(--encre)' : 'var(--encre-4)', whiteSpace: 'nowrap', textAlign: 'right' } },
+        ha(c.surface)),
+      e('div', { key: 'p' + i, style: { fontFamily: "'JetBrains Mono',monospace", fontSize: '11.5px',
+        color: c.surface > 0 ? 'var(--encre-3)' : 'var(--encre-4)', whiteSpace: 'nowrap', textAlign: 'right' } },
+        pct(c.part))
+    ];
+    const grille = e('div', { key: 'classes', role: 'img',
+      'aria-label': "Surface plantée par classe d'âge : "
+        + d.classes.map(c => c.lib + ', ' + ha(c.surface) + ', ' + pct(c.part)).join(' ; ') + '.',
+      style: { display: 'grid', gridTemplateColumns: 'max-content minmax(60px,1fr) max-content max-content',
+        gap: '7px 12px', alignItems: 'center' } },
+      d.classes.map(ligneClasse));
+
+    return e('div', { style: { display: 'flex', flexDirection: 'column', gap: '22px' } }, [
+      e('div', { key: 'b1' }, [
+        titreBloc('t1', 'Plantée et arrachée', 'sur ' + ha(d.surfTot) + ' au registre'),
+        piste, legende
+      ]),
+      e('div', { key: 'b2' }, [
+        titreBloc('t2', "Surface plantée par classe d'âge",
+          'sur ' + ha(d.surfPlantee) + " plantés — les parcelles arrachées n'ont plus d'âge de vigne"),
+        grille
+      ])
+    ]);
+  }
   /* Schéma de la parcelle — prompt 12.
 
      La géométrie (surface, nombre de rangs, écartement, longueur de rang) se
@@ -2724,7 +2913,7 @@ class Component extends DCLogic {
     // la géométrie prend la surface du registre plutôt que `v.surfArr`
     // (chantier A4, voir plus bas).
     const modeRegistre = s.sourceParcellaire === 'registre';
-    const campagne = +v.campagne || new Date().getFullYear();
+    const campagne = CAMPAGNE_COURANTE;
     // prompt B2 — les cellules éditables stockent la frappe BRUTE (« 0, »,
     // « 1,2 », vide en cours de correction) pour ne pas se battre avec
     // l'utilisateur pendant la saisie. La conversion en nombre se fait ici, au
@@ -2745,7 +2934,17 @@ class Component extends DCLogic {
     const lignesParcelleCandidates = registreRows.filter(r => r.idu === s.parcelleIdu && r.situation === 'plantee');
     const lignesParcelleRetenues = lignesParcelleCandidates.filter(r => !s.parcelleLignesExclues[r._id]);
     const agregParcelle = OAD ? OAD.agregerRegistreParcelle(lignesParcelleRetenues, campagne)
-      : { surfParc: 0, ageParc: 0, tauxManquant: 0, cepage: null, cepageMixte: false };
+      : { surfParc: 0, ageParc: 0, tauxManquant: 0, cepage: null, cepageMixte: false,
+          regime: 'propriete', regimeMixte: false };
+    // Régime de faire-valoir de la parcelle désignée — dérivé du registre, plus
+    // jamais saisi : c'est le régime dominant EN SURFACE parmi les lignes
+    // retenues. Une seule variable pour tout l'écran, pour qu'aucun affichage
+    // ne puisse annoncer un régime que le calcul n'applique pas.
+    const regimeParcelle = agregParcelle.regime || 'propriete';
+    const libelleRegimeFv = (cle) => {
+      const t = (OAD ? OAD.REGIMES_FV : []).filter(x => x.cle === cle)[0];
+      return t ? t.lib : cle;
+    };
 
     // Cépage retenu pour le simulateur d'aide au choix (§15 : fiche clones,
     // resume du volet « Ajuster » de l'écran 3). Le registre n'en donne qu'une
@@ -2901,7 +3100,7 @@ class Component extends DCLogic {
       // g.surf en mode manuel, agrégat registre en mode registre — chantier 1),
       // pas sur toute l'exploitation — le régime de faire-valoir de l'étape 2 ne
       // s'applique qu'aux flux attribuables à la parcelle (voir OAD.repartir, README §10).
-      fv: { regime: v.regime, loyerAn: (+v.loyerHa || 0) * surfParcResolu,
+      fv: { regime: regimeParcelle, loyerAn: (+v.loyerHa || 0) * surfParcResolu,
         partRecolte: (+v.partRecolte || 0) / 100, partCouts: (+v.partCouts || 0) / 100 }
     };
 
@@ -2994,7 +3193,7 @@ class Component extends DCLogic {
       // La synthèse latérale reste masquée pendant qu'on décrit la parcelle
       // (temps 1) et réapparaît dès qu'on décide le projet (temps 2).
       syntheseVisible: s.step > 0,
-      estFermage: v.regime === 'fermage', estMetayage: v.regime === 'metayage',
+      estFermage: regimeParcelle === 'fermage', estMetayage: regimeParcelle === 'metayage',
       aPrecedent: s.step > 0, aSuivant: s.step < 2,
       labelPrecedent: s.step > 0 ? labels[s.step - 1] : '',
       // prompt 4 — l'action principale nomme l'étape qu'elle atteint, pas
@@ -3265,7 +3464,7 @@ class Component extends DCLogic {
     const repereRenseigne = (r) => {
       if (touches[r.cle]) return true;
       if (modeRegistre && (r.cle === 'surfTot' || r.cle === 'ageMoy'
-        || r.cle === 'surfArr' || r.cle === 'ageParc')) return true;
+        || r.cle === 'surfArr' || r.cle === 'ageParc' || r.cle === 'regime')) return true;
       return false;
     };
     const reperesRestants = REPERES_CHEMIN_COURT.filter(r => !repereRenseigne(r));
@@ -3295,11 +3494,10 @@ class Component extends DCLogic {
        enterrer un chiffre qui pilote le calcul (même principe que
        chargesProdResumeTxt, qui existait déjà). */
     const eur0 = (x) => nf(Math.round(+x || 0), 0) + ' €';
-    out.ajusterOuvert1 = s.ajusterOuvert1;
-    out.toggleAjuster1 = () => this.setState(st => ({ ajusterOuvert1: !st.ajusterOuvert1 }));
-    out.ajusterChevron1 = s.ajusterOuvert1 ? '−' : '+';
-    out.ajusterResume1 = 'réserve individuelle ' + nf(+v.riPct || 0, 0) + ' % du plafond'
-      + (modeRegistre ? ' · campagne de référence ' + nf(+v.campagne || 0, 0) : '');
+    // Le volet « Ajuster » de l'écran 1 a disparu à son tour : la réserve
+    // individuelle était déjà remontée dans la carte « La composition de votre
+    // vignoble », et la campagne de référence n'est plus paramétrable
+    // (CAMPAGNE_COURANTE). Plus de volet, donc plus de résumé ni de chevron.
 
     // prompt 12 — le volet « Ajuster » du temps 1 a disparu : le loyer et les
     // parts de métayage sont dans le panneau Hypothèses, le nombre de rangs
@@ -3398,7 +3596,7 @@ class Component extends DCLogic {
       { lib: 'Pieds manquants', val: nf(inp.manquants * 100, 1), unite: '%', origine: modeRegistre ? 'Dérivé du registre — moyenne pondérée par surface de la sélection' : 'Saisi' },
       { lib: 'Rendement estimé de la parcelle', val: nf(inp.rendEstime, 0), unite: 'kg/ha', origine: 'Saisi' },
       { lib: 'Déclin annuel en statu quo', val: nf(inp.declinSQ * 100, 2), unite: '%/an', origine: 'Saisi — volet « hypothèses de comparaison » du temps 3 (prompt C1)' },
-      { lib: 'Régime de faire-valoir', val: v.regime, unite: '—', origine: 'Saisi' },
+      { lib: 'Régime de faire-valoir', val: regimeParcelle, unite: '—', origine: modeRegistre ? "Dérivé du registre — mode d'exploitation dominant en surface parmi les lignes retenues" : 'Saisi' },
       { lib: 'Loyer annuel (fermage)', val: nf(+v.loyerHa || 0, 0), unite: '€/ha/an', origine: 'Saisi — utilisé si régime = fermage' },
       { lib: 'Loyer annuel × surface parcelle', val: nf(inp.fv.loyerAn, 0), unite: '€/an', origine: 'Dérivé — loyer/ha × surface réelle de la parcelle' },
       { lib: 'Part de récolte au propriétaire (métayage)', val: nf(+v.partRecolte || 0, 0), unite: '%', origine: 'Saisi — utilisé si régime = métayage' },
@@ -3450,6 +3648,15 @@ class Component extends DCLogic {
     // plus rien à choisir. Le registre et ses corrections sont conservés dans
     // le navigateur (localStorage, prompt B1) ; rien n'est jamais envoyé.
     out.registreSurfTotTxt = this.fmtHa(agregExploitation.surfTot) + ' ha';
+    // Composition du vignoble (graphique du temps 1) — décomposition des deux
+    // chiffres dérivés ci-dessus : quelle part du domaine est en repos, et
+    // comment la surface plantée se répartit par classe d'âge. Le comptage
+    // est fait par le moteur ; renderVals ne fait que le mettre en forme.
+    // Placé AVANT le repli `!OAD || erreurSurface` plus bas : ce graphique ne
+    // décrit que le registre, il reste juste même quand la parcelle désignée,
+    // elle, est incohérente.
+    const repartitionAge = OAD ? OAD.repartirRegistreParAge(registreRows, campagne) : null;
+    out.graphExploitation = repartitionAge ? this.graphExploitation(repartitionAge) : null;
     out.registreAgeMoyTxt = nf(agregExploitation.ageMoy, 1) + ' ans';
     // prompt B8 — état bloquant de l'écran 1. Le test porte sur la SURFACE, pas
     // sur le nombre de lignes : un registre de dix lignes toutes à 0 ha ne
@@ -3466,6 +3673,13 @@ class Component extends DCLogic {
       anneePlant: r.anneePlant, surface: r.surface, tauxManquant: r.tauxManquant,
       age: campagne - nombreCellule(r.anneePlant),
       situation: r.situation,
+      // La cellule est un sélecteur à trois valeurs : elle affiche donc la clé
+      // NORMALISÉE, pas la frappe brute — un « FD » venu du fichier CIVC et un
+      // « propriete » choisi à la main désignent la même chose, et un code
+      // inconnu ne doit pas laisser le sélecteur sans valeur. C'est la seule
+      // colonne où la normalisation a lieu à l'affichage : les autres portent
+      // du texte libre ou un nombre en cours de frappe.
+      regimeFv: OAD ? OAD.normaliserRegimeFv(r.modeExplo) : 'propriete',
       onIdu: (e) => this.majCelluleRegistre(r._id, 'idu', e.target.value),
       onCommune: (e) => this.majCelluleRegistre(r._id, 'commune', e.target.value),
       onCepage: (e) => this.majCelluleRegistre(r._id, 'cepage', e.target.value),
@@ -3473,6 +3687,7 @@ class Component extends DCLogic {
       onSurface: (e) => this.majCelluleRegistre(r._id, 'surface', e.target.value),
       onTauxManquant: (e) => this.majCelluleRegistre(r._id, 'tauxManquant', e.target.value),
       onSituation: (e) => this.majCelluleRegistre(r._id, 'situation', e.target.value),
+      onRegimeFv: (e) => this.majCelluleRegistre(r._id, 'modeExplo', e.target.value),
       onSupprimer: () => this.supprimerLigneRegistre(r._id),
       // Le libellé nomme la ligne : « Supprimer la ligne » tout court laisserait
       // un lecteur d'écran devant huit boutons indiscernables.
@@ -3514,12 +3729,22 @@ class Component extends DCLogic {
     out.parcelleLignesTable = lignesParcelleCandidates.map(r => ({
       id: r._id, cepage: r.cepage, anneePlant: r.anneePlant, age: campagne - r.anneePlant,
       surfaceTxt: this.fmtHa(r.surface),
+      regimeFvTxt: libelleRegimeFv(OAD ? OAD.normaliserRegimeFv(r.modeExplo) : 'propriete'),
       coche: !s.parcelleLignesExclues[r._id],
       toggle: () => this.setState(st => ({ parcelleLignesExclues: { ...st.parcelleLignesExclues, [r._id]: !st.parcelleLignesExclues[r._id] } }))
     }));
     out.surfParcRegistreTxt = this.fmtHa(agregParcelle.surfParc) + ' ha';
     out.ageParcRegistreTxt = nf(agregParcelle.ageParc, 1) + ' ans';
     out.manquantsRegistreTxt = nf(agregParcelle.tauxManquant, 1) + ' %';
+    out.regimeParcRegistreTxt = libelleRegimeFv(regimeParcelle);
+    // Sélection à régimes hétérogènes : on le DIT, on ne bloque pas. Le calcul
+    // n'a qu'un régime à appliquer — c'est le dominant en surface — mais
+    // l'utilisateur doit savoir que sa sélection en mêle plusieurs, sans quoi
+    // il lirait un régime qui ne décrit qu'une partie de sa parcelle.
+    out.regimeMixteTxt = (modeRegistre && agregParcelle.regimeMixte)
+      ? '⚠ sélection à faire-valoir mixtes — le régime dominant en surface ('
+        + libelleRegimeFv(regimeParcelle) + ') est appliqué à toute la parcelle'
+      : '';
     // Correction — cette ligne lisait `out.cepageMixteAlerte`, qui n'est
     // affecté qu'une trentaine de lignes plus bas (section « clones + precon ») :
     // la valeur était donc toujours `undefined` ici et l'avertissement « cépages
@@ -3659,8 +3884,8 @@ class Component extends DCLogic {
     if (inp.irrigation) out.investLignes.push({ lib: 'Arrosage du plantier', val: this.fmtE0(investIrrigationMat), quand: `année ${inp.repos}`, note: '' });
 
     // fv hint — chantier 5 : le régime ne s'applique qu'aux flux de la parcelle
-    out.fvHint = v.regime === 'propriete' ? '100 % exploitant'
-      : v.regime === 'fermage' ? `loyer ${this.fmtE(inp.fv.loyerAn)}/an au propriétaire (flux de la parcelle uniquement)`
+    out.fvHint = regimeParcelle === 'propriete' ? '100 % exploitant'
+      : regimeParcelle === 'fermage' ? `loyer ${this.fmtE(inp.fv.loyerAn)}/an au propriétaire (flux de la parcelle uniquement)`
       : `${v.partRecolte} % récolte / ${v.partCouts} % coûts au propriétaire (flux de la parcelle uniquement)`;
 
     // moteur

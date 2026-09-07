@@ -704,6 +704,78 @@ test('registre vide → agrégats à 0 sans exception (état bloquant affiché)'
 });
 
 // ----------------------------------------------------------------------
+// Section 8 bis — Faire-valoir porté par le registre parcellaire.
+//
+// Le régime de faire-valoir se saisissait dans un bloc à part, au bas du
+// temps 1, et valait pour toute la parcelle désignée. C'était une
+// approximation : une exploitation possède telle parcelle et loue telle
+// autre. Il est désormais une propriété de CHAQUE ligne du registre, portée
+// par la colonne `mode_explo` que le format d'export CIVC prévoyait déjà
+// sans que rien ne la lise. Le régime qui entre dans le calcul en est
+// dérivé — dominant en surface parmi les lignes retenues.
+// ----------------------------------------------------------------------
+
+test('normaliserRegimeFv : code CIVC, libellé en toutes lettres et clé interne désignent la même chose', () => {
+  ['FD', 'fd', 'P', 'Propriété', 'propriete', 'faire-valoir direct'].forEach(x =>
+    assert.strictEqual(OAD.normaliserRegimeFv(x), 'propriete', `« ${x} » doit valoir propriete`));
+  ['FE', 'fer', 'Fermage', 'fermage', 'FERMAGE'].forEach(x =>
+    assert.strictEqual(OAD.normaliserRegimeFv(x), 'fermage', `« ${x} » doit valoir fermage`));
+  ['MET', 'Métayage', 'metayage', 'METAYAGE'].forEach(x =>
+    assert.strictEqual(OAD.normaliserRegimeFv(x), 'metayage', `« ${x} » doit valoir metayage`));
+});
+
+test('faire-valoir absent, vide ou inconnu → propriété : à défaut d’information, aucun prélèvement inventé', () => {
+  [undefined, null, '', '   ', 'XYZ', 0].forEach(x =>
+    assert.strictEqual(OAD.normaliserRegimeFv(x), 'propriete'));
+  // Le jeu de test historique ne porte aucun `modeExplo` : il doit continuer
+  // à produire exactement le résultat d'avant ce chantier, régime compris.
+  const lignes = REGISTRE_TEST.filter(r => r.idu === 'Z0068' && r.situation === 'plantee');
+  const a = OAD.agregerRegistreParcelle(lignes, CAMPAGNE_TEST);
+  assert.strictEqual(a.regime, 'propriete');
+  assert.strictEqual(a.regimeMixte, false);
+});
+
+test('le régime retenu est le dominant EN SURFACE, pas en nombre de lignes', () => {
+  // Deux lignes en fermage (0,02 ha à elles deux) contre une en métayage
+  // (0,30 ha) : c'est le métayage qui commande, parce que c'est lui qui porte
+  // les flux que `repartir` découpe entre exploitant et propriétaire.
+  const lignes = [
+    { cepage: 'CHARDONNAY B', anneePlant: 2000, surface: 0.01, tauxManquant: 0, modeExplo: 'FE' },
+    { cepage: 'CHARDONNAY B', anneePlant: 2000, surface: 0.01, tauxManquant: 0, modeExplo: 'FE' },
+    { cepage: 'CHARDONNAY B', anneePlant: 2000, surface: 0.30, tauxManquant: 0, modeExplo: 'MET' }
+  ];
+  const a = OAD.agregerRegistreParcelle(lignes, CAMPAGNE_TEST);
+  assert.strictEqual(a.regime, 'metayage');
+  assert.strictEqual(a.regimeMixte, true, 'une sélection à régimes mêlés doit être signalée, pas tue');
+});
+
+test('sélection homogène : aucun signalement de faire-valoir mixte', () => {
+  const lignes = [
+    { cepage: 'CHARDONNAY B', anneePlant: 2000, surface: 0.10, tauxManquant: 0, modeExplo: 'FE' },
+    { cepage: 'CHARDONNAY B', anneePlant: 2000, surface: 0.20, tauxManquant: 0, modeExplo: 'fermage' }
+  ];
+  const a = OAD.agregerRegistreParcelle(lignes, CAMPAGNE_TEST);
+  assert.strictEqual(a.regime, 'fermage');
+  assert.strictEqual(a.regimeMixte, false, '« FE » et « fermage » sont le même régime écrit deux fois');
+});
+
+test('sélection vide → propriété, sans exception ni régime fantôme', () => {
+  const a = OAD.agregerRegistreParcelle([], CAMPAGNE_TEST);
+  assert.strictEqual(a.regime, 'propriete');
+  assert.strictEqual(a.regimeMixte, false);
+});
+
+test('égalité parfaite de surface : le régime retenu est stable d’un rendu à l’autre', () => {
+  // Deux régimes à surface strictement égale ne doivent pas faire dépendre le
+  // résultat de l'ordre des lignes : l'utilisateur verrait le régime changer
+  // en réordonnant son registre sans rien y corriger.
+  const a = { cepage: 'C', anneePlant: 2000, surface: 0.5, tauxManquant: 0, modeExplo: 'FE' };
+  const b = { cepage: 'C', anneePlant: 2000, surface: 0.5, tauxManquant: 0, modeExplo: 'MET' };
+  assert.strictEqual(OAD.agregerRegistreParcelle([a, b], CAMPAGNE_TEST).regime,
+    OAD.agregerRegistreParcelle([b, a], CAMPAGNE_TEST).regime);
+});
+
+// ----------------------------------------------------------------------
 // Section 9 — Calibration Cerfrance/MHCS des charges d'entretien (chantier 2)
 //
 // Défauts UI calibrés (index.html), pas des valeurs arbitraires :
@@ -1730,9 +1802,25 @@ test('prompt 9 : les graphiques sont ouverts par défaut, leurs boutons de repli
 
 section('24. Panneau « Hypothèses » (prompt 10)');
 
-test('les 36 contrôles liés à state.v sont toujours présents, une fois et une seule', () => {
-  const cles = ['volco', 'prixKg', 'campagne', 'riPct', 'coutSurfaceProdHaAn', 'coutRdtParKg',
-    'tauxHoraire', 'ecartRang', 'ecartPied', 'rendEstime', 'regime', 'nbRangs', 'loyerHa',
+/* 36 → 35 : `campagne` a été retiré des saisies. La campagne de référence des
+   âges du registre est désormais toujours l'année en cours (CAMPAGNE_COURANTE
+   dans index.html) ; le champ « Campagne de référence » du temps 1, dernier
+   occupant du volet « Ajuster » de cet écran, a disparu avec lui. Ce n'est pas
+   une perte de contrôle à rattraper mais une simplification demandée : le test
+   suivant garde la porte fermée.
+
+   35 → 34 : `regime` a quitté `state.v` à son tour (prompt « faire-valoir au
+   registre »). Le régime de faire-valoir ne se saisit plus dans un bloc au bas
+   du temps 1, valable pour toute la parcelle : il est porté par CHAQUE ligne du
+   registre parcellaire (colonne « Faire-valoir », `mode_explo` du format CIVC),
+   et celui qui entre dans le calcul en est dérivé — dominant en surface parmi
+   les lignes retenues, comme la surface et l'âge le sont déjà. Ce n'est donc pas
+   un contrôle perdu mais un contrôle déplacé, et rendu plus fin ; le test qui
+   suit vérifie qu'il n'est pas rouvert ailleurs. `loyerHa`, `partRecolte` et
+   `partCouts` restent des saisies : ce sont des montants, pas un régime. */
+test('les 34 contrôles liés à state.v sont toujours présents, une fois et une seule', () => {
+  const cles = ['volco', 'prixKg', 'riPct', 'coutSurfaceProdHaAn', 'coutRdtParKg',
+    'tauxHoraire', 'ecartRang', 'ecartPied', 'rendEstime', 'nbRangs', 'loyerHa',
     'partRecolte', 'partCouts', 'cepage', 'calcaireActif', 'profondeurSol', 'drainageSol',
     'materiel', 'porteGreffe', 'typeTaille', 'nbFils', 'espPiquet', 'anneePleineProd',
     'repos', 'coutArrachageHa', 'coutPlant', 'coutPalissageHa', 'coutProtectionHa',
@@ -1741,6 +1829,54 @@ test('les 36 contrôles liés à state.v sont toujours présents, une fois et un
     const n = (INDEX_HTML.match(new RegExp('on\\.' + k + ' \\}\\}', 'g')) || []).length;
     assert.strictEqual(n, 1, 'le contrôle « ' + k + ' » doit rester saisissable, exactement une fois');
   });
+  assert.ok(!/on\.regime \}\}/.test(INDEX_HTML) && !/id="f-regime"/.test(INDEX_HTML),
+    'le régime de faire-valoir ne doit pas rouvrir un champ global : il se corrige au registre, ligne par ligne');
+  const defauts = INDEX_HTML.match(/const V_DEFAUTS = \{[\s\S]*?\n\};/);
+  assert.ok(defauts && !/\bregime:/.test(defauts[0]),
+    'rien à persister sous `regime` : la valeur est dérivée du registre à chaque rendu');
+});
+
+/* Suite de la section 8 bis — faire-valoir porté par le registre. Ces deux
+   tests-ci lisent le gabarit : ils vivent donc après la déclaration de
+   INDEX_HTML, et non auprès des tests de moteur de la section 8 bis. */
+test('le faire-valoir est branché au registre dans le gabarit, et nulle part ailleurs', () => {
+  assert.ok(/<div class="th wide">Faire-valoir<\/div>/.test(INDEX_HTML),
+    'la colonne « Faire-valoir » doit exister dans le registre parcellaire');
+  assert.ok(/r\.regimeFv \}\}/.test(INDEX_HTML) && /r\.onRegimeFv \}\}/.test(INDEX_HTML),
+    'la cellule doit être saisissable ligne par ligne');
+  assert.ok(/majCelluleRegistre\(r\._id, 'modeExplo'/.test(INDEX_HTML),
+    'la saisie doit écrire dans la colonne mode_explo du registre, pas dans un état parallèle');
+  assert.ok(/regimeParcRegistreTxt/.test(INDEX_HTML) && /regimeMixteTxt/.test(INDEX_HTML),
+    'le temps 1 doit afficher le régime dérivé et signaler une sélection mixte');
+  assert.ok(!/Faire-valoir de la parcelle<\/h3>/.test(INDEX_HTML),
+    'le bloc « Faire-valoir de la parcelle » du bas du temps 1 a disparu : la saisie est au registre');
+  assert.ok(/fv: \{ regime: regimeParcelle,/.test(INDEX_HTML),
+    'le moteur doit recevoir le régime dérivé du registre, jamais une saisie globale');
+});
+
+test('le jeu de registre d’exemple renseigne mode_explo sur toutes ses lignes', () => {
+  const csv = INDEX_HTML.match(/const REGISTRE_EXEMPLE_CSV = `([^`]*)`/)[1];
+  const lignes = csv.trim().split('\n');
+  const iMode = lignes[0].split(';').indexOf('mode_explo');
+  assert.ok(iMode >= 0, 'la colonne mode_explo doit rester au format');
+  lignes.slice(1).forEach((l, i) => {
+    const val = l.split(';')[iMode].trim();
+    assert.ok(val.length > 0, `ligne ${i + 1} : mode_explo ne doit plus être vide`);
+    assert.strictEqual(OAD.normaliserRegimeFv(val), 'propriete',
+      `ligne ${i + 1} : l'exemple reste en faire-valoir direct — un fermage inventé changerait le résultat par défaut`);
+  });
+});
+
+test("la campagne de référence n'est plus une saisie : toujours l'année en cours", () => {
+  assert.ok(/const CAMPAGNE_COURANTE = new Date\(\)\.getFullYear\(\);/.test(INDEX_HTML),
+    "la campagne doit être une constante dérivée de l'horloge, en un seul endroit");
+  assert.ok(!/on\.campagne/.test(INDEX_HTML) && !/id="f-campagne"/.test(INDEX_HTML),
+    'aucun champ de saisie ne doit rouvrir le paramétrage de la campagne');
+  const defauts = INDEX_HTML.match(/const V_DEFAUTS = \{[\s\S]*?\n\};/);
+  assert.ok(defauts && !/\bcampagne:/.test(defauts[0]),
+    "la campagne ne doit pas revenir dans V_DEFAUTS : rien à persister ni à restaurer");
+  assert.ok(!/ajusterOuvert1|toggleAjuster1|ajusterResume1|ajusterChevron1/.test(INDEX_HTML),
+    "le volet « Ajuster » du temps 1 était vide sans elle : il ne reste pas à l'écran");
 });
 
 test("le panneau Hypothèses est un état d'interface ; ses valeurs restent dans state.v", () => {
@@ -1937,6 +2073,84 @@ test('la synthèse imprimée est assemblée des mêmes morceaux que celle de l\'
     assert.ok(bloc.indexOf('out.' + k) >= 0,
       'la fiche remise au vigneron ne doit pas raconter autre chose que l\'écran : ' + k);
   });
+});
+
+
+// ----------------------------------------------------------------------
+// Section 29 — Composition du vignoble : part arrachée / plantée et
+// surface par classe d'âge (graphique du temps 1).
+//
+// Ce que ces tests figent, ce sont les deux CONVENTIONS de découpage, les
+// seules qui puissent produire un graphique faux sans lever d'exception :
+// les classes d'âge ignorent les lignes Arrachée, et les bornes sont
+// fermées à gauche, ouvertes à droite.
+// ----------------------------------------------------------------------
+
+section('29. Composition du vignoble — part arrachée et classes d\'âge (temps 1)');
+
+test('repartirRegistreParAge : plantée/arrachée sur la surface totale, classes sur la seule surface plantée', () => {
+  const r = OAD.repartirRegistreParAge(REGISTRE_TEST, CAMPAGNE_TEST);
+  const { surfTot } = OAD.agregerRegistreExploitation(REGISTRE_TEST, CAMPAGNE_TEST);
+  assertClose(r.surfTot, surfTot, 1e-9,
+    'le graphique doit annoncer la même surface totale que le champ affiché au-dessus de lui');
+  assertClose(r.surfArrachee, 0.47, 1e-9);   // Z0068 0,21 + Z0069 0,13 + Z0157 0,13
+  assertClose(r.surfPlantee, 1.03, 1e-9);
+  assertClose(r.partArrachee + r.partPlantee, 1, 1e-9);
+  // Les lignes Arrachée n'entrent dans AUCUNE classe d'âge : une parcelle
+  // arrachée n'a plus d'âge de vigne, la ranger dans « 0 à 10 ans » la ferait
+  // passer pour un jeune plantier.
+  const sommeClasses = r.classes.reduce((s, c) => s + c.surface, 0);
+  assertClose(sommeClasses, r.surfPlantee, 1e-9,
+    'la somme des classes vaut exactement la surface plantée, jamais la surface totale');
+  assertClose(r.classes[0].surface, 0.05, 1e-9);   // 2019 -> 7 ans
+  assertClose(r.classes[1].surface, 0.18, 1e-9);   // 2010 x3 (0,12+0,04+0) -> 16 ans, 2006 -> 20 ans (0,02)
+  assertClose(r.classes[2].surface, 0, 1e-9);      // aucune vigne de 30 à 50 ans dans ce registre
+  assertClose(r.classes[3].surface, 0.80, 1e-9);   // 1951/1954 -> 72 et 75 ans
+});
+
+test('bornes de classe fermées à gauche, ouvertes à droite — aucune surface comptée deux fois ni perdue', () => {
+  // Une ligne exactement sur chaque borne : 0, 10, 30 et 50 ans.
+  const surLesBornes = [0, 10, 30, 50].map((age, i) => ({
+    idu: 'B' + i, cepage: 'CHARDONNAY B', anneePlant: CAMPAGNE_TEST - age,
+    surface: 1, tauxManquant: 0, situation: 'plantee'
+  }));
+  const r = OAD.repartirRegistreParAge(surLesBornes, CAMPAGNE_TEST);
+  assert.deepStrictEqual(r.classes.map(c => c.surface), [1, 1, 1, 1],
+    'une vigne de 10 ans tout juste est « 10 à 30 », pas « 0 à 10 » : sinon la première '
+    + 'classe compte deux lignes et la deuxième aucune');
+  assertClose(r.classes.reduce((s, c) => s + c.part, 0), 1, 1e-9);
+});
+
+test('registre vide, cellule en cours de saisie, année de plantation dans le futur', () => {
+  const vide = OAD.repartirRegistreParAge([], CAMPAGNE_TEST);
+  assert.strictEqual(vide.surfTot, 0);
+  assert.strictEqual(vide.partPlantee, 0, 'surface nulle -> parts à 0, jamais NaN (0/0)');
+  assert.deepStrictEqual(vide.classes.map(c => c.surface), [0, 0, 0, 0]);
+  assert.deepStrictEqual(OAD.repartirRegistreParAge(undefined, CAMPAGNE_TEST).classes.map(c => c.part),
+    [0, 0, 0, 0]);
+  // Année de plantation postérieure à la campagne : âge négatif. La ligne
+  // tombe dans la première classe plutôt que d'être perdue — sans quoi la
+  // somme des classes cesserait de valoir la surface plantée, et le
+  // graphique afficherait des proportions fausses.
+  const futur = OAD.repartirRegistreParAge([
+    { idu: 'F', cepage: 'CHARDONNAY B', anneePlant: CAMPAGNE_TEST + 3, surface: 0.4, situation: 'plantee' }
+  ], CAMPAGNE_TEST);
+  assertClose(futur.classes[0].surface, 0.4, 1e-9);
+  assertClose(futur.classes.reduce((s, c) => s + c.surface, 0), futur.surfPlantee, 1e-9);
+});
+
+test('le graphique de composition est branché au temps 1', () => {
+  assert.ok(/\{\{ graphExploitation \}\}/.test(INDEX_HTML),
+    'le graphique doit être monté dans le gabarit, pas seulement calculé');
+  assert.ok(/OAD\.repartirRegistreParAge\(/.test(INDEX_HTML),
+    'la répartition vient du moteur, pas d\'un comptage refait dans index.html');
+  // Le graphique doit être DANS la section du temps 1, avant le volet
+  // « Ajuster » : c'est une lecture de l'exploitation, pas un réglage.
+  const t1 = INDEX_HTML.indexOf('TEMPS 1 · VOTRE EXPLOITATION');
+  const t1bis = INDEX_HTML.indexOf('TEMPS 1 · LA PARCELLE DÉSIGNÉE');
+  const graph = INDEX_HTML.indexOf('{{ graphExploitation }}');
+  assert.ok(graph > t1 && graph < t1bis,
+    'le graphique décrit toute l\'exploitation : il appartient à la première section, pas à la parcelle');
 });
 
 // ----------------------------------------------------------------------

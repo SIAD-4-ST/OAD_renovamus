@@ -37,6 +37,7 @@ chiffrée se met à jour en continu dans la colonne de droite.
 5. [Le flux de données, de la frappe au résultat](#5-le-flux-de-données-de-la-frappe-au-résultat)
 6. [Glossaire des champs de saisie](#6-glossaire-des-champs-de-saisie)
     - [6bis. Le registre parcellaire — seule source des surfaces et des âges](#6bis-le-registre-parcellaire--seule-source-des-surfaces-et-des-âges)
+    - [6ter. Le faire-valoir au registre — un régime par parcelle](#6ter-le-faire-valoir-au-registre--un-régime-par-parcelle)
 7. [Le moteur kg — `simulerReserveKg`](#7-le-moteur-kg--simulerreservekg)
     - [7bis. Journal d'arbitrages — chantier A2 : uniformisation de l'arrachage](#7bis-journal-darbitrages--chantier-a2--uniformisation-de-larrachage)
     - [7ter. Journal d'arbitrages — chantier A3 : remplacement des paliers de montée en charge](#7ter-journal-darbitrages--chantier-a3--remplacement-des-paliers-de-montée-en-charge)
@@ -55,6 +56,7 @@ chiffrée se met à jour en continu dans la colonne de droite.
     - [17bis. Les deux sorties d'impression](#17bis-les-deux-sorties-dimpression)
 18. [Graphiques SVG faits main](#18-graphiques-svg-faits-main)
     - [18bis. La frise de trajectoire — `friseTrajectoire()`](#18bis-la-frise-de-trajectoire--frisetrajectoire)
+    - [18ter. La composition du vignoble — `graphExploitation()`](#18ter-la-composition-du-vignoble--graphexploitation)
 19. [Limites, hypothèses et paramètres cachés](#19-limites-hypothèses-et-paramètres-cachés)
     - [19bis. Journal d'arbitrages — accueil, simplification de l'interface, deux corrections](#19bis-journal-darbitrages--accueil-simplification-de-linterface-deux-corrections)
     - [19ter. Journal d'arbitrages — session du 01/09/2026](#19ter-journal-darbitrages--session-du-01092026)
@@ -500,7 +502,7 @@ l'ensemble des champs à tout moment.
 
 | # | Temps | Sections | Contenu |
 |---|---|---|---|
-| 1 | **La parcelle** | *Votre exploitation* + *La parcelle désignée* | Registre parcellaire (bandeau replié, importable, corrigeable et complétable ligne à ligne — §6bis), surface totale et âge moyen **dérivés du registre**, VolCo, prix du raisin. Puis la **géométrie de la parcelle** avec son **schéma dessiné pendant la saisie** (§16) : surface arrachée (du registre), écart entre rangs, écart entre pieds, nombre de rangs — seuls champs saisis ; longueur de rang, densité, pieds à planter, conformité des écartements et **conformité de la densité aux bornes AOC** en sont déduits, jamais saisis. Puis âge, taux de pieds manquants, rendement estimé, régime de faire-valoir. |
+| 1 | **La parcelle** | *Votre exploitation* + *La parcelle désignée* | Registre parcellaire (bandeau replié, importable, corrigeable et complétable ligne à ligne — §6bis), surface totale et âge moyen **dérivés du registre**, VolCo, prix du raisin. Puis la **géométrie de la parcelle** avec son **schéma dessiné pendant la saisie** (§16) : surface arrachée (du registre), écart entre rangs, écart entre pieds, nombre de rangs — seuls champs saisis ; longueur de rang, densité, pieds à planter, conformité des écartements et **conformité de la densité aux bornes AOC** en sont déduits, jamais saisis. Puis âge, taux de pieds manquants et **régime de faire-valoir**, tous trois **dérivés du registre** (§6ter), et rendement estimé. |
 | 2 | **Le projet** | *Ce que vous replantez* + *Ce que cela coûte* | Simulateur d'aide au choix du matériel végétal (cépage / calcaire / profondeur / drainage, arbre porte-greffe, table clones — informatif, §15), matériel végétal et porte-greffe, palissage et conduite dérivés de la géométrie du temps 1 (§14). Puis la durée de repos du sol, les investissements liés à la parcelle (arrachage et préparation, plants, arrosage du plantier) et l'entretien en deux temps (B.1 repos, B.2 plantier). Les **tarifs** de palissage et de protection sont dans le panneau Hypothèses, pas ici : ce sont des références sourcées, pas des choix de projet. |
 | 3 | **La trajectoire** | *Résultats* | **Trois chiffres de tête** en 36 px, puis la **frise de trajectoire** (§18bis), puis le bandeau climatique non repliable, les deux boutons d'impression, la synthèse rédigée et les réglages d'affichage (vue de faire-valoir, mode main d'œuvre, test de résistance). Le bloc « Ce que le renouvellement produit » garde les KPI physiques et les deux graphiques, **affichés par défaut**. Le détail descend dans **cinq onglets** (§3ter). Hors onglets, en bas : annexe technique (détail annuel), volet « hypothèses de comparaison » portant `declinSQ`, tableau du manque à gagner. |
 
@@ -589,7 +591,7 @@ pilote le calcul.
 | Écran | Les 11 repères |
 |---|---|
 | 1 | surface totale, âge moyen *(ou dérivés du registre)*, VolCo, prix du raisin |
-| 2 | surface arrachée, âge de la parcelle, rendement estimé, régime de faire-valoir, écart entre rangs, écart entre pieds |
+| 2 | surface arrachée, âge de la parcelle, rendement estimé, régime de faire-valoir *(dérivé du registre, §6ter)*, écart entre rangs, écart entre pieds |
 | 4 | durée de repos |
 
 La liste vit dans `REPERES_CHEMIN_COURT` (`index.html`), avec pour chaque
@@ -619,8 +621,8 @@ prétend.
 `inp` et dans le moteur :** `fracFormation` (coefficient de modélisation ;
 sa valeur retenue reste affichée là où elle agit), `survie` et
 `coutEntreplant` (n'alimentent que la complantation, jamais affichée).
-`campagne` reste saisissable dans le volet « Ajuster » de l'écran 1,
-lui-même conditionné au mode registre. Tous restent listés dans la fiche
+`campagne` n'est plus une saisie du tout depuis le 07/09/2026 : voir le
+paragraphe ci-dessous. Tous restent listés dans la fiche
 d'audit imprimable, avec une provenance qui dit désormais « NON
 SAISISSABLE » plutôt que « Saisi ».
 
@@ -687,7 +689,7 @@ chantier A4 : elle est déduite (surface ÷ (nbRangs × écart rang)), affichée
 | `manquants` | % | 15 | taux de pieds manquants → dimensionne la complantation. Dérivé du registre en mode registre (§6bis) |
 | `rendEstime` | kg/ha | 10500 | rendement actuel de la parcelle — sert au statu quo **et** à la complantation |
 | `declinSQ` | %/an | 1 | déclin annuel de rendement si on ne touche à rien (statu quo) — défaut indicatif, à ajuster à la parcelle |
-| `regime` | propriete\|fermage\|metayage | propriete | régime de faire-valoir, pilote la répartition des flux (§10) |
+| `regime` | propriete\|fermage\|metayage | — | régime de faire-valoir, pilote la répartition des flux (§10). **N'est plus une saisie** : dérivé du registre parcellaire, colonne « Faire-valoir » (`mode_explo`) — voir §6ter. Ne figure plus dans `state.v` |
 | `loyerHa` (si fermage) | €/ha/an | 3000 | loyer fermage → `fv.loyerAn = loyerHa × surfParc` (surface de la parcelle, pas de l'exploitation — voir §10) |
 | `partRecolte` (si métayage) | % | 33 | part de recettes au propriétaire |
 | `partCouts` (si métayage) | % | 33 | part de coûts au propriétaire |
@@ -820,6 +822,12 @@ lignes : dix lignes à 0 ha ne valent pas mieux qu'aucune ligne. C'est un
 garde-fou d'**interface** : côté moteur, `simulerReserveKg` protégeait déjà
 ses divisions (`surfProd === 0 ? 0 : …`), et un test dédié le fige (§18,
 section 19 des tests).
+**Ce que le registre donne aussi, et qui ne tient pas dans deux nombres.**
+`OAD.repartirRegistreParAge(rows, campagne)` en tire la part déjà arrachée,
+la part plantée et la surface par classe d'âge (`[0,10[`, `[10,30[`,
+`[30,50[`, `[50,∞[`). C'est la source du graphique « La composition de votre
+vignoble » affiché juste sous les deux champs dérivés — voir §18ter.
+
 
 **Origine des données — jeu d'exemple, pas d'import réel.** `state.registreRows`
 est peuplé au chargement à partir d'une constante `REGISTRE_EXEMPLE_CSV`
@@ -884,7 +892,8 @@ dialogue ne protégerait de rien qu'elle puisse rendre.
 assumées, sans source) : `idu` et `commune` vides — ce sont des identifiants
 CIVC que le vigneron connaît, l'outil n'en invente pas ; `cepage`
 `CHARDONNAY B` ; `anneePlant` = campagne − 10 ; `surface`, `tauxManquant` à
-0 ; `situation` `plantee`. Une ligne vierge n'apporte donc **aucune surface**
+0 ; `situation` `plantee` ; `modeExplo` `propriete` — le seul régime qui ne
+prélève rien (§6ter). Une ligne vierge n'apporte donc **aucune surface**
 et ne lève pas à elle seule l'état bloquant.
 
 **`_id` change de nature.** C'était la position de la ligne, réattribuée à
@@ -934,8 +943,25 @@ campagne)` (`moteur-oad.js`) renvoie `{ surfTot, ageMoy }` :
 parcelle arrachée reste une surface de l'exploitation, en repos) ;
 `ageMoy` = moyenne pondérée par surface, **excluant** les lignes arrachées
 du numérateur et du dénominateur (une parcelle sans vigne en terre n'a pas
-d'âge de vigne). `v.campagne` (défaut : année courante du navigateur) sert
-de référence pour `age = campagne − anneePlant`.
+d'âge de vigne). La référence des âges (`age = campagne − anneePlant`) est
+`CAMPAGNE_COURANTE`, constante d'`index.html` fixée à l'année courante du
+navigateur (`new Date().getFullYear()`) au chargement.
+
+> **La campagne de référence n'est plus paramétrable (07/09/2026).** Elle
+> était un champ du volet « Ajuster » de l'écran 1 (`v.campagne`) ; c'est
+> désormais toujours l'année en cours. Personne n'a de raison de dater le
+> vignoble d'une autre année que celle où il est regardé, et le paramètre
+> coûtait un champ à comprendre. `CAMPAGNE_COURANTE` vit **hors de
+> `V_DEFAUTS`** : ce n'est pas une saisie, donc rien à persister, rien à
+> restaurer, rien à « reprendre ». Un instantané localStorage écrit par une
+> version antérieure porte encore `v.campagne` ; `fusionnerV` l'ignore sans
+> bruit, puisqu'il ne remplace que des clés existantes de `V_DEFAUTS` —
+> aucune migration n'est nécessaire. Le volet « Ajuster » de l'écran 1, dont
+> elle était la dernière occupante, disparaît avec elle (comme celui du
+> temps 1 avant lui : un volet vide ne reste pas à l'écran), et avec lui
+> `ajusterOuvert1` / `toggleAjuster1` / `ajusterResume1` /
+> `ajusterChevron1`. Rien ne change au calcul : la valeur par défaut de
+> l'ancien champ était déjà l'année en cours.
 
 **Étape 2 — désignation de la parcelle.** Un sélecteur `idu` (`iduOptions`,
 les `idu` distincts parmi les lignes *plantées* uniquement) choisit un
@@ -947,13 +973,16 @@ regroupe des sous-parcelles hétérogènes. Les lignes retenues alimentent
 qui renvoie `surfParc`, `ageParc` et `tauxManquant` (pondérés par surface),
 ainsi que `cepage` (le cépage de plus grande surface cumulée dans la
 sélection) et `cepageMixte` (alerte purement informative si la sélection
-mélange plusieurs cépages — l'UI n'a qu'un seul champ cépage, voir §15).
+mélange plusieurs cépages — l'UI n'a qu'un seul champ cépage, voir §15),
+et enfin `regime` / `regimeMixte` — le régime de faire-valoir dominant en
+surface et son alerte de mélange, sur le même modèle que le cépage (§6ter).
 
 **Branchement dans `inp`.** En mode registre, `renderVals()` (`index.html`)
-substitue les 4 valeurs dérivées à celles de `state.v` : `inp.surfTot`,
+substitue les valeurs dérivées à celles de `state.v` : `inp.surfTot`,
 `inp.ageMoy`, `inp.ageParc`, `inp.manquants` (= `tauxManquant/100`)
 viennent du registre plutôt que des champs `v.surfTot`/`v.ageMoy`/
-`v.ageParc`/`v.manquants`. `agregParcelle.surfParc` cascade jusqu'à
+`v.ageParc`/`v.manquants`. `inp.fv.regime` s'y ajoute (§6ter), à ceci près
+qu'il n'a plus de champ de repli : `v.regime` a disparu de `state.v`. `agregParcelle.surfParc` cascade jusqu'à
 `fv.loyerAn = loyerHa × surfParcResolu` (§10) et, depuis le **chantier A4**
 (§16), jusqu'à la géométrie elle-même : `OAD.geometrieAgronomique(surf, …)`
 reçoit `agregParcelle.surfParc` comme `surf` (donc `surfParcResolu = g.surf
@@ -962,6 +991,72 @@ rang — la densité, elle, continue de dépendre uniquement des écartements,
 indépendamment du mode actif. (Avant le chantier A4, cette surface passait
 par une réconciliation « largeur équivalente » aujourd'hui obsolète, voir
 §16.)
+
+## 6ter. Le faire-valoir au registre — un régime par parcelle
+
+Le régime de faire-valoir se saisissait dans un bloc à part, au bas du
+temps 1 (`v.regime`, un sélecteur à trois valeurs), et valait pour **toute**
+la parcelle désignée. C'était une approximation commode : une exploitation
+champenoise possède telle parcelle, en loue une autre en fermage et en
+travaille une troisième en métayage. Un régime global obligeait à choisir
+lequel des trois décrivait le moins mal l'ensemble.
+
+**Le faire-valoir est désormais une propriété de la ligne**, au même titre
+que le cépage ou la situation. Il tient dans la colonne `mode_explo` que le
+format d'export du portail CIVC prévoyait déjà (§6bis) — elle existait au
+format sans que rien ne la lise. Le tableau du registre porte une colonne
+**« Faire-valoir »** saisissable ligne à ligne (Propriété / Fermage /
+Métayage), et le bloc du bas du temps 1 a disparu.
+
+**Trois écritures, une seule chose.** `OAD.normaliserRegimeFv(brut)` accepte
+le code du fichier CIVC (`FD`, `FE`, `MET`…), le libellé en toutes lettres
+(« Métayage »), et la clé interne écrite par le sélecteur (`metayage`). Une
+valeur vide, absente ou inconnue retombe sur `propriete` : c'est le régime
+majoritaire en Champagne, et le seul qui n'ajoute ni loyer ni part de
+récolte — à défaut d'information, l'outil ne prélève rien plutôt que
+d'inventer un prélèvement. Un registre importé d'une version antérieure,
+dont la colonne `mode_explo` est vide, se comporte donc exactement comme
+avant ce chantier.
+
+**Le régime du calcul est dérivé, jamais saisi.**
+`OAD.agregerRegistreParcelle()` renvoie, à côté de `surfParc`, `ageParc` et
+`tauxManquant`, deux champs de plus :
+
+| Champ | Règle |
+|---|---|
+| `regime` | régime **dominant en surface** parmi les lignes retenues de la parcelle désignée ; `propriete` sur une sélection vide |
+| `regimeMixte` | `true` si les lignes retenues mêlent plusieurs régimes |
+
+La pondération est **en surface**, pas en nombre de lignes : c'est la
+surface qui porte les flux que `repartir()` découpe entre exploitant et
+propriétaire (§10). En cas d'égalité parfaite, l'ordre de `REGIMES_FV`
+tranche — deux rendus du même registre ne doivent jamais donner deux
+réponses, et réordonner ses lignes ne doit pas changer son résultat.
+
+**Ce que l'écran affiche.** Le temps 1 montre le régime dérivé en lecture
+seule, dans la même grille que l'âge et les pieds manquants, avec la mention
+« dérivé du registre — régime dominant en surface ». Une sélection à régimes
+mêlés est **signalée**, pas bloquée : l'outil est pédagogique, mais il ne
+peut appliquer qu'un régime, et l'utilisateur doit savoir que celui qu'il lit
+ne décrit qu'une partie de sa parcelle. Le tableau de la parcelle désignée
+affiche lui aussi le faire-valoir de chaque ligne, en lecture — cocher ou
+décocher une ligne sans voir son régime reviendrait à changer le calcul à
+l'aveugle.
+
+**Ce qui ne bouge pas.** `loyerHa`, `partRecolte` et `partCouts` restent des
+saisies, dans le panneau Hypothèses : ce sont des **montants**, pas un
+régime. `repartir()` (§10) est inchangé — il reçoit toujours un seul
+`fv.regime`, c'est son origine qui a changé. `state.v` perd sa clé `regime` :
+rien à persister ni à restaurer, la valeur se recalcule à chaque rendu depuis
+le registre. Un instantané localStorage écrit avant ce chantier porte encore
+`v.regime` ; `fusionnerV` l'ignore sans bruit, puisqu'il ne remplace que des
+clés existantes de `V_DEFAUTS` — aucune migration n'est nécessaire.
+
+Le repère « régime de faire-valoir » reste l'un des **11 repères** du chemin
+court, mais rejoint les repères dérivés du registre (surface totale, âge
+moyen, surface arrachée, âge de la parcelle) : il compte pour renseigné, et
+son `id` vise le sélecteur de parcelle désignée, d'où l'on voit le
+faire-valoir des lignes retenues.
 
 ## 7. Le moteur kg — `simulerReserveKg`
 
@@ -2590,6 +2685,71 @@ construction, les années que la synthèse textuelle annonce.
 La légende sous la frise dit la **causalité** et nomme l'aléa effectivement
 simulé — sans lui, la chaîne « récolte courte → creux de réserve → point bas de
 trésorerie » n'a pas de premier maillon.
+
+---
+
+### 18ter. La composition du vignoble — `graphExploitation()`
+
+Le temps 1 affichait le registre sous forme de **deux nombres** — surface
+totale, âge moyen — et d'un tableau de douze lignes replié par défaut. Deux
+nombres qui perdent précisément ce sur quoi se décide un renouvellement :
+quelle part du domaine est **déjà arrachée**, et comment la surface plantée se
+distribue **par classe d'âge**. Personne ne lit une pyramide des âges dans une
+colonne « année de plantation ».
+
+Le graphique est placé **juste sous les deux champs dérivés qu'il décompose**,
+avant le volet « Ajuster » : c'est une lecture de l'exploitation, pas un
+réglage. Il est masqué quand `out.registreSansSurface` est vrai — l'écran
+affiche alors son état bloquant, un graphique vide n'y ajouterait rien.
+
+Depuis le 07/09/2026, la carte qui porte ce graphique porte aussi le curseur
+de **réserve individuelle actuelle** (`v.riPct`), remonté du volet « Ajuster »
+de l'écran 1 : la réserve est le stock de kilos déjà constitué par ce
+vignoble, elle se lit avec sa pyramide des âges. Seul le **graphique** reste
+masqué quand le registre ne porte aucune surface ; la carte, elle, reste à
+l'écran — le curseur est une saisie, il ne doit jamais disparaître. Le volet
+« Ajuster » de l'écran 1 n'a plus rien contenu ensuite que la campagne de
+référence, puis, celle-ci n'étant plus paramétrable (voir §6bis), plus rien du
+tout : il a été supprimé, avec `ajusterResume1` et son chevron.
+
+Le comptage vit dans le moteur (`OAD.repartirRegistreParAge(rows, campagne)`,
+pur et testé) ; `graphExploitation()` ne fait que le mettre en forme, en
+`React.createElement` comme la frise.
+
+**Deux échelles distinctes, jamais additionnées** — chaque bloc porte la sienne
+en sous-titre, sans quoi on lirait cinq parts qui ne font pas cent :
+
+| Bloc | Dénominateur | Rendu |
+|---|---|---|
+| Plantée / Arrachée | surface **totale** (arrachée comprise), comme `agregerRegistreExploitation` | une piste, deux segments `flexGrow` séparés d'un filet de fond de 2 px ; le libellé est dans le segment dès 16 % de largeur, la part seule en dessous ; les deux surfaces en hectares sont reprises en légende, qu'un segment étroit ne peut pas porter |
+| Classes d'âge | surface **plantée** seule — une parcelle arrachée n'a plus d'âge de vigne, même exclusion que l'âge moyen pondéré | quatre barres dont la longueur est la **part de la surface plantée**, pas une part du maximum : la piste entière vaut cent pour cent et les quatre barres s'y ajoutent exactement |
+
+**Bornes des classes : `[0,10[`, `[10,30[`, `[30,50[`, `[50,∞[`** — fermées à
+gauche, ouvertes à droite. Une vigne de trente ans tout juste est « 30 à 50 »,
+jamais comptée deux fois. Un âge négatif (année de plantation postérieure à la
+campagne, ou cellule en cours de saisie) tombe dans la première classe plutôt
+que d'être perdu : **la somme des classes vaut toujours exactement la surface
+plantée**, invariant sans lequel le graphique mentirait sur des proportions.
+Un test le fige (§18, section 29 des tests).
+
+**Couleurs.** Comme la frise et le schéma de parcelle, ce sont des couleurs de
+*série* : littérales, identiques dans les deux thèmes. Les classes d'âge
+portent une rampe d'une **seule teinte**, du clair au foncé
+(`#9BBEA7 · #74A084 · #547E64 · #365D46`) : l'âge est une grandeur *ordonnée*,
+quatre couleurs franches lui inventeraient quatre catégories sans rapport. La
+teinte ne porte **aucun jugement** — l'outil ne dit pas qu'une vigne de
+cinquante ans est un problème, il montre la surface concernée. Les deux
+extrémités de la rampe ont été vérifiées lisibles sur le fond clair **et** sur
+le fond sombre, et chaque barre porte son chiffre en clair à côté d'elle : la
+couleur ne porte jamais seule l'information. « Arrachée » reprend le beige de
+la phase **repos** de la frise (`#CFC6B0`) — une parcelle arrachée *est* une
+surface en repos, elle doit se reconnaître d'un graphique à l'autre.
+
+La piste de fond des classes d'âge prend `--surface-basse` et non
+`--bordure-claire` : dans le thème sombre, le dernier pas de la rampe est plus
+foncé qu'une bordure et la barre s'y lirait comme un **creux**, figure et fond
+inversés. Le filet `--bordure` qui la borde redonne l'étendue des cent pour
+cent, que le fond seul ne montre plus dans le thème clair.
 
 ---
 

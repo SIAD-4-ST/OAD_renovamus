@@ -292,6 +292,39 @@ function agregerRegistreExploitation(rows, campagne) {
   return { surfTot, ageMoy: surfPlantee > 0 ? sommePonderee / surfPlantee : 0 };
 }
 
+/* Faire-valoir porté par le registre parcellaire.
+
+   Le régime de faire-valoir n'est plus une saisie unique posée au bas du
+   temps 1 : c'est une propriété de CHAQUE ligne du registre, portée par la
+   colonne `mode_explo` de l'export du portail CIVC — une exploitation loue
+   telle parcelle et possède telle autre, un régime global était une
+   approximation. Le régime qui entre dans le calcul est celui de la parcelle
+   désignée, dérivé des lignes retenues (voir agregerRegistreParcelle).
+
+   `normaliserRegimeFv` accepte trois écritures pour la même chose : le code
+   du fichier CIVC (FD / FE / MET…), le libellé en toutes lettres, et la clé
+   interne écrite par le sélecteur du tableau. Une valeur vide ou inconnue
+   retombe sur `propriete` — c'est le régime majoritaire en Champagne, et le
+   seul qui n'ajoute ni loyer ni part de récolte : à défaut d'information, on
+   ne prélève rien plutôt que d'inventer un prélèvement. */
+const REGIMES_FV = [
+  { cle: 'propriete', lib: 'Propriété' },
+  { cle: 'fermage',   lib: 'Fermage' },
+  { cle: 'metayage',  lib: 'Métayage' }
+];
+
+function normaliserRegimeFv(brut) {
+  const t = String(brut === undefined || brut === null ? '' : brut)
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  if (!t) return 'propriete';
+  // Métayage d'abord : aucun code de fermage ne contient « met », alors que
+  // « metayage » ne contient pas « ferm » — l'ordre n'a pas d'incidence ici,
+  // il est fixé pour que la lecture ne laisse pas de doute.
+  if (t.indexOf('met') === 0 || t.indexOf('metay') >= 0) return 'metayage';
+  if (t.indexOf('ferm') >= 0 || t === 'fe' || t === 'f' || t === 'fer') return 'fermage';
+  return 'propriete';
+}
+
 // Agrégation de la parcelle désignée à partir d'un sous-ensemble de lignes
 // sélectionnées (typiquement les lignes Plantée d'un même idu) : ageParc et
 // tauxManquant pondérés par surface, même logique que l'exploitation.
@@ -301,21 +334,34 @@ function agregerRegistreExploitation(rows, campagne) {
 function agregerRegistreParcelle(rows, campagne) {
   let surfParc = 0, sommeAge = 0, sommeManquant = 0;
   const surfParCepage = {};
+  const surfParRegime = {};
   rows.forEach(r => {
     const surf = +r.surface || 0;
     surfParc += surf;
     sommeAge += ageRegistre(+r.anneePlant || campagne, campagne) * surf;
     sommeManquant += (+r.tauxManquant || 0) * surf;
     surfParCepage[r.cepage] = (surfParCepage[r.cepage] || 0) + surf;
+    const reg = normaliserRegimeFv(r.modeExplo);
+    surfParRegime[reg] = (surfParRegime[reg] || 0) + surf;
   });
   const cepages = Object.keys(surfParCepage);
   const cepage = cepages.reduce((best, c) => surfParCepage[c] > (surfParCepage[best] || 0) ? c : best, cepages[0]);
+  // Régime dominant EN SURFACE, pas en nombre de lignes : c'est la surface qui
+  // porte les flux que `repartir` découpe entre exploitant et propriétaire.
+  // L'ordre de REGIMES_FV sert d'arbitre en cas d'égalité parfaite, pour que
+  // deux rendus successifs du même registre ne donnent jamais deux réponses.
+  const regimes = REGIMES_FV.map(r => r.cle).filter(c => surfParRegime[c] !== undefined);
+  const regime = regimes.reduce((best, c) => surfParRegime[c] > surfParRegime[best] ? c : best, regimes[0]);
   return {
     surfParc,
     ageParc: surfParc > 0 ? sommeAge / surfParc : 0,
     tauxManquant: surfParc > 0 ? sommeManquant / surfParc : 0,
     cepage: cepage || null,
-    cepageMixte: cepages.length > 1
+    cepageMixte: cepages.length > 1,
+    // Sélection vide -> 'propriete' : même règle que normaliserRegimeFv, aucun
+    // prélèvement inventé faute d'information.
+    regime: regime || 'propriete',
+    regimeMixte: regimes.length > 1
   };
 }
 
@@ -343,6 +389,71 @@ function synthetiseRegistre(rows) {
     if (c) vus[c] = true;
   });
   return { nbLignes: lignes.length, surfaceTotale, cepages: Object.keys(vus).sort() };
+}
+
+/* ---------------------------------------------------------------------
+   Composition du vignoble — part arrachée / part plantée, et surface par
+   classe d'âge. Alimente le graphique du temps 1 (« votre exploitation »).
+
+   Le registre porte déjà ces trois informations, mais éparpillées sur
+   douze lignes de tableau replié : on ne voit pas d'un coup d'œil quelle
+   part du domaine est en repos, ni combien d'hectares ont passé cinquante
+   ans. C'est pourtant la question à laquelle tout l'outil répond.
+
+   Deux découpages distincts, et volontairement non additionnables :
+
+   - Plantée / Arrachée porte sur la surface TOTALE. Une parcelle arrachée
+     reste une surface de l'exploitation, en repos — même règle que
+     `agregerRegistreExploitation`, pour que le graphique annonce la même
+     surface totale que le champ affiché juste au-dessus de lui.
+
+   - Les classes d'âge ne portent QUE sur la surface plantée. Une parcelle
+     arrachée n'a plus d'âge de vigne : la ranger dans « 0 à 10 ans » la
+     ferait passer pour un jeune plantier. Même exclusion que l'âge moyen
+     pondéré, pour la même raison.
+
+   Bornes fermées à gauche, ouvertes à droite — [0,10[, [10,30[, [30,50[,
+   [50,∞[ : une vigne de trente ans tout juste est « 30 à 50 », et n'est
+   jamais comptée deux fois. Un âge négatif (année de plantation dans le
+   futur, ou cellule en cours de saisie) tombe dans la première classe
+   plutôt que d'être perdu : la somme des classes vaut toujours exactement
+   la surface plantée, invariant sans lequel le graphique mentirait sur
+   des proportions.
+
+   Les parts sont des fractions (0 à 1), pas des pourcentages : la mise en
+   forme appartient à l'interface. Surface nulle -> parts à 0, jamais NaN.
+   --------------------------------------------------------------------- */
+
+const CLASSES_AGE = [
+  { id: 'c0_10', lib: '0 à 10 ans', min: 0, max: 10 },
+  { id: 'c10_30', lib: '10 à 30 ans', min: 10, max: 30 },
+  { id: 'c30_50', lib: '30 à 50 ans', min: 30, max: 50 },
+  { id: 'c50p', lib: '50 ans et plus', min: 50, max: Infinity }
+];
+
+function repartirRegistreParAge(rows, campagne) {
+  const surfaces = CLASSES_AGE.map(() => 0);
+  let surfPlantee = 0, surfArrachee = 0;
+  (rows || []).forEach(r => {
+    const surf = +(r && r.surface) || 0;
+    if (!(r && r.situation === 'plantee')) { surfArrachee += surf; return; }
+    surfPlantee += surf;
+    const age = ageRegistre(+r.anneePlant || campagne, campagne);
+    let i = CLASSES_AGE.findIndex(c => age >= c.min && age < c.max);
+    if (i < 0) i = 0;   // âge négatif : première classe, jamais perdu
+    surfaces[i] += surf;
+  });
+  const surfTot = surfPlantee + surfArrachee;
+  const part = (x, tot) => tot > 0 ? x / tot : 0;
+  return {
+    surfTot, surfPlantee, surfArrachee,
+    partPlantee: part(surfPlantee, surfTot),
+    partArrachee: part(surfArrachee, surfTot),
+    classes: CLASSES_AGE.map((c, i) => ({
+      id: c.id, lib: c.lib, min: c.min, max: c.max,
+      surface: surfaces[i], part: part(surfaces[i], surfPlantee)
+    }))
+  };
 }
 
 /* =====================================================================
@@ -377,13 +488,15 @@ function prochainIdRegistre(rows) {
 // B8) : `idu` et `commune` restent vides — ce sont des identifiants CIVC que
 // le vigneron connaît, l'outil n'a pas à en inventer ; l'année de plantation
 // place la ligne à 10 ans, âge où la question du renouvellement ne se pose pas
-// encore, donc une valeur neutre qu'il faudra corriger. Les colonnes que le
-// calcul n'utilise pas (num_civc, productivité, enroulement, court-noué) sont
+// encore, donc une valeur neutre qu'il faudra corriger. `modeExplo` part sur
+// `propriete`, comme toute ligne dont le faire-valoir n'est pas renseigné :
+// c'est le seul régime qui ne prélève rien. Les colonnes que le calcul
+// n'utilise pas (num_civc, productivité, enroulement, court-noué) sont
 // présentes à 0 pour que la ligne ait exactement la forme de celles que
 // produit `parseRegistreCSV`.
 function ligneRegistreVierge(campagne, id) {
   return {
-    _id: id, idu: '', commune: '', numCivc: '', modeExplo: '',
+    _id: id, idu: '', commune: '', numCivc: '', modeExplo: 'propriete',
     cepage: 'CHARDONNAY B', anneePlant: campagne - 10, surface: 0,
     productiviteMoyenne: 0, tauxManquant: 0, enroulement: 0, courtNoue: 0,
     situation: 'plantee'
@@ -1137,6 +1250,8 @@ if (typeof module !== 'undefined') module.exports =
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, synthetiseRegistre, trajectoireAge,
+    REGIMES_FV, normaliserRegimeFv,
+    repartirRegistreParAge, CLASSES_AGE,
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
     DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee, tresorerieCumulee,
@@ -1151,6 +1266,8 @@ if (typeof window !== 'undefined') window.OAD =
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, synthetiseRegistre, trajectoireAge,
+    REGIMES_FV, normaliserRegimeFv,
+    repartirRegistreParAge, CLASSES_AGE,
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
     DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee, tresorerieCumulee,
