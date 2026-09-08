@@ -545,6 +545,17 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
               <div class="ro">{{ registreSurfTotTxt }}</div>
               <span class="hint">dérivé du registre — Plantée + Arrachée</span>
             </div>
+            <!-- prompt B9 — l'assiette réglementaire du VolCo et du plafond de
+                 réserve n'est pas la surface au registre : elle exclut les
+                 parcelles en repos et les plantiers. Les deux surfaces sont
+                 donc affichées côte à côte, chacune sous son propre libellé,
+                 la seconde disant en clair ce qu'elle laisse dehors. -->
+            <div class="field">
+              <label class="lbl">Surface en production</label>
+              <div class="ro">{{ registreSurfProdTxt }}</div>
+              <span class="hint">assiette du VolCo et du plafond de réserve — lignes Plantée d'âge ≥ 3 ans</span>
+              <span class="hint">{{ registreHorsProdTxt }}</span>
+            </div>
             <div class="field">
               <label class="lbl">Âge moyen du vignoble</label>
               <div class="ro">{{ registreAgeMoyTxt }}</div>
@@ -1424,7 +1435,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
             <div class="n4">{{ teteRetour.det }}</div>
           </div>
           <div style="padding:20px 22px;background:var(--accent-fond);display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--accent-fond-bordure)">
-            <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Effort net à financer</div>
+            <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Investissement net de la réserve</div>
             <div class="n1">{{ teteEffort.val }}</div>
             <div class="n4">{{ teteEffort.det }}</div>
           </div>
@@ -1466,7 +1477,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
         </div>
 
         <div style="background:var(--encre);color:var(--surface-basse);border-radius:10px;padding:20px 24px;margin:16px 0;font-size:13.5px;line-height:1.65">
-          Sur {{ horizonTxt }}, l'<b style="color:var(--accent-fond)">arrachage-replantation</b> est une opération de <b style="color:var(--accent-fond)">transition</b>. La réserve mobilisable — <b style="color:var(--accent-fond)">{{ reserveReelleTxt }}</b> réellement mobilisés ({{ reserveTheoTxt }} théoriques) — {{ syntheseCouvTxt }} <b style="color:var(--accent-fond)">{{ investTxt }}</b>{{ syntheseCouvSuffixTxt }}. L'effort net à financer ressort à <b style="color:var(--accent-fond)">{{ effortNetTxt }}</b>. Tension de trésorerie maximale en année {{ creuxT }} (<b style="color:var(--accent-fond)">{{ creuxTxt }}</b>){{ syntheseAbsorptionTxt }}. {{ syntheseStockLeadTxt }} <b style="color:var(--accent-fond)">{{ stockMinTxt }} kg/ha</b> {{ syntheseStockTailTxt }} {{ syntheseHorizonTxt }}
+          Sur {{ horizonTxt }}, l'<b style="color:var(--accent-fond)">arrachage-replantation</b> est une opération de <b style="color:var(--accent-fond)">transition</b>. La réserve mobilisable — <b style="color:var(--accent-fond)">{{ reserveReelleTxt }}</b> réellement mobilisés ({{ reserveTheoTxt }} théoriques) — {{ syntheseCouvTxt }} <b style="color:var(--accent-fond)">{{ investTxt }}</b>{{ syntheseCouvSuffixTxt }}. {{ syntheseSoldeTxt }} {{ reserveHorizonTxt }} Tension de trésorerie maximale en année {{ creuxT }} (<b style="color:var(--accent-fond)">{{ creuxTxt }}</b>){{ syntheseAbsorptionTxt }}. {{ syntheseStockLeadTxt }} <b style="color:var(--accent-fond)">{{ stockMinTxt }} kg/ha</b> {{ syntheseStockTailTxt }} {{ syntheseHorizonTxt }}
         </div>
         <div style="font-size:11.5px;color:var(--encre-3);margin:8px 0 16px;line-height:1.5">Ordres de grandeur pédagogiques établis sur vos saisies — une décision d'investissement s'instruit avec votre conseil comptable et, le cas échéant, votre bailleur.</div>
 
@@ -1536,9 +1547,9 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
               <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiEcartAge.det }}</div>
             </div>
             <div style="background:var(--accent-fond);border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiStockReserve.lib }}</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiStockReserve.val }}</div>
-              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiStockReserve.det }}</div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiReserveHorizon.lib }}</div>
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiReserveHorizon.val }}</div>
+              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiReserveHorizon.det }}</div>
             </div>
             <div style="background:var(--accent-fond);border-radius:6px;padding:14px 16px">
               <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiReserveMin.lib }}</div>
@@ -1616,18 +1627,19 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
               <div style="padding:7px 0;border-bottom:1px dotted var(--bordure);text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap">{{ il.val }}</div>
             </sc-for>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:16px">
-            <div style="background:var(--accent-fond);border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiInvestTotal.lib }}</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiInvestTotal.val }}</div>
-              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiInvestTotal.det }}</div>
-            </div>
-            <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-left:4px solid var(--alerte);border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiPointBas.lib }}</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--alerte)">{{ kpiPointBas.val }}</div>
-              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiPointBas.det }}</div>
-            </div>
+          <!-- chantier C5 — l'ancien cartouche « investissement brut » (un KPI
+               de 22 px, concurrent des autres montants de l'écran) est devenu
+               le simple TOTAL du tableau qu'il surmonte. Ce n'est pas un
+               indicateur de plus : c'est la somme des lignes juste au-dessus,
+               et elle entre dans la cascade de clôture comme premier terme.
+               Le point bas de trésorerie, lui, a rejoint la cascade — voir le
+               bloc « ce que change le renouvellement » en clôture d'écran. -->
+          <div style="display:grid;grid-template-columns:1fr auto auto;gap:2px 16px;font-size:13.5px;align-items:baseline;margin-top:2px">
+            <div style="padding:9px 0;font-weight:600">{{ investTotalLib }}</div>
+            <div style="padding:9px 0;text-align:right;color:var(--encre-3);font-size:11.5px;white-space:nowrap"></div>
+            <div style="padding:9px 0;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap">{{ investTxt }}</div>
           </div>
+          <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45;max-width:74ch">{{ investTotalDet }}</div>
         </div>
         </div>
         </sc-if>
@@ -1637,27 +1649,19 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
         <!-- ============ BLOC 3 — Impact sur la réserve ============ -->
         <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin:20px 0">
           <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px;max-width:74ch">La réserve individuelle est un stock de kg déjà constitué, pas un revenu nouveau : l'arrachage autorise à en puiser une partie plus vite que d'habitude, pour jouer son rôle d'assurance pendant la période sans production normale de la parcelle.</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
-            <div style="background:var(--accent-fond);border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiAmortisseur.lib }}</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiAmortisseur.val }}</div>
-              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiAmortisseur.det }}</div>
-            </div>
-          </div>
+          <!-- chantier C5 — les cartouches en euros de ce bloc (« Réserve
+               mobilisée », « Investissement net de la réserve mobilisée ») ont
+               été retirés d'ici : ce sont deux TERMES de la cascade de clôture,
+               et les laisser vivre en parallèle recréerait exactement le
+               problème que ce chantier résout — des montants épars, aux
+               périmètres différents, qu'aucun ordre ne relie.
 
-          <div style="margin-top:10px">
-            <button onClick="{{ toggleEffortNet }}" style="font-size:11.5px;padding:7px 14px;border:1px solid var(--bordure);background:var(--surface-haute);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
-              <span>Détail — effort net après réserve</span>
-              <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">{{ effortNetChevron }}</span>
-            </button>
-            <sc-if value="{{ effortNetOuvert }}" hint-placeholder-val="{{ false }}">
-              <div style="max-width:280px;margin-top:10px;background:var(--surface-haute);border:1px solid var(--bordure);border-left:4px solid var(--vegetal);border-radius:6px;padding:14px 16px">
-                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiEffortNet.lib }}</div>
-                <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiEffortNet.val }}</div>
-                <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiEffortNet.det }}</div>
-              </div>
-            </sc-if>
-          </div>
+               Ce bloc ne garde donc que du PHYSIQUE : des kilos, jamais des
+               euros. La ligne ci-dessous en kg/ha est la contrepartie du terme
+               « réserve mobilisée » de la cascade (chantier C3, contrainte
+               d'adjacence) : elle est répétée là-bas, immédiatement sous la
+               cascade. Ne pas réintroduire ici de conversion en euros. -->
+          <div style="font-size:11.5px;color:var(--encre-3);line-height:1.5;max-width:74ch">La réserve à l'horizon figure en tête d'écran, dans « ce que le renouvellement produit », et sous la cascade de clôture — en kg/ha dans les deux cas. Ce qu'elle représente en euros n'est pas un indicateur à part : c'est un terme de la cascade.</div>
 
           <div style="margin-top:16px;border-top:1px dotted var(--bordure);padding-top:14px">
             <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">
@@ -1822,24 +1826,90 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
           </div>
         </div>
 
-        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;margin-top:12px;overflow:hidden">
-          <button onClick="{{ toggleMaG }}" class="fold-btn">
-            <span style="font-size:13.5px;font-weight:600">Manque à gagner par rapport au statu quo (indicatif — jamais déduit du calcul)</span>
-            <span class="hint">— {{ magEnteteTxt }}</span>
-            <span class="fold-sign">{{ magChevron }}</span>
-          </button>
-          <sc-if value="{{ magOuvert }}" hint-placeholder-val="{{ false }}">
-            <div style="padding:0 20px 18px">
-              <div style="display:grid;grid-template-columns:56px 1fr;font-size:11.5px;max-width:220px">
-                <div class="th">t</div>
-                <div class="th r">Arrachage</div>
-                <sc-for list="{{ magRows }}" as="m" hint-placeholder-count="4">
-                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);font-family:'JetBrains Mono',monospace">{{ m.t }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ m.arr }}</div>
-                </sc-for>
+        <!-- chantier C5 — le bloc repliable « Manque à gagner par rapport au
+             statu quo » a été retiré de l'écran. Ce n'était pas un terme de la
+             cascade : `manqueAGagner` applique un max(0, …) année par année et
+             ne porte que sur `volcoVendu`, ce qui le rend NON RECOMPOSABLE avec
+             le différentiel (23 921 € d'écart mesuré sur le paramétrage
+             dégradé). Sa place est prise par le terme « Écart de recettes
+             raisin » de la cascade ci-dessous, qui, lui, est exact.
+             La fonction reste exportée et testée (@deprecated chantier C5). -->
+
+        <!-- ============ PAR RAPPORT À NE RIEN FAIRE — chantier C4 ============
+
+             UNE LIGNE, en clôture de l'écran, affichée TOUJOURS, quel que soit
+             le signe. C'est le seul chiffre différentiel de l'interface.
+
+             Pourquoi elle existe : un simulateur d'IMPACT dont tous les chiffres
+             sont absolus ne mesure aucun impact — « impact » est un mot
+             différentiel. Avant ce chantier, basculer le test de résistance
+             climatique (la variable qui décide de tout) ne faisait bouger aucun
+             des deux KPI de tête : le même « 0 € » et le même point bas
+             s'affichaient dans deux mondes séparés par des dizaines de milliers
+             d'euros par hectare.
+
+             CE QUE CE CHANTIER NE RÉTABLIT PAS — et qu'une session ultérieure ne
+             doit pas « compléter » :
+               · aucune seconde courbe sur les graphiques ;
+               · aucune colonne « statu quo » dans un tableau ;
+               · aucun champ de saisie relatif au scénario de référence ;
+               · ce chiffre ne monte PAS dans les trois chiffres de tête (36 px) —
+                 teteRetour / teteEffort / teteAge restent inchangés ;
+               · aucune formulation évaluative (« favorable », « rentable »,
+                 « perdant ») : un montant signé et son libellé, rien d'autre.
+                 Le principe « aucune recommandation » tient.
+             Le contrefactuel reste invisible COMME SCÉNARIO CONFIGURABLE et
+             devient visible COMME POINT DE RÉFÉRENCE ARITHMÉTIQUE. -->
+        <!-- ==== LA CASCADE — chantier C5 ====
+             La cascade REMPLACE, à l'écran, l'affichage épars des montants en
+             euros (investissement brut, réserve mobilisée, solde
+             investissement/réserve, manque à gagner). Ils mélangeaient trois
+             axes — parcelle / exploitation, absolu / différentiel, ponctuel /
+             flux — sans qu'aucun ne dise sa convention.
+
+             Ses quatre termes sont une décomposition EXACTE du différentiel de
+             C4, pas un empilement d'indicateurs. Le moteur lève une exception
+             si la somme s'écarte du total de plus de 1 € : une cascade fausse
+             doit casser bruyamment, pas dériver en silence.
+
+             Restent HORS cascade, clairement séparés sous le trait, parce
+             qu'ils ne sont pas des termes d'une somme :
+               · la réserve à l'horizon (kg/ha) — physique, jamais additionnable
+                 à des euros (et adjacence C3 : elle ne quitte pas le voisinage
+                 du terme « réserve mobilisée ») ;
+               · le point bas de trésorerie (€, année) — un EXTREMUM, pas un
+                 cumul : il ne s'additionne à rien.
+             Ne pas les faire entrer dans le tableau au motif qu'ils sont « du
+             même sujet ». -->
+        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;margin-top:12px;padding:16px 20px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">{{ cascadeLib }}</div>
+          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px;max-width:78ch;line-height:1.5">{{ cascadeIntroTxt }}</div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:2px 16px;font-size:13.5px;align-items:baseline">
+            <sc-for list="{{ cascadeRows }}" as="cx" hint-placeholder-count="4">
+              <div style="padding:8px 0;border-bottom:1px dotted var(--bordure)">{{ cx.lib }}<span style="color:var(--encre-4);font-size:11.5px"> — {{ cx.note }}</span></div>
+              <div style="padding:8px 0;border-bottom:1px dotted var(--bordure);text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap;color:{{ cx.fg }}">{{ cx.val }}</div>
+            </sc-for>
+            <div style="padding:10px 0;font-weight:600;border-top:2px solid var(--encre)">{{ differentielLib }}</div>
+            <div style="padding:10px 0;text-align:right;font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;white-space:nowrap;border-top:2px solid var(--encre)">{{ differentielTxt }}</div>
+          </div>
+          <div style="font-size:11.5px;color:var(--encre-3);margin-top:8px;max-width:78ch;line-height:1.5">{{ differentielDet }}</div>
+
+          <!-- Sous le trait : ce qui n'est PAS un terme de la somme. -->
+          <div style="margin-top:16px;border-top:1px dotted var(--bordure);padding-top:14px">
+            <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:10px;max-width:78ch;line-height:1.5">Les deux grandeurs ci-dessous ne s'ajoutent pas à la cascade : l'une est un stock physique, l'autre un extremum. Elles répondent à d'autres questions.</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+              <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-left:4px solid var(--accent);border-radius:6px;padding:14px 16px">
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiReserveHorizon.lib }}</div>
+                <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiReserveHorizon.val }}</div>
+                <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiReserveHorizon.det }}</div>
+              </div>
+              <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-left:4px solid var(--alerte);border-radius:6px;padding:14px 16px">
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiPointBas.lib }}</div>
+                <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--alerte)">{{ kpiPointBas.val }}</div>
+                <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiPointBas.det }}</div>
               </div>
             </div>
-          </sc-if>
+          </div>
         </div>
 
         <p style="font-size:11.5px;color:var(--encre-3);max-width:78ch;margin-top:24px;border-top:1px solid var(--bordure);padding-top:14px;line-height:1.6">Simulation pédagogique construite sur vos seules saisies — hypothèses, sources et formule de chaque chiffre : fiche imprimable ci-dessus (« 🖨 Imprimer la fiche »).</p>
@@ -1886,7 +1956,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
             <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--encre-4);letter-spacing:0.08em;margin:14px 0 6px">FINANCEMENT</div>
             <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)"><span style="color:var(--encre-3)">Investissement brut</span><b class="mono">{{ investTxt }}</b></div>
             <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)"><span style="color:var(--encre-3)">Réserve mobilisée</span><b style="font-family:'JetBrains Mono',monospace;color:var(--accent)">{{ reserveReelleTxt }}</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0"><span style="color:var(--encre-3)">Effort net</span><b style="font-family:'JetBrains Mono',monospace;color:var(--vegetal)">{{ effortNetTxt }}</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0"><span style="color:var(--encre-3)">Investissement net de la réserve</span><b style="font-family:'JetBrains Mono',monospace;color:var(--vegetal)">{{ soldeReserveTxt }}</b></div>
 
             <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--encre-4);letter-spacing:0.08em;margin:14px 0 6px">RISQUE</div>
             <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)"><span style="color:var(--encre-3)">Tension max trésorerie</span><b style="font-family:'JetBrains Mono',monospace;color:var(--alerte)">{{ creuxTxt }}</b></div>
@@ -1929,7 +1999,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
           <div class="n4">{{ teteRetour.det }}</div>
         </div>
         <div style="padding:14px 16px;background:var(--accent-fond);border-right:1px solid var(--accent-fond-bordure)">
-          <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Effort net à financer</div>
+          <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Investissement net de la réserve</div>
           <div class="n1" style="font-size:28px">{{ teteEffort.val }}</div>
           <div class="n4">{{ teteEffort.det }}</div>
         </div>
@@ -2015,6 +2085,31 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
           </sc-for>
         </tbody>
       </table>
+
+      <!-- ============ HYPOTHÈSES NON MODÉLISÉES — chantier C7 ============
+           La fiche d'audit vise le conseiller / comptable, pas le banquier
+           (arbitrage 7) : elle assume l'auditabilité du modèle plutôt que le
+           dossier de financement. Mais une fiche d'audit qui ne dit pas ce
+           qu'elle NE calcule PAS n'est pas auditable — le lecteur ne peut pas
+           savoir où s'arrête la garantie.
+
+           Ce bloc est donc obligatoire, pas décoratif, et sans euphémisme. Le
+           point 4 en particulier n'est PAS seulement informatif : le point bas
+           de trésorerie est présenté dans un contexte de financement, et sans
+           cette mention le lecteur croit lire une trésorerie datée.
+
+           Ne pas transformer ce bloc en module : ajouter un taux d'emprunt ou
+           un pas de temps infra-annuel est écarté par arbitrage. La fiche se
+           contente de le dire. -->
+      <div style="margin-top:16px;padding-top:10px;border-top:1px solid #000">
+        <div style="font-weight:600;margin-bottom:6px">Ce que ce calcul ne modélise pas</div>
+        <div style="font-size:11.5px;margin-bottom:6px">Les six points ci-dessous bornent la garantie de cette fiche. Ils sont assumés, pas oubliés.</div>
+        <ol style="font-size:11.5px;margin:0;padding-left:18px;line-height:1.55">
+          <sc-for list="{{ printLimitesRows }}" as="lm" hint-placeholder-count="6">
+            <li style="margin-bottom:3px"><b>{{ lm.titre }}</b> {{ lm.texte }}</li>
+          </sc-for>
+        </ol>
+      </div>
 
       <div style="margin-top:16px;padding-top:10px;border-top:1px solid #000;font-size:11.5px">
         Imprimé le {{ printDateTxt }} — OAD Renouvellement v1.2 — maquette, référentiel de coûts en cours de validation.
@@ -2364,8 +2459,12 @@ class Component extends DCLogic {
       // se lisent ensemble. Repliés par défaut, hors instantané localStorage
       // comme les autres états de navigation.
       refAideOuverte: false, refClonesOuverte: false,
-      detailOuvert: false, magOuvert: false,
-      effortNetOuvert: false,
+      detailOuvert: false,   // chantier C5 : magOuvert supprimé avec le tableau « manque à gagner »
+      // chantier C3 — ex-`effortNetOuvert`. État de navigation, hors instantané
+      // localStorage (comme les autres volets) : le renommer ne casse aucun
+      // instantané écrit par une version antérieure.
+      // chantier C5 : le repli du solde a disparu avec son cartouche — la
+      // cascade le remplace et n'est pas repliable (c'est la lecture principale).
       // prompt 9 — inversion. Les deux seuls graphiques de l'écran 5 étaient
       // repliés derrière des boutons pendant que les tableaux de chiffres
       // étaient dépliés : l'information la plus lisible était celle qui était
@@ -3031,7 +3130,7 @@ class Component extends DCLogic {
 
      Chaque barre porte son chiffre en clair à côté d'elle : la couleur ne
      porte jamais seule l'information, et une barre courte reste lisible. */
-  graphExploitation(d) {
+  graphExploitation(d, assiette) {
     const e = React.createElement;
     // Rampe ordinale d'une seule teinte (clair -> foncé = jeune -> vieux).
     const RAMPE_AGE = ['#9BBEA7', '#74A084', '#547E64', '#365D46'];
@@ -3081,6 +3180,20 @@ class Component extends DCLogic {
       cle('k1', COUL_PLANTEE, 'Plantée', ha(d.surfPlantee)),
       cle('k2', COUL_ARRACHEE, 'Arrachée (en repos)', ha(d.surfArrachee))
     ]);
+    /* prompt B9 — la piste ci-dessus découpe la surface au registre en Plantée
+       et Arrachée. Ce n'est pas l'assiette qui porte le VolCo et le plafond de
+       réserve : celle-ci retranche AUSSI les plantiers, invisibles dans ce
+       découpage puisqu'ils sont plantés. La note le dit en toutes lettres
+       plutôt que de laisser croire que « Plantée » et « en production » sont la
+       même surface — deux surfaces à l'écran, deux libellés distincts.
+       Rendue seulement quand l'agrégat est disponible : sans lui, la piste
+       reste juste, elle dit simplement moins. */
+    const note = assiette ? e('div', { key: 'note',
+      style: { marginTop: '10px', fontSize: '11.5px', lineHeight: 1.5, color: 'var(--encre-3)' } },
+      'Assiette de production : ' + ha(assiette.surfProd)
+      + ' — la surface plantée moins ' + ha(assiette.surfPlantier)
+      + " de plantier (moins de 3 ans). C'est elle, et non la surface au registre, qui porte le volume commercialisable et le plafond de réserve individuelle.")
+      : null;
 
     /* ---- classes d'âge : quatre barres sur la seule surface plantée ------
        Les longueurs sont des PARTS de la surface plantée, pas des parts du
@@ -3118,7 +3231,7 @@ class Component extends DCLogic {
     return e('div', { style: { display: 'flex', flexDirection: 'column', gap: '22px' } }, [
       e('div', { key: 'b1' }, [
         titreBloc('t1', 'Plantée et arrachée', 'sur ' + ha(d.surfTot) + ' au registre'),
-        piste, legende
+        piste, legende, note
       ]),
       e('div', { key: 'b2' }, [
         titreBloc('t2', "Surface plantée par classe d'âge",
@@ -3192,7 +3305,12 @@ class Component extends DCLogic {
       surface: nombreCellule(r.surface),
       tauxManquant: nombreCellule(r.tauxManquant)
     }));
-    const agregExploitation = OAD ? OAD.agregerRegistreExploitation(registreRows, campagne) : { surfTot: 0, ageMoy: 0 };
+    // prompt B9 — l'agrégat porte désormais la PARTITION de la surface au
+    // registre : surfTot = surfProd + surfPlantier + surfRepos. `surfProd`
+    // (lignes Plantée d'âge ≥ 3 ans) est l'assiette réglementaire du VolCo et
+    // du plafond de réserve ; `surfTot` reste la surface d'affichage.
+    const agregExploitation = OAD ? OAD.agregerRegistreExploitation(registreRows, campagne)
+      : { surfTot: 0, surfProd: 0, surfPlantier: 0, surfRepos: 0, ageMoy: 0 };
     const iduDisponibles = [...new Set(registreRows.filter(r => r.situation === 'plantee').map(r => r.idu))];
     const lignesParcelleCandidates = registreRows.filter(r => r.idu === s.parcelleIdu && r.situation === 'plantee');
     const lignesParcelleRetenues = lignesParcelleCandidates.filter(r => !s.parcelleLignesExclues[r._id]);
@@ -3346,6 +3464,10 @@ class Component extends DCLogic {
     const inp = {
       geo: g,
       surfTot: modeRegistre ? agregExploitation.surfTot : (+v.surfTot || 1), surfParc: surfParcResolu,
+      // prompt B9 — assiette de PRODUCTION, distincte de la surface au registre.
+      // Hors registre, aucune décomposition n'est dérivable : l'assiette y vaut
+      // la surface saisie, ce qui reproduit exactement le comportement antérieur.
+      surfProdTot: modeRegistre ? agregExploitation.surfProd : (+v.surfTot || 1),
       ageMoy: modeRegistre ? agregExploitation.ageMoy : (+v.ageMoy || 0),
       ageParc: modeRegistre ? agregParcelle.ageParc : (+v.ageParc || 0),
       repos: reposChoisi,
@@ -3579,10 +3701,6 @@ class Component extends DCLogic {
       refClonesChevron: s.refClonesOuverte ? '−' : '+',
       detailOuvert: s.detailOuvert, toggleDetail: () => this.setState(st => ({ detailOuvert: !st.detailOuvert })),
       detailChevron: s.detailOuvert ? '−' : '+',
-      magOuvert: s.magOuvert, toggleMaG: () => this.setState(st => ({ magOuvert: !st.magOuvert })),
-      magChevron: s.magOuvert ? '−' : '+',
-      effortNetOuvert: s.effortNetOuvert, toggleEffortNet: () => this.setState(st => ({ effortNetOuvert: !st.effortNetOuvert })),
-      effortNetChevron: s.effortNetOuvert ? '−' : '+',
       stockChartOuvert: s.stockChartOuvert, toggleStockChart: () => this.setState(st => ({ stockChartOuvert: !st.stockChartOuvert })),
       // prompt 9 — les graphiques étant ouverts par défaut, le bouton propose
       // désormais de les MASQUER : un bouton « Afficher » sous un graphique
@@ -3842,11 +3960,16 @@ class Component extends DCLogic {
     out.voletPlantierTotalTxt = nf(voletPlantierTotalEuroHa, 0) + ' €/ha';
     out.printInpRows = [
       { lib: "Surface totale de l'exploitation", val: nf(inp.surfTot, 2), unite: 'ha', origine: modeRegistre ? 'Dérivé du registre — somme de toutes les lignes (Plantée + Arrachée)' : 'Saisi' },
+      // prompt B9 — deux surfaces à l'écran, deux origines explicites : celle
+      // du registre (ci-dessus) et l'assiette réglementaire (ci-dessous). Les
+      // laisser toutes deux sous le libellé « surface » sans dire laquelle sert
+      // à quoi rendrait la fiche illisible.
+      { lib: 'Surface en production', val: nf(inp.surfProdTot, 2), unite: 'ha', origine: modeRegistre ? `Dérivé du registre — lignes Plantée d'âge ≥ 3 ans (seuil OAD.SEUIL_ENTREE_PRODUCTION, à valider) ; exclut ${nf(agregExploitation.surfPlantier, 2)} ha de plantier et ${nf(agregExploitation.surfRepos, 2)} ha en repos` : 'Repli — égale la surface saisie hors registre' },
       { lib: 'Âge moyen du vignoble', val: nf(inp.ageMoy, 0), unite: 'ans', origine: modeRegistre ? `Dérivé du registre — moyenne pondérée par surface, lignes Plantée uniquement, campagne ${campagne}` : 'Saisi' },
       { lib: 'Volume commercialisable (VolCo)', val: nf(inp.volco, 0), unite: 'kg/ha', origine: 'Saisi' },
       { lib: 'Prix du raisin', val: nf(inp.prixKg, 2), unite: '€/kg', origine: 'Saisi' },
       { lib: 'Réserve individuelle initiale (saisie)', val: nf(+v.riPct || 0, 0), unite: '% du plafond', origine: 'Saisi' },
-      { lib: 'Réserve individuelle initiale', val: nf(inp.reserveInit, 0), unite: 'kg/ha', origine: 'Dérivé — OAD.PLAFOND_RESERVE (10 000) × réserve saisie / 100' },
+      { lib: 'Réserve individuelle initiale', val: nf(inp.reserveInit, 0), unite: 'kg/ha', origine: 'Dérivé — OAD.PLAFOND_RESERVE (10 000) × réserve saisie / 100 ; converti en kg sur la surface en production, pas sur la surface au registre (prompt B9)' },
       { lib: 'Âge de la parcelle', val: nf(inp.ageParc, 0), unite: 'ans', origine: modeRegistre ? `Dérivé du registre — moyenne pondérée par surface de la sélection (idu ${s.parcelleIdu}), campagne ${campagne}` : 'Saisi' },
       { lib: 'Pieds manquants', val: nf(inp.manquants * 100, 1), unite: '%', origine: modeRegistre ? 'Dérivé du registre — moyenne pondérée par surface de la sélection' : 'Saisi' },
       { lib: 'Rendement estimé de la parcelle', val: nf(inp.rendEstime, 0), unite: 'kg/ha', origine: 'Saisi' },
@@ -3904,6 +4027,15 @@ class Component extends DCLogic {
     // plus rien à choisir. Le registre et ses corrections sont conservés dans
     // le navigateur (localStorage, prompt B1) ; rien n'est jamais envoyé.
     out.registreSurfTotTxt = this.fmtHa(agregExploitation.surfTot) + ' ha';
+    /* prompt B9 — la surface au registre et l'assiette de production sont deux
+       chiffres différents, tous deux à l'écran : chacun porte donc un libellé
+       qui dit ce qu'il est et ce qu'il sert (même contrainte que le bandeau de
+       synthèse, voir OAD.synthetiseRegistre). `registreHorsProdTxt` nomme
+       explicitement ce que l'assiette laisse dehors — sans lui, l'écart entre
+       les deux surfaces resterait à deviner. */
+    out.registreSurfProdTxt = this.fmtHa(agregExploitation.surfProd) + ' ha';
+    out.registreHorsProdTxt = 'hors assiette : ' + this.fmtHa(agregExploitation.surfPlantier)
+      + ' ha de plantier · ' + this.fmtHa(agregExploitation.surfRepos) + ' ha en repos';
     // Composition du vignoble (graphique du temps 1) — décomposition des deux
     // chiffres dérivés ci-dessus : quelle part du domaine est en repos, et
     // comment la surface plantée se répartit par classe d'âge. Le comptage
@@ -3912,7 +4044,7 @@ class Component extends DCLogic {
     // décrit que le registre, il reste juste même quand la parcelle désignée,
     // elle, est incohérente.
     const repartitionAge = OAD ? OAD.repartirRegistreParAge(registreRows, campagne) : null;
-    out.graphExploitation = repartitionAge ? this.graphExploitation(repartitionAge) : null;
+    out.graphExploitation = repartitionAge ? this.graphExploitation(repartitionAge, agregExploitation) : null;
     out.registreAgeMoyTxt = nf(agregExploitation.ageMoy, 1) + ' ans';
     // prompt B8 — état bloquant de l'écran 1. Le test porte sur la SURFACE, pas
     // sur le nombre de lignes : un registre de dix lignes toutes à 0 ha ne
@@ -3959,8 +4091,12 @@ class Component extends DCLogic {
     const synthReg = OAD ? OAD.synthetiseRegistre(registreRows)
       : { nbLignes: registreRows.length, surfaceTotale: 0, cepages: [] };
     const pluriel = (n, mot) => n + ' ' + mot + (n > 1 ? 's' : '');
+    // prompt B9 — le bandeau annonce les deux assiettes, jamais la seule
+    // surface au registre : replié, il est le seul endroit où l'on voit d'un
+    // coup combien de la surface produit réellement.
     out.registreResumeTxt = pluriel(synthReg.nbLignes, 'parcelle')
-      + ' · ' + nf(synthReg.surfaceTotale, 2) + ' ha'
+      + ' · ' + nf(synthReg.surfaceTotale, 2) + ' ha au registre'
+      + ', dont ' + nf(agregExploitation.surfProd, 2) + ' ha en production'
       + ' · ' + pluriel(synthReg.cepages.length, 'cépage');
     out.registreOuvert = s.registreOuvert;
     out.registreAria = s.registreOuvert ? 'true' : 'false';
@@ -4283,7 +4419,7 @@ class Component extends DCLogic {
 
     // Bandeau des quatre décisions — il dit ce qui est déjà décidé, rien de
     // plus : aucun montant de synthèse au temps 2 (l'investissement, la réserve
-    // mobilisée et l'effort net restent au temps 3).
+    // mobilisée et le solde investissement/réserve restent au temps 3).
     out.jalons = [
       { num: '1', lib: 'Repos du sol', val: out.dureeReposTxt },
       { num: '2', lib: 'Pleine production', val: anneePleineProd + 'e année' },
@@ -4343,26 +4479,45 @@ class Component extends DCLogic {
       : `${v.partRecolte} % récolte / ${v.partCouts} % coûts au propriétaire (flux de la parcelle uniquement)`;
 
     // moteur
-    out.erreurSurface = (inp.surfParc > inp.surfTot + 1e-9)
-      ? `La parcelle (${this.fmtHa(inp.surfParc)} ha) dépasse la surface d'exploitation (${this.fmtHa(inp.surfTot)} ha) — corrigez l'une des deux valeurs.`
+    // prompt B9 — la borne porte sur la surface EN PRODUCTION, pas sur la
+    // surface au registre : une parcelle candidate à l'arrachage est
+    // nécessairement en production. Ce test doit rester aligné sur le garde-fou
+    // de OAD.construireScenarios, qui lèverait sinon une exception au rendu.
+    out.erreurSurface = (inp.surfParc > inp.surfProdTot + 1e-9)
+      ? `La parcelle (${this.fmtHa(inp.surfParc)} ha) dépasse la surface en production de l'exploitation (${this.fmtHa(inp.surfProdTot)} ha sur ${this.fmtHa(inp.surfTot)} ha au registre) — corrigez l'une des deux valeurs.`
       : '';
     if (!OAD || out.erreurSurface) {
       const kpiVide = { lib: '…', val: '…', det: '' };
-      Object.assign(out, { investTxt: '…', reserveReelleTxt: '…', reserveTheoTxt: '…', effortNetTxt: '…',
+      // chantier C3 — kpiSoldeReserve et kpiReserveHorizon sont repliés
+      // ENSEMBLE sur le même kpiVide : la contrainte d'adjacence vaut aussi
+      // pour l'état dégradé, où l'un ne doit pas apparaître sans l'autre.
+      Object.assign(out, { investTxt: '…', reserveReelleTxt: '…', reserveTheoTxt: '…',
+        soldeReserveTxt: '…', soldeReserveAbsTxt: '…', soldeEstNegatif: false,
+        reserveHorizonTxt: '…', syntheseSoldeTxt: '…',
         creuxTxt: '…', creuxT: '…', creuxAbsTxt: '…', creuxAbsT: '…', stockMinTxt: '…', stockMinC: 'var(--accent)', tMin: '…',
-        kpiInvestTotal: kpiVide, kpiPointBas: kpiVide, kpiAmortisseur: kpiVide, kpiEffortNet: kpiVide,
+        kpiInvestTotal: kpiVide, kpiPointBas: kpiVide, kpiAmortisseur: kpiVide,
+        kpiSoldeReserve: kpiVide, kpiReserveHorizon: kpiVide,
         kpiReserveMin: kpiVide, kpiEcartAge: kpiVide, kpiStockReserve: kpiVide, regimesTravail: [],
         // prompt 5 — les trois chiffres de tête ont le même repli que les KPI :
         // sans moteur ou sur une saisie incohérente, ils ne montrent rien plutôt
         // qu'un chiffre faux en 36 px.
         teteRetour: kpiVide, teteEffort: kpiVide, teteAge: kpiVide,
         friseTrajectoire: null, friseLegendeTxt: '',
-        detailEnteteTxt: '…', magEnteteTxt: '…',
+        detailEnteteTxt: '…',
         ageAvantTxt: '…', ageApresArrTxt: '…', ageApresSQTxt: '…',
-        chartStock: null, chartAge: null, ageLegendItems: [], detailRows: [], magRows: [], lectureTreso: '',
+        chartStock: null, chartAge: null, ageLegendItems: [], detailRows: [], lectureTreso: '',
         syntheseCouvTxt: '…', syntheseCouvSuffixTxt: '', syntheseAbsorptionTxt: '',
         syntheseStockLeadTxt: '…', syntheseStockTailTxt: '…', syntheseHorizonTxt: '…',
         syntheseTxt: '…',
+        // chantier C4 — la ligne « par rapport à ne rien faire » est affichée
+        // TOUJOURS, quel que soit le signe : elle a donc aussi son repli ici.
+        differentielLib: '…', differentielTxt: '…', differentielDet: '',
+        // chantier C5 — la cascade a le même repli : elle est le même nombre,
+        // décomposé. Aucun des deux ne doit apparaître sans l'autre.
+        cascadeLib: '…', cascadeIntroTxt: '', cascadeRows: [],
+        printCascadeRows: [],
+        investTotalLib: '…', investTotalDet: '',
+        printLimitesRows: [],
         printKpiRows: [], printDetailArr: [] });
       return out;
     }
@@ -4392,13 +4547,52 @@ class Component extends DCLogic {
     const arrParcelle = cumTreso(sc.arrachage, true);
     let creuxAbs = { v: Infinity, t: 0 };
     arrParcelle.forEach((val, t) => { if (val < creuxAbs.v) creuxAbs = { v: val, t }; });
-    const invest = sc.arrachage.investissement;
-    const reserveReelle = sc.arrachage.eur.reduce((acc, r) => acc + r.cashRI, 0);
+    /* chantier C4 — différentiel par rapport à « ne rien faire ».
+       Calculé par le moteur (OAD.differentielTresorerie), qui réutilise TELLE
+       QUELLE la trésorerie cumulée des deux scénarios : aucune règle nouvelle,
+       une soustraction terme à terme.
+         · `parcelleSeule: true`, et non la trésorerie de l'exploitation : sur
+           l'exploitation entière, le revenu du reste du domaine noie l'effet de
+           l'opération (déjà vérifié au test P6) ;
+         · `s.vueFV`, la MÊME vue de faire-valoir que le reste de l'écran, sans
+           exception ;
+         · `sc.reference`, jamais l'alias historique `sc.statuquo` — c'est la
+           clé que doit lire tout code nouveau. */
+    const diffTreso = OAD.differentielTresorerie(sc.arrachage, sc.reference, inp.fv, s.vueFV, { parcelleSeule: true });
+    /* chantier C3 — le solde investissement/réserve est calculé PAR LE MOTEUR
+       (OAD.soldeInvestissementReserve), plus ici : c'est de la logique
+       financière, sa place est dans moteur-oad.js. Il est SIGNÉ : l'ancien
+       `Math.max(0, invest − reserveReelle)` écrasait à zéro toute la région où
+       la réserve couvre l'investissement — le cas dominant — et rendait le KPI
+       plat sur la majeure partie de la plage de riPct. Ne pas remettre de
+       plancher. Voir README §12, journal d'arbitrages « chantier C3 ». */
+    const soldeIR = OAD.soldeInvestissementReserve(sc.arrachage);
+    const invest = soldeIR.invest;
+    const reserveReelle = soldeIR.reserveMobilisee;
+    const soldeInvestReserve = soldeIR.solde;
     const reserveTheo = inp.volSortieArr * inp.surfParc * inp.nbSortie * inp.prixKg;
     const couv = invest > 0 ? reserveReelle / invest : 0;
-    const effortNet = Math.max(0, invest - reserveReelle);
-    const stockMin = Math.min(...sc.arrachage.kg.map(r => r.stockHa));
-    const tMin = sc.arrachage.kg.find(r => r.stockHa === stockMin).t;
+    /* chantier C3 — contrepartie PHYSIQUE du solde ci-dessus, en kg/ha. Le
+       solde en euros ne distingue pas deux régimes très différents : réserve
+       saturée au plafond (le déblocage est réellement gratuit) et réserve non
+       saturée (c'est un prélèvement de plusieurs milliers de kg/ha sur un stock
+       qui manquera plus tard). Ces deux nombres, eux, les distinguent. Le stock
+       n'est JAMAIS converti en euros — reserveHorizon ne reçoit d'ailleurs
+       aucun paramètre monétaire, par construction. */
+    const resHorizon = OAD.reserveHorizon(sc.arrachage, sc.reference, inp.horizon);
+    /* chantier C7 — le minimum et SON ANNÉE sont trouvés en un seul passage,
+       par comparaison, et non par `find(r => r.stockHa === stockMin)`.
+       L'ancienne écriture reposait sur une ÉGALITÉ DE FLOTTANTS. Elle
+       fonctionne aujourd'hui — c'est le même tableau et la même valeur, donc
+       la même représentation binaire — mais elle casse EN SILENCE le jour où
+       la série transite par un arrondi (un `toFixed`, un passage par une
+       moyenne, un recalcul intermédiaire) : `find` rend alors `undefined` et
+       l'accès à `.t` lève, ou pire, tombe sur une autre année de valeur
+       voisine. Un `reduce` sur le minimum n'a pas ce défaut. */
+    const creuxStock = sc.arrachage.kg.reduce(
+      (min, r) => (r.stockHa < min.stockHa ? r : min), sc.arrachage.kg[0]);
+    const stockMin = creuxStock.stockHa;
+    const tMin = creuxStock.t;
     // Trajectoire d'âge du vignoble (chantier P7) — remplace l'ancien KPI
     // ponctuel ageApres/gainAge (instantané, comptait la parcelle à l'âge 0
     // dès t=0 même pendant le repos du sol). Voir moteur-oad.js
@@ -4410,15 +4604,15 @@ class Component extends DCLogic {
     const seuil = this.props.seuilReserve ?? 4000;
     const h = inp.horizon;
 
-    const chArr = OAD.chargesEntretien('arrachage', sc.arrachage.kg, inp);
-    const chSQ = OAD.chargesEntretien('statuquo', sc.statuquo.kg, inp);
-    const returnYear = 3 + inp.repos;
-    let chargesEvitees = 0;
-    // chargesEntretien renvoie { parcelle, reste } (objets indexés par t), pas un
-    // tableau plat — .reste est identique aux deux scénarios (même surface hors
-    // parcelle) et s'annule dans la différence ; seule .parcelle porte l'écart.
-    for (let t = 0; t < returnYear; t++) chargesEvitees += Math.max(0, (chSQ.parcelle[t] || 0) - (chArr.parcelle[t] || 0));
-    const chargesActives = inp.coutSurfaceProdHaAn > 0 || inp.coutRdtParKg > 0 || inp.coutReposHaAn > 0 || inp.coutPlantierHaAn > 0;
+    /* chantier C5 — `chargesEvitees` supprimé de la vue avec l'entrée de fiche
+       d'audit qu'il alimentait. Il ne sommait que sur `t < returnYear` et ne
+       retenait que les écarts positifs (`max(0, …)`) : deux troncatures qui le
+       rendaient NON RECOMPOSABLE avec le différentiel de trésorerie. Le terme
+       « Écart de charges d'entretien » de la cascade le remplace — même source
+       (`chargesEntretien(...).parcelle`, dont seul `.parcelle` porte l'écart,
+       `.reste` étant identique aux deux scénarios et s'annulant), mais sur tout
+       l'horizon et sans plancher. Le calcul vit désormais dans le moteur
+       (`cascadeDifferentielle`), pas ici. */
 
     // Indicateur MO économisée (F6/F7) : physique (h/ha), € indicatif à part.
     // JAMAIS additionné à cashNet / la trésorerie / un KPI financier (invariant #2) —
@@ -4475,7 +4669,12 @@ class Component extends DCLogic {
     out.investTxt = this.fmtE0(invest);
     out.reserveReelleTxt = this.fmtE0(reserveReelle);
     out.reserveTheoTxt = this.fmtE0(reserveTheo);
-    out.effortNetTxt = this.fmtE0(effortNet);
+    // chantier C3 — solde signé (voir kpiSoldeReserve). `soldeReserveTxt`
+    // remplace `effortNetTxt` : le nom disait « effort », le montant n'en est
+    // pas un.
+    out.soldeReserveTxt = this.fmtE0(soldeInvestReserve);
+    out.soldeReserveAbsTxt = this.fmtE0(Math.abs(soldeInvestReserve));
+    out.soldeEstNegatif = soldeInvestReserve < 0;
 
     /* Trois chiffres de tête — prompt 5.
        Une année, un montant, une durée : les trois grandeurs qu'un vigneron
@@ -4491,13 +4690,19 @@ class Component extends DCLogic {
       det: (inp.repos > 0 ? ans(inp.repos) + ' de repos du sol, puis ' : '')
         + ans(OAD.DELAI_PLANTIER) + ' de plantier'
     };
+    /* chantier C3 — ce chiffre de tête portait « Effort net à financer » et la
+       valeur clampée. Il porte désormais le solde SIGNÉ et le libellé
+       « Investissement net de la réserve mobilisée » (le libellé lui-même est
+       dans le template, ce bloc n'en porte que la valeur et le détail).
+       Le seuil est bien `>= 0` et non `> 0` : à solde nul, l'investissement est
+       exactement couvert, ce que dit la première branche sans rien forcer. */
     out.teteEffort = {
-      val: this.fmtE0(effortNet),
-      det: effortNet > 0
+      val: this.fmtE0(soldeInvestReserve),
+      det: soldeInvestReserve >= 0
         ? 'Investissement ' + this.fmtE0(invest) + ' moins ' + this.fmtE0(reserveReelle)
-          + ' absorbés par la réserve'
-        : 'Investissement ' + this.fmtE0(invest) + ' entièrement absorbé par les '
-          + this.fmtE0(reserveReelle) + ' mobilisés sur la réserve'
+          + ' mobilisés sur la réserve'
+        : 'Réserve mobilisée au-delà de l\'investissement : '
+          + this.fmtE0(Math.abs(soldeInvestReserve)) + ' — un stock prélevé, pas un gain'
     };
     out.teteAge = {
       val: nf(gainAgeHorizon, 1) + (gainAgeHorizon >= 2 ? ' ans' : ' an'),
@@ -4587,10 +4792,26 @@ class Component extends DCLogic {
        ce qu'il vient de lire, et deux rédactions parallèles finiraient par
        diverger. Seul le gras disparaît — une page imprimée n'a pas besoin de
        huit valeurs en gras pour se lire. */
+    /* chantier C3 — la phrase disait « L'effort net à financer ressort à X ».
+       Deux problèmes : « effort net » a disparu du vocabulaire, et « à
+       financer » promettait un coût de financement que le modèle ne calcule
+       pas. Le cas négatif, qui est le cas DOMINANT aux valeurs par défaut,
+       produisait par ailleurs « ressort à 0 € » — soit, en français courant,
+       « c'est gratuit », ce que le modèle ne dit pas.
+       La phrase est construite ici, en un seul fragment, pour que le template
+       et la sortie imprimée la partagent mot pour mot. */
+    out.syntheseSoldeTxt = out.soldeEstNegatif
+      ? `La réserve mobilisée va au-delà de l'investissement, de ${out.soldeReserveAbsTxt}.`
+      : `L'investissement net de la réserve mobilisée ressort à ${out.soldeReserveTxt}.`;
+    /* chantier C3 — ADJACENCE : la réserve à l'horizon suit immédiatement le
+       solde, ici comme à l'écran. Un solde négatif énoncé seul se lit comme un
+       excédent ; suivi du stock restant, il se lit pour ce qu'il est — un
+       déstockage. Ne pas dissocier ces deux phrases. */
+
     out.syntheseTxt = `Sur ${out.horizonTxt}, l'arrachage-replantation est une opération de transition. `
       + `La réserve mobilisable — ${out.reserveReelleTxt} réellement mobilisés `
       + `(${out.reserveTheoTxt} théoriques) — ${out.syntheseCouvTxt} ${out.investTxt}`
-      + `${out.syntheseCouvSuffixTxt}. L'effort net à financer ressort à ${out.effortNetTxt}. `
+      + `${out.syntheseCouvSuffixTxt}. ${out.syntheseSoldeTxt} ${out.reserveHorizonTxt} `
       + `Tension de trésorerie maximale en année ${out.creuxT} (${out.creuxTxt})`
       + `${out.syntheseAbsorptionTxt}. ${out.syntheseStockLeadTxt} ${out.stockMinTxt} kg/ha `
       + `${out.syntheseStockTailTxt} ${out.syntheseHorizonTxt}`;
@@ -4604,29 +4825,150 @@ class Component extends DCLogic {
     // Bloc 2 — coût de l'investissement : total (détail des lignes déjà
     // construit plus haut, out.investLignes) + ce qu'il faut être en mesure
     // de financer au plus bas.
-    // prompt B4 (arbitrage 11) — le libellé, pas le montant, dit à qui appartient
-    // ce chiffre : référence Champagne tant que les quatre postes sont intacts.
-    out.kpiInvestTotal = { lib: out.investLibelleCap, val: this.fmtE0(invest),
-      det: 'arrachage + installation, hors entretien — ' + out.investLibelleNote };
+    // chantier C5 — `out.kpiInvestTotal` supprimé : l'investissement brut n'est
+    // plus un cartouche KPI concurrent des autres montants, c'est le total du
+    // tableau « coût de l'investissement » (out.investTotalLib/investTotalDet,
+    // plus haut) et le premier terme de la cascade. Le libellé « référence
+    // Champagne / votre investissement » (prompt B4, arbitrage 11) est conservé,
+    // porté par out.investLibelleCap.
     out.kpiPointBas = { lib: 'Point bas de trésorerie', val: this.fmtE0(creuxAbs.v), det: `trésorerie cumulée de la parcelle seule, année ${creuxAbs.t} — hors reste de l'exploitation, ce qu'il faut être en mesure de financer au plus bas` };
 
     // Bloc 3 — impact sur la réserve : ce qui est mobilisé (jamais un
-    // "gain", voir couvDet plus haut — vocabulaire "mobilise"), l'effort
-    // résiduel une fois la réserve déduite, le plancher atteint pendant la
-    // transition. « Effort net » repliable (arbitrage P6) : conservé tel
-    // quel, juste replié par défaut derrière un disclosure.
-    out.kpiAmortisseur = { lib: 'Réserve mobilisée', val: this.fmtE0(reserveReelle), det: couvDet };
-    out.kpiEffortNet = { lib: 'Effort net après réserve', val: this.fmtE0(effortNet), det: 'investissement − réserve = coût réel de décision' };
-    // prompt B5 — KPI physique : où en est le stock de réserve au bout de
-    // l'horizon, comparé au statu quo. Dérivé de la MÊME série que le graphique
-    // de stock (sc.arrachage.kg[t].stockHa) — aucune modélisation nouvelle.
-    const stockFinArr = sc.arrachage.kg[inp.horizon].stockHa;
-    const stockFinSQ = sc.statuquo.kg[inp.horizon].stockHa;
-    const ecartStockFin = stockFinArr - stockFinSQ;
-    out.kpiStockReserve = { lib: `Stock de réserve à ${inp.horizon} ans`,
-      val: this.fmtKg(stockFinArr) + ' kg/ha',
-      det: `contre ${this.fmtKg(stockFinSQ)} kg/ha en statu quo, soit ${ecartStockFin >= 0 ? '+' : '−'}${this.fmtKg(Math.abs(ecartStockFin))} kg/ha — la réserve mobilisée pendant la transition s'est ${ecartStockFin >= 0 ? 'entièrement reconstituée' : 'partiellement reconstituée à cet horizon'}` };
+    // "gain", voir couvDet plus haut — vocabulaire "mobilise"), le solde
+    // signé une fois la réserve déduite, sa contrepartie physique en kg/ha,
+    // et le plancher atteint pendant la transition. Le repli derrière un
+    // disclosure (arbitrage P6) est conservé ; il couvre désormais LES DEUX
+    // cartouches du solde, jamais un seul (chantier C3, adjacence).
+    // chantier C5 — `out.kpiAmortisseur` supprimé : « Réserve mobilisée » est
+    // devenu le deuxième terme de la cascade. `couvDet` (ci-dessus) alimente
+    // encore la phrase de synthèse, où le taux de couverture garde son sens.
+    /* chantier C3 — ex-« Effort net après réserve », renommé ET déclampé.
+
+       Le libellé : « à financer » DISPARAÎT. Aucun coût de financement n'est
+       modélisé (ni taux, ni durée, ni différé — README §19) ; la question du
+       financement est portée par le point bas de trésorerie, pas par ce solde.
+
+       Le `det` : l'ancien disait « investissement − réserve = coût réel de
+       décision ». C'est faux — ce n'est pas le coût réel de la décision (qui
+       supposerait un différentiel, cf. chantier C4), c'est un solde de
+       financement entre deux montants. Le nouveau `det` décrit la soustraction,
+       sans la qualifier.
+
+       Le cas négatif (réserve mobilisée au-delà de l'investissement, cas
+       DOMINANT aux valeurs par défaut) : la valeur reste SIGNÉE — c'est ce qui
+       rend le KPI continu et monotone quand riPct varie de 0 à 100 %, alors
+       qu'il était plat à 0 sur la majeure partie de la plage. Le `det` le dit
+       en clair et en positif. Vocabulaire INTERDIT ici : « excédent », « gain »,
+       « bénéfice ». Ce n'est pas un profit, c'est un DÉSTOCKAGE — sa
+       contrepartie physique est la ligne kpiReserveHorizon ci-dessous, dont il
+       ne doit jamais être séparé. */
+    out.kpiSoldeReserve = {
+      lib: 'Investissement net de la réserve mobilisée',
+      val: this.fmtE0(soldeInvestReserve),
+      det: soldeInvestReserve >= 0
+        ? `investissement ${this.fmtE0(invest)} − réserve mobilisée ${this.fmtE0(reserveReelle)}`
+        : `investissement ${this.fmtE0(invest)} − réserve mobilisée ${this.fmtE0(reserveReelle)} · réserve mobilisée au-delà de l'investissement : ${this.fmtE0(Math.abs(soldeInvestReserve))}`
+    };
+    /* chantier C3 — CONTRAINTE D'ADJACENCE, NON NÉGOCIABLE.
+       Cette ligne est rendue immédiatement sous kpiSoldeReserve, dans le même
+       bloc de template. Il ne doit exister AUCUN état de l'interface où le
+       solde s'affiche sans elle : le solde en euros est muet sur le fait que
+       la réserve mobilisée est un stock prélevé, et le lire seul fait croire
+       que le déstockage est gratuit. Une session ultérieure qui voudrait
+       « aérer la mise en page » ne doit pas les séparer. Le commentaire est
+       répété côté template, à l'endroit du rendu.
+       En kg/ha UNIQUEMENT : ne jamais convertir en euros, y compris entre
+       parenthèses, y compris avec une mention « indicatif » — un lecteur qui
+       voit un euro le soustrait, quel que soit l'avertissement. */
+    out.kpiReserveHorizon = {
+      lib: `Réserve à ${inp.horizon} ans`,
+      val: this.fmtKg(resHorizon.arrachageKgHa) + ' kg/ha',
+      det: `contre ${this.fmtKg(resHorizon.referenceKgHa)} kg/ha sans renouvellement`
+    };
+    out.reserveHorizonTxt = `Réserve à ${inp.horizon} ans : ${this.fmtKg(resHorizon.arrachageKgHa)} kg/ha, `
+      + `contre ${this.fmtKg(resHorizon.referenceKgHa)} kg/ha sans renouvellement.`;
+    // chantier C5 — `out.kpiStockReserve` supprimé : il doublonnait la réserve
+    // à l'horizon du chantier C3 (out.kpiReserveHorizon, ci-dessus), avec deux
+    // défauts en propre — il était recalculé dans la vue au lieu de venir du
+    // moteur, et son détail portait un jugement (« s'est entièrement
+    // reconstituée ») là où C3 s'en tient à la comparaison de deux nombres.
+    // Une seule définition désormais, adossée à OAD.reserveHorizon.
     out.kpiReserveMin = { lib: 'Réserve min en transition', val: this.fmtKg(stockMin) + ' kg/ha', det: `année ${tMin} · ${stockMin < seuil ? '⚠ sous ' + this.fmtKg(seuil) + ' — coussin de sécurité entamé' : 'coussin suffisant, réserve mobilisée puis reconstituée'}` };
+    /* chantier C4 — la ligne « par rapport à ne rien faire ».
+       Un montant SIGNÉ et son libellé, rien d'autre. AUCUNE formulation
+       évaluative : ni « favorable », ni « rentable », ni « perdant », ni
+       « gagnant » — le principe « aucune recommandation » tient, et le signe se
+       lit tout seul. Le détail dit la CONVENTION du chiffre (parcelle seule,
+       horizon, vue de faire-valoir), parce qu'un différentiel dont on ne
+       connaît pas l'assiette n'est pas interprétable ; il ne dit rien de ce
+       qu'il faudrait en conclure.
+       Depuis C5, ce montant est le TOTAL de la cascade ci-dessous : les deux
+       sont le même nombre, calculé une seule fois par le moteur. */
+    out.differentielLib = `Par rapport à ne rien faire, à ${inp.horizon} ans`;
+    out.differentielTxt = this.fmtE0(diffTreso.aHorizon);
+    out.differentielDet = `Trésorerie cumulée de la parcelle sur ${inp.horizon} ans, `
+      + `moins celle de la même parcelle non renouvelée. Parcelle seule, hors reste de `
+      + `l'exploitation, sur la vue de faire-valoir affichée. `
+      + `Le déclin supposé sans renouvellement (${nf((inp.declinSQ || 0) * 100, 1)} %/an) commande ce chiffre.`;
+
+    /* chantier C5 — la cascade. Quatre termes qui SOMMENT EXACTEMENT au
+       différentiel ci-dessus : le moteur lève si l'écart dépasse 1 €.
+       Les libellés viennent du moteur (source unique) ; la vue n'ajoute que la
+       note de provenance et la couleur. AUCUNE formulation évaluative ici non
+       plus : les notes disent d'où vient chaque terme, jamais ce qu'il faudrait
+       en penser. */
+    const cascade = OAD.cascadeDifferentielle(sc.arrachage, sc.reference, inp, inp.fv, s.vueFV);
+    const CASCADE_NOTES = {
+      investissement: "engagé en année 0 puis en année " + inp.repos + " — la parcelle non renouvelée n'en porte aucun",
+      reserve: "sortie « arrachage » monétisée, sur " + inp.nbSortie + " ans — un stock prélevé, voir la réserve à l'horizon ci-dessous",
+      recettes: "la parcelle ne produit pas pendant le repos et le plantier, puis remonte en charge",
+      charges: "ni entretien de vigne en production, ni charge de vendange, pendant la transition"
+    };
+    out.cascadeLib = 'Ce que change le renouvellement, terme à terme';
+    out.cascadeIntroTxt = `Décomposition exacte du chiffre du bas : chaque ligne est un écart entre la `
+      + `parcelle renouvelée et la même parcelle laissée en l'état, cumulé sur ${inp.horizon} ans. `
+      + `Les quatre lignes s'additionnent au total, sans reste.`;
+    out.cascadeRows = cascade.termes.map(t => ({
+      lib: t.lib,
+      note: CASCADE_NOTES[t.id] || '',
+      val: this.fmtE0(t.montant),
+      // Le jeton, pas la teinte : le template ne porte aucune couleur littérale.
+      fg: t.montant < 0 ? 'var(--alerte)' : 'var(--vegetal)'
+    }));
+
+    /* chantier C5 — les mêmes quatre termes pour la fiche d'audit, chacun avec
+       SA formule. Ils y remplacent « Manque à gagner » et « Charges évitées »,
+       retirés parce qu'ils ne se recomposent pas avec le différentiel.
+       Les coefficients de faire-valoir cités ci-dessous sont hérités de
+       `repartir()`, qui est linéaire en revParcelle et en coutsParcelle : en
+       métayage les termes « réserve » et « recettes » portent (1 − partRecolte)
+       côté exploitant, les termes « investissement » et « charges » portent
+       (1 − partCouts) ; en fermage le loyer, identique dans les deux scénarios,
+       s'annule dans le différentiel — il n'y a donc pas de cinquième terme. */
+    const CASCADE_FORMULES = {
+      investissement: '− Σ invArr (arrachage année 0 + installation année repos) — le scénario de référence n\'en porte aucun',
+      reserve: '+ Σₜ (cashRIₜ arrachage − cashRIₜ référence) = Σₜ sortieArrₜ × prixKg — sortie « arrachage » de la réserve, monétisée',
+      recettes: 'Σₜ (venteRaisinParcelleₜ arrachage − venteRaisinParcelleₜ référence) — SANS max(0, …) et sur tout l\'horizon, contrairement à l\'ancien « manque à gagner »',
+      charges: '− Σₜ (chargesEntretien.parcelleₜ arrachage − chargesEntretien.parcelleₜ référence) — SANS max(0, …) et sur tout l\'horizon, contrairement à l\'ancien « charges évitées »'
+    };
+    const cascadeVue = s.vueFV === 'exp' ? 'part exploitant'
+      : s.vueFV === 'prop' ? 'part propriétaire' : 'ensemble';
+    out.printCascadeRows = cascade.termes.map(t => ({
+      lib: 'Cascade — ' + t.lib,
+      val: this.fmtE0(t.montant),
+      formule: (CASCADE_FORMULES[t.id] || '')
+        + `, sur la parcelle seule, vue « ${cascadeVue} », régime ${inp.fv.regime}`
+        + ' · les quatre termes somment EXACTEMENT au différentiel ci-dessus'
+        + ' (OAD.cascadeDifferentielle lève une exception au-delà de 1 € d\'écart)'
+    }));
+
+    /* chantier C5 — total de la table « coût de l'investissement », qui a
+       remplacé l'ancien cartouche KPI « investissement brut ». Ce n'est pas un
+       indicateur concurrent : c'est la somme des lignes juste au-dessus, et
+       elle entre dans la cascade comme premier terme. */
+    out.investTotalLib = out.investLibelleCap;
+    out.investTotalDet = 'Arrachage + installation, hors charges d\'entretien — '
+      + out.investLibelleNote + '. Ce total est le premier terme de la cascade, en clôture d\'écran.';
 
     // Bloc 5 — écart d'âge à l'horizon, avec sa contrepartie dans la même
     // phrase (arbitrage P6 : jamais un gain énoncé seul) — factuel, voir
@@ -4677,39 +5019,113 @@ class Component extends DCLogic {
     // l'écran 5 ; son en-tête dit sa hauteur et le chiffre qui le résume.
     out.detailEnteteTxt = out.detailRows.length + ' années · trésorerie cumulée à '
       + out.horizonTxt + ' : ' + this.fmtE0(arrParcelle[inp.horizon]) + ' sur la parcelle';
-    // chantier C1 — colonne « Complantation » retirée (scénario @deprecated, hors
-    // interface) ; la colonne « Statu quo » l'était déjà codée en dur à 0 € (elle se
-    // compare à elle-même par construction) plutôt que réellement calculée.
-    const magA = OAD.manqueAGagner(sc.arrachage, sc.statuquo, inp.prixKg);
-    out.magRows = magA.map((val, i) => ({ t: String(i), arr: this.fmtE(val) }));
-    out.magEnteteTxt = magA.length + ' années · '
-      + this.fmtE0(magA.reduce((a, b) => a + b, 0)) + ' cumulés';
+    // chantier C5 — le tableau « manque à gagner » (out.magRows / magEnteteTxt)
+    // et son état de repli ont été supprimés avec le bloc d'écran qui les
+    // affichait. `OAD.manqueAGagner` reste exportée et testée
+    // (@deprecated chantier C5) mais n'est plus appelée ici : elle n'est pas
+    // recomposable avec le différentiel (max(0, …) année par année, et assiette
+    // volcoVendu au lieu de venteRaisinParcelle). Le terme « Écart de recettes
+    // raisin » de la cascade la remplace, exactement.
+    // Historique conservé : chantier C1 — la colonne « Complantation » avait été
+    // retirée de ce tableau (scénario @deprecated, hors interface), la colonne
+    // « Statu quo » y était codée en dur à 0 € (elle se comparait à elle-même).
 
     // Fiche d'audit imprimable — détail annuel du seul scénario arrachage
     // (chantier C1 : complantation et statu quo retirés de la fiche, alignée sur
     // ce qui est effectivement affiché à l'écran — §12bis décision 1).
     out.printDetailArr = out.detailRows;
+    /* chantier C7 — « ce que ce calcul ne modélise pas », en pied de fiche
+       d'audit. Six omissions STRUCTURANTES, une ligne chacune, sans euphémisme.
+
+       Ce bloc n'est pas un avertissement de politesse : la fiche d'audit vise le
+       conseiller / comptable, et une fiche qui ne dit pas ce qu'elle ne calcule
+       pas n'est pas auditable — le lecteur ne peut pas savoir où s'arrête la
+       garantie.
+
+       Le point 4 (échéancier) est OBLIGATOIRE et pas seulement informatif : le
+       point bas de trésorerie est présenté dans un contexte de financement, et
+       sans cette mention le lecteur croit lire une trésorerie datée alors que le
+       modèle raisonne en année pleine.
+
+       Les valeurs de campagne citées ici sont ANNUELLES et à revérifier à chaque
+       campagne — elles portent leur date. Ne pas les figer sans source. */
+    const RENDEMENT_BUTOIR_2026 = 15500;   // kg/ha, campagne 2026 — non modélisé, voir ci-dessous
+    out.printLimitesRows = [
+      { titre: 'Aucune actualisation.',
+        texte: "Un euro de l'année " + inp.horizon + " pèse comme un euro de l'année 0. Aucun taux d'actualisation, aucune valeur actuelle nette." },
+      { titre: "Aucune valeur terminale d'actif.",
+        texte: 'Le stock de réserve restant et le rajeunissement du vignoble ne sont jamais convertis en euros, y compris à l\'horizon. Ils sont exposés en kg/ha et en années, séparément.' },
+      { titre: 'Aucun coût de financement.',
+        texte: "Aucun taux d'emprunt, aucune durée, aucun différé. Le solde investissement / réserve n'est donc pas un coût de crédit, et le point bas de trésorerie n'est pas un besoin de financement chiffré." },
+      { titre: 'Aucun échéancier de paiement.',
+        texte: `Trésorerie en année pleine. Pour mémoire, campagne 2026 : première échéance à 25 % du volume commercialisable (2 200 kg/ha) au 5 décembre, solde en trois versements égaux — valeur annuelle, à revérifier à chaque campagne. Les années du point bas et du creux de réserve sont donc des années, pas des dates.` },
+      { titre: 'Prix du raisin unique et constant.',
+        texte: `${nf(inp.prixKg, 2)} €/kg sur tout l'horizon, sans distinction de cépage, de cru ni de millésime, et sans inflation.` },
+      { titre: 'Rendement butoir non modélisé.',
+        texte: `La récolte n'est pas plafonnée dans le moteur ; le butoir de la campagne 2026 (${this.fmtKg(RENDEMENT_BUTOIR_2026)} kg/ha) n'est appliqué nulle part. Une récolte simulée au-dessus de ce seuil n'est pas écrêtée.` }
+    ];
+
 
     // Fiche d'audit imprimable — 8 KPI avec leur formule, y compris ceux repliés ou
     // retirés de l'écran par le chantier P6 (Tension max vs statu quo, Charges
     // évitées) : la fiche reste exhaustive même quand l'écran s'allège.
     out.printKpiRows = [
+      // chantier C2 — cette formule doit rester le décalque EXACT du bloc `invArr`
+      // de moteur-oad.js (construireScenarios, ≈ l. 206-214) : engagement à t=0
+      // pour l'arrachage, puis à t=repos pour l'installation. Avant C2 elle citait
+      // `coûtPrepaHa` (supprimé au chantier P3, double emploi avec coutArrachageHa)
+      // et omettait `coûtProtectionHa` (ajouté au chantier P8, 10 000 €/ha par
+      // défaut) : un lecteur qui recalculait à la main tombait sur un écart de
+      // 10 000 €/ha sans pouvoir l'expliquer. TOUTE modification de la composition
+      // de l'investissement dans `invArr` doit être répercutée ici — la fiche
+      // d'audit est le document du conseiller/comptable, elle doit rester
+      // recalculable à l'euro près. Garde-fou numérique : test « C2 — composition
+      // de l'investissement arrachage » dans tests/parite.test.js.
       { lib: out.investLibelleCap + ' (brut)', val: this.fmtE0(invest),
-        formule: "S_parcelle × coûtArrachageHa (an. 0) + S_parcelle × (coûtPrepaHa + densité × coûtPlant + coûtPalissageHa + irrigation × coûtIrrigHa) (an. repos) — " + out.investLibelleNote },
+        formule: "S_parcelle × coûtArrachageHa (an. 0) + S_parcelle × (densité × coûtPlant + coûtPalissageHa + coûtProtectionHa + irrigation × coûtIrrigHa) (an. repos) — " + out.investLibelleNote },
       { lib: 'Amortisseur de réserve', val: `${this.fmtE0(reserveReelle)} (${Math.round(couv * 100)} % de l'investissement)`,
         formule: 'Σₜ cashRIₜ = Σₜ sortieArrₜ × prixKg, scénario arrachage' },
-      { lib: 'Effort net après réserve', val: this.fmtE0(effortNet),
-        formule: 'max(0, investissement brut − réserve réellement mobilisée)' },
+      // chantier C3 — plus de max(0, …) : le solde est signé, et la fiche
+      // d'audit doit dire laquelle des deux quantités l'emporte, pas masquer
+      // la moitié du domaine sous un zéro.
+      // Le libellé et la valeur viennent de out.kpiSoldeReserve : une seule
+      // définition du solde, pour que la fiche d'audit et le chiffre de tête ne
+      // puissent pas diverger (chantier C5 — c'est le défaut que C2 a dû
+      // corriger sur l'investissement).
+      { lib: out.kpiSoldeReserve.lib, val: out.kpiSoldeReserve.val,
+        formule: 'investissement brut − réserve réellement mobilisée (Σₜ cashRIₜ) — solde SIGNÉ, sans plancher à zéro : négatif = la réserve mobilisée va au-delà de l\'investissement (déstockage, pas un gain — voir la réserve à l\'horizon ci-dessous)' },
+      // chantier C3 — contrepartie physique du solde ci-dessus, jamais séparée
+      // de lui : en kg/ha, jamais convertie en euros.
+      { lib: `Réserve à ${inp.horizon} ans (kg/ha)`,
+        val: `${this.fmtKg(resHorizon.arrachageKgHa)} kg/ha (contre ${this.fmtKg(resHorizon.referenceKgHa)} kg/ha sans renouvellement)`,
+        formule: `OAD.reserveHorizon(arrachage, reference, ${inp.horizon}) : stockHa lu à t = horizon sur chacune des deux séries kg — indicateur PHYSIQUE, aucun paramètre monétaire dans la signature de la fonction, le stock de réserve n'est jamais monétisé (README §19)` },
       { lib: 'Point bas de trésorerie', val: `${this.fmtE0(creuxAbs.v)} (année ${creuxAbs.t})`,
         formule: "minₜ cumulParcelleₜ = minₜ Σ(venteRaisinParcelle + cashRI − coutsParcelle), sur la vue faire-valoir affichée — parcelle seule, hors reste de l'exploitation, absolu (pas relatif au statu quo)" },
+      // chantier C4 — le seul chiffre différentiel de l'outil. Il figure sur la
+      // fiche d'audit avec sa formule, comme tous les autres : c'est le document
+      // où un chiffre doit pouvoir être retracé jusqu'à son calcul.
+      { lib: `Par rapport à ne rien faire, à ${inp.horizon} ans`, val: this.fmtE0(diffTreso.aHorizon),
+        formule: `OAD.differentielTresorerie(arrachage, reference, fv, vue, { parcelleSeule: true }).aHorizon = tresorerieCumulee(arrachage)[${inp.horizon}] − tresorerieCumulee(reference)[${inp.horizon}], soustraction terme à terme de deux séries déjà produites par le moteur — parcelle seule (sur l'exploitation entière, le revenu du reste du domaine noie l'effet de l'opération), sur la vue faire-valoir affichée, montant SIGNÉ. Piloté par le déclin supposé sans renouvellement (declinSQ)` },
       { lib: 'Tension max vs statu quo', val: `${this.fmtE0(creux.v)} (année ${creux.t})`,
         formule: 'minₜ (cumulArrachageₜ − cumulStatuQuoₜ), sur la vue faire-valoir affichée — non affiché à l\'écran, conservé ici' },
       { lib: 'Réserve min en transition', val: `${this.fmtKg(stockMin)} kg/ha (année ${tMin})`,
         formule: `minₜ stockHaₜ (scénario arrachage) ; seuil d'alerte câblé en dur = ${this.fmtKg(seuil)} kg/ha` },
       { lib: `Écart d'âge à ${inp.horizon} ans (trajectoire)`, val: '−' + nf(gainAgeHorizon, 1) + ' an' + (gainAgeHorizon >= 2 ? 's' : ''),
         formule: "OAD.trajectoireAge(inp) : parcelle exclue du numérateur ET du dénominateur pendant le repos (t < repos, option B — même règle que les lignes \"Arrachée\" du registre) ; redémarre à l'âge 0 à t = repos (replantation physique, pas l'entrée en production) ; complantation = mix pondéré (1−manquants)×(âgeParcelle+t) + manquants×t" },
-      { lib: 'Charges évitées en transition', val: this.fmtE0(chargesEvitees) + (chargesActives ? '' : ' (charges à 0 dans vos saisies)'),
-        formule: 'Σ_{t<returnYear} max(0, chargesStatuQuoₜ − chargesArrachageₜ), returnYear = 3 (câblé en dur) + repos — non affiché à l\'écran, conservé ici' }
+      /* chantier C5 — les entrées « Manque à gagner cumulé » et « Charges
+         évitées en transition » ont été RETIRÉES de la fiche d'audit et
+         remplacées par les quatre termes de la cascade ci-dessous.
+
+         Ce n'est pas un allègement de présentation : ces deux quantités ne se
+         recomposent PAS avec le différentiel. `chargesEvitees` ne sommait que
+         sur t < returnYear et ne retenait que les écarts positifs
+         (max(0, …)) ; `manqueAGagner` applique lui aussi un max(0, …) et ne
+         porte que sur volcoVendu. Sur le paramétrage dégradé,
+         « −invest + réserve + chargesEvitees − manqueAGagner » donnait
+         −44 054 € contre −67 975 € de différentiel réel : 23 921 € d'écart.
+         Laisser coexister deux jeux de chiffres aux périmètres différents
+         recréerait exactement le problème que ce chantier résout. */
+      ...out.printCascadeRows,
     ];
 
     return out;

@@ -61,6 +61,7 @@ chiffrée se met à jour en continu dans la colonne de droite.
 19. [Limites, hypothèses et paramètres cachés](#19-limites-hypothèses-et-paramètres-cachés)
     - [19bis. Journal d'arbitrages — accueil, simplification de l'interface, deux corrections](#19bis-journal-darbitrages--accueil-simplification-de-linterface-deux-corrections)
     - [19ter. Journal d'arbitrages — session du 01/09/2026](#19ter-journal-darbitrages--session-du-01092026)
+    - [19quater. Journal d'arbitrages — prompt B9 : assiette de surface (registre vs production)](#19quater-journal-darbitrages--prompt-b9--assiette-de-surface-registre-vs-production)
 20. [Pour aller plus loin](#20-pour-aller-plus-loin)
 21. [Recette humaine — contrôles non automatisables](#21-recette-humaine--contrôles-non-automatisables)
 
@@ -357,7 +358,7 @@ réutilisent les handlers existants (`suivant`, `allerResultats`).
 ### Lot 1b — les résultats autour d'une frise (prompts 5 à 9)
 
 **Trois chiffres de tête**, en N1 : *retour en production* (une année),
-*effort net à financer* (un montant), *vignoble rajeuni de* (une durée).
+*investissement net de la réserve mobilisée* (un montant signé, chantier C3), *vignoble rajeuni de* (une durée).
 Chacun porte sa décomposition en N4 — un chiffre de 36 px ne doit jamais être
 un chiffre nu. Aucun n'est recalculé dans `index.html` ; l'année manquait au
 moteur, d'où `OAD.anneeRetourProduction(repos)`.
@@ -516,7 +517,7 @@ La colonne de droite (`<aside>`, « Synthèse en continu ») est masquée pendan
 qu'on décrit la parcelle (temps 1) et réapparaît dès le temps 2
 (`syntheseVisible = step > 0`) : elle reprend un sous-ensemble des mêmes
 résultats (surface, densité, pieds à planter, conformité AOC, investissement,
-réserve mobilisée, effort net, tension de trésorerie, réserve minimale) et
+réserve mobilisée, solde investissement/réserve, tension de trésorerie, réserve minimale) et
 propose un raccourci direct vers le temps 3.
 
 ### 4bis. Le temps 2 — une décision par carte
@@ -538,7 +539,7 @@ Trois arbitrages tenus par cette refonte :
    disparu au prompt 12) ; `ajusterOuvert3` / `ajusterOuvert4` et leurs valeurs
    dérivées ont quitté `state` et `renderVals()`.
 2. **Aucun montant de synthèse au temps 2** : l'investissement total, la réserve
-   mobilisée et l'effort net restent au temps 3. Le temps 2 n'affiche que les
+   mobilisée et le solde investissement/réserve restent au temps 3. Le temps 2 n'affiche que les
    valeurs de ses propres champs et le total du palissage, qui y est calculé.
 3. **Rien n'a bougé dans le moteur.** Toutes les grandeurs de l'écran existaient
    déjà ; aucune fonction n'a été ajoutée à `moteur-oad.js`, aucune formule n'a
@@ -758,6 +759,7 @@ scénario affiché à part entière. C'est signalé champ par champ ci-dessous.
 | champ (`v.xxx`) | unité | défaut | rôle |
 |---|---|---|---|
 | `surfTot` | ha | 10 | surface totale de l'exploitation — dénominateur de l'effet âge et des charges statu quo. Ignoré en mode registre parcellaire, où il est dérivé du registre (§6bis) |
+| `surfProdTot` | ha | — | **surface en production** : assiette du VolCo, du plafond et du stock de réserve (§7, §19quater). Dérivée du registre (`surfProd`) ; repli explicite `surfProdTot ?? surfTot` quand elle n'est pas fournie |
 | `ageMoy` | ans | 38 | âge moyen du vignoble **avant** l'opération |
 | `riPct` (curseur) | % | 75 | niveau actuel de réserve individuelle, en % du plafond 10 000 kg/ha → `reserveInit = 10000 × riPct/100` |
 | `volco` | kg/ha | 9000 | volume commercialisable, fixé chaque année par le CIVC |
@@ -1090,9 +1092,19 @@ navigateur, et un bandeau le rappelle à l'utilisateur.
 > sont des états de navigation.
 
 **Étape 1 — agrégation exploitation.** `OAD.agregerRegistreExploitation(registreRows,
-campagne)` (`moteur-oad.js`) renvoie `{ surfTot, ageMoy }` :
+campagne)` (`moteur-oad.js`) renvoie
+`{ surfTot, surfProd, surfPlantier, surfRepos, ageMoy }` :
 `surfTot` = somme de **toutes** les lignes (plantées + arrachées, une
 parcelle arrachée reste une surface de l'exploitation, en repos) ;
+`surfProd` = **surface en production**, seules les lignes plantées d'âge
+≥ `SEUIL_ENTREE_PRODUCTION` (3 ans, valeur *à valider*, §19quater) ;
+`surfPlantier` = lignes plantées sous ce seuil ; `surfRepos` = lignes
+arrachées. Les trois forment une **partition** de `surfTot`
+(`surfTot = surfProd + surfPlantier + surfRepos`) : `surfProd` est
+l'assiette réglementaire que le moteur consomme sous le nom `surfProdTot`
+(VolCo, plafond et stock de réserve — §7, §19quater), `surfTot` reste la
+surface d'affichage et le dénominateur des charges du reste de
+l'exploitation ;
 `ageMoy` = moyenne pondérée par surface, **excluant** les lignes arrachées
 du numérateur et du dénominateur (une parcelle sans vigne en terre n'a pas
 d'âge de vigne). La référence des âges (`age = campagne − anneePlant`) est
@@ -1219,7 +1231,9 @@ année de `t=0` à `t=horizon` (10 ans par défaut, ou 25 — §6), le compte de
 différents.
 
 Notations : `surfArr` = surface de la parcelle concernée (`surfParc`),
-`surfRest = surfTot − surfArr` = le reste de l'exploitation (non concerné
+`surfProdTot` = **surface en production** de l'exploitation (`surfProd` du
+registre ; repli sur `surfTot` quand l'appelant ne la fournit pas — §19quater),
+`surfRest = surfProdTot − surfArr` = le reste de l'exploitation (non concerné
 par l'opération, produit toujours à `rendMean`), `fProjet =
 rendFactorProjet` = pénalité de rendement du projet — hook générique du
 moteur (`?? 1`, §7bis/moteur-oad.js:13), non alimenté par l'UI depuis le
@@ -1252,7 +1266,7 @@ rendY = rendYearFn(t)  si fourni (test de résistance, étape 5)
 - **`complantation` / `statuquo`** — la parcelle reste en production toute
   la période, mais avec un rendement propre `rendParcFn(t, rendY)` :
   ```
-  surfProd        = surfTot                                  // toujours plein
+  surfProd        = surfProdTot                              // toujours plein
   recolteReste    = rendY·surfRest
   recolteParcelle = rendParcFn(t, rendY)·surfArr
   recolte         = recolteReste + recolteParcelle
@@ -1271,11 +1285,13 @@ volco = surfProd × p.volco     // le volume commercialisable est calculé sur l
 
 **Étape 4 — stock de début d'année :**
 ```
-stockDebut = reserveInit × surfTot     si t = 0
-           = stockFin de l'année t−1   sinon
+stockDebut = reserveInit × surfProdTot   si t = 0
+           = stockFin de l'année t−1     sinon
 ```
-`reserveInit` est assis sur `surfTot` (surface totale) pour les trois
-scénarios.
+`reserveInit` (kg/ha) est assis sur `surfProdTot` (**surface en
+production**) pour les trois scénarios — et non sur `surfTot`, qui
+compterait aussi les plantiers et les parcelles en repos, lesquels
+n'ouvrent aucun droit à réserve. Voir §19quater.
 
 **Étape 5 — mise en réserve** (le surplus récolté au-dessus du VolCo,
 plafonné par la place disponible sous le plafond 10 000 kg/ha) :
@@ -1417,7 +1433,7 @@ scénarios que l'utilisateur pourrait sélectionner.
 
 | | `arrachage` | `complantation` | `statuquo` |
 |---|---|---|---|
-| Surface productive | `surfRest`, puis `surfTot` après `returnYear` | toujours `surfTot` | toujours `surfTot` |
+| Surface productive | `surfRest`, puis `surfProdTot` après `returnYear` | toujours `surfProdTot` | toujours `surfProdTot` |
 | Rendement de la parcelle | `rendMean·f·fProjet` une fois relancée | `rendParcCompl(t, rendY)` — monte de `rendEstime` vers un rendement cible qui suppose les manquants comblés à 100 % (pondérés par un facteur de récupération), à partir de `entreeProdCompl` (7 ans, fixé en dur depuis le chantier A3, §7ter — plus alimenté par l'UI) | `rendParcSQ(t, rendY) = rendY·(rendEstime/rendMean)·(1−declinSQ)ᵗ` |
 | Sortie de réserve « arrachage » | oui, années 1 à `nbSortie` | non | non |
 | Investissement ponctuel | arrachage (t=0) + replantation (t=repos) | entreplants (t=0), ajustés du taux de survie | aucun |
@@ -1956,6 +1972,15 @@ puis t=`repos`) est inchangé, pour les deux motifs d'arrachage alors en
 vigueur (classique, `repos=1` ; sanitaire, `repos=3`) — motif depuis
 remplacé par un choix libre de `repos` (1/2/3 ans), voir §7bis, chantier A2.
 
+> **État à date (postérieur à P3).** La formule ci-dessus décrit
+> `invArr[repos]` **tel qu'il sortait du chantier P3**. Le chantier **P8** y a
+> depuis ajouté `coutProtectionHa` (protection du jeune plant, 10 000 €/ha par
+> défaut). La composition en vigueur est donc :
+> `invArr[repos] = surfParc × (densite·coutPlant + coutPalissageHa +
+> coutProtectionHa + (irrigation ? coutIrrigHa : 0))`.
+> C'est cet écart d'un chantier à l'autre qui avait laissé la fiche d'audit
+> décrire une formule fausse jusqu'au **chantier C2** (voir ci-dessous).
+
 **Investissement ponctuel complantation** (`invCompl`) :
 ```
 nbPlants     = surfParc × densite × manquants     // pieds manquants à combler
@@ -1992,9 +2017,473 @@ renommage + qualification, aucun changement de calcul) :
   complantation: { kg, eur, investissement: Σ invCompl} }   // @deprecated chantier A1 — calcul conservé, plus exposé
 ```
 `investissement` est volontairement **hors charges d'entretien** : c'est
-la base du KPI « Effort net après réserve » (§17), qui répond à « combien
-dois-je financer pour l'opération elle-même », indépendamment de charges
+la base du KPI « Investissement net de la réserve mobilisée » (§17,
+ex-« Effort net après réserve », renommé et déclampé au chantier C3), qui
+répond à « quelle part de l'opération la réserve ne couvre pas »,
+indépendamment de charges
 d'exploitation récurrentes qui existeraient de toute façon.
+
+### Journal d'arbitrages — chantier C2 : la fiche d'audit documentait une formule fausse (07/09/2026)
+
+**Défaut constaté.** L'entrée « investissement (brut) » de `out.printKpiRows`
+(fiche d'audit imprimable, `index.html`) annonçait la formule
+`S × coûtArrachageHa (an. 0) + S × (coûtPrepaHa + densité × coûtPlant +
+coûtPalissageHa + irrigation × coûtIrrigHa) (an. repos)`. Deux erreurs, dans
+le même sens :
+
+- elle citait **`coûtPrepaHa`**, champ supprimé au chantier P3 ci-dessus
+  (double emploi avec le forfait MHCS `coutArrachageHa`) — il n'existe plus
+  nulle part dans le moteur ;
+- elle **omettait `coûtProtectionHa`**, ajouté au chantier P8 et valant
+  10 000 €/ha par défaut.
+
+Conséquence mesurée : un lecteur qui recalculait à la main tombait sur un
+écart de **`surfParc` × 10 000 €/ha** par rapport au montant affiché en face
+de la formule — soit 5 000 € sur la parcelle de 0,5 ha des valeurs par
+défaut — sans aucun moyen de comprendre d'où il venait. La fiche d'audit
+étant le document destiné au conseiller / comptable, un écart inexpliqué y
+coûte plus cher qu'ailleurs : c'est précisément le document dont on attend
+qu'il soit recalculable.
+
+**Correction.** Formule alignée sur le bloc `invArr` de
+`construireScenarios` :
+```
+an. 0     : S_parcelle × coûtArrachageHa
+an. repos : S_parcelle × (densité × coûtPlant + coûtPalissageHa
+                          + coûtProtectionHa + irrigation × coûtIrrigHa)
+```
+Vérification aux valeurs par défaut de l'interface : 30 927,20 € par la
+formule affichée contre 30 927,20 € rendus par le moteur — écart nul.
+L'ancienne formule donnait 25 927,20 €.
+
+**Périmètre strictement documentaire.** *Aucun* calcul n'est touché :
+`invArr` est inchangé, `coutPrepaHa` n'est pas réintroduit, et les autres
+entrées de `printKpiRows` sont laissées en l'état (elles relèvent des
+chantiers C5 et C7). Les mentions de `coutPrepaHa` subsistant dans ce README
+sont toutes dans le présent journal, où elles documentent sa suppression :
+elles doivent y rester.
+
+**Garde-fou.** Le test « C2 — composition de l'investissement arrachage »
+(`tests/parite.test.js`, section 31) fige *numériquement* la composition
+plutôt que la chaîne d'affichage : sur un jeu d'entrées où les quatre postes
+de l'installation sont non nuls simultanément (protection et irrigation
+comprises), il vérifie que `arrachage.investissement` vaut exactement la
+somme des deux engagements, et qu'une variation unitaire de chaque paramètre
+déplace le total de son coefficient exact. Une dérive future de la
+composition casse donc un test, et le commentaire posé au-dessus de
+`printKpiRows` renvoie explicitement à `invArr`. Un troisième test, lui
+textuel, garde la chaîne affichée exempte de `coûtPrepaHa` et porteuse de
+`coûtProtectionHa`.
+
+### Journal d'arbitrages — chantier C3 : déclampage du solde investissement/réserve et réserve à l'horizon (07/09/2026)
+
+Deux défauts corrigés **ensemble**, parce qu'ils ne doivent jamais s'afficher
+l'un sans l'autre.
+
+#### (a) Le clamp
+
+`index.html` calculait `const effortNet = Math.max(0, invest − reserveReelle)`.
+Ce plancher à zéro écrasait toute la région où la réserve couvre
+l'investissement — c'est-à-dire **le cas dominant**. Aux valeurs par défaut :
+réserve mobilisée ≈ 189 000 € contre ≈ 61 300 € d'investissement, soit un
+solde réel de ≈ −127 700 € affiché « 0 € ».
+
+Un indicateur constant sur son domaine principal n'est pas une simplification,
+c'est une perte d'information. Mesure faite sur un jeu où la réserve est le
+facteur limitant (`volco` au-dessus du rendement moyen, donc aucune mise en
+réserve possible), en faisant varier le curseur `riPct` de 0 à 100 % :
+
+| `riPct` | solde (depuis C3) | ancien KPI clampé |
+|---:|---:|---:|
+| 0 % | +15 891 € | +15 891 € |
+| 10 % | +10 884 € | +10 884 € |
+| 20 % | +3 884 € | +3 884 € |
+| 30 % | −3 009 € | **0 €** |
+| 50 % | −16 119 € | **0 €** |
+| 70 % | −29 122 € | **0 €** |
+| 100 % | −40 809 € | **0 €** |
+
+L'ancien KPI était plat sur plus de 70 % de la plage. Le nouveau est continu et
+monotone sur toute la plage — c'est le critère d'acceptation du chantier, tenu
+par le test « C3 — CRITÈRE D'ACCEPTATION » (section 32 de `tests/parite.test.js`).
+
+De plus, « 0 € à financer » se lit « gratuit », ce que le modèle ne dit pas.
+
+#### (b) L'asymétrie de la réserve, et pourquoi la correction est physique
+
+`cashRI` monétise la **sortie** de réserve ; le **stock consommé** n'a aucun
+coût. C'est assumé (« aucune valeur terminale d'actif », §19) mais
+**directionnel** : cela penche toujours du même côté. Deux régimes très
+différents se cachent derrière le même solde en euros :
+
+- réserve **saturée au plafond** : le déblocage est réellement gratuit, le
+  stock aurait été perdu de toute façon ;
+- réserve **non saturée** : c'est un prélèvement de plusieurs milliers de kg/ha
+  sur un stock qui manquera plus tard, invisible partout ailleurs.
+
+**La règle du projet reste entière : le stock de réserve n'est JAMAIS
+monétisé.** La correction retenue est **physique** (kg/ha), jamais monétaire —
+`OAD.reserveHorizon(scArr, scRef, horizon)` ne reçoit **aucun paramètre
+monétaire** et doit rester structurellement incapable de produire un euro,
+comme `trajectoireAge`. Un garde-fou dédié le vérifie en faisant varier
+`prixKg` (« C3 — GARDE-FOU : reserveHorizon ne produit aucun euro »).
+
+*Rejeté — valoriser le stock consommé, même « à titre indicatif » et entre
+parenthèses* : un lecteur qui voit un euro le soustrait, quel que soit
+l'avertissement qui l'accompagne.
+
+*Rejeté — un badge « réserve saturée / non saturée »* : nommer le régime
+ajoute du vocabulaire là où deux nombres suffisent. La ligne affichée est une
+comparaison directe, qui se lit seule :
+
+> Réserve à 10 ans : **4 514 kg/ha**, contre **7 650 kg/ha** sans renouvellement.
+
+#### (c) Localisation
+
+Le calcul vivait dans la vue, en violation de la règle « toute logique
+financière dans `moteur-oad.js` ». Il est rapatrié : deux fonctions pures,
+`soldeInvestissementReserve(scenArr)` et `reserveHorizon(scArr, scRef, horizon)`,
+exportées via `module.exports` et `window.OAD`.
+
+#### Contrainte d'adjacence — non négociable
+
+La ligne de réserve à l'horizon est rendue **immédiatement sous** le solde,
+**dans le même bloc de template**, sous un **unique** `sc-if`. Il ne doit
+exister aucun état de l'interface où le solde s'affiche sans elle — état
+dégradé compris (les deux sont repliés ensemble sur le même `kpiVide`), et
+phrase de synthèse comprise (`syntheseSoldeTxt` est immédiatement suivi de
+`reserveHorizonTxt`).
+
+Raison : lu seul, un solde négatif se lit comme un excédent, alors que c'est un
+déstockage. Un commentaire le dit explicitement des deux côtés — dans le
+template à l'endroit du rendu, et dans le script au-dessus de
+`out.kpiReserveHorizon` — pour qu'une session ultérieure ne les sépare pas en
+croyant aérer la mise en page. Le test « C3 — ADJACENCE » le vérifie
+structurellement (ordre, absence de conditionnel entre les deux, unicité du
+repli, présence du commentaire).
+
+#### Vocabulaire
+
+- **« effort net » disparaît.** Nouveau libellé : **« Investissement net de la
+  réserve mobilisée »**.
+- **« à financer » disparaît de ce KPI.** Aucun coût de financement n'est
+  modélisé — ni taux, ni durée, ni différé (§19). La question du financement
+  est portée par le **point bas de trésorerie**, pas par ce solde.
+- L'ancien `det`, « investissement − réserve = coût réel de décision », était
+  **faux** : ce n'est pas le coût réel de la décision (qui supposerait un
+  différentiel — voir chantier C4), c'est un solde de financement. Remplacé par
+  une description de la soustraction, sans qualification.
+- Cas négatif : **« Réserve mobilisée au-delà de l'investissement : X € »**.
+  Les mots **« excédent », « gain », « bénéfice » sont interdits** ici et un
+  test les refuse : ce n'est pas un profit, c'est un déstockage.
+
+#### Renommages
+
+`effortNet` → `soldeInvestReserve` ; `out.effortNetTxt` → `out.soldeReserveTxt`
+(+ `soldeReserveAbsTxt`, `soldeEstNegatif`) ; `out.kpiEffortNet` →
+`out.kpiSoldeReserve` (+ `out.kpiReserveHorizon`) ; `state.effortNetOuvert` →
+`state.soldeReserveOuvert`. Ce dernier est un état de navigation, **hors
+instantané `localStorage`** : le renommer ne casse aucun instantané écrit par
+une version antérieure.
+
+#### Hors périmètre, explicitement
+
+`simulerReserveKg`, `coucheEuro` et `chargesEntretien` ne sont pas touchés.
+Aucun taux d'emprunt n'est introduit. La réserve n'est convertie en euros nulle
+part.
+
+### Journal d'arbitrages — chantier C4 : le différentiel par rapport à « ne rien faire » (07/09/2026)
+
+#### Le problème
+
+Un simulateur d'**impact** dont tous les chiffres sont absolus ne mesure aucun
+impact : « impact » est un mot différentiel. Le différentiel existait déjà dans
+le code (`creux`, `manqueAGagner`) mais avait été retiré de l'écran au
+chantier P6.
+
+Démonstration, mesurée sur le moteur avec les valeurs par défaut rendues par
+l'interface :
+
+| Paramétrage | Différentiel trésorerie parcelle à 10 ans | Réserve consommée nette |
+|---|---|---|
+| Défauts UI (`rendMean` 12 296,6) | **+15 700 €/ha** | 0 kg/ha (réserve saturée) |
+| Vendange dégradée (`rendMean` 8 856,6 = moy. − σ) | **−68 000 €/ha** | 3 136 kg/ha |
+
+**84 000 €/ha d'écart entre les deux mondes — et dans les deux, l'écran
+affichait le même « 0 € » et le même point bas.** Les deux KPI de tête étaient
+insensibles à la variable qui décide de tout.
+
+> **Note de reproduction.** Les tests de la section 33 figent ce comportement
+> sur une fixture explicite (`INP_C4`, 10 ha d'exploitation / 1 ha renouvelé,
+> charges calibrées) et non sur les défauts de l'interface : densité, palissage
+> et protection y sont dérivés d'une géométrie que `tests/parite.test.js` ne
+> reconstruit pas. Sur cette fixture, le différentiel vaut **+10 840 €** en
+> vendange nominale et **−162 018 €** en vendange dégradée. Les magnitudes
+> diffèrent donc du tableau ci-dessus ; le comportement — changement de signe,
+> écart de plusieurs dizaines de milliers d'euros — est le même, et c'est lui
+> que les tests gardent.
+
+#### Ce que l'arbitrage retient, et ce qu'il refuse
+
+L'arbitrage **ne rétablit pas** le comparateur supprimé par la note de cadrage
+de juillet 2026. Le contrefactuel reste invisible **comme scénario
+configurable** et devient visible **comme point de référence arithmétique**,
+sur une ligne.
+
+Interdictions explicites — elles sont le cœur de l'arbitrage, et un test les
+tient (« C4 — INTERDICTIONS ») :
+
+- aucune seconde courbe sur les graphiques ;
+- aucune colonne « statu quo » dans un tableau ;
+- aucun champ de saisie relatif au scénario de référence (`declinSQ`, déplacé
+  par C1, reste le seul) ;
+- ce chiffre ne monte **pas** dans les trois chiffres de tête (36 px) :
+  `teteRetour` / `teteEffort` / `teteAge` restent inchangés ;
+- **aucune formulation évaluative** (« favorable », « rentable », « perdant »,
+  « recommandé ») : un montant signé et son libellé, rien d'autre. Le principe
+  « aucune recommandation » tient.
+
+#### Le calcul
+
+`OAD.differentielTresorerie(scArr, scRef, fv, vue, opt)` réutilise **telle
+quelle** `tresorerieCumulee(…, { parcelleSeule: true })` sur les deux scénarios
+et retourne `{ annuel[], cumule[], aHorizon }`. **Aucune règle nouvelle** :
+c'est une soustraction terme à terme de deux séries déjà produites par le
+moteur. Ne pas y introduire d'actualisation, de pondération ni de traitement du
+signe.
+
+- `parcelleSeule: true`, et non la trésorerie de l'exploitation : sur
+  l'exploitation entière, le revenu du reste du domaine noie l'effet de
+  l'opération (déjà vérifié au test P6).
+- Vue de faire-valoir : **la même que le reste de l'écran**, sans exception.
+- Le code nouveau lit **`sc.reference`**, jamais l'alias historique
+  `sc.statuquo`. Un test le vérifie.
+
+#### Affichage
+
+Une **ligne unique**, en clôture de l'écran de résultats, libellée « Par
+rapport à ne rien faire, à 10 ans », affichée **toujours**, quel que soit le
+signe (aucun `sc-if` propre au différentiel ne l'entoure — testé). Son détail
+énonce la *convention* du chiffre (parcelle seule, horizon, vue de
+faire-valoir), parce qu'un différentiel dont on ignore l'assiette n'est pas
+interprétable ; il ne dit rien de ce qu'il faudrait en conclure. La ligne
+figure aussi sur la fiche d'audit, avec sa formule, comme tout autre chiffre.
+
+#### Critère d'acceptation
+
+Basculer le test de résistance climatique fait changer le différentiel affiché
+de plusieurs dizaines de milliers d'euros. Avant ce chantier, rien ne bougeait
+à l'écran.
+
+#### Point de révision assumé
+
+C4 fait primer le principe de crédibilité du projet sur la lettre de la note de
+cadrage de juillet 2026. **Si cette note visait explicitement à ce qu'aucun
+chiffre négatif ne soit montré au vigneron, C4 est à rejeter — mais il faut
+alors aussi retirer `manqueAGagner` de la fiche d'audit**, sans quoi la
+contradiction est simplement déplacée.
+
+### Journal d'arbitrages — chantier C5 : une cascade unique en remplacement des montants épars (07/09/2026)
+
+#### Le problème
+
+L'écran et la fiche d'audit exposaient **six montants en euros** : investissement
+brut, solde investissement/réserve, point bas de trésorerie (parcelle seule,
+**absolu**), tension max vs statu quo (**différentielle**, calculée mais
+masquée), manque à gagner cumulé, charges évitées. Ils mélangeaient trois axes —
+parcelle / exploitation, absolu / différentiel, ponctuel / flux — **sans
+qu'aucun ne dise sa convention**. Le lecteur ne pouvait pas les hiérarchiser.
+
+Le problème n'était pas qu'il manquait des chiffres : il en manquait **un seul
+qui ordonne les autres**.
+
+#### ⚠️ La contrainte de conception, et pourquoi elle est dure
+
+**La cascade doit être une décomposition EXACTE du différentiel de C4, pas un
+empilement d'indicateurs existants.**
+
+Vérification faite avant le chantier : les quantités historiques **ne se
+recomposent pas**. Sur le paramétrage dégradé,
+`−invest + réserve + chargesEvitees − manqueAGagner` donne **−44 054 €** alors
+que le différentiel réel vaut **−67 975 €** — **23 921 € d'écart**. Les causes
+sont connues, et ce sont des troncatures :
+
+- `chargesEvitees` ne somme que sur `t < returnYear` et ne retient que les
+  écarts positifs (`max(0, …)`) ;
+- `manqueAGagner` applique lui aussi un `max(0, …)` et ne porte que sur
+  `volcoVendu` (donc mélange parcelle et reste de l'exploitation).
+
+**Une cascade qui ne tombe pas juste est pire que six chiffres épars : elle
+donne l'apparence de la rigueur.** Les termes sont donc redéfinis comme une
+décomposition du différentiel lui-même — sans plancher, sans fenêtre tronquée.
+
+#### La décomposition
+
+Sur la parcelle seule, arrachage − référence, sur tout l'horizon. Elle est
+**exacte par construction**, puisque `tresorerieCumulee(parcelleSeule)` vaut
+`Σ(venteRaisinParcelle + cashRI − coutsParcelle)` et que
+`coutsParcelle = invArr ⊎ chargesEntretien.parcelle` :
+
+| # | Terme | Contenu | Signe attendu |
+|---|---|---|---|
+| 1 | Investissement de renouvellement | `−Σ invArr` (la référence n'en porte aucun) | négatif |
+| 2 | Réserve mobilisée à l'arrachage | `+Σ Δ cashRI` | positif |
+| 3 | Écart de recettes raisin | `Σ Δ venteRaisinParcelle` | négatif puis se referme |
+| 4 | Écart de charges d'entretien | `−Σ Δ chargesEntretien.parcelle` | positif |
+| **=** | **Différentiel à 10 ans** | `differentielTresorerie(...).aHorizon` | — |
+
+Exemple, vendange dégradée, propriété, vue « Ensemble » :
+
+```
+Investissement de renouvellement      −61 854 €
+Réserve mobilisée à l'arrachage      +189 000 €
+Écart de recettes raisin            −397 031 €
+Écart de charges d'entretien        +107 868 €
+──────────────────────────────────────────────
+= Différentiel à 10 ans             −162 018 €
+```
+
+#### Faire-valoir — la linéarité, écrite pour qu'on ne la « corrige » pas
+
+`repartir()` est **linéaire** en `revParcelle` et en `coutsParcelle` : chaque
+terme hérite donc du même coefficient que dans `repartir`, sans qu'aucune règle
+nouvelle soit nécessaire.
+
+- **Métayage** : les termes 2 et 3 portent `(1 − partRecolte)` côté exploitant
+  (et `partRecolte` côté propriétaire) ; les termes 1 et 4 portent
+  `(1 − partCouts)` (resp. `partCouts`).
+- **Fermage** : le loyer est **identique dans les deux scénarios et s'annule
+  dans le différentiel**. Il n'y a donc **pas de cinquième terme**, et la part
+  propriétaire du différentiel est **nulle**.
+
+Ce raisonnement est écrit en commentaire dans le moteur **exprès** : c'est
+exactement le genre de linéarité qu'une session ultérieure « corrigera » à tort,
+en croyant qu'un régime de faire-valoir demande un traitement particulier. Il
+n'en demande aucun. Deux tests le tiennent (« C5 — métayage : chaque terme
+hérite du coefficient de repartir() » et « C5 — fermage : le loyer s'annule »).
+
+#### L'assertion interne
+
+`cascadeDifferentielle` **lève une exception** si `Σ montants − total` dépasse
+1 €. Une cascade fausse doit casser **bruyamment**, pas dériver en silence —
+c'est tout l'intérêt du chantier. Un test dédié fabrique une incohérence et
+vérifie que le moteur lève bien (« C5 — GARDE-FOU »).
+
+#### Ce qui reste hors cascade
+
+Clairement séparés, sous un trait, parce que **ce ne sont pas des termes d'une
+somme** :
+
+- **la réserve à l'horizon en kg/ha** (chantier C3) — physique, jamais
+  additionnable à des euros. La contrainte d'adjacence de C3 se **déplace** ici :
+  la réserve n'est monétisée que dans la cascade, sa contrepartie physique est
+  donc rendue immédiatement sous la cascade ;
+- **le point bas de trésorerie** (€, année) — un **extremum**, pas un cumul.
+
+Un test vérifie qu'aucun des deux n'entre dans le corps de
+`cascadeDifferentielle`.
+
+#### Ce qui a été retiré
+
+**À l'écran** : le bloc repliable « Manque à gagner », le cartouche « Réserve
+mobilisée », le cartouche « Investissement net de la réserve mobilisée », et le
+cartouche KPI « investissement brut » — ce dernier redevenu le simple **total du
+tableau qu'il surmonte** (ce n'est pas un indicateur concurrent : c'est la somme
+des lignes juste au-dessus, et elle entre dans la cascade comme premier terme).
+
+**Sur la fiche d'audit** : les entrées `manqueAGagner` et `chargesEvitees` sont
+**retirées** et remplacées par les quatre termes de la cascade, chacun avec sa
+formule. *Laisser coexister deux jeux de chiffres aux périmètres différents
+recréerait exactement le problème que ce chantier résout.*
+
+Le KPI `kpiStockReserve`, qui doublonnait la réserve à l'horizon de C3 avec un
+libellé évaluatif (« s'est entièrement reconstituée »), est remplacé par
+`kpiReserveHorizon`, adossé au moteur : une seule définition, deux emplacements
+d'affichage dont l'un est imposé par l'adjacence.
+
+#### Compatibilité
+
+`manqueAGagner` **reste exportée et testée**, marquée `@deprecated chantier C5`
+avec renvoi à la cascade. Elle ne doit plus alimenter ni l'écran ni la fiche
+d'audit. Un test de non-régression documentaire mesure l'écart de l'empilement
+historique au différentiel, pour que la raison du chantier reste vérifiable et
+ne devienne pas une affirmation de README.
+
+#### Critère d'acceptation
+
+Un lecteur ayant sous les yeux la cascade seule peut reconstituer le
+raisonnement complet sans revenir aux hypothèses, et **l'addition tombe juste** —
+vérifié sur 4 jeux d'entrées × 3 régimes × 3 vues, soit 36 combinaisons.
+
+#### Hors périmètre, explicitement
+
+`simulerReserveKg`, `coucheEuro`, `repartir` et `chargesEntretien` ne sont pas
+modifiés : la cascade est un **assemblage de sorties existantes**, pas une
+physique nouvelle. Aucune actualisation. Ni les graphiques SVG ni la frise de
+trajectoire ne sont touchés.
+
+### Journal d'arbitrages — chantier C7 : ce que la fiche d'audit ne calcule pas (07/09/2026)
+
+#### Pourquoi
+
+Arbitrage 7 : la fiche d'audit vise le **conseiller / comptable**, pas le
+banquier. Elle assume donc l'**auditabilité du modèle** plutôt que le dossier de
+financement. Mais une fiche d'audit qui ne dit pas ce qu'elle **ne** calcule pas
+n'est pas auditable : le lecteur ne peut pas savoir où s'arrête la garantie.
+
+#### Les six omissions, en pied de fiche
+
+1. **Aucune actualisation.** Un euro de l'année 10 pèse comme un euro de
+   l'année 0.
+2. **Aucune valeur terminale d'actif.** Réserve en stock et rajeunissement du
+   vignoble ne sont jamais convertis en euros, y compris à l'horizon.
+3. **Aucun coût de financement.** Aucun taux d'emprunt, aucune durée, aucun
+   différé.
+4. **Aucun échéancier de paiement.** Trésorerie en année pleine. Pour mémoire,
+   campagne 2026 : première échéance à 25 % du volume commercialisable
+   (2 200 kg/ha) au 5 décembre, solde en trois versements égaux — *valeur
+   annuelle, à revérifier à chaque campagne*.
+5. **Prix du raisin unique et constant**, sans distinction cépage / cru /
+   millésime, sans inflation.
+6. **Rendement butoir non modélisé** (15 500 kg/ha en 2026) : la récolte n'est
+   pas plafonnée dans le moteur.
+
+**Le point 4 est obligatoire, pas seulement informatif.** Le point bas de
+trésorerie est présenté dans un contexte de financement ; sans cette mention, le
+lecteur croit lire une trésorerie **datée** alors que le modèle raisonne en
+année pleine. Les années du point bas et du creux de réserve sont des années,
+pas des dates.
+
+Un test vérifie que les six sont présentes, qu'il y en a exactement six, que
+l'échéancier cite ses valeurs et son avertissement de péremption, et que le bloc
+**ne promet aucun module à venir** : il constate une limite, il n'annonce rien.
+
+#### Correctif technique joint — l'année du creux de réserve
+
+`tMin = sc.arrachage.kg.find(r => r.stockHa === stockMin).t` reposait sur une
+**égalité de flottants**. Cela fonctionnait — même tableau, même valeur, donc
+même représentation binaire — mais cela casse **en silence** le jour où la série
+transite par un arrondi (un `toFixed`, une moyenne, un recalcul intermédiaire) :
+`find` rend alors `undefined` et l'accès à `.t` lève, ou pire, tombe sur une
+autre année de valeur voisine.
+
+Remplacé par une recherche du minimum **et de son année en un seul passage**,
+par comparaison :
+
+```js
+const creuxStock = sc.arrachage.kg.reduce(
+  (min, r) => (r.stockHa < min.stockHa ? r : min), sc.arrachage.kg[0]);
+```
+
+Comportement en cas d'ex æquo : la **première** année gagne — identique à
+l'ancien `find`, et figé par un test. Le test « C7 — tMin robuste » couvre le
+cas nominal, les valeurs séparées d'un seul bit, les ex æquo, et démontre le cas
+où l'ancienne écriture ne trouvait rien.
+
+#### Hors périmètre
+
+Aucun module de financement, aucun pas de temps infra-annuel : ces deux points
+sont écartés par arbitrage. La fiche se contente de le dire.
 
 ### Journal d'arbitrages — chantier A1 : recentrage sur un scénario unique
 
@@ -2095,6 +2584,14 @@ classique/sanitaire (définitivement aboli ou simplement recatégorisé, voir
 §7bis).
 
 ## 13. Manque à gagner — `manqueAGagner`
+
+> ⚠️ **@deprecated — chantier C5 (07/09/2026).** Cette fonction reste exportée
+> et testée pour compatibilité, mais elle n'alimente plus ni l'écran ni la fiche
+> d'audit : elle n'est **pas recomposable** avec le différentiel de trésorerie
+> (le `max(0, …)` annule les années où l'arrachage vend plus que la référence, et
+> elle ne porte que sur `volcoVendu`). Elle est remplacée par le terme « Écart de
+> recettes raisin » de `cascadeDifferentielle` — voir §12, journal d'arbitrages
+> « chantier C5 ».
 
 Indicateur **dérivé**, jamais réinjecté dans le calcul (tableau dépliable
 « Manque à gagner », étape 5) :
@@ -2652,11 +3149,14 @@ teinté, effets physiques non monétisés) :
 
 | KPI | formule | famille (écran) |
 |---|---|---|
-| Investissement brut | `invest = sc.arrachage.investissement` | Financière — toujours visible |
-| Amortisseur de réserve | `reserveReelle = Σ sc.arrachage.eur[t].cashRI` ; libellé « mobilise X % de l'investissement » sous 100 %, reformulé en € au-delà (jamais de `%` > 100 affiché) | Financière — toujours visible |
-| — théorique | `reserveTheo = volSortieArr × surfParc × nbSortie × prixKg` | (détail du KPI ci-dessus) |
-| Point bas de trésorerie | `creuxAbs = min_t arrParcelle_cum[t]`, avec `arrParcelle[t] = venteRaisinParcelle[t] + cashRI[t] − coutsParcelle[t]` (vue « Ensemble ») réparti via `OAD.repartir()` en neutralisant le flux du reste (`venteRaisinReste`/`coutsReste` à 0) pour les vues Part exploitant/propriétaire — trésorerie cumulée **absolue de la parcelle seule** (pas relative au statu quo, pas noyée dans le revenu du reste de l'exploitation), sur la vue faire-valoir active | Financière — toujours visible |
-| Effort net après réserve | `effortNet = max(0, invest − reserveReelle)` | Financière — repliée par défaut (`state.effortNetOuvert`) |
+| **Cascade — 4 termes** (chantier C5) | `OAD.cascadeDifferentielle(sc.arrachage, sc.reference, inp, fv, vue)` → `{ termes: [{id, lib, montant}], total }`. Décomposition **exacte** du différentiel : `−Σ invArr`, `+Σ Δ cashRI`, `Σ Δ venteRaisinParcelle`, `−Σ Δ chargesEntretien.parcelle`. Le moteur **lève** si `Σ montants − total > 1 €` | Financière — **le** bloc de clôture de l'écran ; remplace les montants épars |
+| Par rapport à ne rien faire (total de la cascade) | `OAD.differentielTresorerie(...).aHorizon` (chantier C4) — montant **signé**, affiché toujours, aucune formulation évaluative | Financière — total de la cascade, en clôture |
+| Investissement brut | `invest = sc.arrachage.investissement` | **Total du tableau « coût de l'investissement »** (chantier C5 : n'est plus un cartouche KPI concurrent) ; premier terme de la cascade |
+| Amortisseur de réserve | `reserveReelle = Σ sc.arrachage.eur[t].cashRI` | Devenu le terme « Réserve mobilisée » de la cascade (chantier C5) ; le cartouche a quitté l'écran |
+| — théorique | `reserveTheo = volSortieArr × surfParc × nbSortie × prixKg` | (cité dans la phrase de synthèse) |
+| Point bas de trésorerie | `creuxAbs = min_t arrParcelle_cum[t]`, avec `arrParcelle[t] = venteRaisinParcelle[t] + cashRI[t] − coutsParcelle[t]` (vue « Ensemble ») réparti via `OAD.repartir()` en neutralisant le flux du reste (`venteRaisinReste`/`coutsReste` à 0) pour les vues Part exploitant/propriétaire — trésorerie cumulée **absolue de la parcelle seule** (pas relative au statu quo, pas noyée dans le revenu du reste de l'exploitation), sur la vue faire-valoir active | **Hors cascade**, sous le trait : c'est un **extremum**, pas un cumul — il ne s'additionne à rien |
+| Investissement net de la réserve mobilisée | `OAD.soldeInvestissementReserve(sc.arrachage).solde = invest − reserveMobilisee`, **signé, sans plancher** (chantier C3 — l'ancien `max(0, …)` écrasait à zéro le cas dominant). Cas négatif : « réserve mobilisée au-delà de l'investissement », jamais « excédent » ni « gain » — c'est un déstockage | Chiffre de tête (`teteEffort`) et **fiche d'audit** ; le cartouche d'écran est devenu deux termes de la cascade (chantier C5) |
+| Réserve à l'horizon (kg/ha) | `OAD.reserveHorizon(sc.arrachage, sc.reference, horizon)` → `{ arrachageKgHa, referenceKgHa, ecartKgHa }`, lus sur `stockHa` à `t = horizon`. Contrepartie **physique** de la monétisation de la réserve, en kg/ha, **jamais convertie en euros** | **Hors cascade**, mais rendue immédiatement sous elle — adjacence non négociable (C3, déplacée sur la cascade par C5). Également en tête d'écran, dans « ce que le renouvellement produit » |
 | Réserve minimale en transition | `stockMin = min_t sc.arrachage.kg[t].stockHa`, alerte si `< 4000` kg/ha (`seuilReserve`) | Physique — toujours visible |
 | Écart d'âge à l'horizon | `trajAge = OAD.trajectoireAge(inp)` ; `gainAgeHorizon = trajAge.statuquo[horizon] − trajAge.arrachage[horizon]` ; contrepartie énoncée dans la même phrase (« rendement à reconstruire durant la transition ») ; détail complet en trajectoire dans le graphique associé (§18) | Physique — toujours visible |
 
@@ -2666,25 +3166,51 @@ de charges ne lisent que `.parcelle`, qui seule porte l'écart de phase
 identique aux deux scénarios comparés et s'annulerait dans la différence
 de toute façon.
 
-**Retirés de l'écran par le chantier P6** (toujours calculés, conservés
-dans `out.printKpiRows` pour la fiche imprimable — voir ci-dessous) :
-« Tension maximale de trésorerie » (`creux = min_t (arr_cum[t] − sq_cum[t])`,
-la version *relative* au statu quo — remplacée à l'écran par le « Point
-bas de trésorerie » *absolu* ci-dessus, qui répond directement à « combien
-dois-je être en mesure de financer, et quand ») et « Charges évitées en
-transition » (`Σ_{t=0}^{returnYear−1} max(0, chSQ.parcelle[t] −
-chArr.parcelle[t])`, `returnYear = 3+repos`).
+**Retirés de l'écran par le chantier P6**, puis traités par le **chantier C5** :
+
+- « Tension maximale de trésorerie » (`creux = min_t (arr_cum[t] − sq_cum[t])`,
+  la version *relative* au statu quo) — reste calculée et **reste sur la fiche
+  d'audit**. À l'écran, le « Point bas de trésorerie » *absolu* continue de
+  répondre à « combien dois-je être en mesure de financer, et quand ».
+- « Charges évitées en transition »
+  (`Σ_{t=0}^{returnYear−1} max(0, chSQ.parcelle[t] − chArr.parcelle[t])`) —
+  **supprimée**, y compris de la fiche d'audit, au chantier C5. Elle ne sommait
+  que sur `t < returnYear` et ne retenait que les écarts positifs : deux
+  troncatures qui la rendaient **non recomposable** avec le différentiel de
+  trésorerie. Le terme « Écart de charges d'entretien » de la cascade la
+  remplace — même source, mais sur tout l'horizon et sans plancher.
+- Idem pour le tableau « Manque à gagner » (`manqueAGagner`), retiré de l'écran
+  **et** de la fiche : la fonction reste exportée et testée, marquée
+  `@deprecated chantier C5`, et le terme « Écart de recettes raisin » de la
+  cascade la remplace exactement.
 
 **Fiche imprimable** (étape 5, bouton « Imprimer » → `window.print()`,
 mise en page dédiée via `@media print` dans `index.html`, masque nav/aside
 et n'affiche que `.print-sheet`) : un document d'audit autonome, distinct
-de l'écran, construit dans `renderVals()` à partir de 5 tableaux —
-`out.printInpRows` (rappel de toutes les hypothèses saisies), `out.printKpiRows`
-(tous les KPI, y compris ceux retirés de l'écran ci-dessus, chacun avec sa
-formule), et `out.printDetailArr` / `printDetailCompl` / `printDetailSQ`
-(détail annuel complet des 3 scénarios). Pensé pour qu'un chiffre affiché
-à l'écran puisse toujours être retracé jusqu'à sa formule et à l'hypothèse
-qui l'alimente, sans avoir à relire le code.
+de l'écran, construit dans `renderVals()` à partir de `out.printInpRows`
+(rappel de toutes les hypothèses saisies), `out.printKpiRows` (tous les KPI,
+y compris ceux retirés de l'écran ci-dessus, chacun avec sa formule — dont les
+quatre termes de la cascade, via `out.printCascadeRows`), `out.printDetailArr`
+(détail annuel du seul scénario arrachage depuis le chantier C1) et
+`out.printLimitesRows` (**ce que le calcul ne modélise pas**, chantier C7).
+Pensé pour qu'un chiffre affiché à l'écran puisse toujours être retracé
+jusqu'à sa formule et à l'hypothèse qui l'alimente, sans avoir à relire le
+code — et, depuis C7, pour que le lecteur sache aussi **où s'arrête la
+garantie**.
+
+⚠️ **Les chaînes `formule` de `printKpiRows` sont de la documentation
+recopiée à la main : rien ne les recalcule.** Elles peuvent donc diverger en
+silence du moteur — c'est exactement ce qui est arrivé à l'entrée
+« investissement (brut) », restée deux chantiers durant sur une formule
+fausse (`coûtPrepaHa` supprimé au chantier P3 mais toujours cité,
+`coûtProtectionHa` ajouté au chantier P8 mais jamais repris), pour un écart
+de 10 000 €/ha à la main du lecteur. Corrigée au **chantier C2** (§12,
+journal d'arbitrages), qui a aussi posé le garde-fou : la composition de
+l'investissement est désormais figée *numériquement* par un test
+(`tests/parite.test.js`, section 31), et un commentaire au-dessus de
+`printKpiRows` renvoie au bloc `invArr` de `moteur-oad.js`. **Toute
+modification d'une formule du moteur documentée ici doit être répercutée
+dans la chaîne correspondante.**
 
 Séparé de ces grilles, un encadré dédié (jamais dans `out.kpisFinance` ni
 `out.kpisPhysique`) affiche l'indicateur physique « main d'œuvre
@@ -2820,7 +3346,7 @@ avec et sans mobilisation de la réserve) et son encadré « pourquoi la
 réserve est décisive » ont également été retirés de l'écran. Ces quatre
 figures n'existent plus que dans l'historique git ; rien de leur logique
 ne subsiste ailleurs — les chiffres qu'elles portaient (investissement,
-réserve, effort net, écart
+réserve, solde investissement/réserve, écart
 final avec/sans réserve) restent lisibles via les KPI et, pour le détail
 formule par formule, via la fiche imprimable (`out.printKpiRows`, §17).
 
@@ -2891,6 +3417,16 @@ Le comptage vit dans le moteur (`OAD.repartirRegistreParAge(rows, campagne)`,
 pur et testé) ; `graphExploitation()` ne fait que le mettre en forme, en
 `React.createElement` comme la frise.
 
+Depuis le prompt B9 (§19quater), la fonction reçoit un **second argument** :
+l'agrégat `agregerRegistreExploitation`, dont elle tire une note sous la piste
+« Plantée et arrachée ». Cette piste découpe la surface **au registre** ; ce
+n'est pas l'assiette qui porte le VolCo et le plafond de réserve, laquelle
+retranche aussi les **plantiers** — invisibles dans ce découpage, puisqu'ils
+sont plantés. La note le dit en toutes lettres plutôt que de laisser croire que
+« Plantée » et « en production » désignent la même surface. Elle n'est rendue
+que si l'agrégat est fourni : sans lui, la piste reste juste, elle dit
+simplement moins.
+
 **Deux échelles distinctes, jamais additionnées** — chaque bloc porte la sienne
 en sous-titre, sans quoi on lirait cinq parts qui ne font pas cent :
 
@@ -2930,7 +3466,76 @@ cent, que le fond seul ne montre plus dans le thème clair.
 
 ## 19. Limites, hypothèses et paramètres cachés
 
+> 🚧 **CHANTIER C6 — NON DÉMARRÉ, en attente d'une vérification externe
+> BLOQUANTE (série C, 07/09/2026).**
+>
+> `coutSurfaceProdHaAn` (11 400 €/ha/an, documenté « charges de structure hors
+> charges locatives, amortissement retiré » = 15 300 − 3 900) est **écrasé** par
+> `reprendreVoletProd` avec le total du détail par opération
+> (`REF_OPS_MANUEL` / `REF_OPS_MECANISE` : taille, liage, ébourgeonnage,
+> relevage, rognage, sol, ferti-irrigation, traitements). Ce sont des
+> **opérations culturales**, pas des charges de structure : **deux assiettes
+> incompatibles dans un seul champ**.
+>
+> Les deux conséquences sont **de sens opposé**, ce qui est la pire
+> configuration — le total paraît plausible pour de mauvaises raisons :
+> si 11 400 est de la structure seule, les opérations culturales ne sont nulle
+> part dans le modèle par défaut, et comme la référence porte ce taux 10 ans
+> contre 6 pour l'arrachage, l'omission biaise **en faveur du statu quo** ;
+> cliquer « ↻ Reprendre » remplace la structure par les opérations et fait
+> disparaître assurance, foncier, mécanisation et frais généraux — biais
+> **dans l'autre sens**.
+>
+> Enjeu de magnitude : 11 400 × 10 ans = **114 000 €/ha**, soit environ deux
+> fois l'investissement de plantation. C'est le poste le plus lourd du modèle,
+> et le seul dont le commentaire de provenance dise « ou repris de… », ce qui
+> n'est pas une provenance.
+>
+> **Précondition à lever avant tout code** : faire confirmer par le **Cerfrance
+> Nord Est Île-de-France** le périmètre exact du poste 15 300 €/ha de la
+> référence 2024 — charges de structure seules, ou total incluant les
+> opérations culturales ? Interroger la **grille d'analyse de gestion**, pas le
+> document de synthèse grand public, où la ventilation n'est en général pas
+> explicitée. Le sens du chantier en dépend et la réponse **n'est pas
+> déductible du dépôt**. La conclusion, sourcée et datée, se reporte ici.
+>
+> Le chantier prévoit ensuite de scinder en `coutStructureHaAn` (défaut
+> Cerfrance, **jamais** cible d'un bouton « Reprendre ») et
+> `coutOperationsHaAn` (seule cible de `reprendreVoletProd`), `chargesEntretien`
+> consommant la somme des deux, avec `coutSurfaceProdHaAn` conservé en entrée
+> de compatibilité pour les instantanés `localStorage` antérieurs. **Ne pas
+> démarrer sans la source écrite.**
+
+> **Depuis le chantier C7 (07/09/2026), les six omissions les plus
+> structurantes de cette section sont RECOPIÉES EN PIED DE FICHE D'AUDIT**
+> (`out.printLimitesRows`, rendu dans la sortie « Fiche d'audit »), pour qu'un
+> conseiller ou un comptable sache où s'arrête la garantie du document qu'il a
+> sous les yeux, sans avoir à ouvrir ce README : aucune actualisation, aucune
+> valeur terminale d'actif, aucun coût de financement, aucun échéancier de
+> paiement, prix du raisin unique et constant, rendement butoir non modélisé.
+> Toute limite ajoutée ici et jugée structurante doit y être répercutée — un
+> test vérifie que la fiche en porte exactement six.
+
 - **Mono-parcelle, prix unique.** Pas de distinction cépage/cru/millésime.
+- **Aucun échéancier de paiement — trésorerie en année pleine (chantier C7).**
+  Le modèle ne connaît pas de pas de temps infra-annuel : les années du point
+  bas de trésorerie et du creux de réserve sont des **années, pas des dates**.
+  Pour mémoire, campagne 2026 : première échéance à 25 % du volume
+  commercialisable (2 200 kg/ha) au 5 décembre, solde en trois versements
+  égaux — **valeur annuelle, à revérifier à chaque campagne**. Cette mention
+  est obligatoire sur la fiche d'audit : le point bas y est présenté dans un
+  contexte de financement, et sans elle le lecteur croit lire une trésorerie
+  datée.
+- **Rendement butoir non modélisé (chantier C7).** La récolte n'est plafonnée
+  nulle part dans le moteur ; le butoir de la campagne 2026 (15 500 kg/ha)
+  n'est appliqué à aucune série. Une récolte simulée au-dessus de ce seuil
+  n'est pas écrêtée. À ne pas confondre avec le VolCo (`VOLCO_CAMPAGNE`,
+  8 800 kg/ha en 2026), qui, lui, est bien modélisé.
+- **Aucun coût de financement (rappelé par C3 et C7).** Ni taux d'emprunt, ni
+  durée, ni différé. Le solde investissement / réserve n'est donc **pas** un
+  coût de crédit, et le point bas de trésorerie n'est pas un besoin de
+  financement chiffré. C'est la raison pour laquelle le mot « à financer » a
+  été retiré du KPI de solde au chantier C3.
 - **Aucune valeur terminale d'actif.** Le stock de réserve individuelle en
   fin d'horizon (`stockFin`/`stockHa`) et l'écart d'âge du vignoble
   (`trajectoireAge`) sont des actifs physiques contraints, jamais
@@ -2942,6 +3547,25 @@ cent, que le fond seul ne montre plus dans le thème clair.
   patrimonial dans les KPI financiers — cohérent avec le principe
   anti-double-compte du projet, mais à garder en tête pour toute lecture
   « valeur nette du patrimoine ».
+- **Assiette des charges d'entretien (prompt B9, décision D3).** Depuis que
+  la production, le VolCo, le plafond et le stock de réserve sont assis sur la
+  **surface en production** (`surfProdTot`, §7), `chargesEntretien` fait
+  exception : le reste de l'exploitation y est toujours facturé au taux
+  « vigne en production » sur `surfTot − surfParc`, plantiers et parcelles en
+  repos compris. L'exploitation paie donc de l'entretien de vigne mature sur
+  des hectares qui ne produisent pas. Limite assumée, tenue par un test nommé,
+  traitée dans un lot ultérieur — voir §19quater.
+- **Pas d'écrêtement du stock de réserve (prompt B9, décision D4).** Quand la
+  surface en production diminue (arrachage), le stock déjà constitué peut
+  dépasser `plafond × nouvelle surface en production`. Le moteur le conserve
+  et se contente d'annuler la marge de mise. Point réglementaire **non
+  tranché**, à faire arbitrer par le service Appellation/Vendanges du Comité
+  avant toute modélisation — voir §19quater.
+- **Seuil d'entrée en production non sourcé.** `SEUIL_ENTREE_PRODUCTION = 3`
+  ans sépare le plantier de la vigne en production, donc décide de l'assiette
+  réglementaire. Cohérent avec `returnYear = 3 + repos` (§7), mais marqué
+  « À VALIDER » dans le moteur : à confirmer sur le cahier des charges AOC
+  Champagne, chapitre entrée en production.
 - **Aucune actualisation.** Les flux de trésorerie (`cashNet`, `investissement`,
   cumuls) sont sommés bruts sur l'horizon (10 ans côté interface depuis
   l'arbitrage 6 du 01/09/2026 ; le moteur accepte toujours 25), sans taux
@@ -3162,6 +3786,101 @@ prompts, à trancher avant diffusion) :
 - Date de relevé des prix `PRIX_PALISSAGE` et `PRIX_PROTECTION_PLANT`.
 - Date de relevé des surfaces de multiplication PlantGrape, et période de
   calcul du couple (`REND_MOYEN_REGIONAL`, `ECART_TYPE_REGIONAL`).
+
+### 19quater. Journal d'arbitrages — prompt B9 : assiette de surface (registre vs production)
+
+**Diagnostic.** `agregerRegistreExploitation` renvoyait `surfTot` = somme de
+**toutes** les lignes du registre, Plantée et Arrachée. Cette valeur était
+injectée telle quelle dans `construireScenarios` puis `simulerReserveKg` comme
+**surface productive** : `surfRest = surfTot − surfArr` (récolte du reste de
+l'exploitation), `surfProd = surfTot` en statu quo et complantation,
+`volco = surfProd × volco`, `stockDebut = reserveInit × surfTot` et le plafond
+de mise en réserve `plafond × surfProd`.
+
+Or l'assiette réglementaire du rendement commercialisable et du plafond de
+réserve individuelle est la **surface en production**, qui exclut :
+
+- les parcelles en repos (`situation = 'arrachee'`) ;
+- les **plantiers**, c'est-à-dire les lignes Plantée dont l'âge est inférieur
+  au seuil d'entrée en production.
+
+Conséquence : sur une exploitation en renouvellement régulier (5 à 8 % de
+surface non productive en permanence), l'outil surestimait simultanément la
+récolte, le VolCo, le plafond de mise en réserve et le **stock de réserve
+initial**. Le biais n'était pas neutralisé par la comparaison inter-scénarios :
+la dynamique de réserve est non linéaire (bornes `min`/`max`, plafond, plancher
+à zéro) et `sortieArr` est plafonné par `stockDebut` — le déblocage d'arrachage
+apparaissait donc plus finançable qu'il ne l'est réellement.
+
+**Les quatre décisions.**
+
+| # | Décision | Conséquence | Ce que ça écarte |
+|---|---|---|---|
+| D1 | `surfTot` **conserve** sa définition (toutes lignes) et reste la surface d'affichage du temps 1. On **ajoute** `surfProd`, on ne redéfinit rien | `agregerRegistreExploitation` renvoie `{ surfTot, surfProd, surfPlantier, surfRepos, ageMoy }`, partition stricte de `surfTot` | Écarte la redéfinition silencieuse de `surfTot`, qui aurait cassé les 164 tests existants sans signal explicite — un changement de sémantique déguisé en correction |
+| D2 | Seuil d'entrée en production : `campagne − anneePlant ≥ 3`, porté par la constante nommée `SEUIL_ENTREE_PRODUCTION` | Commentaire de provenance dans le moteur : « **À VALIDER** — CDC AOC Champagne, chapitre entrée en production ; cohérent avec `returnYear = 3 + repos` (§7) » | Écarte le nombre nu dans le code. **Ce n'est pas une valeur sourcée** : elle est marquée comme telle, à la manière des autres valeurs « assumé » du projet |
+| D3 | Le moteur consomme `surfProdTot` pour **production, VolCo, plafond et stock de réserve**. Les **charges d'entretien** restent inchangées : `chargesEntretien` continue de facturer `surfRest = surfTot − surfParc` au taux « vigne en production » | Limite connue, tenue par un test nommé `LIMITE ASSUMÉE : chargesEntretien facture le reste de l'exploitation sur surfTot…` | Écarte le changement simultané des deux sémantiques. Une seule change à la fois : sans quoi un écart de résultat ne serait imputable ni à l'une ni à l'autre. **Traité dans un lot ultérieur** |
+| D4 | **Écrêtement hors périmètre** : quand le stock dépasse `plafond × nouvelle surface en production` après arrachage, le comportement actuel est maintenu — le stock existant est conservé, seule la marge de mise s'annule (`Math.max(0, …)`) | `TODO` explicite dans `simulerReserveKg`, et un test nommé `LIMITE ASSUMÉE : le stock de réserve n'est pas écrêté…` qui fige le comportement | Écarte toute modélisation d'un écrêtement décidée par le code. **Point réglementaire à faire trancher par le service Appellation/Vendanges du Comité** avant modélisation |
+
+**Ce qui a changé, concrètement.**
+
+- `moteur-oad.js` — `SEUIL_ENTREE_PRODUCTION = 3` (exportée) ;
+  `agregerRegistreExploitation` renvoie la partition ; `simulerReserveKg` lit
+  `surfProdTot` aux quatre emplacements de production/réserve (`surfRest`,
+  `surfProd` en branche non-arrachage, `stockDebut` à `t = 0`, et par voie de
+  conséquence `volco` et la marge de plafond) ; `construireScenarios` accepte
+  `inp.surfProdTot` et le propage.
+- **Garde-fou** — `surfParc > surfTot` devient `surfParc > surfProdTot` : la
+  parcelle candidate à l'arrachage est nécessairement en production. Le message
+  d'erreur nomme les **deux** assiettes, sans quoi un utilisateur dont la
+  parcelle tient dans `surfTot` mais pas dans `surfProdTot` ne comprendrait pas
+  ce qu'on lui refuse. Même borne côté interface (`out.erreurSurface`), pour
+  que le moteur ne lève jamais au rendu.
+- **Repli explicite** — `inp.surfProdTot ?? inp.surfTot`, dans
+  `construireScenarios` **et** dans `simulerReserveKg` (fonction exportée,
+  appelable directement). Il préserve la parité stricte des fixtures de test
+  antérieures et le mode hors registre, où aucune décomposition n'est
+  dérivable.
+- **Interface** — temps 1 : champ « Surface en production » à côté de
+  « Surface totale », avec la mention de ce qu'il laisse dehors (plantier,
+  repos) ; note de décomposition sous la piste « Plantée et arrachée » du
+  graphique, qui dit en toutes lettres que « Plantée » et « en production » ne
+  sont pas la même surface ; bandeau replié du registre qui annonce les deux
+  chiffres. Écran des hypothèses : ligne « Surface en production » d'origine
+  *Dérivé du registre — lignes Plantée d'âge ≥ 3 ans*, et l'origine de la
+  réserve initiale précise désormais sur quelle assiette la conversion en kg
+  s'appuie.
+
+**Vérification.** Les 164 tests antérieurs passent **sans qu'aucune fixture ni
+valeur attendue n'ait été touchée** ; 16 tests ajoutés (section 30) —
+**180 ok, 0 FAIL**. Deux d'entre eux tiennent les critères d'acceptation par
+**exécution comparée**, pas par assertion de principe :
+
+- *invariance* — sur un registre sans ligne Arrachée et sans ligne sous le
+  seuil, `construireScenarios` avec et sans `surfProdTot` produit des sorties
+  strictement identiques (`assert.deepStrictEqual` sur l'objet complet) ;
+- *sensibilité* — sur un registre témoin à 2 ha au registre pour 1 ha en
+  production, stock de réserve initial, VolCo annuel et assiette du plafond de
+  mise sont strictement inférieurs à l'ancien calcul, dans un rapport égal à
+  `surfProd / surfTot` (0,5), vérifié année par année.
+
+**Deux points parkés, à rouvrir explicitement.**
+
+1. **Assiette des charges** (D3) — `chargesEntretien` facture toujours le reste
+   de l'exploitation au taux « vigne en production » sur `surfTot − surfParc`,
+   plantiers et parcelles en repos compris. Lot ultérieur.
+2. **Écrêtement du stock** (D4) — aucune règle n'est appliquée quand la surface
+   en production diminue. À faire trancher par le service Appellation/Vendanges
+   du Comité.
+
+**Effet de bord documenté, non corrigé.** Une ligne Plantée sans année de
+plantation exploitable retombe sur le `|| campagne` hérité (âge 0) et se
+classe donc en **plantier**, hors assiette de production. Comportement figé par
+un test ; le corriger demanderait de décider ce que vaut une ligne incomplète,
+ce qui n'était pas l'objet de ce lot. Dans le même esprit : une exploitation
+dont **toute** la surface serait en repos ou en plantier donne une assiette
+nulle, donc des résultats à zéro — le moteur ne divise pas par la surface
+(gardes `surfProd === 0 ? 0 : …`), mais l'écran 1 ne déclenche pas d'état
+bloquant pour autant, son test portant sur `surfTot`.
 
 ## 20. Pour aller plus loin
 

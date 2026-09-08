@@ -9,7 +9,18 @@ function simulerReserveKg(p) {
   const rows = [];
   const ramp = p.rampProfile || [1];
   const returnYear = 3 + p.repos;
-  const surfRest = p.surfTot - p.surfArr;
+  /* Prompt B9 — assiette de surface. L'assiette réglementaire du rendement
+     commercialisable et du plafond de réserve individuelle est la surface EN
+     PRODUCTION : elle exclut les parcelles en repos et les plantiers, qui
+     n'ouvrent droit ni à récolte commercialisable ni à plafond de réserve.
+     `surfTot` (toutes lignes du registre, Plantée + Arrachée) reste la surface
+     d'affichage et le dénominateur des charges du reste de l'exploitation.
+     Repli explicite sur `surfTot` pour les appelants qui ne fournissent pas
+     encore la surface en production (mode hors registre, fixtures de test
+     antérieures à ce lot) : le comportement y est alors strictement inchangé. */
+  const surfProdTot = p.surfProdTot ?? p.surfTot;
+  // reste de l'exploitation : ce qui produit, hors parcelle candidate
+  const surfRest = surfProdTot - p.surfArr;
   const fProjet = p.rendFactorProjet ?? 1;   // effet densité × matériel (VSL, Voltis…)
   let stockPrev = null;
   for (let t = 0; t <= p.horizon; t++) {
@@ -24,14 +35,29 @@ function simulerReserveKg(p) {
       recolteReste = rendY * surfRest;
       recolteParcelle = jeune ? rendY * f * fProjet * p.surfArr : 0;
     } else {
-      surfProd = p.surfTot;
+      // statu quo / complantation : la parcelle reste en production, l'assiette
+      // productive de l'exploitation est donc entière (B9 : hors repos/plantiers)
+      surfProd = surfProdTot;
       const rendParc = p.rendParcFn ? p.rendParcFn(t, rendY) : rendY;
       recolteReste = rendY * surfRest;
       recolteParcelle = rendParc * p.surfArr;
     }
     const recolte = recolteReste + recolteParcelle;
+    // VolCo : droit à commercialiser, adossé à la surface en production de
+    // l'année (B9 — surfProd dérive désormais de surfProdTot, pas de surfTot).
     const volco = surfProd * p.volco;
-    const stockDebut = (t === 0) ? p.reserveInit * p.surfTot : stockPrev;
+    // Stock de réserve initial : `reserveInit` est un kg/ha d'assiette
+    // réglementaire ; le convertir sur surfTot gonflerait le stock de départ de
+    // toute la surface non productive du registre (B9).
+    const stockDebut = (t === 0) ? p.reserveInit * surfProdTot : stockPrev;
+    /* Plafond de mise en réserve : plafond (kg/ha) × surface en production,
+       diminué du stock déjà constitué. TODO — écrêtement (B9, décision D4) :
+       quand la surface en production diminue (arrachage), le stock déjà
+       constitué peut dépasser plafond × nouvelle surface en production. Le
+       comportement retenu ici conserve le stock existant et se contente
+       d'annuler la marge de mise (le Math.max(0, …) intérieur). Point
+       réglementaire à faire trancher par le service Appellation/Vendanges du
+       Comité avant toute modélisation d'un écrêtement — hors périmètre B9. */
     const mise = Math.max(0, Math.min(recolte - volco,
       Math.max(0, (p.plafond - (surfProd === 0 ? 0 : stockDebut / surfProd)) * surfProd)));
     const deficit = Math.max(0, volco - recolte);
@@ -150,11 +176,20 @@ function chargesEntretien(scenario, rowsKg, inp) {
 }
 
 function construireScenarios(inp) {
-  if (inp.surfParc > inp.surfTot + 1e-9) {
-    throw new Error(`surfParc (${inp.surfParc} ha) > surfTot (${inp.surfTot} ha)`);
+  /* Prompt B9 — l'assiette de production est distincte de la surface au
+     registre. Repli explicite sur `surfTot` quand l'appelant ne la fournit
+     pas : parité stricte avec les fixtures antérieures à ce lot et avec le
+     mode hors registre, où aucune décomposition n'est dérivable. */
+  const surfProdTot = inp.surfProdTot ?? inp.surfTot;
+  // La parcelle candidate à l'arrachage est nécessairement EN PRODUCTION : la
+  // borne porte donc sur surfProdTot, pas sur surfTot (qui compte aussi les
+  // plantiers et les parcelles déjà en repos).
+  if (inp.surfParc > surfProdTot + 1e-9) {
+    throw new Error(`surfParc (${inp.surfParc} ha) > surface en production (surfProdTot ${surfProdTot} ha) `
+      + `— la parcelle à arracher doit être en production ; surfTot au registre : ${inp.surfTot} ha`);
   }
   const base = {
-    surfTot: inp.surfTot, surfArr: inp.surfParc, repos: inp.repos,
+    surfTot: inp.surfTot, surfProdTot, surfArr: inp.surfParc, repos: inp.repos,
     nbSortie: inp.nbSortie, volSortieArr: inp.volSortieArr,
     plafond: inp.plafond, volco: inp.volco, rendMean: inp.rendMean,
     reserveInit: inp.reserveInit, optInsuff: true, horizon: inp.horizon,
@@ -164,7 +199,9 @@ function construireScenarios(inp) {
   const merge = (a, b) => { const m = { ...a }; for (const k in b) m[k] = (m[k] || 0) + b[k]; return m; };
   const somme = o => Object.values(o).reduce((s, v) => s + v, 0);
 
-  // Coûts PONCTUELS d'investissement (arrachage + installation) — base de l'« effort net »
+  // Coûts PONCTUELS d'investissement (arrachage + installation) — base du solde
+  // investissement/réserve (ex-« effort net », renommé au chantier C3 :
+  // voir soldeInvestissementReserve plus bas)
   // chantier P3 : coutArrachageHa (MHCS) couvre désormais arrachage + évacuation des
   // souches + amendement calcaire + préparation du sol — un champ coutPrepaHa séparé
   // ferait double emploi, voir README §12 (journal d'arbitrages).
@@ -259,6 +296,21 @@ function construireScenarios(inp) {
   };
 }
 
+/* @deprecated chantier C5 — utiliser `cascadeDifferentielle` (terme « Écart de
+   recettes raisin »).
+
+   Cette fonction reste EXPORTÉE ET TESTÉE pour compatibilité, mais elle ne doit
+   plus alimenter ni l'écran ni la fiche d'audit : elle n'est PAS recomposable
+   avec le différentiel de trésorerie. Deux raisons, toutes deux des
+   troncatures :
+     · le `Math.max(0, …)` annule les années où l'arrachage vend PLUS que la
+       référence — l'écart réel n'est donc pas conservé ;
+     · elle ne porte que sur `volcoVendu`, pas sur `venteRaisinParcelle` : elle
+       mélange la parcelle et le reste de l'exploitation.
+   Mesure : sur le paramétrage dégradé, l'empilement
+   « −invest + réserve + chargesEvitees − manqueAGagner » donnait −44 054 €
+   contre −67 975 € de différentiel réel, soit 23 921 € d'écart. Voir README
+   §12, journal d'arbitrages « chantier C5 ». */
 function manqueAGagner(scen, refSQ, prixKg) {
   return scen.kg.map((r, i) => Math.max(0, (refSQ.kg[i].volcoVendu - r.volcoVendu) * prixKg));
 }
@@ -274,22 +326,56 @@ function ageRegistre(anneePlant, campagne) {
   return campagne - anneePlant;
 }
 
+/* Seuil d'entrée en production, en années depuis la plantation. Une ligne
+   Plantée d'âge strictement inférieur est un PLANTIER : elle occupe de la
+   surface au registre, mais ne porte ni récolte commercialisable ni plafond
+   de réserve individuelle.
+   À VALIDER — CDC AOC Champagne, chapitre entrée en production ; cohérent
+   avec returnYear = 3 + repos (§7). Ce n'est pas une valeur sourcée : elle
+   est marquée comme telle, au même titre que les autres valeurs « assumé »
+   du projet (prompt B9, décision D2). */
+const SEUIL_ENTREE_PRODUCTION = 3;
+
 // surfTot = somme de TOUTES les lignes (Plantée + Arrachée) : une parcelle
-// arrachée reste une surface de l'exploitation, en repos.
+// arrachée reste une surface de l'exploitation, en repos. Cette définition est
+// INCHANGÉE par le prompt B9 (décision D1) — c'est la surface d'affichage du
+// temps 1 et le dénominateur des charges du reste de l'exploitation.
+//
+// Prompt B9 : trois surfaces dérivées viennent la décomposer, sans la
+// redéfinir. Partition stricte, invariant garanti par construction —
+//   surfTot === surfProd + surfPlantier + surfRepos :
+//   - surfProd     : lignes Plantée d'âge >= SEUIL_ENTREE_PRODUCTION. C'est
+//                    l'assiette réglementaire du VolCo et du plafond de
+//                    réserve, consommée par simulerReserveKg (surfProdTot) ;
+//   - surfPlantier : lignes Plantée sous le seuil (jeune vigne, pas encore
+//                    en production) ;
+//   - surfRepos    : lignes Arrachée (parcelles en repos du sol).
+//
 // ageMoy = moyenne pondérée par surface, EXCLUANT les lignes Arrachée du
 // numérateur ET du dénominateur (une parcelle arrachée n'a plus d'âge de
 // vigne). Aucune ligne Plantée -> ageMoy = 0 (dénominateur nul, pas de NaN).
 function agregerRegistreExploitation(rows, campagne) {
   let surfTot = 0, sommePonderee = 0, surfPlantee = 0;
+  let surfProd = 0, surfPlantier = 0, surfRepos = 0;
   rows.forEach(r => {
     const surf = +r.surface || 0;
     surfTot += surf;
     if (r.situation === 'plantee') {
       surfPlantee += surf;
-      sommePonderee += ageRegistre(+r.anneePlant || campagne, campagne) * surf;
+      // Ligne sans année de plantation exploitable : le `|| campagne` hérité
+      // lui donne l'âge 0, elle est donc classée en PLANTIER (hors assiette de
+      // production). Comportement documenté, volontairement inchangé ici : le
+      // corriger demanderait de décider ce que vaut une ligne incomplète, ce
+      // qui n'est pas l'objet de ce lot (prompt B9, étape 1).
+      const age = ageRegistre(+r.anneePlant || campagne, campagne);
+      sommePonderee += age * surf;
+      if (age >= SEUIL_ENTREE_PRODUCTION) surfProd += surf; else surfPlantier += surf;
+    } else {
+      surfRepos += surf;
     }
   });
-  return { surfTot, ageMoy: surfPlantee > 0 ? sommePonderee / surfPlantee : 0 };
+  return { surfTot, surfProd, surfPlantier, surfRepos,
+    ageMoy: surfPlantee > 0 ? sommePonderee / surfPlantee : 0 };
 }
 
 /* Faire-valoir porté par le registre parcellaire.
@@ -1115,6 +1201,253 @@ function tresorerieCumulee(scen, fv, vue, opt) {
 }
 
 /* =====================================================================
+   Solde investissement / réserve — chantier C3 (arbitrages du 07/09/2026).
+
+   Remplace le calcul qui vivait dans la vue (index.html, `effortNet`), en
+   violation de la règle « toute logique financière dans moteur-oad.js ».
+
+   DEUX changements, pas un seul :
+
+   1. LE CLAMP DISPARAÎT. L'ancienne formule était
+      `effortNet = Math.max(0, invest − reserveReelle)`. Ce plancher à zéro
+      écrasait toute la région où la réserve couvre l'investissement —
+      c'est-à-dire le cas DOMINANT : aux valeurs par défaut, la réserve
+      mobilisée vaut ≈ 189 000 € contre ≈ 61 300 € d'investissement, soit un
+      solde réel de ≈ −127 700 € affiché « 0 € ». Un indicateur constant sur
+      son domaine principal n'est pas une simplification, c'est une perte
+      d'information : en faisant varier riPct de 0 à 100 %, l'ancien KPI
+      restait plat à 0 sur la majeure partie de la plage. `solde` est donc
+      SIGNÉ, sans plancher.
+
+   2. LE VOCABULAIRE CHANGE. Ce n'est ni un « effort net », ni un montant
+      « à financer » : aucun coût de financement n'est modélisé (pas de taux,
+      pas de durée, pas de différé — voir README §19). C'est un solde
+      arithmétique entre deux montants déjà calculés. La question du
+      financement est portée par le POINT BAS DE TRÉSORERIE, pas par celui-ci.
+
+   Convention de signe : solde > 0 = l'investissement excède la réserve
+   mobilisée ; solde < 0 = la réserve mobilisée va au-delà de
+   l'investissement. Le cas négatif n'est PAS un gain : c'est un déstockage
+   (voir `reserveHorizon` ci-dessous, qui en donne la contrepartie physique).
+   ===================================================================== */
+function soldeInvestissementReserve(scenArr) {
+  const invest = (scenArr && scenArr.investissement) || 0;
+  const reserveMobilisee = ((scenArr && scenArr.eur) || [])
+    .reduce((acc, r) => acc + (r.cashRI || 0), 0);
+  // Signé, sans Math.max : voir le point 1 ci-dessus.
+  return { invest, reserveMobilisee, solde: invest - reserveMobilisee };
+}
+
+/* =====================================================================
+   Réserve à l'horizon, en kg/ha — chantier C3.
+
+   POURQUOI cette fonction ne peut pas être omise quand on affiche le solde
+   ci-dessus. `cashRI` monétise la SORTIE de réserve ; le STOCK consommé, lui,
+   n'a aucun coût dans le modèle (« aucune valeur terminale d'actif »,
+   README §19). C'est assumé, mais c'est DIRECTIONNEL : cela penche toujours
+   du même côté. Deux régimes physiquement très différents se cachent derrière
+   le même solde en euros :
+     - réserve saturée au plafond : le déblocage est réellement gratuit, le
+       stock aurait été perdu de toute façon ;
+     - réserve non saturée : c'est un prélèvement de plusieurs milliers de
+       kg/ha sur un stock qui manquera plus tard — invisible partout ailleurs.
+   Le solde en euros ne distingue pas ces deux mondes. Ces deux nombres, si.
+
+   LA RÈGLE DU PROJET RESTE ENTIÈRE : le stock de réserve n'est JAMAIS
+   monétisé. La correction apportée ici est PHYSIQUE (kg/ha), jamais
+   monétaire. Aucun paramètre monétaire n'entre dans cette signature — comme
+   `trajectoireAge`, cette fonction doit être STRUCTURELLEMENT incapable de
+   produire un euro. Ne pas y ajouter `inp`, `prixKg` ni quoi que ce soit qui
+   en porte un : le garde-fou « C3 — reserveHorizon ne produit aucun euro »
+   (tests/parite.test.js) échouerait, et il a raison.
+
+   Lecture attendue à l'écran : « Réserve à 10 ans : 4 514 kg/ha, contre
+   7 650 kg/ha sans renouvellement. » Pas de badge « saturée / non saturée »,
+   pas de régime nommé : la comparaison des deux nombres se lit sans
+   vocabulaire supplémentaire.
+   ===================================================================== */
+function reserveHorizon(scArr, scRef, horizon) {
+  const lire = (sc) => {
+    const rows = (sc && sc.kg) || [];
+    // On lit la ligne dont `t` vaut l'horizon plutôt que rows[horizon] : la
+    // série est indexée par t depuis 0, mais rien dans le contrat de
+    // simulerReserveKg n'oblige les deux à coïncider à jamais.
+    const row = rows.find(r => r.t === horizon) || rows[rows.length - 1];
+    return row ? row.stockHa : 0;
+  };
+  const arrachageKgHa = lire(scArr);
+  const referenceKgHa = lire(scRef);
+  return { arrachageKgHa, referenceKgHa, ecartKgHa: arrachageKgHa - referenceKgHa };
+}
+
+/* =====================================================================
+   Différentiel de trésorerie par rapport à « ne rien faire » — chantier C4.
+
+   POURQUOI. Un simulateur d'IMPACT dont tous les chiffres sont absolus ne
+   mesure aucun impact : « impact » est un mot différentiel. Le différentiel
+   existait déjà dans le code (`creux`, `manqueAGagner`) mais avait été retiré
+   de l'écran au chantier P6.
+
+   Démonstration du problème, mesurée sur ce moteur :
+
+     Paramétrage                          | différentiel à 10 ans | réserve consommée
+     -------------------------------------|-----------------------|------------------
+     défauts UI (rendMean 12 296,6)        |        +15 700 €/ha   |   0 kg/ha (saturée)
+     vendange dégradée (rendMean 8 856,6)  |        −68 000 €/ha   |   3 136 kg/ha
+
+   84 000 €/ha d'écart entre ces deux mondes — et dans les deux, l'écran
+   affichait le même « 0 € » et le même point bas. Les deux KPI de tête étaient
+   insensibles à la variable qui décide de tout.
+
+   CE QUE CETTE FONCTION N'EST PAS. Elle ne rétablit PAS le comparateur à trois
+   scénarios supprimé par la note de cadrage de juillet 2026. Le contrefactuel
+   reste invisible COMME SCÉNARIO CONFIGURABLE — aucune colonne, aucune seconde
+   courbe, aucun champ de saisie le concernant — et devient visible COMME POINT
+   DE RÉFÉRENCE ARITHMÉTIQUE, sur une ligne.
+
+   AUCUNE RÈGLE NOUVELLE. C'est une soustraction terme à terme de deux séries
+   déjà produites par le moteur : `tresorerieCumulee` est réutilisée TELLE
+   QUELLE sur les deux scénarios, avec les mêmes `fv` et `vue`. Ne pas y
+   introduire d'actualisation, de pondération ni de traitement du signe.
+
+   `parcelleSeule` est passé par l'appelant et vaut `true` à l'écran : sur
+   l'exploitation entière, le revenu du reste du domaine noie l'effet de
+   l'opération (déjà vérifié au test P6).
+
+   Le code lit `sc.reference`, JAMAIS l'alias historique `sc.statuquo` — c'est
+   l'appelant qui choisit, mais tout code nouveau doit passer `reference`.
+   ===================================================================== */
+function differentielTresorerie(scArr, scRef, fv, vue, opt) {
+  const a = tresorerieCumulee(scArr, fv, vue, opt);
+  const r = tresorerieCumulee(scRef, fv, vue, opt);
+  const n = Math.min(a.annuelle.length, r.annuelle.length);
+  const annuel = [], cumule = [];
+  for (let t = 0; t < n; t++) {
+    annuel.push(a.annuelle[t] - r.annuelle[t]);
+    cumule.push(a.cumulee[t] - r.cumulee[t]);
+  }
+  return { annuel, cumule, aHorizon: cumule.length ? cumule[cumule.length - 1] : 0 };
+}
+
+/* =====================================================================
+   Cascade différentielle — chantier C5.
+
+   POURQUOI. L'écran et la fiche d'audit exposaient six montants en euros :
+   investissement brut, solde investissement/réserve, point bas de trésorerie
+   (parcelle seule, ABSOLU), tension max vs statu quo (DIFFÉRENTIELLE), manque à
+   gagner cumulé, charges évitées. Ils mélangeaient trois axes — parcelle /
+   exploitation, absolu / différentiel, ponctuel / flux — sans qu'aucun ne dise
+   sa convention. Il ne manquait pas des chiffres : il en manquait UN SEUL qui
+   ordonne les autres.
+
+   ⚠️ CONTRAINTE DE CONCEPTION FONDAMENTALE — la cascade est une décomposition
+   EXACTE du différentiel de C4, PAS un empilement des indicateurs existants.
+
+   Vérification faite avant ce chantier : les quantités historiques NE SE
+   RECOMPOSENT PAS. Sur le paramétrage dégradé,
+   `−invest + réserve + chargesEvitees − manqueAGagner` donnait −44 054 € alors
+   que le différentiel réel valait −67 975 € — 23 921 € d'écart. Les causes
+   sont connues et sont des troncatures : `chargesEvitees` ne somme que sur
+   `t < returnYear` et ne retient que les écarts positifs (`max(0, …)`) ;
+   `manqueAGagner` applique lui aussi un `max(0, …)` et ne porte que sur
+   `volcoVendu`. Une cascade qui ne tombe pas juste est PIRE que six chiffres
+   épars : elle donne l'apparence de la rigueur. Les termes sont donc redéfinis
+   comme une décomposition du différentiel lui-même — sans plancher, sans
+   fenêtre tronquée.
+
+   L'EXACTITUDE EST STRUCTURELLE, pas empirique. `tresorerieCumulee(…,
+   { parcelleSeule: true })` vaut, par ligne,
+   `venteRaisinParcelle + cashRI − coutsParcelle`, et `coutsParcelle` est
+   exactement `invArr ⊎ chargesEntretien(...).parcelle` (voir
+   `construireScenarios`). Le différentiel se réécrit donc terme à terme :
+
+     Σ Δ(venteRaisinParcelle + cashRI − coutsParcelle)
+       = −Σ invArr                       (1) la référence n'en porte aucun
+         + Σ Δ cashRI                    (2)
+         + Σ Δ venteRaisinParcelle       (3)
+         − Σ Δ chargesEntretien.parcelle (4)
+
+   FAIRE-VALOIR. `repartir()` est LINÉAIRE en `revParcelle` (= venteRaisinParcelle
+   + cashRI) et en `coutsParcelle` : chaque terme hérite donc du même coefficient
+   que dans `repartir`, sans qu'aucune règle nouvelle soit nécessaire.
+     · propriété      : exp = revParcelle − coutsParcelle       → cRev = 1,   cCout = 1   (prop : 0, 0)
+     · fermage        : exp = revParcelle − coutsParcelle − loyerAn
+                        Le loyer est IDENTIQUE dans les deux scénarios et
+                        S'ANNULE DANS LE DIFFÉRENTIEL : il n'y a donc PAS de
+                        cinquième terme, et la part propriétaire du
+                        différentiel est nulle. → cRev = 1, cCout = 1 (prop : 0, 0)
+     · métayage       : prop = a·revParcelle − b·coutsParcelle
+                        exp  = (1−a)·revParcelle − (1−b)·coutsParcelle
+                        → les termes 2 et 3 (recettes + réserve) portent
+                          (1 − partRecolte) côté exploitant et partRecolte côté
+                          propriétaire ; les termes 1 et 4 (investissement +
+                          charges) portent (1 − partCouts) / partCouts.
+   CE RAISONNEMENT EST ÉCRIT ICI EXPRÈS : c'est exactement le genre de
+   linéarité qu'une session ultérieure « corrigera » à tort, en croyant qu'un
+   régime de faire-valoir demande un traitement particulier. Il n'en demande
+   aucun.
+
+   `resteNet` (venteRaisinReste − coutsReste) n'apparaît nulle part : la
+   cascade est calculée en `parcelleSeule`, où il est neutralisé — même
+   convention que le différentiel de C4 et que le point bas de trésorerie.
+   ===================================================================== */
+function cascadeDifferentielle(scArr, scRef, inp, fv, vue) {
+  // Coefficients hérités de `repartir` — voir le raisonnement de linéarité
+  // ci-dessus. cRev porte les flux de recette de la parcelle (vente + réserve),
+  // cCout porte les coûts de la parcelle (investissement + charges).
+  const regime = (fv && fv.regime) || 'propriete';
+  let cRev = 1, cCout = 1;
+  if (vue === 'prop') {
+    // Propriété et fermage : la part propriétaire du DIFFÉRENTIEL est nulle
+    // (rien pour la première, un loyer qui s'annule pour la seconde).
+    if (regime === 'metayage') { cRev = fv.partRecolte; cCout = fv.partCouts; }
+    else { cRev = 0; cCout = 0; }
+  } else if (vue === 'exp' && regime === 'metayage') {
+    cRev = 1 - fv.partRecolte; cCout = 1 - fv.partCouts;
+  }
+
+  const sommeDelta = (cle) => {
+    const a = scArr.eur || [], r = scRef.eur || [];
+    const n = Math.min(a.length, r.length);
+    let s = 0;
+    for (let t = 0; t < n; t++) s += (a[t][cle] || 0) - (r[t][cle] || 0);
+    return s;
+  };
+  const sommeMap = (m) => Object.values(m || {}).reduce((s, v) => s + v, 0);
+
+  // (1) Investissement de renouvellement — la référence n'en porte aucun.
+  const invest = scArr.investissement || 0;
+  // (4) Charges d'entretien : recalculées avec chargesEntretien, la fonction
+  // d'origine, réutilisée telle quelle. La cascade est un ASSEMBLAGE de sorties
+  // existantes, pas une physique nouvelle : ne pas modifier chargesEntretien.
+  const chArr = chargesEntretien('arrachage', scArr.kg, inp);
+  const chRef = chargesEntretien('statuquo', scRef.kg, inp);
+  const deltaCharges = sommeMap(chArr.parcelle) - sommeMap(chRef.parcelle);
+
+  const termes = [
+    { id: 'investissement', lib: 'Investissement de renouvellement', montant: -cCout * invest },
+    { id: 'reserve',        lib: "Réserve mobilisée à l'arrachage",  montant:  cRev * sommeDelta('cashRI') },
+    { id: 'recettes',       lib: 'Écart de recettes raisin',          montant:  cRev * sommeDelta('venteRaisinParcelle') },
+    { id: 'charges',        lib: "Écart de charges d'entretien",      montant: -cCout * deltaCharges }
+  ];
+  const total = tresorerieCumulee(scArr, fv, vue, { parcelleSeule: true }).cumulee.slice(-1)[0]
+    - tresorerieCumulee(scRef, fv, vue, { parcelleSeule: true }).cumulee.slice(-1)[0];
+
+  /* ASSERTION INTERNE — une cascade fausse doit casser BRUYAMMENT, pas dériver
+     en silence. C'est tout l'intérêt du chantier : un empilement qui ne tombe
+     pas juste donne l'apparence de la rigueur. Seuil à 1 € : on additionne des
+     dizaines de milliers d'euros, l'arrondi flottant reste très en dessous. */
+  const somme = termes.reduce((s, x) => s + x.montant, 0);
+  if (Math.abs(somme - total) > 1) {
+    throw new Error(`cascadeDifferentielle: la cascade ne somme pas au différentiel `
+      + `(Σ termes = ${somme.toFixed(2)}, total = ${total.toFixed(2)}, écart = ${(somme - total).toFixed(2)} €). `
+      + `Régime « ${regime} », vue « ${vue} ». Un terme a été ajouté, retiré ou tronqué : `
+      + `la décomposition doit rester EXACTE, voir README §12 chantier C5.`);
+  }
+  return { termes, total };
+}
+
+/* =====================================================================
    Phases de la parcelle renouvelée — prompts 5 et 7.
 
    Le temps est partout dans l'outil (« années 3-4 », « repos », « plantier »,
@@ -1250,11 +1583,18 @@ if (typeof module !== 'undefined') module.exports =
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, synthetiseRegistre, trajectoireAge,
+    SEUIL_ENTREE_PRODUCTION,
     REGIMES_FV, normaliserRegimeFv,
     repartirRegistreParAge, CLASSES_AGE,
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
     DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee, tresorerieCumulee,
+    // chantier C3 : solde signé investissement/réserve + réserve à l'horizon (kg/ha, jamais €)
+    soldeInvestissementReserve, reserveHorizon,
+    // chantier C4 : différentiel de trésorerie par rapport à ne rien faire
+    differentielTresorerie,
+    // chantier C5 : décomposition exacte du différentiel ci-dessus en quatre termes
+    cascadeDifferentielle,
     conformiteDensiteAOC, metresDeRang, DENSITE_AOC_MIN, DENSITE_AOC_MAX,
     CLONES_CHAMPAGNE, clonesParCepage,
     PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,
@@ -1266,11 +1606,18 @@ if (typeof window !== 'undefined') window.OAD =
     REF_OPS_MANUEL, REF_OPS_MECANISE, TAUX_HORAIRE_DEFAUT, SMIC_2026_BRUT,
     proposerVoletProduction, heuresManuellesParAnnee, moEconomisee, regimesTravailArrachage,
     ageRegistre, agregerRegistreExploitation, agregerRegistreParcelle, synthetiseRegistre, trajectoireAge,
+    SEUIL_ENTREE_PRODUCTION,
     REGIMES_FV, normaliserRegimeFv,
     repartirRegistreParAge, CLASSES_AGE,
     prochainIdRegistre, ligneRegistreVierge, resoudreParcelleIdu,
     nbSortiePourRepos, VOL_SORTIE_ARRACHAGE, rampeLineaire, geometrieAgronomique,
     DELAI_PLANTIER, anneeRetourProduction, phasesParcelle, phaseParAnnee, tresorerieCumulee,
+    // chantier C3 : solde signé investissement/réserve + réserve à l'horizon (kg/ha, jamais €)
+    soldeInvestissementReserve, reserveHorizon,
+    // chantier C4 : différentiel de trésorerie par rapport à ne rien faire
+    differentielTresorerie,
+    // chantier C5 : décomposition exacte du différentiel ci-dessus en quatre termes
+    cascadeDifferentielle,
     conformiteDensiteAOC, metresDeRang, DENSITE_AOC_MIN, DENSITE_AOC_MAX,
     CLONES_CHAMPAGNE, clonesParCepage,
     PLAFOND_RESERVE, REND_MOYEN_REGIONAL, ECART_TYPE_REGIONAL, VOLCO_CAMPAGNE,

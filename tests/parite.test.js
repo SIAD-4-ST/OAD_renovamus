@@ -2082,9 +2082,14 @@ test('la synthèse imprimée est assemblée des mêmes morceaux que celle de l\'
   const debut = INDEX_HTML.indexOf('out.syntheseTxt =');
   assert.ok(debut > 0, "la version texte plat de la synthèse doit exister");
   const bloc = INDEX_HTML.slice(debut, debut + 900);
+  // chantier C3 : `effortNetTxt` remplacé par `syntheseSoldeTxt` (solde signé,
+  // libellé sans « à financer »), et `reserveHorizonTxt` s'y ajoute — la
+  // contrainte d'adjacence vaut aussi dans la phrase de synthèse, où un solde
+  // négatif énoncé seul se lirait comme un excédent.
   ['syntheseCouvTxt', 'syntheseCouvSuffixTxt', 'syntheseAbsorptionTxt',
    'syntheseStockLeadTxt', 'syntheseStockTailTxt', 'syntheseHorizonTxt',
-   'reserveReelleTxt', 'investTxt', 'effortNetTxt', 'stockMinTxt'].forEach(k => {
+   'reserveReelleTxt', 'investTxt', 'syntheseSoldeTxt', 'reserveHorizonTxt',
+   'stockMinTxt'].forEach(k => {
     assert.ok(bloc.indexOf('out.' + k) >= 0,
       'la fiche remise au vigneron ne doit pas raconter autre chose que l\'écran : ' + k);
   });
@@ -2166,6 +2171,1013 @@ test('le graphique de composition est branché au temps 1', () => {
   const graph = INDEX_HTML.indexOf('{{ graphExploitation }}');
   assert.ok(graph > t1 && graph < t1bis,
     'le graphique décrit toute l\'exploitation : il appartient à la première section, pas à la parcelle');
+});
+
+// ----------------------------------------------------------------------
+// Section 30 — Assiette de surface : registre vs production (prompt B9)
+//
+// `surfTot` compte toutes les lignes du registre, Plantée et Arrachée. Ce
+// n'est PAS l'assiette réglementaire du rendement commercialisable ni du
+// plafond de réserve individuelle : celle-ci exclut les parcelles en repos et
+// les plantiers. Le moteur consomme désormais `surfProdTot` pour tout ce qui
+// est production, VolCo, plafond et stock de réserve.
+//
+// Décisions figées ici (prompt B9, ne pas rouvrir dans ce lot) :
+//   D1 — surfTot garde sa définition ; surfProd est un champ AJOUTÉ.
+//   D2 — seuil d'entrée en production = 3 ans, constante nommée, « à valider ».
+//   D3 — chargesEntretien reste assis sur surfTot (limite assumée, testée plus bas).
+//   D4 — pas d'écrêtement du stock quand la surface en production diminue
+//        (point réglementaire non tranché, limite assumée, testée plus bas).
+// ----------------------------------------------------------------------
+
+section('30. Assiette de surface — registre vs production (prompt B9)');
+
+// Registre témoin : 1 ha en production, 0,5 ha de plantier (planté il y a un
+// et deux ans, sous le seuil de 3 ans), 0,5 ha en repos. surfTot = 2 ha,
+// surfProd = 1 ha : le rapport surfProd/surfTot vaut exactement 0,5, ce qui
+// rend les tests de sensibilité lisibles à l'œil nu.
+const REGISTRE_B9 = [
+  { idu: 'P1', cepage: 'CHARDONNAY B', anneePlant: 1998, surface: 0.60, tauxManquant: 4, situation: 'plantee' },
+  { idu: 'P2', cepage: 'MEUNIER N',    anneePlant: 2015, surface: 0.40, tauxManquant: 4, situation: 'plantee' },
+  { idu: 'J1', cepage: 'CHARDONNAY B', anneePlant: CAMPAGNE_TEST - 1, surface: 0.30, tauxManquant: 0, situation: 'plantee' },
+  { idu: 'J2', cepage: 'CHARDONNAY B', anneePlant: CAMPAGNE_TEST - 2, surface: 0.20, tauxManquant: 0, situation: 'plantee' },
+  { idu: 'R1', cepage: 'MEUNIER N',    anneePlant: 1960, surface: 0.50, tauxManquant: 0, situation: 'arrachee' }
+];
+
+test('agregerRegistreExploitation : surfTot = surfProd + surfPlantier + surfRepos (invariant de partition)', () => {
+  [REGISTRE_B9, REGISTRE_TEST, []].forEach((reg, i) => {
+    const a = OAD.agregerRegistreExploitation(reg, CAMPAGNE_TEST);
+    assertClose(a.surfProd + a.surfPlantier + a.surfRepos, a.surfTot, 1e-9,
+      `registre #${i} : la partition doit reconstituer exactement la surface au registre`);
+  });
+});
+
+test('surfProd exclut les lignes Arrachée', () => {
+  const a = OAD.agregerRegistreExploitation(REGISTRE_B9, CAMPAGNE_TEST);
+  assertClose(a.surfRepos, 0.50, 1e-9, 'la ligne R1 est en repos');
+  // Gonfler la seule ligne Arrachée ne doit rien changer à l'assiette de production.
+  const gonfle = REGISTRE_B9.map(r => r.situation === 'arrachee' ? { ...r, surface: 12 } : r);
+  const b = OAD.agregerRegistreExploitation(gonfle, CAMPAGNE_TEST);
+  assertClose(b.surfProd, a.surfProd, 1e-9, 'surfProd ne bouge pas quand la surface en repos change');
+  assert.ok(b.surfTot > a.surfTot, 'surfTot, lui, augmente : les deux grandeurs sont bien distinctes');
+});
+
+test("surfProd exclut les lignes Plantée sous le seuil d'entrée en production", () => {
+  const a = OAD.agregerRegistreExploitation(REGISTRE_B9, CAMPAGNE_TEST);
+  assertClose(a.surfTot, 2.00, 1e-9);
+  assertClose(a.surfProd, 1.00, 1e-9, 'seules P1 et P2 ont trois ans révolus');
+  assertClose(a.surfPlantier, 0.50, 1e-9, 'J1 (1 an) et J2 (2 ans) sont des plantiers');
+  // Le seuil est fermé à gauche : une vigne de 3 ans tout juste EST en production.
+  const surSeuil = OAD.agregerRegistreExploitation(
+    [{ idu: 'S', cepage: 'CHARDONNAY B', anneePlant: CAMPAGNE_TEST - OAD.SEUIL_ENTREE_PRODUCTION,
+       surface: 1, tauxManquant: 0, situation: 'plantee' }], CAMPAGNE_TEST);
+  assertClose(surSeuil.surfProd, 1, 1e-9, 'âge = seuil exactement -> en production');
+  assertClose(surSeuil.surfPlantier, 0, 1e-9);
+  assert.strictEqual(OAD.SEUIL_ENTREE_PRODUCTION, 3, 'seuil documenté « à valider » — CDC AOC Champagne');
+});
+
+test('registre sans Arrachée ni plantier : surfProd === surfTot (non-régression)', () => {
+  const propre = REGISTRE_B9.filter(r => r.situation === 'plantee'
+    && CAMPAGNE_TEST - r.anneePlant >= OAD.SEUIL_ENTREE_PRODUCTION);
+  const a = OAD.agregerRegistreExploitation(propre, CAMPAGNE_TEST);
+  assertClose(a.surfProd, a.surfTot, 1e-9);
+  assertClose(a.surfPlantier, 0, 1e-9);
+  assertClose(a.surfRepos, 0, 1e-9);
+});
+
+// Une ligne Plantée sans année de plantation exploitable retombe sur
+// `|| campagne` (âge 0) et se classe donc en plantier. Comportement HÉRITÉ,
+// documenté et volontairement non corrigé dans ce lot (prompt B9, étape 1) :
+// ce test le fige pour qu'une correction future soit un choix, pas un effet
+// de bord.
+test('ligne sans année de plantation : âge 0, donc classée en plantier (comportement hérité figé)', () => {
+  const a = OAD.agregerRegistreExploitation(
+    [{ idu: 'X', cepage: 'CHARDONNAY B', anneePlant: '', surface: 0.8, tauxManquant: 0, situation: 'plantee' }],
+    CAMPAGNE_TEST);
+  assertClose(a.surfPlantier, 0.8, 1e-9);
+  assertClose(a.surfProd, 0, 1e-9);
+});
+
+// ---- Simulation : les quatre points de substitution --------------------
+
+test('simulerReserveKg : le stock initial est calculé sur surfProdTot, pas sur surfTot', () => {
+  const base = { surfTot: 10, surfArr: 0, repos: 1, nbSortie: 3, volSortieArr: 9000,
+    plafond: 10000, volco: 9000, rendMean: 12296.6, reserveInit: 7500, optInsuff: true,
+    horizon: 3, scenario: 'statuquo' };
+  const avecProd = OAD.simulerReserveKg({ ...base, surfProdTot: 6 });
+  const sansProd = OAD.simulerReserveKg(base);
+  assertClose(avecProd[0].stockDebut, 7500 * 6, 1e-6, 'assiette = surface en production');
+  assertClose(sansProd[0].stockDebut, 7500 * 10, 1e-6, 'repli : surfTot quand surfProdTot est absent');
+});
+
+test('simulerReserveKg : VolCo et plafond de mise suivent surfProdTot', () => {
+  const base = { surfTot: 10, surfArr: 2, repos: 1, nbSortie: 3, volSortieArr: 9000,
+    plafond: 10000, volco: 9000, rendMean: 12296.6, reserveInit: 7500, optInsuff: true,
+    horizon: 5, scenario: 'statuquo' };
+  const r = OAD.simulerReserveKg({ ...base, surfProdTot: 6 });
+  r.forEach(row => {
+    assertClose(row.surfProd, 6, 1e-9, `t=${row.t} : l'assiette productive est surfProdTot`);
+    assertClose(row.volcoCible, 6 * 9000, 1e-6, `t=${row.t}`);
+    // Marge de mise = (plafond − stock/ha) × surface en production : le stock
+    // ramené à l'assiette ne dépasse donc jamais le plafond.
+    assert.ok(row.stockFin / 6 <= 10000 + 1e-6, `t=${row.t} : stock/ha borné par le plafond sur l'assiette`);
+  });
+  // surfRest se mesure aussi sur l'assiette de production : 6 − 2 = 4 ha.
+  const arr = OAD.simulerReserveKg({ ...base, surfProdTot: 6, scenario: 'arrachage', rampProfile: [1] });
+  assertClose(arr[0].surfProd, 4, 1e-9, "année 0 : le bloc arraché sort de l'assiette");
+});
+
+// ---- Repli et garde-fou ------------------------------------------------
+
+test('construireScenarios : repli surfProdTot ?? surfTot — parité stricte avec les fixtures existantes', () => {
+  // Critère d'acceptation 2 : comparaison des SORTIES par exécution, pas une
+  // simple assertion sur un paramètre. Les deux appels ne diffèrent que par la
+  // présence explicite de surfProdTot, égal à surfTot.
+  const sansChamp = OAD.construireScenarios(INP_A);
+  const avecChampEgal = OAD.construireScenarios({ ...INP_A, surfProdTot: INP_A.surfTot });
+  assert.deepStrictEqual(avecChampEgal, sansChamp,
+    "surfProdTot = surfTot doit reproduire à l'identique le comportement antérieur au prompt B9");
+});
+
+test('invariance : registre sans repos ni plantier, résultats strictement identiques (critère 2)', () => {
+  // Registre « propre » : aucune ligne Arrachée, aucune ligne sous le seuil.
+  // L'assiette dérivée vaut alors surfTot, et TOUS les résultats numériques
+  // doivent être strictement identiques à ceux d'avant le lot (= appel sans
+  // surfProdTot). Vérification par exécution et comparaison des sorties.
+  const propre = REGISTRE_B9.filter(r => r.situation === 'plantee'
+    && CAMPAGNE_TEST - r.anneePlant >= OAD.SEUIL_ENTREE_PRODUCTION);
+  const a = OAD.agregerRegistreExploitation(propre, CAMPAGNE_TEST);
+  const inp = { ...INP_A, surfTot: a.surfTot, surfParc: 0.3 };
+  assert.deepStrictEqual(
+    OAD.construireScenarios({ ...inp, surfProdTot: a.surfProd }),
+    OAD.construireScenarios(inp));
+});
+
+test('sensibilité : repos et plantiers rabattent stock initial, VolCo et plafond (critère 3)', () => {
+  const a = OAD.agregerRegistreExploitation(REGISTRE_B9, CAMPAGNE_TEST);
+  const inp = { ...INP_A, surfTot: a.surfTot, surfParc: 0.3 };
+  const avant = OAD.construireScenarios(inp);                                  // assiette = surfTot (pré-B9)
+  const apres = OAD.construireScenarios({ ...inp, surfProdTot: a.surfProd });  // assiette = surface en production
+  const ratio = a.surfProd / a.surfTot;
+  assert.ok(ratio < 1, 'le registre témoin porte bien du repos et des plantiers');
+
+  const kAvant = avant.arrachage.kg[0], kApres = apres.arrachage.kg[0];
+  assert.ok(kApres.stockDebut < kAvant.stockDebut, 'le stock de réserve initial doit diminuer');
+  assertClose(kApres.stockDebut / kAvant.stockDebut, ratio, 1e-9,
+    'et diminuer exactement dans le rapport surfProd / surfTot');
+
+  // VolCo annuel et assiette du plafond de mise : même rapport, sur toutes les
+  // années du scénario de référence (assiette constante, donc rapport pur).
+  avant.reference.kg.forEach((row, t) => {
+    const rowApres = apres.reference.kg[t];
+    assert.ok(rowApres.volcoCible < row.volcoCible, `t=${t} : le VolCo doit diminuer`);
+    assertClose(rowApres.volcoCible / row.volcoCible, ratio, 1e-9, `t=${t} : VolCo`);
+    assertClose(rowApres.surfProd / row.surfProd, ratio, 1e-9, `t=${t} : assiette du plafond de mise`);
+  });
+});
+
+test('construireScenarios : surfParc > surfProdTot lève une erreur explicite', () => {
+  const a = OAD.agregerRegistreExploitation(REGISTRE_B9, CAMPAGNE_TEST);
+  // 1,20 ha : sous surfTot (2 ha) — donc accepté avant le prompt B9 — mais
+  // au-dessus de l'assiette de production (1 ha). Une parcelle candidate à
+  // l'arrachage est nécessairement en production.
+  assert.throws(
+    () => OAD.construireScenarios({ ...INP_A, surfTot: a.surfTot, surfProdTot: a.surfProd, surfParc: 1.2 }),
+    (err) => /surfParc/.test(err.message) && /surfProdTot/.test(err.message) && /surfTot au registre/.test(err.message),
+    'le message doit nommer les deux assiettes, pas seulement celle qui bloque');
+  // Sans surfProdTot, le repli redonne l'ancienne borne : 1,2 ha < 2 ha passe.
+  assert.doesNotThrow(() => OAD.construireScenarios({ ...INP_A, surfTot: a.surfTot, surfParc: 1.2 }));
+});
+
+// ---- Limites assumées, parkées par décision ----------------------------
+
+test("LIMITE ASSUMÉE : chargesEntretien facture le reste de l'exploitation sur surfTot, plantiers et repos inclus (lot ultérieur)", () => {
+  // Décision D3 (prompt B9) : une seule sémantique change à la fois. Les
+  // charges d'entretien continuent de facturer le « reste » au taux « vigne en
+  // production » sur surfTot − surfParc, plantiers et parcelles en repos
+  // compris. Ce test FIGE la limite : le jour où le lot suivant la corrige, il
+  // devra le faire tomber explicitement, pas la voir passer en silence.
+  const inp = { ...INP_A, surfTot: 2, surfProdTot: 1, surfParc: 0.3,
+    coutSurfaceProdHaAn: 1000, coutReposHaAn: 0, coutPlantierHaAn: 0, coutRdtParKg: 0 };
+  const rows = OAD.simulerReserveKg({ surfTot: 2, surfProdTot: 1, surfArr: 0.3, repos: 1,
+    nbSortie: 3, volSortieArr: 9000, plafond: 10000, volco: 9000, rendMean: 12296.6,
+    reserveInit: 7500, optInsuff: true, horizon: 2, scenario: 'arrachage', rampProfile: [1] });
+  const ce = OAD.chargesEntretien('arrachage', rows, inp);
+  // surfTot − surfParc = 1,70 ha facturés à 1 000 €/ha, et non
+  // surfProdTot − surfParc = 0,70 ha : l'écart EST la limite documentée.
+  assertClose(ce.reste[0], 1700, 1e-6,
+    'les charges du reste restent assises sur surfTot (D3) — à corriger dans un lot ultérieur');
+});
+
+test("LIMITE ASSUMÉE : le stock de réserve n'est pas écrêté quand la surface en production diminue (point réglementaire non tranché)", () => {
+  // Décision D4 (prompt B9). Stock de départ au plafond sur 10 ha, puis
+  // arrachage de 5 ha : le stock ramené à l'assiette résiduelle dépasse le
+  // plafond, et le moteur le CONSERVE — il se contente de ne plus rien mettre
+  // en réserve. Comportement maintenu tel quel, à faire trancher par le
+  // service Appellation/Vendanges avant modélisation d'un écrêtement.
+  const rows = OAD.simulerReserveKg({ surfTot: 10, surfProdTot: 10, surfArr: 5, repos: 1,
+    nbSortie: 0, volSortieArr: 0, plafond: 10000, volco: 9000, rendMean: 12296.6,
+    reserveInit: 10000, optInsuff: false, horizon: 2, scenario: 'arrachage', rampProfile: [1] });
+  assertClose(rows[0].stockDebut, 100000, 1e-6, 'stock de départ = plafond × 10 ha');
+  assertClose(rows[0].surfProd, 5, 1e-9, 'assiette réduite de moitié après arrachage');
+  assertClose(rows[0].mise, 0, 1e-9, 'plus aucune marge de mise : le plafond est dépassé');
+  assert.ok(rows[0].stockFin >= 100000 - 1e-6,
+    "le stock existant n'est pas rogné — TODO D4, point réglementaire non tranché");
+  assert.ok(rows[0].stockHa > 10000, "le stock ramené à l'assiette dépasse donc le plafond");
+});
+
+// ---- Interface : les deux surfaces sont nommées et distinguées ---------
+
+test('index.html : le moteur reçoit surfProdTot, dérivé du registre', () => {
+  assert.ok(/surfProdTot:/.test(INDEX_HTML),
+    "inp doit porter surfProdTot, sans quoi le repli ramène l'assiette à surfTot");
+  assert.ok(/agregExploitation\.surfProd\b/.test(INDEX_HTML),
+    "l'assiette vient de l'agrégat du moteur, pas d'un comptage refait dans index.html");
+});
+
+test('écran des hypothèses : deux surfaces, deux origines distinctes et non ambiguës (critère 5)', () => {
+  assert.ok(/Surface totale de l'exploitation/.test(INDEX_HTML));
+  assert.ok(/Surface en production/.test(INDEX_HTML),
+    'la surface en production doit figurer en propre dans la fiche des hypothèses');
+  assert.ok(/lignes Plantée d'âge ≥ 3 ans/.test(INDEX_HTML),
+    "son origine doit dire la règle de dérivation, pas seulement « dérivé du registre »");
+  const apresReserve = INDEX_HTML.slice(INDEX_HTML.indexOf("{ lib: 'Réserve individuelle initiale'"));
+  assert.ok(/surface en production/.test(apresReserve.slice(0, 400)),
+    "la conversion de la réserve initiale en kg doit annoncer l'assiette qu'elle utilise");
+});
+
+test('temps 1 : la décomposition du registre est à l\'écran, chaque surface étiquetée', () => {
+  assert.ok(/registreSurfProdTxt/.test(INDEX_HTML), 'la surface en production est affichée au temps 1');
+  assert.ok(/registreHorsProdTxt/.test(INDEX_HTML),
+    'plantiers et repos sont nommés : deux surfaces à l\'écran ne se distinguent que par leur libellé');
+});
+
+// ----------------------------------------------------------------------
+// Section 31 — chantier C2 : la fiche d'audit documente la VRAIE composition
+// de l'investissement d'arrachage. Le test ne porte pas sur la chaîne
+// d'affichage (fragile, et elle changerait au moindre remaniement de libellé)
+// mais fige numériquement la composition elle-même : si un chantier futur
+// ajoute, retire ou déplace un terme de `invArr`, ce test casse, et le
+// commentaire posé au-dessus de `printKpiRows` dans index.html rappelle qu'il
+// faut alors reprendre la formule affichée.
+// ----------------------------------------------------------------------
+
+section('31. Composition de l\'investissement d\'arrachage (chantier C2)');
+
+// Les quatre postes de l'engagement à t=repos sont non nuls SIMULTANÉMENT
+// (protection ajoutée au chantier P8, irrigation activée) : une omission de
+// l'un d'eux ne peut pas passer inaperçue derrière un zéro.
+const INP_C2_INVEST = { ...INP_A, declinSQ: 0, coutProtectionHa: 10330, irrigation: true };
+
+test('C2 — composition de l\'investissement arrachage', () => {
+  const inp = INP_C2_INVEST;
+  const sc = OAD.construireScenarios(inp);
+  // Décalque littéral du bloc `invArr` de construireScenarios : arrachage à
+  // t=0, installation à t=repos. AUCUN terme de préparation du sol (coutPrepaHa,
+  // supprimé au chantier P3 — double emploi avec coutArrachageHa, forfait MHCS
+  // tout compris).
+  const attenduAn0 = inp.surfParc * inp.coutArrachageHa;
+  const attenduAnRepos = inp.surfParc * (inp.densite * inp.coutPlant + inp.coutPalissageHa
+    + inp.coutProtectionHa + (inp.irrigation ? inp.coutIrrigHa : 0));
+  assertClose(sc.arrachage.investissement, attenduAn0 + attenduAnRepos, 1e-6,
+    "l'investissement total est exactement la somme des deux engagements");
+  // …et chaque engagement tombe bien sur son année (INP_A a ses 4 taux de
+  // charges d'entretien à 0 : coutsParcelle n'est alimenté que par invArr).
+  assertClose(sc.arrachage.eur[0].coutsParcelle, attenduAn0, 1e-6,
+    'an. 0 : arrachage seul');
+  assertClose(sc.arrachage.eur[inp.repos].coutsParcelle, attenduAnRepos, 1e-6,
+    'an. repos : plants + palissage + protection + irrigation');
+});
+
+test('C2 — chaque poste de l\'installation pèse exactement son montant dans le total', () => {
+  const base = INP_C2_INVEST;
+  const S = base.surfParc;
+  // Sensibilité poste par poste : +1 unité sur chaque paramètre doit déplacer
+  // l'investissement total de son coefficient exact, ni plus ni moins.
+  const ref = OAD.construireScenarios(base).arrachage.investissement;
+  const delta = (patch) => OAD.construireScenarios({ ...base, ...patch }).arrachage.investissement - ref;
+  assertClose(delta({ coutArrachageHa: base.coutArrachageHa + 1 }), S, 1e-6, 'coutArrachageHa : × S');
+  assertClose(delta({ coutPlant: base.coutPlant + 1 }), S * base.densite, 1e-6, 'coutPlant : × S × densité');
+  assertClose(delta({ coutPalissageHa: base.coutPalissageHa + 1 }), S, 1e-6, 'coutPalissageHa : × S');
+  assertClose(delta({ coutProtectionHa: base.coutProtectionHa + 1 }), S, 1e-6, 'coutProtectionHa : × S');
+  assertClose(delta({ coutIrrigHa: base.coutIrrigHa + 1 }), S, 1e-6, 'coutIrrigHa : × S (irrigation activée)');
+  assertClose(delta({ irrigation: false }), -S * base.coutIrrigHa, 1e-6,
+    'irrigation désactivée : le poste disparaît entièrement');
+});
+
+test('C2 — la fiche d\'audit ne cite plus coûtPrepaHa et cite coûtProtectionHa', () => {
+  // On isole la SEULE chaîne `formule:` de l'entrée investissement : les
+  // commentaires alentour citent volontairement coutPrepaHa pour expliquer son
+  // retrait (chantier P3), et ne doivent pas faire échouer le test.
+  const bloc = INDEX_HTML.slice(INDEX_HTML.indexOf('out.printKpiRows = ['));
+  const entree = bloc.slice(0, bloc.indexOf("{ lib: 'Amortisseur de réserve'"));
+  const m = entree.match(/formule:\s*"([^"]*)"/);
+  assert.ok(m, "l'entrée investissement de printKpiRows doit porter une chaîne `formule:`");
+  const formuleInvest = m[1];
+  assert.ok(!/coûtPrepaHa/.test(formuleInvest),
+    'coutPrepaHa a été supprimé au chantier P3 : la fiche ne doit plus le citer');
+  assert.ok(/coûtProtectionHa/.test(formuleInvest),
+    'coutProtectionHa (chantier P8, 10 000 €/ha par défaut) doit figurer dans la formule');
+  for (const terme of ['coûtArrachageHa', 'densité × coûtPlant', 'coûtPalissageHa', 'coûtIrrigHa']) {
+    assert.ok(formuleInvest.includes(terme), `terme manquant dans la formule affichée : ${terme}`);
+  }
+});
+
+// ----------------------------------------------------------------------
+// Section 32 — chantier C3 : solde investissement/réserve déclampé, et
+// réserve à l'horizon (kg/ha).
+//
+// Deux défauts corrigés ensemble parce qu'ils ne doivent jamais s'afficher
+// l'un sans l'autre :
+//   (a) `Math.max(0, invest − reserveReelle)` écrasait à zéro toute la région
+//       où la réserve couvre l'investissement — le cas dominant ;
+//   (b) le stock de réserve consommé n'a aucun coût dans le modèle (assumé,
+//       README §19) mais c'est DIRECTIONNEL : la contrepartie physique du
+//       déstockage doit donc être exposée, en kg/ha et jamais en euros.
+// ----------------------------------------------------------------------
+
+section("32. Solde investissement / réserve et réserve à l'horizon (chantier C3)");
+
+// Cas (a) — réserve excédentaire. Aux paramètres canoniques, la réserve
+// mobilisée dépasse largement l'investissement : c'est ce cas-là que
+// l'ancien clamp affichait « 0 € », donc « gratuit ».
+const INP_C3_EXCEDENT = { ...INP_A, declinSQ: 0 };
+
+// Cas (b) — réserve insuffisante. `volco` relevé au-dessus du rendement moyen
+// supprime tout surplus commercialisable : plus rien n'alimente la mise en
+// réserve, et le stock disponible pour la sortie « arrachage » se réduit à ce
+// que porte `reserveInit` (le curseur riPct de l'interface, converti par
+// index.html en `reserveInit = 10000 × riPct/100`). riPct bas ⇒ solde positif.
+const INP_C3_RI_BAS = { ...INP_A, declinSQ: 0, volco: 12500, reserveInit: 1000 }; // riPct = 10 %
+
+test('C3 — solde non clampé, cas réserve excédentaire', () => {
+  const sc = OAD.construireScenarios(INP_C3_EXCEDENT);
+  const r = OAD.soldeInvestissementReserve(sc.arrachage);
+  assert.ok(r.reserveMobilisee > r.invest,
+    "préalable du cas : la réserve mobilisée doit dépasser l'investissement");
+  assert.ok(r.solde < 0, `solde attendu strictement négatif, obtenu ${r.solde}`);
+  // Le point du chantier : PAS zéro. L'ancienne formule rendait exactement 0 ici.
+  assert.ok(Math.abs(r.solde) > 1,
+    "le solde ne doit pas être écrasé à zéro : c'est précisément le défaut corrigé par C3");
+  assertClose(r.solde, r.invest - r.reserveMobilisee, 1e-9,
+    'solde = invest − reserveMobilisee, sans plancher');
+});
+
+test('C3 — solde, cas réserve insuffisante', () => {
+  const sc = OAD.construireScenarios(INP_C3_RI_BAS);
+  const r = OAD.soldeInvestissementReserve(sc.arrachage);
+  assert.ok(r.reserveMobilisee > 0,
+    'préalable du cas : une réserve est bien mobilisée, simplement pas assez');
+  assert.ok(r.reserveMobilisee < r.invest, "préalable du cas : elle ne couvre pas l'investissement");
+  assert.ok(r.solde > 0, `solde attendu strictement positif, obtenu ${r.solde}`);
+  assertClose(r.solde, r.invest - r.reserveMobilisee, 1e-9);
+});
+
+// Critère d'acceptation du chantier, énoncé tel quel : « en faisant varier
+// riPct de 0 à 100 %, le KPI de solde varie de façon continue et monotone sur
+// toute la plage. Aujourd'hui il est plat à 0 sur la majeure partie. »
+test("C3 — CRITÈRE D'ACCEPTATION : le solde est monotone et non plat quand riPct varie de 0 à 100 %", () => {
+  const PLAFOND = 10000;   // kg/ha — conversion riPct → reserveInit faite par index.html
+  const soldes = [];
+  for (let riPct = 0; riPct <= 100; riPct += 5) {
+    const sc = OAD.construireScenarios({ ...INP_C3_RI_BAS, reserveInit: PLAFOND * riPct / 100 });
+    soldes.push(OAD.soldeInvestissementReserve(sc.arrachage).solde);
+  }
+  // Monotone décroissant (au sens large : plus de réserve ⇒ solde plus bas).
+  for (let i = 1; i < soldes.length; i++) {
+    assert.ok(soldes[i] <= soldes[i - 1] + 1e-9,
+      `rupture de monotonie entre riPct=${(i - 1) * 5} % (${soldes[i - 1]}) et riPct=${i * 5} % (${soldes[i]})`);
+  }
+  // …et STRICTEMENT décroissant sur la majeure partie de la plage : c'est ce
+  // qui distingue le nouveau comportement de l'ancien.
+  const strictes = soldes.slice(1).filter((v, i) => v < soldes[i] - 1e-9).length;
+  assert.ok(strictes >= soldes.length - 3,
+    `le solde doit bouger sur presque toute la plage, ${strictes}/${soldes.length - 1} pas strictement décroissants`);
+  // Démonstration explicite du défaut corrigé : l'ANCIENNE formule clampée
+  // était plate à 0 sur plus de la moitié de la plage, sur ce même jeu.
+  const ancienClampe = soldes.map(v => Math.max(0, v));
+  const platsAZero = ancienClampe.filter(v => v === 0).length;
+  assert.ok(platsAZero > soldes.length / 2,
+    'ce jeu doit bien reproduire le défaut historique (clamp plat à 0 sur la majeure partie), sinon le test ne prouve rien');
+  // Le solde change bien de signe : les deux régimes sont couverts.
+  assert.ok(soldes[0] > 0 && soldes[soldes.length - 1] < 0,
+    'la plage doit traverser le zéro, sans quoi la monotonie ne prouve rien');
+});
+
+test('C3 — reserveHorizon lit stockHa à t = horizon sur les deux scénarios', () => {
+  const inp = INP_C3_EXCEDENT;
+  const sc = OAD.construireScenarios(inp);
+  const rh = OAD.reserveHorizon(sc.arrachage, sc.reference, inp.horizon);
+  assertClose(rh.arrachageKgHa, sc.arrachage.kg[inp.horizon].stockHa, 1e-9);
+  assertClose(rh.referenceKgHa, sc.reference.kg[inp.horizon].stockHa, 1e-9);
+  assertClose(rh.ecartKgHa, rh.arrachageKgHa - rh.referenceKgHa, 1e-9);
+});
+
+test("C3 — reserveHorizon expose bien l'écart quand la réserve n'est pas saturée", () => {
+  // Sur INP_C3_RI_BAS à riPct = 100 %, l'arrachage a consommé sa réserve et ne
+  // l'a pas reconstituée à l'horizon, contrairement à la référence : les deux
+  // nombres diffèrent. C'est exactement le régime que le solde en euros, seul,
+  // ne sait pas distinguer d'une réserve saturée.
+  const inp = { ...INP_C3_RI_BAS, reserveInit: 10000 };
+  const sc = OAD.construireScenarios(inp);
+  const rh = OAD.reserveHorizon(sc.arrachage, sc.reference, inp.horizon);
+  assert.ok(rh.referenceKgHa > rh.arrachageKgHa,
+    "la référence doit conserver plus de stock que l'arrachage sur ce jeu");
+  assert.ok(rh.ecartKgHa < 0, 'ecartKgHa = arrachage − référence, donc négatif ici');
+});
+
+// Garde-fou, sur le modèle de celui de la section 12 pour trajectoireAge : la
+// règle « le stock de réserve n'est JAMAIS monétisé » est structurelle, pas
+// une convention d'écriture. reserveHorizon ne reçoit aucun paramètre
+// monétaire ; faire varier le prix du kg ne doit donc rien pouvoir changer.
+test('C3 — GARDE-FOU : reserveHorizon ne produit aucun euro', () => {
+  const base = INP_C3_RI_BAS;
+  const scRef = OAD.construireScenarios({ ...base, prixKg: 7 });
+  const scCher = OAD.construireScenarios({ ...base, prixKg: 999999 });
+  const rhRef = OAD.reserveHorizon(scRef.arrachage, scRef.reference, base.horizon);
+  const rhCher = OAD.reserveHorizon(scCher.arrachage, scCher.reference, base.horizon);
+  assert.deepStrictEqual(rhCher, rhRef,
+    "prixKg ne doit avoir aucun effet sur la réserve à l'horizon (indicateur physique, jamais monétisé — README §19)");
+  // …et le résultat ne porte AUCUNE clé qui puisse passer pour un montant.
+  assert.deepStrictEqual(Object.keys(rhRef).sort(), ['arrachageKgHa', 'ecartKgHa', 'referenceKgHa'],
+    'reserveHorizon ne doit exposer que des kg/ha — aucune clé monétaire, même « indicative »');
+});
+
+// Les commentaires de `index.html` citent volontairement les anciens noms pour
+// documenter le renommage (même procédé qu'au chantier C2) : les assertions
+// ci-dessous portent donc sur le CODE et sur les LIBELLÉS RENDUS, jamais sur le
+// fichier entier, sans quoi la documentation du chantier ferait échouer le test
+// qui la garde.
+const CODE_SANS_COMMENTAIRES = INDEX_HTML
+  .replace(/\/\*[\s\S]*?\*\//g, ' ')      // blocs /* … */ (script)
+  .replace(/^[ \t]*\/\/.*$/gm, ' ')       // lignes // … (script)
+  .replace(/<!--[\s\S]*?-->/g, ' ');      // commentaires HTML (template)
+
+test("C3 — la vue n'écrase plus le solde par un Math.max(0, …) et appelle le moteur", () => {
+  assert.ok(/OAD\.soldeInvestissementReserve\(/.test(INDEX_HTML),
+    'le solde doit venir du moteur, pas être recalculé dans la vue');
+  assert.ok(/OAD\.reserveHorizon\(/.test(INDEX_HTML),
+    "la réserve à l'horizon doit venir du moteur");
+  assert.ok(!/Math\.max\(0,\s*invest\s*-\s*reserveReelle\)/.test(INDEX_HTML),
+    'le clamp à zéro doit avoir disparu de la vue');
+  assert.ok(!/effortNet/.test(CODE_SANS_COMMENTAIRES),
+    'plus aucune occurrence de « effortNet » dans le code : le renommage doit être complet (variables, état, clés de sortie, interpolations du template)');
+});
+
+test("C3 — vocabulaire : ni « à financer » sur ce KPI, ni « excédent / gain / bénéfice » sur le cas négatif", () => {
+  assert.ok(!/effort net à financer/i.test(CODE_SANS_COMMENTAIRES),
+    "« à financer » disparaît de ce KPI : aucun coût de financement n'est modélisé");
+  assert.ok(INDEX_HTML.includes('Investissement net de la réserve'),
+    'le nouveau libellé doit être affiché');
+  // Le cas négatif est un déstockage, jamais un profit.
+  const bloc = CODE_SANS_COMMENTAIRES.slice(CODE_SANS_COMMENTAIRES.indexOf('out.kpiSoldeReserve = {'),
+    CODE_SANS_COMMENTAIRES.indexOf('out.kpiReserveMin = {'));
+  assert.ok(bloc.length > 0 && bloc.length < 4000, 'la tranche analysée doit bien encadrer les KPI du solde');
+  for (const mot of ['excédent', 'excedent', 'bénéfice', 'benefice']) {
+    assert.ok(!new RegExp(mot, 'i').test(bloc),
+      `vocabulaire interdit sur le cas négatif : « ${mot} » — c'est un déstockage, pas un profit`);
+  }
+  assert.ok(/réserve mobilisée au-delà de l'investissement/i.test(CODE_SANS_COMMENTAIRES),
+    'le cas négatif doit porter sa formulation dédiée');
+});
+
+// Contrainte d'adjacence, point 8 du chantier : « il ne doit exister aucun état
+// de l'interface où le solde s'affiche sans elle ». Le test la vérifie
+// structurellement.
+//
+// MISE À JOUR chantier C5 : le cartouche « solde investissement / réserve » a
+// quitté l'écran — la réserve mobilisée et l'investissement y sont devenus deux
+// TERMES de la cascade, et laisser vivre en parallèle un solde partiel
+// recréerait les montants épars que C5 supprime. La contrainte d'adjacence ne
+// disparaît pas pour autant : elle se DÉPLACE sur la cascade, qui est
+// l'endroit où la réserve est désormais monétisée. La réserve à l'horizon en
+// kg/ha est rendue immédiatement sous la cascade, dans le même bloc.
+// Le solde signé reste calculé et reste sur la fiche d'audit (C3), où il est
+// suivi de la même ligne en kg/ha.
+test("C3/C5 — ADJACENCE : la réserve à l'horizon est rendue dans le même bloc que la monétisation de la réserve", () => {
+  // (a) À l'écran : le terme « réserve » de la cascade et la réserve à
+  //     l'horizon sont dans le même bloc, la seconde après le premier.
+  const iCascade = INDEX_HTML.indexOf('{{ cascadeRows }}') >= 0
+    ? INDEX_HTML.indexOf('{{ cascadeRows }}')
+    : INDEX_HTML.indexOf('list="{{ cascadeRows }}"');
+  const iReserve = INDEX_HTML.indexOf('{{ kpiReserveHorizon.lib }}', iCascade);
+  assert.ok(iCascade > 0, 'la cascade doit être rendue par le template');
+  assert.ok(iReserve > iCascade,
+    "la réserve à l'horizon doit être rendue APRÈS la cascade, dans le même bloc");
+  // Aucun sc-if ne s'ouvre entre les deux : pas d'état où la cascade
+  // (donc la réserve monétisée) s'affiche sans sa contrepartie physique.
+  const entre = INDEX_HTML.slice(iCascade, iReserve);
+  assert.ok(!/<sc-if/.test(entre),
+    "aucun conditionnel entre la cascade et la réserve à l'horizon");
+
+  // (b) Sur la fiche d'audit : le solde signé est immédiatement suivi de la
+  //     réserve à l'horizon, en kg/ha.
+  const rows = INDEX_HTML.slice(INDEX_HTML.indexOf('out.printKpiRows = ['));
+  // Le libellé et la valeur du solde viennent de out.kpiSoldeReserve : une seule
+  // définition, partagée par le chiffre de tête et la fiche (chantier C5).
+  const iSolde = rows.indexOf('out.kpiSoldeReserve.lib');
+  const iResAudit = rows.indexOf('Réserve à ${inp.horizon} ans (kg/ha)');
+  assert.ok(iSolde > 0 && iResAudit > iSolde,
+    "sur la fiche d'audit, la réserve à l'horizon suit immédiatement le solde signé");
+
+  // (c) Le commentaire de contrainte doit rester : c'est lui qui empêche une
+  //     session ultérieure de séparer les deux « pour aérer la mise en page ».
+  assert.ok(/adjacence/i.test(INDEX_HTML),
+    'la contrainte doit rester écrite dans le fichier');
+});
+
+test("C3 — la réserve à l'horizon n'est jamais convertie en euros dans la vue", () => {
+  // Ancrage sur l'AFFECTATION (`out.kpiReserveHorizon = {`), pas sur la simple
+  // mention du nom : le commentaire d'adjacence du template le cite bien plus
+  // haut dans le fichier, et une tranche partant de là engloberait tout l'écran.
+  const debut = INDEX_HTML.indexOf('out.kpiReserveHorizon = {');
+  const fin = INDEX_HTML.indexOf('out.kpiReserveMin = {');
+  assert.ok(debut > 0 && fin > debut, "les deux affectations doivent exister, dans cet ordre");
+  const bloc = INDEX_HTML.slice(debut, fin);
+  assert.ok(/kg\/ha/.test(bloc), 'la ligne doit être libellée en kg/ha');
+  assert.ok(!/fmtE0?\(/.test(bloc),
+    "aucun formatage monétaire sur cette ligne — même entre parenthèses, même « indicatif »");
+  assert.ok(!/€/.test(bloc), "aucun symbole € sur la réserve à l'horizon");
+});
+
+// ----------------------------------------------------------------------
+// Section 33 — chantier C4 : différentiel par rapport à « ne rien faire ».
+//
+// Un simulateur d'IMPACT dont tous les chiffres sont absolus ne mesure aucun
+// impact. Le différentiel existait déjà dans le code (`creux`,
+// `manqueAGagner`) mais avait été retiré de l'écran au chantier P6 : basculer
+// le test de résistance climatique — la variable qui décide de tout — ne
+// faisait bouger aucun des deux KPI de tête.
+//
+// Ce que C4 rétablit : un POINT DE RÉFÉRENCE ARITHMÉTIQUE sur une ligne.
+// Ce que C4 ne rétablit PAS : le contrefactuel comme SCÉNARIO CONFIGURABLE
+// (aucune colonne, aucune seconde courbe, aucun champ de saisie).
+// ----------------------------------------------------------------------
+
+section("33. Différentiel par rapport à ne rien faire (chantier C4)");
+
+// Fixture à l'échelle de l'interface — 10 ha d'exploitation, 1 ha renouvelé,
+// charges d'entretien calibrées (défauts UI). Elle diffère volontairement
+// d'INP_A, dont la parcelle pèse 30 % de l'exploitation : à cette échelle-là,
+// l'opération domine la trésorerie et le différentiel ne change jamais de
+// signe. Les ordres de grandeur cités dans le prompt du chantier ont été
+// mesurés sur les valeurs par défaut RENDUES par l'interface (densité,
+// palissage et protection y sont dérivés d'une géométrie que ce fichier de
+// test ne reconstruit pas) ; ce que les tests figent ici, ce sont les valeurs
+// de CETTE fixture et, surtout, le comportement : changement de signe et écart
+// de plusieurs dizaines de milliers d'euros entre les deux paramétrages.
+const INP_C4 = {
+  surfTot: 10, surfProdTot: 10, surfParc: 1, repos: 1, nbSortie: 3,
+  volSortieArr: OAD.VOL_SORTIE_ARRACHAGE, plafond: 10000, volco: 9000,
+  rendMean: 12296.6, reserveInit: 7500, horizon: 10, rendYearFn: null,
+  ramp: OAD.rampeLineaire(5), rendFactorProjet: 1, rendEstime: 10500,
+  manquants: 0.15, declinSQ: 0.01, densite: 8264,
+  coutArrachageHa: 22500, coutPlant: 2.10, coutPalissageHa: 12000,
+  coutProtectionHa: 10000, irrigation: false, coutIrrigHa: 5000,
+  coutEntreplant: 4.5, survie: 0.5, entreeProd: 7, prixKg: 7,
+  coutSurfaceProdHaAn: 11400, coutRdtParKg: 1.52,
+  coutReposHaAn: 0, coutPlantierHaAn: 8000,
+  fv: { regime: 'propriete', loyerAn: 3000, partRecolte: 0.33, partCouts: 0.33 }
+};
+// Vendange dégradée : rendMean = moyenne − écart-type régional (12 296,6 − 3 440).
+const INP_C4_DEGRADE = { ...INP_C4, rendMean: 12296.6 - 3440 };
+
+test('C4 — différentiel = soustraction des deux trésoreries', () => {
+  const inp = INP_C4;
+  const sc = OAD.construireScenarios(inp);
+  // Sur les trois régimes de faire-valoir et les trois vues : la fonction ne
+  // doit RIEN faire d'autre qu'une soustraction terme à terme.
+  for (const regime of ['propriete', 'fermage', 'metayage']) {
+    const fv = { ...inp.fv, regime };
+    for (const vue of ['1', 'exp', 'prop']) {
+      const opt = { parcelleSeule: true };
+      const d = OAD.differentielTresorerie(sc.arrachage, sc.reference, fv, vue, opt);
+      const a = OAD.tresorerieCumulee(sc.arrachage, fv, vue, opt);
+      const r = OAD.tresorerieCumulee(sc.reference, fv, vue, opt);
+      for (let t = 0; t < d.cumule.length; t++) {
+        assertClose(d.cumule[t], a.cumulee[t] - r.cumulee[t], 1e-6, `${regime}/${vue} cumulé t=${t}`);
+        assertClose(d.annuel[t], a.annuelle[t] - r.annuelle[t], 1e-6, `${regime}/${vue} annuel t=${t}`);
+      }
+      assertClose(d.aHorizon, d.cumule[d.cumule.length - 1], 1e-9,
+        `${regime}/${vue} : aHorizon est le dernier élément de cumule`);
+    }
+  }
+});
+
+// LE test le plus important de l'outil : il documente le comportement que
+// l'écran ne montrait pas du tout avant ce chantier.
+test('C4 — le différentiel change de signe selon rendMean', () => {
+  const calc = (inp) => {
+    const sc = OAD.construireScenarios(inp);
+    return OAD.differentielTresorerie(sc.arrachage, sc.reference, inp.fv, '1', { parcelleSeule: true }).aHorizon;
+  };
+  const nominal = calc(INP_C4);
+  const degrade = calc(INP_C4_DEGRADE);
+  // Valeurs figées sur cette fixture (chantier C4). Toute dérive volontaire
+  // d'une formule du moteur les déplacera : les mettre à jour en citant le
+  // chantier responsable, jamais en silence.
+  assertClose(nominal, 10840.250926, 1e-4, 'différentiel à 10 ans, vendange nominale');
+  assertClose(degrade, -162017.794169, 1e-4, 'différentiel à 10 ans, vendange dégradée');
+  // Ce que ces deux nombres racontent, et que l'écran taisait :
+  assert.ok(nominal > 0 && degrade < 0,
+    'le différentiel doit changer de SIGNE entre les deux paramétrages');
+  assert.ok(Math.abs(nominal - degrade) > 50000,
+    `les deux mondes doivent être séparés de plusieurs dizaines de milliers d'euros, obtenu ${Math.abs(nominal - degrade)}`);
+});
+
+test("C4 — le différentiel est bien celui de la PARCELLE SEULE, pas de l'exploitation", () => {
+  // Vérification du choix de convention (point 4 du chantier) : sur
+  // l'exploitation entière, le revenu du reste du domaine noie l'effet de
+  // l'opération. Les deux différentiels doivent donc être nettement distincts.
+  const inp = INP_C4_DEGRADE;
+  const sc = OAD.construireScenarios(inp);
+  const parcelle = OAD.differentielTresorerie(sc.arrachage, sc.reference, inp.fv, '1', { parcelleSeule: true }).aHorizon;
+  const exploitation = OAD.differentielTresorerie(sc.arrachage, sc.reference, inp.fv, '1', {}).aHorizon;
+  assert.ok(Math.abs(parcelle - exploitation) > 1,
+    "parcelle seule et exploitation entière ne doivent pas donner le même chiffre, sinon la convention ne se voit pas");
+  assert.ok(/parcelleSeule:\s*true/.test(INDEX_HTML.slice(INDEX_HTML.indexOf('OAD.differentielTresorerie('),
+    INDEX_HTML.indexOf('OAD.differentielTresorerie(') + 200)),
+    "la vue doit appeler le différentiel avec parcelleSeule: true");
+});
+
+test('C4 — le code nouveau lit sc.reference, jamais l\'alias historique sc.statuquo', () => {
+  const appel = INDEX_HTML.slice(INDEX_HTML.indexOf('OAD.differentielTresorerie('),
+    INDEX_HTML.indexOf('OAD.differentielTresorerie(') + 200);
+  assert.ok(/sc\.reference/.test(appel), 'le différentiel doit être calculé sur sc.reference');
+  assert.ok(!/sc\.statuquo/.test(appel), "sc.statuquo est un alias de compatibilité : aucun code nouveau ne doit le lire");
+});
+
+// Les interdictions du chantier sont le cœur de l'arbitrage : elles sont
+// testées, pas seulement écrites en commentaire.
+test('C4 — INTERDICTIONS : ni seconde courbe, ni colonne statu quo, ni champ de saisie du contrefactuel', () => {
+  // Le différentiel ne monte pas dans les trois chiffres de tête (36 px).
+  for (const tete of ['out.teteRetour', 'out.teteEffort', 'out.teteAge']) {
+    const i = INDEX_HTML.indexOf(tete + ' = {');
+    assert.ok(i > 0, `${tete} doit exister`);
+    const bloc = INDEX_HTML.slice(i, i + 700);
+    assert.ok(!/diffTreso|differentiel/i.test(bloc),
+      `${tete} doit rester inchangé : le différentiel ne monte pas dans les chiffres de tête`);
+  }
+  // Aucune seconde série n'est ajoutée aux graphiques à partir du différentiel.
+  assert.ok(!/chart\w*\s*=\s*[^;]*diffTreso/i.test(INDEX_HTML),
+    'aucun graphique ne doit consommer le différentiel : pas de seconde courbe');
+  // Aucun champ de saisie nouveau relatif au scénario de référence : `declinSQ`
+  // existait déjà avant ce chantier (déplacé par C1), il reste le seul.
+  const champsRef = (INDEX_HTML.match(/id="f-declinSQ"/g) || []).length;
+  assert.strictEqual(champsRef, 1,
+    "declinSQ reste l'unique saisie relative au contrefactuel — C4 n'en ajoute aucune");
+});
+
+test('C4 — aucune formulation évaluative sur la ligne différentielle', () => {
+  const debut = INDEX_HTML.indexOf('out.differentielLib');
+  const fin = INDEX_HTML.indexOf('\n', INDEX_HTML.indexOf('out.differentielDet'));
+  assert.ok(debut > 0 && fin > debut, 'les trois chaînes du différentiel doivent exister');
+  const bloc = INDEX_HTML.slice(debut, INDEX_HTML.indexOf('out.differentielDet') + 900);
+  for (const mot of ['favorable', 'défavorable', 'rentable', 'perdant', 'gagnant',
+                     'recommand', 'conseill', 'intérêt à', 'vaut mieux']) {
+    assert.ok(!new RegExp(mot, 'i').test(bloc),
+      `formulation évaluative interdite sur ce chiffre : « ${mot} » — un montant signé et son libellé, rien d'autre`);
+  }
+  assert.ok(/par rapport à ne rien faire/i.test(INDEX_HTML),
+    'le libellé imposé par le chantier doit être celui affiché');
+});
+
+test('C4 — la ligne est affichée TOUJOURS, quel que soit le signe', () => {
+  // La ligne vit à l'intérieur du `sc-if` du temps 3, comme tout le reste de
+  // l'écran de résultats — c'est normal et ce n'est pas ce qu'on teste. Ce
+  // qu'on teste, c'est qu'AUCUN conditionnel propre au différentiel ne
+  // l'entoure : rien ne doit pouvoir la masquer selon le signe du montant.
+  const i = INDEX_HTML.indexOf('{{ differentielLib }}');
+  assert.ok(i > 0, 'la ligne doit être rendue par le template');
+  // Depuis l'ouverture de son propre bloc jusqu'à l'interpolation : aucun sc-if.
+  const debutBloc = INDEX_HTML.lastIndexOf('PAR RAPPORT À NE RIEN FAIRE', i);
+  assert.ok(debutBloc > 0, 'le bloc de clôture doit porter son commentaire de chantier');
+  assert.ok(!/<sc-if/.test(INDEX_HTML.slice(debutBloc, i)),
+    "aucun sc-if entre l'ouverture du bloc et la ligne : elle s'affiche quel que soit le signe");
+  // Aucun conditionnel du template ne porte sur le différentiel, où qu'il soit.
+  const conditions = (INDEX_HTML.match(/<sc-if value="\{\{([^}]*)\}\}"/g) || []).join(' ');
+  assert.ok(!/differentiel|diffTreso/i.test(conditions),
+    'aucun sc-if ne doit être piloté par le différentiel');
+  // …et le script ne la construit pas conditionnellement non plus.
+  const bloc = INDEX_HTML.slice(INDEX_HTML.indexOf('out.differentielLib'),
+    INDEX_HTML.indexOf('out.differentielDet') + 900);
+  assert.ok(!/differentielTxt\s*=\s*[^;]*\?/.test(bloc),
+    'la valeur affichée ne doit pas dépendre du signe : un montant signé, tel quel');
+});
+
+// ----------------------------------------------------------------------
+// Section 34 — chantier C5 : la cascade, décomposition EXACTE du différentiel.
+//
+// Le point de ce chantier n'est pas d'ajouter des chiffres, c'est d'en avoir
+// UN qui ordonne les autres. La contrainte qui en découle est dure : la
+// cascade doit SOMMER au différentiel de C4, à l'euro près, sur tous les jeux
+// d'entrées et tous les régimes de faire-valoir.
+//
+// Une cascade qui ne tombe pas juste est PIRE que six chiffres épars : elle
+// donne l'apparence de la rigueur. C'est pourquoi le moteur lève une exception
+// au-delà de 1 € d'écart, et pourquoi ces tests balaient large.
+// ----------------------------------------------------------------------
+
+section('34. Cascade différentielle (chantier C5)');
+
+// Les quatre jeux d'entrées demandés par le chantier.
+const JEUX_C5 = {
+  'défauts': INP_C4,
+  'vendange dégradée': INP_C4_DEGRADE,
+  'riPct bas': { ...INP_C4, reserveInit: 500, volco: 12500 },
+  'repos = 3': { ...INP_C4, repos: 3, nbSortie: OAD.nbSortiePourRepos(3) }
+};
+const REGIMES_C5 = ['propriete', 'fermage', 'metayage'];
+const VUES_C5 = ['1', 'exp', 'prop'];
+
+test('C5 — la cascade somme au différentiel', () => {
+  let combinaisons = 0;
+  for (const [nomJeu, inp] of Object.entries(JEUX_C5)) {
+    const sc = OAD.construireScenarios(inp);
+    for (const regime of REGIMES_C5) {
+      const fv = { ...inp.fv, regime };
+      for (const vue of VUES_C5) {
+        const c = OAD.cascadeDifferentielle(sc.arrachage, sc.reference, inp, fv, vue);
+        const somme = c.termes.reduce((s, t) => s + t.montant, 0);
+        // Tolérance 1 € (celle du chantier) — en pratique l'écart est nul au
+        // flottant près, la marge couvre l'accumulation sur 11 années.
+        assertClose(somme, c.total, 1,
+          `${nomJeu} / ${regime} / vue ${vue} : Σ termes ≠ total`);
+        // …et le total EST bien le différentiel de C4, pas un autre calcul.
+        const d = OAD.differentielTresorerie(sc.arrachage, sc.reference, fv, vue, { parcelleSeule: true });
+        assertClose(c.total, d.aHorizon, 1e-6,
+          `${nomJeu} / ${regime} / vue ${vue} : le total de la cascade doit être le différentiel de C4`);
+        assert.strictEqual(c.termes.length, 4, 'la cascade compte exactement quatre termes');
+        combinaisons++;
+      }
+    }
+  }
+  assert.strictEqual(combinaisons, 36, '4 jeux × 3 régimes × 3 vues');
+});
+
+test("C5 — fermage : le loyer s'annule dans le différentiel", () => {
+  // `repartir` retranche loyerAn à l'exploitant et le verse au propriétaire,
+  // à l'identique dans les deux scénarios : il disparaît de la soustraction.
+  // Il n'y a donc PAS de cinquième terme de loyer dans la cascade — et une
+  // session ultérieure qui en ajouterait un ferait échouer ce test.
+  const inp = INP_C4;
+  const sc = OAD.construireScenarios(inp);
+  const totalPour = (loyerAn, vue) => OAD.cascadeDifferentielle(
+    sc.arrachage, sc.reference, inp, { ...inp.fv, regime: 'fermage', loyerAn }, vue).total;
+  for (const vue of VUES_C5) {
+    const ref = totalPour(3000, vue);
+    for (const loyer of [0, 12000, 99999]) {
+      assertClose(totalPour(loyer, vue), ref, 1e-9,
+        `vue ${vue} : le total de la cascade ne doit pas dépendre de loyerAn (loyer = ${loyer})`);
+    }
+  }
+  // Corollaire : côté propriétaire, un fermage ne produit AUCUN différentiel.
+  assertClose(totalPour(3000, 'prop'), 0, 1e-9,
+    "en fermage, la part propriétaire du différentiel est nulle : le loyer est le même dans les deux scénarios");
+});
+
+test('C5 — métayage : chaque terme hérite du coefficient de repartir()', () => {
+  // Vérification directe de la linéarité invoquée en commentaire dans le
+  // moteur : termes « réserve » et « recettes » en (1 − partRecolte) côté
+  // exploitant, termes « investissement » et « charges » en (1 − partCouts).
+  const inp = INP_C4;
+  const sc = OAD.construireScenarios(inp);
+  const fvM = { ...inp.fv, regime: 'metayage', partRecolte: 0.33, partCouts: 0.33 };
+  const ens = OAD.cascadeDifferentielle(sc.arrachage, sc.reference, inp, fvM, '1');
+  const exp = OAD.cascadeDifferentielle(sc.arrachage, sc.reference, inp, fvM, 'exp');
+  const prop = OAD.cascadeDifferentielle(sc.arrachage, sc.reference, inp, fvM, 'prop');
+  const par = (c, id) => c.termes.find(t => t.id === id).montant;
+  for (const id of ['reserve', 'recettes']) {
+    assertClose(par(exp, id), (1 - fvM.partRecolte) * par(ens, id), 1e-6, `exp/${id}`);
+    assertClose(par(prop, id), fvM.partRecolte * par(ens, id), 1e-6, `prop/${id}`);
+  }
+  for (const id of ['investissement', 'charges']) {
+    assertClose(par(exp, id), (1 - fvM.partCouts) * par(ens, id), 1e-6, `exp/${id}`);
+    assertClose(par(prop, id), fvM.partCouts * par(ens, id), 1e-6, `prop/${id}`);
+  }
+  // Conservation : exploitant + propriétaire = ensemble, terme à terme.
+  for (const id of ['investissement', 'reserve', 'recettes', 'charges']) {
+    assertClose(par(exp, id) + par(prop, id), par(ens, id), 1e-6, `conservation sur ${id}`);
+  }
+});
+
+test('C5 — les signes attendus des quatre termes', () => {
+  const inp = INP_C4;
+  const sc = OAD.construireScenarios(inp);
+  const c = OAD.cascadeDifferentielle(sc.arrachage, sc.reference, inp, inp.fv, '1');
+  const par = id => c.termes.find(t => t.id === id).montant;
+  assert.ok(par('investissement') < 0, "l'investissement est un décaissement : négatif");
+  assert.ok(par('reserve') > 0, 'la réserve mobilisée entre en trésorerie : positif');
+  assert.ok(par('recettes') < 0, 'la parcelle ne produit pas pendant la transition : négatif à 10 ans');
+  assert.ok(par('charges') > 0, "les charges d'entretien évitées pendant la transition : positif");
+});
+
+// L'assertion interne du moteur est le garde-fou central du chantier : sans
+// elle, une cascade fausse dériverait en silence.
+test('C5 — GARDE-FOU : une cascade qui ne somme pas lève une exception', () => {
+  const inp = INP_C4;
+  const sc = OAD.construireScenarios(inp);
+  // On fabrique une référence incohérente : ses coûts de parcelle sont amputés,
+  // si bien que le total (calculé sur les séries) ne peut plus correspondre aux
+  // termes (calculés sur chargesEntretien).
+  const scRefTruque = {
+    ...sc.reference,
+    eur: sc.reference.eur.map(r => ({ ...r, coutsParcelle: r.coutsParcelle + 50000 }))
+  };
+  assert.throws(
+    () => OAD.cascadeDifferentielle(sc.arrachage, scRefTruque, inp, inp.fv, '1'),
+    /ne somme pas au différentiel/,
+    'le moteur doit casser bruyamment, pas dériver en silence');
+});
+
+// Non-régression documentaire : les deux quantités retirées de la fiche d'audit
+// ne se recomposent PAS avec le différentiel — c'est la raison du chantier, et
+// ce test la mesure plutôt que de la croire sur parole.
+test("C5 — l'empilement historique NE se recompose PAS avec le différentiel (raison du chantier)", () => {
+  const inp = INP_C4_DEGRADE;
+  const sc = OAD.construireScenarios(inp);
+  const invest = sc.arrachage.investissement;
+  const reserve = sc.arrachage.eur.reduce((a, r) => a + r.cashRI, 0);
+  const chArr = OAD.chargesEntretien('arrachage', sc.arrachage.kg, inp);
+  const chSQ = OAD.chargesEntretien('statuquo', sc.reference.kg, inp);
+  const returnYear = 3 + inp.repos;
+  let chargesEvitees = 0;
+  for (let t = 0; t < returnYear; t++) {
+    chargesEvitees += Math.max(0, (chSQ.parcelle[t] || 0) - (chArr.parcelle[t] || 0));
+  }
+  const mag = OAD.manqueAGagner(sc.arrachage, sc.reference, inp.prixKg).reduce((a, v) => a + v, 0);
+  const empilement = -invest + reserve + chargesEvitees - mag;
+  const differentiel = OAD.differentielTresorerie(
+    sc.arrachage, sc.reference, inp.fv, '1', { parcelleSeule: true }).aHorizon;
+  assert.ok(Math.abs(empilement - differentiel) > 1000,
+    `l'empilement historique doit s'écarter nettement du différentiel (écart obtenu : ${Math.abs(empilement - differentiel).toFixed(0)} €) — `
+    + "s'il tombait juste, le chantier C5 n'aurait pas lieu d'être");
+  // …tandis que la cascade, elle, tombe juste.
+  const c = OAD.cascadeDifferentielle(sc.arrachage, sc.reference, inp, inp.fv, '1');
+  assertClose(c.termes.reduce((a, t) => a + t.montant, 0), differentiel, 1,
+    'la cascade, elle, somme exactement au différentiel');
+});
+
+test('C5 — manqueAGagner reste exportée et marquée @deprecated', () => {
+  assert.strictEqual(typeof OAD.manqueAGagner, 'function',
+    'la fonction reste exportée pour compatibilité');
+  const MOTEUR = require('fs').readFileSync(path.join(__dirname, '..', 'moteur-oad.js'), 'utf8');
+  const i = MOTEUR.indexOf('function manqueAGagner');
+  const avant = MOTEUR.slice(Math.max(0, i - 1400), i);
+  assert.ok(/@deprecated chantier C5/.test(avant),
+    'elle doit porter la marque @deprecated citant le chantier');
+  assert.ok(/cascadeDifferentielle/.test(avant),
+    'et renvoyer explicitement à la cascade qui la remplace');
+});
+
+test("C5 — l'écran et la fiche d'audit ne portent plus les montants épars", () => {
+  // Écran : plus de bloc « Manque à gagner », plus de cartouches en euros
+  // concurrents de la cascade.
+  assert.ok(!/\{\{ magRows \}\}/.test(INDEX_HTML) && !/list="\{\{ magRows \}\}"/.test(INDEX_HTML),
+    'le tableau « manque à gagner » ne doit plus être rendu à l\'écran');
+  assert.ok(!/\{\{ kpiAmortisseur\./.test(INDEX_HTML),
+    '« Réserve mobilisée » est devenu un terme de la cascade, plus un cartouche');
+  assert.ok(!/\{\{ kpiSoldeReserve\./.test(INDEX_HTML),
+    'le solde investissement/réserve est devenu deux termes de la cascade à l\'écran');
+  assert.ok(!/\{\{ kpiInvestTotal\./.test(INDEX_HTML),
+    '« investissement brut » est devenu le total de son propre tableau, plus un KPI concurrent');
+  // Fiche d'audit : les deux entrées non recomposables ont disparu, la cascade
+  // les remplace.
+  const rows = INDEX_HTML.slice(INDEX_HTML.indexOf('out.printKpiRows = ['));
+  assert.ok(!/lib: 'Charges évitées en transition'/.test(rows),
+    "« Charges évitées » retirée de la fiche : non recomposable avec le différentiel");
+  assert.ok(/printCascadeRows/.test(rows),
+    'les quatre termes de la cascade doivent alimenter la fiche');
+  assert.ok(/Cascade — /.test(INDEX_HTML),
+    'chaque terme figure sur la fiche avec sa formule');
+});
+
+test('C5 — hors cascade : la réserve en kg/ha et le point bas restent séparés', () => {
+  // Ce ne sont pas des termes d'une somme : l'un est physique, l'autre un
+  // extremum. Ils doivent rester visibles, mais hors du tableau qui s'additionne.
+  assert.ok(/\{\{ kpiReserveHorizon\.lib \}\}/.test(INDEX_HTML),
+    "la réserve à l'horizon reste affichée");
+  assert.ok(/\{\{ kpiPointBas\.lib \}\}/.test(INDEX_HTML),
+    'le point bas de trésorerie reste affiché');
+  // Aucun des deux n'est une ligne de cascadeRows.
+  const idsCascade = ['investissement', 'reserve', 'recettes', 'charges'];
+  const MOTEUR = require('fs').readFileSync(path.join(__dirname, '..', 'moteur-oad.js'), 'utf8');
+  const bloc = MOTEUR.slice(MOTEUR.indexOf('function cascadeDifferentielle'));
+  const corps = bloc.slice(0, bloc.indexOf('\n}'));
+  for (const mot of ['pointBas', 'creux', 'stockHa', 'reserveHorizon']) {
+    assert.ok(!new RegExp(mot).test(corps),
+      `« ${mot} » ne doit pas entrer dans la cascade : ce n'est pas un terme d'une somme`);
+  }
+  assert.strictEqual(idsCascade.length, 4);
+});
+
+// ----------------------------------------------------------------------
+// Section 35 — chantier C7 : bloc « hypothèses non modélisées » sur la fiche
+// d'audit, et robustesse de l'année du creux de réserve.
+//
+// Une fiche d'audit qui ne dit pas ce qu'elle NE calcule PAS n'est pas
+// auditable : le lecteur ne peut pas savoir où s'arrête la garantie.
+// ----------------------------------------------------------------------
+
+section("35. Hypothèses non modélisées et robustesse de tMin (chantier C7)");
+
+test('C7 — tMin robuste', () => {
+  // L'ancienne écriture était `kg.find(r => r.stockHa === stockMin).t`, une
+  // ÉGALITÉ DE FLOTTANTS. On rejoue ici la logique retenue (reduce sur le
+  // minimum) sur une série comportant des valeurs très proches, dont deux que
+  // l'arithmétique flottante ne rend pas exactement égales à leur propre
+  // minimum recalculé.
+  const creuxDe = (serie) => serie.reduce((min, r) => (r.stockHa < min.stockHa ? r : min), serie[0]);
+
+  // (a) Cas nominal : le minimum est unique et bien identifié.
+  const s1 = [9000, 7000, 4514.333333, 4514.333334, 6000, 8000].map((v, t) => ({ t, stockHa: v }));
+  const c1 = creuxDe(s1);
+  assert.strictEqual(c1.t, 2, "l'année du minimum doit être 2");
+  assertClose(c1.stockHa, 4514.333333, 1e-9);
+
+  // (b) Valeurs très proches (écart au dernier bit) : aucune exception, et
+  //     l'année rendue est bien celle du plus petit.
+  const base = 0.1 + 0.2;                 // 0.30000000000000004
+  const s2 = [1, base, 0.3, base, 2].map((v, t) => ({ t, stockHa: v }));
+  const c2 = creuxDe(s2);
+  assert.strictEqual(c2.t, 2, '0,3 est strictement inférieur à 0.1 + 0.2 : année 2');
+
+  // (c) Ex æquo exacts : la PREMIÈRE occurrence est retenue (comportement
+  //     stable et documenté, identique à celui de l'ancien `find`).
+  const s3 = [5, 3, 3, 9].map((v, t) => ({ t, stockHa: v }));
+  assert.strictEqual(creuxDe(s3).t, 1, 'en cas d\'ex æquo, la première année gagne');
+
+  // (d) Le cas qui cassait l'ancienne écriture : un minimum recalculé par une
+  //     autre voie (ici une somme flottante) n'est pas bit-à-bit égal à la
+  //     valeur présente dans la série. `find` rendrait undefined, puis lèverait.
+  const serieArrondie = [0.7, 0.1 + 0.2 + 0.4, 0.9].map((v, t) => ({ t, stockHa: v }));
+  const minRecalcule = Math.min(...serieArrondie.map(r => r.stockHa));
+  const parEgalite = serieArrondie.find(r => r.stockHa === (0.1 + 0.2 + 0.4 + 0) * 1.0000000000000002);
+  assert.strictEqual(parEgalite, undefined,
+    'démonstration : une égalité de flottants peut ne rien trouver');
+  // …alors que le reduce, lui, rend toujours une ligne.
+  const c4 = creuxDe(serieArrondie);
+  assert.ok(c4 && typeof c4.t === 'number', 'le reduce rend toujours une ligne valide');
+  assertClose(c4.stockHa, minRecalcule, 1e-12);
+
+  // (e) La vue utilise bien cette écriture, plus l'égalité de flottants.
+  //     On lit le CODE sans les commentaires : celui du chantier C7 cite
+  //     volontairement l'ancienne expression pour expliquer ce qui la remplace.
+  assert.ok(!/find\(r => r\.stockHa === stockMin\)/.test(CODE_SANS_COMMENTAIRES),
+    "l'égalité de flottants doit avoir disparu du code de index.html");
+  assert.ok(/reduce\(\s*\r?\n?\s*\(min, r\) => \(r\.stockHa < min\.stockHa \? r : min\)/.test(INDEX_HTML),
+    'le minimum et son année doivent être trouvés par comparaison, en un seul passage');
+});
+
+test("C7 — la fiche d'audit porte les six omissions structurantes", () => {
+  const i = INDEX_HTML.indexOf('out.printLimitesRows = [');
+  assert.ok(i > 0, 'le bloc doit exister dans le script');
+  const bloc = INDEX_HTML.slice(i, INDEX_HTML.indexOf('];', i));
+  const attendus = [
+    'Aucune actualisation.',
+    "Aucune valeur terminale d'actif.",
+    'Aucun coût de financement.',
+    'Aucun échéancier de paiement.',
+    'Prix du raisin unique et constant.',
+    'Rendement butoir non modélisé.'
+  ];
+  for (const titre of attendus) {
+    assert.ok(bloc.includes(titre), `omission manquante sur la fiche : « ${titre} »`);
+  }
+  // Exactement six, ni plus ni moins : le chantier les énumère.
+  const nb = (bloc.match(/\{ titre:/g) || []).length;
+  assert.strictEqual(nb, 6, 'six omissions, telles qu\'énumérées par le chantier C7');
+  // …et le bloc est rendu par le template de la fiche d'audit.
+  assert.ok(/list="\{\{ printLimitesRows \}\}"/.test(INDEX_HTML),
+    'le bloc doit être rendu dans la sortie « fiche d\'audit »');
+  const feuille = INDEX_HTML.slice(INDEX_HTML.indexOf('class="print-sheet"'));
+  assert.ok(feuille.indexOf('{{ printLimitesRows }}') > 0,
+    "il doit se trouver dans la feuille d'audit, pas dans la remise au vigneron");
+});
+
+test("C7 — l'échéancier est mentionné avec ses valeurs de campagne, datées", () => {
+  // Point 4 : obligatoire, parce que le point bas de trésorerie est présenté
+  // dans un contexte de financement. Sans lui, le lecteur croit lire une
+  // trésorerie datée alors que le modèle raisonne en année pleine.
+  const i = INDEX_HTML.indexOf('out.printLimitesRows = [');
+  const bloc = INDEX_HTML.slice(i, INDEX_HTML.indexOf('];', i));
+  assert.ok(/année pleine/.test(bloc), 'la convention de temps doit être dite explicitement');
+  assert.ok(/25 %/.test(bloc) && /2 200 kg\/ha/.test(bloc) && /5 décembre/.test(bloc),
+    "l'échéancier 2026 doit être cité : 25 % du volume commercialisable au 5 décembre");
+  assert.ok(/à revérifier à chaque campagne/.test(bloc),
+    'une valeur annuelle doit porter son avertissement de péremption');
+  assert.ok(/15 500 kg\/ha|RENDEMENT_BUTOIR_2026/.test(bloc + INDEX_HTML.slice(Math.max(0, i - 400), i)),
+    'le rendement butoir 2026 doit être cité avec sa valeur');
+});
+
+test("C7 — le bloc ne promet aucun module de financement", () => {
+  const i = INDEX_HTML.indexOf('out.printLimitesRows = [');
+  const bloc = INDEX_HTML.slice(i, INDEX_HTML.indexOf('];', i));
+  // Il dit ce qui n'est pas fait ; il n'annonce pas que ce sera fait.
+  for (const mot of ['prochainement', 'à venir', 'sera ajouté', 'future version', 'bientôt']) {
+    assert.ok(!new RegExp(mot, 'i').test(bloc),
+      `le bloc constate une limite, il ne promet rien : « ${mot} »`);
+  }
 });
 
 // ----------------------------------------------------------------------
