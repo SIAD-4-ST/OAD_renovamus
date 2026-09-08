@@ -62,6 +62,7 @@ chiffrée se met à jour en continu dans la colonne de droite.
     - [19bis. Journal d'arbitrages — accueil, simplification de l'interface, deux corrections](#19bis-journal-darbitrages--accueil-simplification-de-linterface-deux-corrections)
     - [19ter. Journal d'arbitrages — session du 01/09/2026](#19ter-journal-darbitrages--session-du-01092026)
     - [19quater. Journal d'arbitrages — prompt B9 : assiette de surface (registre vs production)](#19quater-journal-darbitrages--prompt-b9--assiette-de-surface-registre-vs-production)
+    - [19quinquies. Journal d'arbitrages — refonte du temps 3 : six thèmes, un axe d'années (08/09/2026)](#19quinquies-journal-darbitrages--refonte-du-temps-3--six-thèmes-un-axe-dannées-08092026)
 20. [Pour aller plus loin](#20-pour-aller-plus-loin)
 21. [Recette humaine — contrôles non automatisables](#21-recette-humaine--contrôles-non-automatisables)
 
@@ -372,6 +373,12 @@ partagent le même axe de 11 colonnes d'année — phases de la parcelle, stock 
 réserve, trésorerie cumulée. C'est le cœur de la refonte : le temps était
 partout dans l'outil et n'était jamais dessiné.
 
+> **Révisé le 08/09/2026 (§18bis, §19quinquies).** La frise porte désormais
+> **six pistes** — phase, stock de réserve, déblocage, blocage, investissements,
+> entretien — et la trésorerie cumulée n'en fait plus partie. Le principe du
+> prompt 7 est inchangé : un seul axe de temps, toutes les échelles alignées
+> dessus, et les points de courbe au centre de leur colonne.
+
 **Les cinq blocs deviennent cinq onglets** (`role="tablist"`, navigation aux
 flèches, `state.ongletResultat` hors instantané) : « Coût, poste par poste »,
 « Réserve individuelle », « Main d'œuvre et charges », « Ce qui est replanté »,
@@ -387,10 +394,30 @@ hypothèses de comparaison et le manque à gagner restent hors onglets.
 > L'appariement a été résolu **par libellé** : un onglet doit dire ce qu'il
 > contient.
 
+> ⚠️ **Annulé le 08/09/2026 (§19quinquies).** Les cinq onglets ont été
+> **supprimés**, avec `state.ongletResultat` et leur navigation clavier : ils
+> rangeaient l'écran par bloc de code et n'en montraient qu'un à la fois. Le
+> contenu est réparti par **thème** — six cartes, une par piste de la frise —
+> et l'écran se parcourt désormais par **année**, via l'axe de la frise
+> (`state.anneeFrise`). Les deux paragraphes ci-dessus sont conservés pour
+> l'historique : ils décrivent l'état du 07/09/2026, plus l'écran actuel.
+
 **Les graphiques par défaut, les tableaux repliés.** `stockChartOuvert` et
-`ageChartOuvert` démarrent à `true`, leurs boutons de repli conservés et
+`ageChartOuvert` démarraient à `true`, leurs boutons de repli conservés et
 retournés en « Masquer ». En regard, tout volet de détail long annonce dans son
 en-tête ce qu'il contient et le total de sa colonne principale.
+
+> **Suppression du 08/09/2026.** Le bloc « Ce que le renouvellement produit »
+> a été retiré du temps 3, et les deux graphiques qu'il portait avec lui :
+> `chartStock`, `chartAge`, leurs états (`stockChartOuvert`,
+> `ageChartOuvert`), leurs boutons de repli et les trois KPI physiques
+> (`kpiEcartAge`, `kpiReserveHorizon`, `kpiReserveMin`) n'existent plus dans
+> `index.html`. Le paragraphe ci-dessus est conservé pour l'historique. La
+> seconde moitié — « tout volet de détail long annonce ce qu'il contient » —
+> reste en vigueur. Ce que le bloc portait et qui **reste à l'écran** : la
+> réserve à l'horizon et son plancher, dans la phrase de synthèse
+> (`reserveHorizonTxt` puis `stockMinTxt`) et sur la fiche d'audit ; l'écart
+> d'âge, dans le chiffre de tête `teteAge` et sur la fiche d'audit.
 
 ### Lot 1c — le parcours en trois temps (prompts 10 à 14)
 
@@ -511,14 +538,26 @@ l'ensemble des champs à tout moment.
 |---|---|---|---|
 | 1 | **La parcelle** | *Votre exploitation* + *La parcelle désignée* | Registre parcellaire (bandeau replié, importable, corrigeable et complétable ligne à ligne — §6bis), surface totale et âge moyen **dérivés du registre**, VolCo, prix du raisin. Puis la **géométrie de la parcelle** avec son **schéma dessiné pendant la saisie** (§16) : surface arrachée (du registre), écart entre rangs, écart entre pieds, nombre de rangs — seuls champs saisis ; longueur de rang, densité, pieds à planter, conformité des écartements et **conformité de la densité aux bornes AOC** en sont déduits, jamais saisis. Puis âge, taux de pieds manquants et **régime de faire-valoir**, tous trois **dérivés du registre** (§6ter), et rendement estimé. |
 | 2 | **Le projet** | *Quatre décisions, puis les références* (§4bis) | **Quatre cartes de décision**, chacune portant son propre dessin : durée de repos du sol (trois frises), année de pleine production (profil de montée en charge), palissage et conduite dérivés de la géométrie du temps 1 (§14, huit lignes en barres), entretien de la transition (bande de durées B.1 repos / B.2 plantier). Puis les **investissements ponctuels** (arrachage et préparation, plants, arrosage du plantier) et le bloc **Références** — variété plantée (11 options, des trois cépages principaux aux variétés VIFA) et porte-greffe, arbre d'aide au choix (calcaire / profondeur / drainage), table des clones de la variété retenue (informatif, §15). Les **tarifs** de palissage et de protection sont dans le panneau Hypothèses, pas ici : ce sont des références sourcées, pas des choix de projet. |
-| 3 | **La trajectoire** | *Résultats* | **Trois chiffres de tête** en 36 px, puis la **frise de trajectoire** (§18bis), puis le bandeau climatique non repliable, les deux boutons d'impression, la synthèse rédigée et les réglages d'affichage (vue de faire-valoir, mode main d'œuvre, test de résistance). Le bloc « Ce que le renouvellement produit » garde les KPI physiques et les deux graphiques, **affichés par défaut**. Le détail descend dans **cinq onglets** (§3ter). Hors onglets, en bas : annexe technique (détail annuel), volet « hypothèses de comparaison » portant `declinSQ`, tableau du manque à gagner. |
+| 3 | **La trajectoire** | *Résultats* | **Trois chiffres de tête** en 36 px, puis la **frise de trajectoire à six pistes** (§18bis) et le panneau **« Année N »** qui donne les six chiffres de l'année retenue sur l'axe. Puis le bandeau climatique non repliable, les deux boutons d'impression, la synthèse rédigée et les réglages d'affichage (vue de faire-valoir, mode main d'œuvre, test de résistance). *(Le bloc « Ce que le renouvellement produit » — trois KPI physiques et deux graphiques repliables — a été retiré le 08/09/2026 : il doublonnait les chiffres de tête et la carte de thème « Réserve ».)* Le détail est rangé par **thème** : six cartes de synthèse (une par piste, avec son total sur l'horizon et trois à cinq lignes de détail), puis le détail du thème 5 (investissement poste par poste) et du thème 6 (régimes de travail et main d'œuvre), une bande compacte de récapitulatif technique, et la **matrice annuelle par thème** dans son volet repliable — cliquer une ligne y sélectionne l'année. |
+
+> **Refonte du temps 3 (08/09/2026), §18bis et §19ter.** Les **cinq onglets**
+> ont disparu : ils rangeaient l'écran par bloc de code et n'en montraient
+> qu'un à la fois. La **trésorerie cumulée** est sortie de l'écran — piste de
+> la frise, point bas, différentiel, cascade, et les phrases de synthèse qui
+> les commentaient. Le volet « hypothèses de comparaison » est parti avec
+> elles : `declinSQ` reste dans `state.v` et dans `inp` (le moteur le lit pour
+> bâtir `sc.reference`), mais n'est plus saisissable — la fiche d'audit en
+> donne la valeur, marquée **NON SAISISSABLE**. `state.ongletResultat` est
+> remplacé par `state.anneeFrise`, également hors instantané `localStorage`.
 
 La colonne de droite (`<aside>`, « Synthèse en continu ») est masquée pendant
 qu'on décrit la parcelle (temps 1) et réapparaît dès le temps 2
 (`syntheseVisible = step > 0`) : elle reprend un sous-ensemble des mêmes
 résultats (surface, densité, pieds à planter, conformité AOC, investissement,
-réserve mobilisée, solde investissement/réserve, tension de trésorerie, réserve minimale) et
-propose un raccourci direct vers le temps 3.
+réserve mobilisée, solde investissement/réserve) puis, sous le surtitre
+**RÉSERVE** — anciennement `RISQUE` —, deux grandeurs physiques : la réserve
+minimale de la transition et ce que l'arrachage a **débloqué** sur la période.
+Elle propose un raccourci direct vers le temps 3.
 
 ### 4bis. Le temps 2 — une décision par carte
 
@@ -1087,9 +1126,10 @@ navigateur, et un bandeau le rappelle à l'utilisateur.
 > ce n'est pas une donnée de simulation. Un instantané écrit avant ce prompt,
 > ou porteur d'une valeur inconnue, retombe sur le **sombre**, désormais le
 > défaut : seule la valeur `clair` explicitement enregistrée rend l'outil clair. Ce qui n'entre
-> toujours PAS dans l'instantané : l'étape courante, l'onglet de résultats, les
-> volets ouverts ou repliés, le panneau Hypothèses, le registre replié — ce
-> sont des états de navigation.
+> toujours PAS dans l'instantané : l'étape courante, l'année retenue sur la
+> frise du temps 3 (`anneeFrise`, qui a remplacé `ongletResultat` le
+> 08/09/2026), les volets ouverts ou repliés, le panneau Hypothèses, le
+> registre replié — ce sont des états de navigation.
 
 **Étape 1 — agrégation exploitation.** `OAD.agregerRegistreExploitation(registreRows,
 campagne)` (`moteur-oad.js`) renvoie
@@ -2527,6 +2567,18 @@ entrée les indexe à un seul endroit, datées, pour la traçabilité de la
 note elle-même — elle ne remplace aucun des journaux détaillés existants
 (voir consigne « ne pas supprimer l'historique »).
 
+> **Suite, 08/09/2026 — refonte du temps 3 (§19quinquies).** La décision 1
+> ci-dessous (« contre-factuel silencieux ») a connu deux mouvements
+> successifs : le chantier C4 lui avait rendu **une ligne** à l'écran — un
+> point de référence arithmétique, pas un scénario configurable —, puis la
+> refonte du temps 3 a retiré cette ligne et la cascade de C5 avec elle. Le
+> contre-factuel redevient donc **entièrement silencieux à l'écran**, et
+> `declinSQ` n'est plus saisissable. Ni `OAD.differentielTresorerie` ni
+> `OAD.cascadeDifferentielle` ne sont supprimées : elles restent exportées,
+> testées et marquées `@deprecated`. Un chantier ultérieur ne doit rétablir
+> sur le temps 3 **ni piste de trésorerie, ni cascade différentielle** — le
+> détail de l'arbitrage et de ce qu'il écarte est en §19quinquies.
+
 **1. Contre-factuel silencieux.** Le statu quo est conservé en référence
 interne (`sc.statuquo`/`sc.reference`, `moteur-oad.js`) ; son exposition à
 l'écran est supprimée. Motif : les différentiels de l'écran 5 (manque à
@@ -3156,9 +3208,9 @@ teinté, effets physiques non monétisés) :
 | — théorique | `reserveTheo = volSortieArr × surfParc × nbSortie × prixKg` | (cité dans la phrase de synthèse) |
 | Point bas de trésorerie | `creuxAbs = min_t arrParcelle_cum[t]`, avec `arrParcelle[t] = venteRaisinParcelle[t] + cashRI[t] − coutsParcelle[t]` (vue « Ensemble ») réparti via `OAD.repartir()` en neutralisant le flux du reste (`venteRaisinReste`/`coutsReste` à 0) pour les vues Part exploitant/propriétaire — trésorerie cumulée **absolue de la parcelle seule** (pas relative au statu quo, pas noyée dans le revenu du reste de l'exploitation), sur la vue faire-valoir active | **Hors cascade**, sous le trait : c'est un **extremum**, pas un cumul — il ne s'additionne à rien |
 | Investissement net de la réserve mobilisée | `OAD.soldeInvestissementReserve(sc.arrachage).solde = invest − reserveMobilisee`, **signé, sans plancher** (chantier C3 — l'ancien `max(0, …)` écrasait à zéro le cas dominant). Cas négatif : « réserve mobilisée au-delà de l'investissement », jamais « excédent » ni « gain » — c'est un déstockage | Chiffre de tête (`teteEffort`) et **fiche d'audit** ; le cartouche d'écran est devenu deux termes de la cascade (chantier C5) |
-| Réserve à l'horizon (kg/ha) | `OAD.reserveHorizon(sc.arrachage, sc.reference, horizon)` → `{ arrachageKgHa, referenceKgHa, ecartKgHa }`, lus sur `stockHa` à `t = horizon`. Contrepartie **physique** de la monétisation de la réserve, en kg/ha, **jamais convertie en euros** | **Hors cascade**, mais rendue immédiatement sous elle — adjacence non négociable (C3, déplacée sur la cascade par C5). Également en tête d'écran, dans « ce que le renouvellement produit » |
-| Réserve minimale en transition | `stockMin = min_t sc.arrachage.kg[t].stockHa`, alerte si `< 4000` kg/ha (`seuilReserve`) | Physique — toujours visible |
-| Écart d'âge à l'horizon | `trajAge = OAD.trajectoireAge(inp)` ; `gainAgeHorizon = trajAge.statuquo[horizon] − trajAge.arrachage[horizon]` ; contrepartie énoncée dans la même phrase (« rendement à reconstruire durant la transition ») ; détail complet en trajectoire dans le graphique associé (§18) | Physique — toujours visible |
+| Réserve à l'horizon (kg/ha) | `OAD.reserveHorizon(sc.arrachage, sc.reference, horizon)` → `{ arrachageKgHa, referenceKgHa, ecartKgHa }`, lus sur `stockHa` à `t = horizon`. Contrepartie **physique** de la monétisation de la réserve, en kg/ha, **jamais convertie en euros** | **Hors cascade** — adjacence non négociable (C3), déplacée sur la cascade par C5 puis, la cascade et le bloc « ce que le renouvellement produit » ayant tous deux quitté l'écran, sur la **phrase de synthèse** du temps 3, où elle précède immédiatement le plancher de la transition. Également sur la fiche d'audit, sous le solde signé |
+| Réserve minimale en transition | `stockMin = min_t sc.arrachage.kg[t].stockHa`, alerte si `< 4000` kg/ha (`seuilReserve`) | Physique — dans la phrase de synthèse (immédiatement après la réserve à l'horizon), sur la bande de récapitulatif technique et sur la fiche d'audit. Le cartouche `kpiReserveMin` a disparu avec le bloc « ce que le renouvellement produit » (08/09/2026) |
+| Écart d'âge à l'horizon | `trajAge = OAD.trajectoireAge(inp)` ; `gainAgeHorizon = trajAge.statuquo[horizon] − trajAge.arrachage[horizon]` ; contrepartie énoncée dans la même phrase (« rendement à reconstruire durant la transition ») ; la contrepartie est énoncée dans la même phrase | Physique — chiffre de tête `teteAge` et fiche d'audit. Le cartouche `kpiEcartAge` et le graphique de trajectoire d'âge ont disparu avec le bloc « ce que le renouvellement produit » (08/09/2026) |
 
 `chargesEntretien` renvoie `{ parcelle, reste }` (§11) : les KPI dérivés
 de charges ne lisent que `.parcelle`, qui seule porte l'écart de phase
@@ -3285,7 +3337,20 @@ boutons, deux publics**.
 | Sortie | Bouton | Contenu | Couleur |
 |---|---|---|---|
 | Remise | « Remettre au vigneron » | **une page** : identification de la parcelle et date, les trois chiffres de tête, la frise de trajectoire, la synthèse, et en pied les limites de l'outil | conservée |
-| Audit | « Fiche d'audit » | la fiche exhaustive, inchangée : hypothèses (`printInpRows`), KPI avec formule (`printKpiRows`), détail annuel (`printDetailArr`) | monochrome |
+| Audit | « Fiche d'audit » | la fiche exhaustive : hypothèses (`printInpRows`), KPI avec formule (`printKpiRows`), détail annuel (`matriceRows`) | monochrome |
+
+> **Révisé le 08/09/2026 (§19quinquies).** Aucune des deux sorties ne porte
+> plus de trésorerie. La remise rend `friseTrajectoireImprimee`, la variante
+> **compacte** de la frise à six pistes : la feuille d'impression masque tous
+> les `button`, or l'axe des années est devenu un jeu de onze boutons — la
+> frise de l'écran y perdrait sa graduation, donc son axe de temps. Les deux
+> variantes sortent de la même fonction et du même jeu de données. La fiche
+> d'audit remplace son détail annuel de huit colonnes de moteur (dont
+> `cashNet`) par la **matrice annuelle par thème**, `out.matriceRows`,
+> construite une seule fois et partagée avec l'écran ; elle perd les trois
+> entrées de `printKpiRows` adossées aux cumuls en euros (point bas, « par
+> rapport à ne rien faire », tension max vs statu quo) ainsi que les quatre
+> lignes de cascade, et gagne la mention **NON SAISISSABLE** sur `declinSQ`.
 
 Les deux blocs vivent **au niveau du document**, hors de `<main>` : ce sont des
 pages à part entière, pas des annexes de l'écran. La sortie demandée est
@@ -3321,10 +3386,14 @@ la main avec `React.createElement('svg', …)`, méthode par méthode :
 
 - **`chart(series, opt)`** — courbes multi-séries avec grille, ligne de
   référence en pointillé (ex. plafond 10 000 kg/ha) et annotations
-  ponctuelles. Utilisé pour le graphique de stock de réserve
-  (`chartStock`), replié par défaut à l'écran depuis le chantier P6
-  (`state.stockChartOuvert`), et pour la trajectoire d'âge du vignoble
-  (`chartAge`, chantier P7, replié par défaut — `state.ageChartOuvert`).
+  ponctuelles. **Plus appelée depuis le 08/09/2026** : ses deux seuls
+  appelants — le graphique de stock de réserve (`chartStock`) et la
+  trajectoire d'âge du vignoble (`chartAge`, chantier P7) — sont partis
+  avec le bloc « ce que le renouvellement produit ». La méthode et sa
+  compagne `legendSwatch()` restent dans `index.html`, inutilisées : le
+  seul dessin de l'écran est désormais la **frise de trajectoire** (§18bis),
+  qui a son propre rendu. Un chantier ultérieur qui ajouterait une courbe
+  doit repartir de `chart()`, pas en réécrire une.
   Depuis P7, chaque série peut porter un `marker` (`'circle'`|`'square'`|
   `'triangle'`, tracé à chaque point `t`) en plus de `dash`
   (`strokeDasharray`, déjà présent mais inutilisé avant P7) : accessibilité
@@ -3350,42 +3419,121 @@ réserve, solde investissement/réserve, écart
 final avec/sans réserve) restent lisibles via les KPI et, pour le détail
 formule par formule, via la fiche imprimable (`out.printKpiRows`, §17).
 
-### 18bis. La frise de trajectoire — `friseTrajectoire()` (prompt 7)
+### 18bis. La frise de trajectoire — `friseTrajectoire()` (prompt 7, refondue le 08/09/2026)
 
-Le cœur de la refonte. Le temps est partout dans l'outil — « années 3-4 »,
-« repos », « plantier », « à 10 ans » — et n'était jamais dessiné : il se lisait
-dans six blocs séparés, chacun avec son unité (années, kilos, euros, heures).
-Il est dessiné **une seule fois**, avec les trois échelles alignées sur le même
-axe horizontal, pour que le lien de cause à effet — récolte courte, creux de
-réserve, point bas de trésorerie décalé — se voie sans être expliqué.
+Le cœur de l'écran de résultats. Le temps est partout dans l'outil — « années
+3-4 », « repos », « plantier », « à 10 ans » — et n'était jamais dessiné : il se
+lisait dans des blocs séparés, chacun avec son unité (années, kilos, euros,
+heures). Il est dessiné **une seule fois**, toutes les échelles alignées sur le
+même axe horizontal, pour que le lien de cause à effet se voie sans être
+expliqué.
 
 Construit en `React.createElement` dans `renderVals()`, pas dans le gabarit :
-les trois pistes doivent partager exactement la même géométrie de colonnes, ce
-qui suppose de la calculer une fois et de la distribuer.
+les pistes doivent partager exactement la même géométrie de colonnes, ce qui
+suppose de la calculer une fois et de la distribuer. C'est aussi pourquoi les
+couleurs de **série** y sont littérales — le gabarit, lui, n'en porte aucune
+(test §27).
 
-| Piste | Source | Rendu |
-|---|---|---|
-| Phase de la parcelle | `OAD.phasesParcelle(repos, horizon)` | bande de 38 px, segments `flexGrow` proportionnels aux durées réelles ; un segment d'une seule année affiche « an N » et garde son nom en `title` |
-| Stock de réserve | `sc.arrachage.kg[t].stockHa` — la **même** série que le graphique « trajectoire du stock » | aire `--accent-fond` + courbe `#A97F26` en SVG `viewBox="0 0 1000 88"`, `preserveAspectRatio="none"` ; échelle de 0 au **plafond de réserve** (un creux se juge par rapport au plafond, pas au maximum de la courbe) |
-| Trésorerie cumulée | `OAD.tresorerieCumulee(sc.arrachage, fv, vue, { parcelleSeule: true })` — la **même** série que le KPI « point bas » | 11 barres suspendues à la règle du haut ; quatre couleurs, dans cet ordre de priorité : retour au positif, point bas, remontée encore négative, descente |
+#### De trois pistes à six (08/09/2026)
+
+La frise portait trois pistes : phase, stock de réserve, **trésorerie cumulée**.
+Elle en porte six, une par thème, et la trésorerie n'en fait plus partie.
+
+| # | Piste | Source exacte | Unité(s) | Rendu |
+|---|---|---|---|---|
+| 1 | Phase de la parcelle | `OAD.phasesParcelle(repos, horizon)` ; `OAD.phaseParAnnee(...)` pour la phase d'une année | années | bande de 34 px, segments `flexGrow` proportionnels aux durées réelles ; un segment d'une seule année affiche « an N » et garde son nom en `title` ; le segment qui contient l'année retenue porte un liseré d'accent |
+| 2 | Stock de réserve | `sc.arrachage.kg[t].stockHa`, échelle jusqu'à `inp.plafond` | kg/ha | **inchangée** — aire `#F1E6CC` + courbe `#A97F26` en SVG `viewBox="0 0 1000 80"`, `preserveAspectRatio="none"` ; point du creux et son étiquette conservés |
+| 3 | Déblocage de réserve | `kg[t].sortieArr` ; € = `sortieArr × inp.prixKg`, **identique à** `eur[t].cashRI` ; kg/ha = `sortieArr / inp.surfParc` | kg **et** € | barres pleines `#A97F26` |
+| 4 | Bloqué en réserve | `kg[t].mise` ; part des autres parcelles = `mise × recolteReste / recolte` | kg | barres **creuses** (contour `#A97F26`), la part remplie `#F1E6CC` étant celle des autres parcelles |
+| 5 | Investissements | les mêmes postes que `out.investLignes` — arrachage en année 0, plants / palissage / protection (/ arrosage) en année `repos` ; total = `sc.arrachage.investissement` | € | barres **empilées** par poste |
+| 6 | Entretien | `OAD.heuresManuellesParAnnee('arrachage', sc.arrachage.kg, inp)` → h/ha ; total parcelle = `× inp.surfParc` | heures | barres pleines `#4C7A57` |
+
+**Unités.** Le total (parcelle) vient en premier, l'unité à l'hectare en second,
+partout où les deux ont un sens — déblocage, entretien. Le stock, lui, reste en
+kg/ha et n'est **jamais** converti en euros : c'est un stock physique, pas une
+créance (§19, chantier C3).
+
+**Une seule liste de postes d'investissement** (`POSTES_INVEST` dans
+`renderVals`) alimente le tableau « poste par poste », la carte du thème 5 et la
+piste empilée. Deux listes du même fait finissent toujours par diverger d'un
+poste ; un test vérifie que leur somme est bien `sc.arrachage.investissement`.
+
+#### Pourquoi la trésorerie cumulée sort de la frise
+
+C'est un **arbitrage, pas un oubli**, et il ne doit pas être « réparé ».
+
+Sur un horizon de 10 ans avec deux vendanges déficitaires par défaut, la
+trésorerie cumulée de la parcelle seule est négative dans la quasi-totalité des
+configurations. Lue en premier — et elle l'était, troisième piste d'une image
+qui ouvre l'écran — elle ne dit qu'une chose déjà connue : *un renouvellement
+coûte avant de rapporter*. Elle occupait le tiers inférieur de la seule image de
+l'écran pour ce message-là, et rendait les deux autres pistes secondaires.
+
+Ce qui disparaît avec elle, sur cet écran uniquement :
+
+- la troisième piste et tout ce qui l'alimentait (`treso`, `tresoTxt`,
+  `pointBasT`, les barres à quatre couleurs) ;
+- le cartouche « Point bas de trésorerie » (`kpiPointBas`) — un **extremum** de
+  cette série, qui n'a plus de série ;
+- la ligne différentielle de C4 et la cascade de C5, qui lisaient
+  `OAD.differentielTresorerie`, donc les mêmes cumuls ;
+- dans la synthèse rédigée, la tension maximale, l'absorption à l'horizon et la
+  comparaison de cumuls au statu quo — trois phrases qui commentaient une image
+  désormais absente ;
+- dans la synthèse latérale, la ligne « Tension max trésorerie » ; le surtitre
+  `RISQUE` devient `RÉSERVE` et porte deux grandeurs physiques.
+
+Ce qui **ne** disparaît **pas** : `OAD.tresorerieCumulee`,
+`OAD.differentielTresorerie` et `OAD.cascadeDifferentielle` restent exportées,
+testées et justes. Elles portent une marque `@deprecated` qui dit exactement
+cela — le calcul est conservé, c'est son affichage qui est retiré. Le garde-fou
+de la cascade (exception au-delà de 1 € d'écart) continue de les protéger.
+
+#### L'axe des années est devenu le contrôle de l'écran
+
+Les onze pastilles de la graduation sont des **boutons** (`aria-pressed`).
+L'année retenue est teintée dans chaque piste, et un panneau « Année N » donne
+ses six chiffres — phase, stock, déblocage kg + €, blocage kg dont autres
+parcelles, investissement par poste, heures + h/ha + charge de surface de la
+phase. C'est ce que la frise ne pouvait donner qu'au survol, c'est-à-dire ni au
+vidéoprojecteur ni au clavier.
+
+`state.anneeFrise` porte cette année. C'est un état de **navigation** : hors
+instantané `localStorage`, comme `step` et les volets. Il est borné à l'horizon
+à chaque rendu — un changement de paramétrage ne doit jamais laisser une
+sélection hors axe. La matrice annuelle écrit le même état : il n'y a qu'une
+seule année retenue à l'écran, jamais deux sélections concurrentes.
+
+#### Géométrie, et la variante imprimée
 
 **Les points de la courbe tombent au centre de leur colonne d'année** —
 `x = (i + 0,5) × 1000 / N` — et non à ses bords, sans quoi la courbe se
-décalerait d'une demi-colonne par rapport aux barres et à la graduation. La
-graduation reprend les mêmes colonnes `flex: 1` et le même `gap` que les
-barres.
+décalerait d'une demi-colonne par rapport aux barres et à la graduation. Les
+quatre pistes en barres partagent les mêmes colonnes `flex: 1` et le même `gap`
+que la graduation.
 
 L'annotation du creux est **hors du SVG**, dans un `div` positionné par-dessus :
 avec `preserveAspectRatio="none"`, un texte à l'intérieur serait étiré
 horizontalement.
 
 **Aucune interpolation, aucun lissage** : les valeurs tracées sont celles du
-moteur, année par année. Le creux et le point bas affichés sont donc, par
-construction, les années que la synthèse textuelle annonce.
+moteur, année par année.
+
+La sortie « remise au vigneron » rend `out.friseTrajectoireImprimee`, la
+**variante compacte** de la même frise (`d.compact`), pour deux raisons dont la
+première est un vrai piège : la feuille d'impression masque tous les `button`,
+or l'axe est devenu un jeu de onze boutons — imprimée telle quelle, la frise
+perdrait sa graduation, donc son axe de temps ; et la remise tient sur **une**
+page, ce que six pistes aux hauteurs de l'écran ne permettraient pas. Mêmes
+séries, mêmes couleurs, même fonction : les deux rendus ne peuvent pas raconter
+deux trajectoires différentes.
 
 La légende sous la frise dit la **causalité** et nomme l'aléa effectivement
-simulé — sans lui, la chaîne « récolte courte → creux de réserve → point bas de
-trésorerie » n'a pas de premier maillon.
+simulé — sans lui, la chaîne « récolte courte → creux de réserve » n'a pas de
+premier maillon. Une seconde légende, en pastilles, nomme les couleurs de série
+que le lecteur doit pouvoir rattacher à un poste : les phases et les postes
+d'investissement. Les pistes à une seule teinte portent leur nom dans le libellé
+de la piste — une pastille n'y ajouterait rien.
 
 ---
 
@@ -3746,6 +3894,13 @@ A1-A3 / B1-B7 / C1-C3. Pour chacune : ce qu'elle produit, et **ce qu'elle
 écarte** — une décision dont on n'a pas noté l'alternative se rediscute à
 l'infini.
 
+> **Révisions ultérieures.** L'arbitrage 8 (test de résistance climatique actif
+> par défaut, deux vendanges déficitaires) est **maintenu** — c'est lui, en
+> revanche, qui rend la trésorerie cumulée négative dans la quasi-totalité des
+> configurations, et donc lui qui a motivé son retrait de l'écran du temps 3 le
+> 08/09/2026 (§19quinquies). Le paramétrage par défaut n'a pas changé : c'est
+> ce qu'on en montre qui a changé.
+
 | # | Décision | Conséquence | Ce que ça écarte |
 |---|---|---|---|
 | 1 | `localStorage` autorisé — persistance par **instantané** de `state.v` et `state.registreRows`, pas par diff | Les saisies survivent au rechargement ; bouton « Effacer mes données » dans l'en-tête ; `CLAUDE.md` mis à jour **dans le même commit** | Écarte la persistance par diff, qui aurait exigé une clé stable par ligne de registre — donc un appariement fragile après import. Écarte aussi tout stockage distant : rien ne sort du navigateur |
@@ -3881,6 +4036,82 @@ dont **toute** la surface serait en repos ou en plantier donne une assiette
 nulle, donc des résultats à zéro — le moteur ne divise pas par la surface
 (gardes `surfProd === 0 ? 0 : …`), mais l'écran 1 ne déclenche pas d'état
 bloquant pour autant, son test portant sur `surfTot`.
+
+### 19quinquies. Journal d'arbitrages — refonte du temps 3 : six thèmes, un axe d'années (08/09/2026)
+
+**Diagnostic.** Le temps 3 se lisait en **cinq onglets** — « Coût, poste par
+poste », « Réserve individuelle », « Main d'œuvre et charges », « Ce qui est
+replanté », « Rajeunissement du vignoble » — dont un seul était visible à la
+fois. Ces intitulés reprenaient l'ordre des **blocs de code**, pas une question
+que l'utilisateur se pose ; rien à l'écran ne disait qu'il restait quatre
+onglets fermés, et un conseiller ne peut pas expliquer une trajectoire en les
+dépliant l'un après l'autre.
+
+Au-dessus d'eux, la frise portait trois pistes, dont la troisième était la
+**trésorerie cumulée de la parcelle seule**. Sur dix ans avec deux vendanges
+déficitaires par défaut — le paramétrage par défaut, arbitrage 8 du prompt B3 —
+cette courbe est négative dans la quasi-totalité des configurations. Elle
+occupait le tiers inférieur de la seule image de l'écran pour dire une chose
+déjà connue : *un renouvellement coûte avant de rapporter*. Autour d'elle
+s'étaient accumulés un cartouche « point bas », une ligne différentielle (C4) et
+une cascade de quatre termes (C5), tous adossés aux mêmes cumuls en euros.
+
+**Décision.** Le temps 3 est réorganisé par **THÈME** et par **ANNÉE**. Six
+pistes sur un axe de onze colonnes — phase, stock de réserve, déblocage,
+blocage, investissements, entretien —, six cartes de synthèse, un panneau
+« Année N », une matrice années × thèmes. La trésorerie cumulée sort de l'écran.
+
+| # | Décision | Conséquence | Ce que ça écarte |
+|---|---|---|---|
+| 1 | **La trésorerie cumulée sort de la frise** et de l'écran | Six pistes thématiques à sa place ; la piste du stock de réserve est reprise **inchangée** (géométrie, point du creux, étiquette) | Écarte le maintien d'une courbe juste mais illisible en tête d'écran. Écarte aussi de la remplacer par une trésorerie « annuelle » ou « lissée » : le problème n'était pas la forme du cumul, c'était qu'un flux financier négatif ouvre l'écran |
+| 2 | Le **point bas de trésorerie** (`kpiPointBas`) est retiré | Le bloc « ce que le renouvellement produit » ne porte plus que des grandeurs physiques | Écarte de le garder « au cas où » : c'est l'extremum d'une série qui n'est plus affichée. Un extremum sans sa série n'est pas interprétable |
+| 3 | La **ligne différentielle (C4)** et la **cascade (C5)** quittent l'écran et la fiche d'audit | Le seul chiffre financier de tête reste l'investissement net de la réserve | N'annule pas l'arbitrage C4 sur son terrain : un simulateur d'impact a besoin d'un point de référence arithmétique. Ce qui a changé, c'est l'écran — un cumul différentiel sur dix ans n'a pas de colonne où se poser dans une lecture par année |
+| 4 | `OAD.tresorerieCumulee`, `OAD.differentielTresorerie` et `OAD.cascadeDifferentielle` **restent exportées et testées**, marquées `@deprecated` | Les tests de moteur des §22, §33 et §34 sont conservés en entier, garde-fou de la cascade compris | Écarte la suppression pure et simple : les fonctions sont justes, et rien ne dit qu'un futur écran (dossier de financement, export comptable) n'en aura pas besoin. Ce qui est retiré est l'**affichage**, pas le calcul |
+| 5 | Le volet **« Hypothèses de comparaison »** est retiré ; `declinSQ` n'est plus saisissable | La clé reste dans `state.v` et dans `inp` — le moteur la lit pour bâtir `sc.reference`, dont dépend `reserveHorizon`, encore affichée. La fiche d'audit en donne la valeur, marquée **NON SAISISSABLE** | Écarte de supprimer la clé : `sc.reference` en dépend. Écarte aussi de laisser le champ : un réglage dont on ne voit plus l'effet invite à régler au hasard |
+| 6 | Les **cinq onglets** disparaissent | Contenu réparti par thème : coût poste par poste → thème 5, réserve → thèmes 2 et 3, main d'œuvre → thème 6, récapitulatif technique → une bande compacte, rajeunissement → le troisième chiffre de tête, qui le portait déjà dans sa légende | Écarte de convertir les onglets en volets repliables : ç'aurait été le même défaut avec un autre habillage. Écarte aussi d'y ajouter un sixième onglet par thème |
+| 7 | L'**axe des années devient le contrôle** de l'écran : onze boutons `aria-pressed`, un panneau « Année N », des lignes de matrice cliquables | `state.anneeFrise` remplace `state.ongletResultat`, également **hors instantané `localStorage`** | Écarte le survol comme seul accès au détail annuel : un `title` n'existe ni au vidéoprojecteur ni au clavier. Écarte deux sélections concurrentes — l'axe et la matrice écrivent le même état |
+| 8 | Le tableau « mode technique » devient la **matrice annuelle par thème**, partagée par l'écran et la fiche d'audit | Une seule construction (`out.matriceRows`), deux rendus | Écarte de garder les huit colonnes de moteur (surface productive, VolCo vendu, sortie pour insuffisance, cash net) : elles disaient le calcul, pas la trajectoire, et la dernière était le flux même que ce chantier retire |
+| 9 | Le sélecteur de **faire-valoir** est rebranché sur la réserve débloquée | Le coefficient est **lu sur `OAD.repartir`** par différence entre un euro de `cashRI` et zéro — `repartir` est affine en `cashRI`, cette différence *est* son coefficient | Le sélecteur ne pilotait plus que des séries retirées : il serait devenu un bouton qui ne change rien, ce qui est pire qu'un contrôle absent. Écarte de recopier une table de régimes dans la vue — elle divergerait le jour où `repartir` changerait |
+| 10 | La **remise au vigneron** rend une variante **compacte** de la même frise (`d.compact`) | Axe en texte simple, hauteurs réduites d'un tiers | La feuille d'impression masque tous les `button` : l'axe interactif y aurait perdu sa graduation, donc son axe de temps. Écarte une seconde fonction de dessin, qui divergerait de celle de l'écran |
+
+**Critère de recette, vérifié par test.** Le mot « trésorerie » n'apparaît plus
+dans le gabarit du temps 3 ni dans les deux sorties d'impression (lecture du
+gabarit **sans ses commentaires** — ceux-ci documentent volontairement ce qui a
+été retiré, et un test qui lirait le fichier brut échouerait sur sa propre
+documentation).
+
+**Ce qu'un chantier ultérieur ne doit pas « rétablir ».** Ces retraits ne sont
+pas des oublis, et le code les commente à l'endroit exact où ils ont eu lieu :
+
+- **aucune piste de trésorerie** sur la frise du temps 3, sous quelque forme
+  que ce soit — cumul, flux annuel, courbe lissée ;
+- **aucune cascade différentielle** ni ligne de différentiel cumulé sur cet
+  écran ;
+- **aucun cartouche de point bas**, qui n'est que l'extremum de la série
+  retirée ;
+- **aucune conversion de la réserve en euros** dans les thèmes 2 et 4 : le
+  stock reste physique (§19, chantier C3) ;
+- **aucune septième piste** : une piste de plus est un thème de plus, qui se
+  décide, il ne s'ajoute pas ;
+- **aucun champ de saisie du contrefactuel** : `declinSQ` garde sa valeur par
+  défaut et sa mention sur la fiche d'audit.
+
+**Tests ajoutés** (§36) : la somme des postes d'investissement par année égale
+`sc.arrachage.investissement` (sur quatre paramétrages, poste à poste et
+colonne à colonne) ; `Σ sortieArr × prixKg` égale `Σ cashRI`, en somme **et**
+année par année ; le gabarit du temps 3 ne porte plus ni le mot « trésorerie »
+ni d'appel aux deux fonctions retirées, et la frise porte six pistes, pas sept ;
+la frise, le panneau d'année et la matrice lisent la même année retenue ;
+`phaseParAnnee` couvre les onze années sans trou et s'accorde avec
+`phasesParcelle` (vérification de la garantie du §21, sans la dupliquer).
+
+**Tests mis à jour**, avec leur motif inscrit sur place : §23 (attentes
+inversées — les onglets ont disparu), §24 (32 contrôles au lieu de 33,
+`declinSQ` excepté), §28 (la synthèse imprimée ne porte plus l'absorption ni la
+comparaison de cumuls ; la remise rend la frise compacte), §32 (la contrainte
+d'adjacence se déplace sur le bloc « ce que le renouvellement produit »), §33 et
+§34 (les tests de gabarit deviennent des verrous de non-retour ; les tests de
+moteur sont conservés intacts).
 
 ## 20. Pour aller plus loin
 

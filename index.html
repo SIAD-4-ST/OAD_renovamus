@@ -183,6 +183,45 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
 .seg-groupe{display:inline-flex;border:1px solid var(--bordure);border-radius:6px;overflow:hidden}
 .seg-btn{font-size:13.5px;padding:7px 13px;border:0;border-right:1px solid var(--bordure);cursor:pointer;white-space:nowrap}
 
+/* --- temps 3 : six thèmes sur un axe d'années (refonte du 08/09/2026) ---
+   Les blocs de l'écran de résultats répétaient le même style inline une
+   quinzaine de fois (fond, bordure, rayon, marges). Ils passent en classes,
+   comme le reste du fichier : un style écrit deux fois est une classe qui
+   n'a pas encore été nommée. Aucune couleur littérale ici non plus — les
+   teintes de série des six pistes sont choisies dans renderVals. */
+.t3{background:var(--surface-haute);border:1px solid var(--bordure);border-radius:10px;padding:20px 22px;margin:16px 0 4px;display:flex;flex-direction:column;gap:14px}
+.t3-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+/* Une carte par thème. minmax(250px, …) plutôt que 210 : les cartes portent
+   trois à cinq lignes libellé/valeur, qui se cassent en deux sous 250 px. */
+.t3-cartes{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin:16px 0 4px}
+.t3-carte{background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.t3-num{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase}
+.t3-val{font-family:'Newsreader',serif;font-size:22px;font-weight:600;line-height:1.1;margin:2px 0}
+.t3-ligne{display:flex;justify-content:space-between;gap:14px;font-size:11.5px;padding:4px 0;border-top:1px dotted var(--bordure)}
+.t3-ligne > span:last-child{font-family:'JetBrains Mono',monospace;color:var(--encre);text-align:right;white-space:nowrap}
+/* Panneau de l'année retenue : six cases, une par thème, dans l'ordre des
+   pistes de la frise. */
+.t3-an{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.t3-an-c{background:var(--accent-fond);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+/* Bloc de détail d’un thème (5 · investissements, 6 · entretien) — même
+   habillage que les autres cartes de l’écran, écrit une fois. */
+.t3-detail{background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin:20px 0}
+/* Bande de récapitulatif technique — l'ancien onglet « Ce qui est replanté »,
+   ramené à une rangée de valeurs. */
+.t3-bande{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px 22px;background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:16px 18px;margin:14px 0}
+/* Matrice années × thèmes. Une vraie table : la ligne est l'unité de lecture
+   ET la cible du clic qui sélectionne l'année, ce qu'une grille de div ne
+   sait pas faire sans réinventer une ligne. */
+.mat-t{width:100%;border-collapse:collapse;font-size:11.5px;min-width:820px}
+.mat-t th{font-size:11.5px;text-transform:uppercase;font-weight:400;color:var(--encre-3);padding:5px 6px;border-bottom:1px solid var(--bordure);text-align:right;white-space:nowrap}
+.mat-t th.l{text-align:left}
+.mat-t td{padding:5px 6px;border-bottom:1px solid var(--bordure-claire);font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap}
+.mat-t td.l{text-align:left;font-family:'Archivo',sans-serif}
+.mat-t tr.tot td{border-top:2px solid var(--encre);border-bottom:0;font-weight:600}
+.mat-t tbody tr{cursor:pointer}
+.mat-t tbody tr:hover td{background:var(--surface-basse)}
+.mat-btn{border:0;background:none;padding:0;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--encre);cursor:pointer}
+
 /* --- écrans étroits --------------------------------------------------- */
 /* La grille de champs se replie à une colonne avant la mise en page générale :
    deux colonnes de champs sous 900 px écrasent les libellés. */
@@ -514,7 +553,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px 20px;margin-bottom:12px">
                 <div><b>Temps 1 · La parcelle</b><br><span style="color:var(--encre-3)">registre, surface, âge, faire-valoir</span></div>
                 <div><b>Temps 2 · Le projet</b><br><span style="color:var(--encre-3)">cépage, densité, palissage, coûts</span></div>
-                <div><b>Temps 3 · La trajectoire</b><br><span style="color:var(--encre-3)">réserve, trésorerie, âge, fiche</span></div>
+                <div><b>Temps 3 · La trajectoire</b><br><span style="color:var(--encre-3)">réserve, déblocages, investissement, entretien</span></div>
               </div>
               <p style="margin:0 0 8px"><b>Tous les champs sont déjà préremplis</b> avec des valeurs plausibles : vous pouvez aller directement aux résultats, puis revenir affiner ce qui compte pour vous. Le calcul se refait à chaque frappe, il n'y a rien à valider.</p>
               <p style="margin:0"><b>Vos saisies sont conservées sur cet ordinateur uniquement. Rien n'est envoyé.</b> Vous les retrouverez au prochain chargement de la page ; le bouton <b>Effacer mes données</b>, en haut à droite, les remplace par les valeurs d'exemple. Le bouton <b>Lexique</b>, à côté, définit les termes de métier employés dans l'outil.</p>
@@ -1414,7 +1453,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
         <sc-if value="{{ erreurSurface }}" hint-placeholder-val="{{ false }}">
           <div style="margin:8px 0;font-size:13.5px;padding:9px 12px;border-radius:5px;background:var(--alerte-fond);color:var(--alerte)">⚠ {{ erreurSurface }}</div>
         </sc-if>
-        <h2 style="font-family:'Newsreader',serif;font-weight:600;font-size:22px;margin:4px 0 6px">Ce que représente votre projet, sur {{ horizonTxt }}</h2>
+        <h2 class="n2" style="margin:4px 0 6px">Ce que représente votre projet, sur {{ horizonTxt }}</h2>
 
         <!-- ============ TROIS CHIFFRES DE TÊTE — prompt 5 ============
              L'écran 5 commençait par un bandeau d'aléa, un bouton
@@ -1427,7 +1466,12 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
              année, un montant, une durée. Elles ne sont pas recalculées ici —
              elles viennent de `construireScenarios`, de `trajectoireAge` et de
              `anneeRetourProduction`. Le paragraphe de synthèse descend sous
-             elles : il devient leur commentaire, pas leur substitut. -->
+             elles : il devient leur commentaire, pas leur substitut.
+
+             INCHANGÉES par la refonte du 08/09/2026 : ce sont les trois seuls
+             chiffres de 36 px de l'écran, et le troisième (« Vignoble rajeuni
+             de ») porte désormais SEUL le rajeunissement, dont l'onglet dédié
+             a disparu. -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--bordure);border-radius:10px;overflow:hidden;margin:16px 0 4px">
           <div style="padding:20px 22px;background:var(--accent-fond);display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--accent-fond-bordure)">
             <div class="n4" style="text-transform:uppercase;letter-spacing:0.06em">Retour en production</div>
@@ -1446,18 +1490,54 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
           </div>
         </div>
 
-        <!-- ============ FRISE DE TRAJECTOIRE — prompt 7 ============
-             Une seule image, trois échelles, un axe de temps commun. Le
+        <!-- ============ FRISE — SIX PISTES, UN AXE (refonte 08/09/2026) ====
+             Une seule image, six échelles, un axe de temps commun. Le
              graphique est construit dans renderVals() (React.createElement) :
-             les trois pistes doivent partager exactement la même géométrie de
-             colonnes, ce qui suppose de la calculer une fois. -->
-        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:10px;padding:20px 22px;margin:16px 0 4px;display:flex;flex-direction:column;gap:14px">
-          <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+             les six pistes doivent partager exactement la même géométrie de
+             colonnes, ce qui suppose de la calculer une fois.
+
+             Un thème par piste, dans l'ordre où on les regarde : la phase de
+             la parcelle, le stock de réserve, ce qu'on en débloque, ce qu'on y
+             bloque, ce qu'on investit, ce qu'on y travaille.
+
+             CE QUI A ÉTÉ RETIRÉ ET NE DOIT PAS REVENIR : la piste de cumul en
+             euros de la parcelle seule. Sur dix ans avec deux vendanges
+             déficitaires par défaut, elle est négative dans la quasi-totalité
+             des configurations et rend le reste de l'écran illisible. Le
+             moteur la calcule toujours ; l'écran ne la montre plus.
+             Voir README §18bis / §19ter.
+
+             L'axe des années est le CONTRÔLE de l'écran : ses onze pastilles
+             sont des boutons, et le panneau juste dessous donne les six
+             chiffres de l'année retenue. -->
+        <div class="t3">
+          <div class="t3-h">
             <div class="n2">La trajectoire de la parcelle, année par année</div>
-            <div class="n4">phases, kilos et euros sur un seul axe de temps</div>
+            <div class="n4">six thèmes sur un seul axe de temps — cliquez une année de l'axe</div>
           </div>
           {{ friseTrajectoire }}
+          {{ friseLegendeSeries }}
           <div class="n4" style="max-width:88ch">{{ friseLegendeTxt }}</div>
+        </div>
+
+        <!-- Panneau de l'année retenue. Ce que la frise ne peut donner qu'au
+             survol — et qui n'existe donc ni au vidéoprojecteur ni au clavier —
+             est ici en clair, thème par thème, pour l'année sélectionnée sur
+             l'axe ou dans la matrice du bas. -->
+        <div class="t3">
+          <div class="t3-h">
+            <div class="n2">Année {{ anneeSelTxt }}</div>
+            <div class="n4">les six thèmes pour l'année retenue sur l'axe ci-dessus</div>
+          </div>
+          <div class="t3-an">
+            <sc-for list="{{ anneePanneau }}" as="ap" hint-placeholder-count="6">
+              <div class="t3-an-c">
+                <div class="t3-num">{{ ap.num }} · {{ ap.lib }}</div>
+                <div class="n3" style="font-weight:600">{{ ap.val }}</div>
+                <div class="n4">{{ ap.det }}</div>
+              </div>
+            </sc-for>
+          </div>
         </div>
 
         <!-- prompt B3 (arbitrage 8) — le test de résistance est actif PAR DÉFAUT.
@@ -1473,24 +1553,41 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
         <div style="margin:10px 0 4px">
           <button onClick="{{ imprimerRemise }}" style="font-size:13.5px;font-weight:600;padding:9px 16px;border:0;background:var(--encre);color:var(--encre-inverse);border-radius:6px;cursor:pointer">🖨 Remettre au vigneron</button>
           <button onClick="{{ imprimerAudit }}" style="font-size:13.5px;padding:9px 16px;margin-left:10px;border:1px solid var(--encre);background:var(--surface-haute);border-radius:6px;cursor:pointer;color:var(--encre)">🖨 Fiche d'audit</button>
-          <div class="n4" style="margin-top:6px;max-width:78ch">La première tient sur <b>une page</b> : identification de la parcelle, les trois chiffres de tête, la frise, la synthèse et les limites de l'outil. La seconde est la fiche exhaustive — hypothèses, KPI et formules, détail annuel.</div>
+          <div class="n4" style="margin-top:6px;max-width:78ch">La première tient sur <b>une page</b> : identification de la parcelle, les trois chiffres de tête, la frise et sa synthèse. La seconde est la fiche exhaustive — hypothèses, KPI et formules, détail annuel par thème.</div>
         </div>
 
+        <!-- Synthèse rédigée. Refonte du 08/09/2026 : la phrase ne porte plus
+             ni la tension maximale, ni l'absorption à l'horizon, ni la
+             comparaison de cumuls en euros au statu quo — les trois lisaient
+             des séries retirées de l'écran, et une phrase qui commente un
+             graphique absent ne se vérifie plus. Elle se referme sur ce qui
+             reste montré : réserve mobilisée, investissement, solde, réserve à
+             l'horizon, plancher de réserve.
+             Le MÊME fragment (out.syntheseTxt) alimente la remise au vigneron :
+             deux rédactions parallèles finiraient par diverger. -->
         <div style="background:var(--encre);color:var(--surface-basse);border-radius:10px;padding:20px 24px;margin:16px 0;font-size:13.5px;line-height:1.65">
-          Sur {{ horizonTxt }}, l'<b style="color:var(--accent-fond)">arrachage-replantation</b> est une opération de <b style="color:var(--accent-fond)">transition</b>. La réserve mobilisable — <b style="color:var(--accent-fond)">{{ reserveReelleTxt }}</b> réellement mobilisés ({{ reserveTheoTxt }} théoriques) — {{ syntheseCouvTxt }} <b style="color:var(--accent-fond)">{{ investTxt }}</b>{{ syntheseCouvSuffixTxt }}. {{ syntheseSoldeTxt }} {{ reserveHorizonTxt }} Tension de trésorerie maximale en année {{ creuxT }} (<b style="color:var(--accent-fond)">{{ creuxTxt }}</b>){{ syntheseAbsorptionTxt }}. {{ syntheseStockLeadTxt }} <b style="color:var(--accent-fond)">{{ stockMinTxt }} kg/ha</b> {{ syntheseStockTailTxt }} {{ syntheseHorizonTxt }}
+          Sur {{ horizonTxt }}, l'<b style="color:var(--accent-fond)">arrachage-replantation</b> est une opération de <b style="color:var(--accent-fond)">transition</b>. La réserve mobilisable — <b style="color:var(--accent-fond)">{{ reserveReelleTxt }}</b> réellement mobilisés ({{ reserveTheoTxt }} théoriques) — {{ syntheseCouvTxt }} <b style="color:var(--accent-fond)">{{ investTxt }}</b>{{ syntheseCouvSuffixTxt }}. {{ syntheseSoldeTxt }} {{ reserveHorizonTxt }} {{ syntheseStockLeadTxt }} <b style="color:var(--accent-fond)">{{ stockMinTxt }} kg/ha</b> {{ syntheseStockTailTxt }}
         </div>
-        <div style="font-size:11.5px;color:var(--encre-3);margin:8px 0 16px;line-height:1.5">Ordres de grandeur pédagogiques établis sur vos saisies — une décision d'investissement s'instruit avec votre conseil comptable et, le cas échéant, votre bailleur.</div>
+        <div class="n4" style="margin:8px 0 16px">Ordres de grandeur pédagogiques établis sur vos saisies — une décision d'investissement s'instruit avec votre conseil comptable et, le cas échéant, votre bailleur.</div>
 
-        <!-- Réglages d'affichage — les quatre contrôles étaient alignés en une
+        <!-- Réglages d'affichage — les trois contrôles étaient alignés en une
              seule rangée où rien ne disait lesquels changent le calcul. Ils sont
              désormais étiquetés un par un, dans une grille, sous un titre qui
-             annonce qu'ils ne modifient aucune de vos saisies. -->
+             annonce qu'ils ne modifient aucune de vos saisies.
+
+             Refonte du 08/09/2026 — le premier contrôle s'intitulait
+             « Trésorerie affichée » et ne pilotait que des séries de cumul en
+             euros, toutes retirées. Il porte son vrai nom, « Vue de
+             faire-valoir », et pilote la répartition de la réserve débloquée
+             (thème 3) : le seul montant en euros de l'écran que le régime
+             partage réellement. Un contrôle qui ne changerait rien serait pire
+             qu'un contrôle absent. -->
         <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:16px 18px;margin:14px 0 20px">
-          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:12px">Ces réglages changent <b>la façon de lire les résultats</b> ci-dessous — ils ne modifient aucune de vos saisies.</div>
+          <div class="n4" style="margin-bottom:12px">Ces réglages changent <b>la façon de lire les résultats</b> ci-dessous — ils ne modifient aucune de vos saisies.</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px 22px">
 
             <div class="field">
-              <span class="lbl">Trésorerie affichée</span>
+              <span class="lbl">Vue de faire-valoir</span>
               <div style="display:inline-flex;border:1px solid var(--bordure);border-radius:6px;overflow:hidden;width:fit-content;max-width:100%">
                 <button onClick="{{ vue1 }}" style="font-size:13.5px;padding:7px 13px;border:0;cursor:pointer;border-right:1px solid var(--bordure);background:{{ vueBg1 }};color:{{ vueFg1 }}">Ensemble</button>
                 <button onClick="{{ vueExp }}" style="font-size:13.5px;padding:7px 13px;border:0;cursor:pointer;border-right:1px solid var(--bordure);background:{{ vueBgExp }};color:{{ vueFgExp }}">Part exploitant</button>
@@ -1505,7 +1602,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
                 <button onClick="{{ moPrestataire }}" style="font-size:13.5px;padding:7px 13px;border:0;cursor:pointer;border-right:1px solid var(--bordure);background:{{ moBgExterne }};color:{{ moFgExterne }}">Prestataire</button>
                 <button onClick="{{ moFamiliale }}" style="font-size:13.5px;padding:7px 13px;border:0;cursor:pointer;background:{{ moBgFamiliale }};color:{{ moFgFamiliale }}">Familiale</button>
               </div>
-              <span class="hint">change la lecture des heures économisées, jamais la trésorerie</span>
+              <span class="hint">change la lecture des heures économisées, jamais les kilos ni l'investissement</span>
             </div>
 
             <!-- prompt B3 (arbitrage 6) — le sélecteur d'horizon 10/25 ans est
@@ -1526,100 +1623,41 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
           </div>
         </div>
 
-        <!-- ============ LECTURE PRINCIPALE — prompt B5 ============
-             Avec un horizon de 10 ans et deux vendanges déficitaires par défaut,
-             la trésorerie cumulée est négative dans la quasi-totalité des
-             configurations. Lue en premier, elle rend l'outil décourageant au
-             point d'être inutilisable, alors qu'elle ne dit qu'une chose déjà
-             connue : un renouvellement coûte avant de rapporter.
-             Ce que le renouvellement PRODUIT est physique — un vignoble plus
-             jeune, une réserve mobilisée puis reconstituée — et c'est cela qui
-             passe en tête, au niveau typographique occupé jusqu'ici par les KPI
-             financiers. Les KPI financiers ne perdent rien : ils descendent d'un
-             cran (blocs 2 et 3), avec tout leur détail. -->
-        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-left:4px solid var(--accent);border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Ce que le renouvellement produit</div>
-          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px;max-width:74ch">Les grandeurs physiques, en années et en kilos : elles ne dépendent ni du prix du raisin ni de vos charges. Le coût, lui, est juste en dessous.</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px">
-            <div style="background:var(--accent-fond);border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiEcartAge.lib }}</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--accent-encre)">{{ kpiEcartAge.val }}</div>
-              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiEcartAge.det }}</div>
-            </div>
-            <div style="background:var(--accent-fond);border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiReserveHorizon.lib }}</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiReserveHorizon.val }}</div>
-              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiReserveHorizon.det }}</div>
-            </div>
-            <div style="background:var(--accent-fond);border-radius:6px;padding:14px 16px">
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiReserveMin.lib }}</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiReserveMin.val }}</div>
-              <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiReserveMin.det }}</div>
-            </div>
-          </div>
-
-          <!-- Les deux graphiques restent repliés par défaut (prompt B5, point 3) ;
-               seul leur bouton d'ouverture remonte ici, au-dessus du bloc
-               financier. Le contenu est inchangé. -->
-          <div style="margin-top:16px;border-top:1px dotted var(--bordure);padding-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-            <button onClick="{{ toggleStockChart }}" style="font-size:11.5px;padding:7px 14px;border:1px solid var(--bordure);background:var(--surface-haute);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
-              <span>{{ stockChartLabel }}</span>
-              <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">{{ stockChartChevron }}</span>
-            </button>
-            <button onClick="{{ toggleAgeChart }}" style="font-size:11.5px;padding:7px 14px;border:1px solid var(--bordure);background:var(--surface-haute);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px">
-              <span>{{ ageChartLabel }}</span>
-              <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">{{ ageChartChevron }}</span>
-            </button>
-          </div>
-          <sc-if value="{{ stockChartOuvert }}" hint-placeholder-val="{{ false }}">
-            <div style="margin-top:12px">
-              {{ chartStock }}
-              <div style="font-size:11.5px;color:var(--encre-3);margin-top:6px">En kg/ha de surface productive. Un cumul flatteur peut cacher une réserve asséchée. Plafond 10 000 kg/ha.</div>
-            </div>
-          </sc-if>
-          <sc-if value="{{ ageChartOuvert }}" hint-placeholder-val="{{ false }}">
-            <div style="margin-top:12px">
-              {{ chartAge }}
-              <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:11.5px;margin-top:10px">
-                <sc-for list="{{ ageLegendItems }}" as="li" hint-placeholder-count="3">
-                  <span style="display:inline-flex;align-items:center;gap:6px">{{ li.swatch }}{{ li.label }}</span>
-                </sc-for>
-              </div>
-            </div>
-          </sc-if>
+        <!-- ============ SIX CARTES DE SYNTHÈSE (refonte 08/09/2026) ========
+             Elles remplacent les cinq onglets de résultats. Les onglets
+             rangeaient l'écran par BLOC DE CODE et n'en montraient qu'un à la
+             fois : un conseiller ne peut pas expliquer une trajectoire en
+             dépliant cinq onglets l'un après l'autre, et rien ne disait qu'il
+             en restait quatre. Une carte par thème, dans l'ordre des pistes,
+             toutes visibles : le total sur l'horizon, puis trois à cinq lignes
+             de détail. -->
+        <div class="t3-h" style="margin-top:24px">
+          <div class="n2">Les six thèmes, sur {{ horizonTxt }}</div>
+          <div class="n4">le total de chaque piste de la frise, et son détail</div>
         </div>
-
-        <!-- ============ ONGLETS DES RÉSULTATS — prompt 8 ============
-             L'écran 5 empilait dix blocs verticaux : le conseiller ne pouvait
-             pas montrer une chose à la fois, et rien n'indiquait où s'arrêter
-             de défiler. Les cinq blocs deviennent cinq onglets, même contenu,
-             un seul visible à la fois.
-
-             Les intitulés « Bloc 1 » à « Bloc 5 » disparaissent : ils
-             numérotaient l'ordre du code, pas une progression que
-             l'utilisateur reconnaît. Le libellé de l'onglet les remplace.
-
-             L'ordre est celui de PROMPTS.md, résolu PAR LIBELLÉ : le handoff
-             y appariait « Réserve individuelle » au bloc 4 et « Main d'œuvre »
-             au bloc 3, alors que c'est l'inverse dans le code, et appelait le
-             cinquième onglet « Détail annuel » alors que le bloc 5 est le
-             rajeunissement du vignoble — le détail annuel, lui, reste hors
-             onglets, dans l'annexe technique. Un onglet doit dire ce qu'il
-             contient : les libellés suivent le contenu.
-
-             state.ongletResultat est un état d'interface : hors instantané
-             localStorage, comme l'étape courante et les volets. -->
-        <div role="tablist" aria-label="Détail des résultats" onKeyDown="{{ ongletsClavier }}" style="display:flex;border:1px solid var(--bordure);border-radius:8px;overflow:hidden;margin:20px 0 0;flex-wrap:wrap">
-          <sc-for list="{{ ongletsResultat }}" as="og" hint-placeholder-count="5">
-            <button role="tab" id="{{ og.id }}" aria-selected="{{ og.aria }}" aria-controls="{{ og.panneau }}" tabindex="{{ og.tabindex }}" onClick="{{ og.go }}" style="font-size:13.5px;padding:11px 18px;border:0;border-right:1px solid var(--bordure);border-bottom:2px solid {{ og.souligne }};cursor:pointer;background:{{ og.bg }};color:{{ og.fg }};font-weight:{{ og.poids }}">{{ og.label }}</button>
+        <div class="t3-cartes">
+          <sc-for list="{{ themeCartes }}" as="tc" hint-placeholder-count="6">
+            <div class="t3-carte">
+              <div class="t3-num">{{ tc.num }} · {{ tc.lib }}</div>
+              <div class="t3-val">{{ tc.val }}</div>
+              <div class="n4" style="margin-bottom:6px">{{ tc.det }}</div>
+              <sc-for list="{{ tc.lignes }}" as="tl" hint-placeholder-count="4">
+                <div class="t3-ligne"><span style="color:var(--encre-3)">{{ tl.lib }}</span><span>{{ tl.val }}</span></div>
+              </sc-for>
+            </div>
           </sc-for>
         </div>
 
-        <sc-if value="{{ onglet0 }}" hint-placeholder-val="{{ true }}">
-        <div role="tabpanel" id="onglet-panneau-0" aria-labelledby="onglet-btn-0">
-        <!-- ============ BLOC 2 — Coût de l'investissement ============ -->
-        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px;max-width:74ch">Ce que coûte le renouvellement de la parcelle, poste par poste.</div>
+        <!-- Thème 5, en détail — l'ancien onglet « Coût, poste par poste ».
+             Il reste entier : la carte du thème 5 donne les montants, ce
+             tableau donne leur PROVENANCE (forfait MHCS, nombre de pieds ×
+             prix unitaire, postes de palissage retenus, protection). Sans lui,
+             les cinq montants de la carte seraient des chiffres nus.
+             Le total est celui du moteur (sc.arrachage.investissement), jamais
+             une somme recalculée dans la vue. -->
+        <div class="t3-detail">
+          <div class="t3-num" style="margin-bottom:4px">5 · Investissements — le détail poste par poste</div>
+          <div class="n4" style="margin-bottom:14px;max-width:74ch">Ce que coûte le renouvellement de la parcelle, poste par poste, avec l'année où chacun est engagé.</div>
           <div style="display:grid;grid-template-columns:1fr auto auto;gap:2px 16px;font-size:13.5px;align-items:baseline">
             <sc-for list="{{ investLignes }}" as="il" hint-placeholder-count="4">
               <div style="padding:7px 0;border-bottom:1px dotted var(--bordure)">{{ il.lib }}<span style="color:var(--encre-4);font-size:11.5px"> — {{ il.note }}</span></div>
@@ -1627,77 +1665,34 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
               <div style="padding:7px 0;border-bottom:1px dotted var(--bordure);text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap">{{ il.val }}</div>
             </sc-for>
           </div>
-          <!-- chantier C5 — l'ancien cartouche « investissement brut » (un KPI
-               de 22 px, concurrent des autres montants de l'écran) est devenu
-               le simple TOTAL du tableau qu'il surmonte. Ce n'est pas un
-               indicateur de plus : c'est la somme des lignes juste au-dessus,
-               et elle entre dans la cascade de clôture comme premier terme.
-               Le point bas de trésorerie, lui, a rejoint la cascade — voir le
-               bloc « ce que change le renouvellement » en clôture d'écran. -->
           <div style="display:grid;grid-template-columns:1fr auto auto;gap:2px 16px;font-size:13.5px;align-items:baseline;margin-top:2px">
             <div style="padding:9px 0;font-weight:600">{{ investTotalLib }}</div>
             <div style="padding:9px 0;text-align:right;color:var(--encre-3);font-size:11.5px;white-space:nowrap"></div>
             <div style="padding:9px 0;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap">{{ investTxt }}</div>
           </div>
-          <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45;max-width:74ch">{{ investTotalDet }}</div>
+          <div class="n4" style="max-width:74ch">{{ investTotalDet }}</div>
         </div>
-        </div>
-        </sc-if>
 
-        <sc-if value="{{ onglet1 }}" hint-placeholder-val="{{ false }}">
-        <div role="tabpanel" id="onglet-panneau-1" aria-labelledby="onglet-btn-1">
-        <!-- ============ BLOC 3 — Impact sur la réserve ============ -->
-        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px;max-width:74ch">La réserve individuelle est un stock de kg déjà constitué, pas un revenu nouveau : l'arrachage autorise à en puiser une partie plus vite que d'habitude, pour jouer son rôle d'assurance pendant la période sans production normale de la parcelle.</div>
-          <!-- chantier C5 — les cartouches en euros de ce bloc (« Réserve
-               mobilisée », « Investissement net de la réserve mobilisée ») ont
-               été retirés d'ici : ce sont deux TERMES de la cascade de clôture,
-               et les laisser vivre en parallèle recréerait exactement le
-               problème que ce chantier résout — des montants épars, aux
-               périmètres différents, qu'aucun ordre ne relie.
-
-               Ce bloc ne garde donc que du PHYSIQUE : des kilos, jamais des
-               euros. La ligne ci-dessous en kg/ha est la contrepartie du terme
-               « réserve mobilisée » de la cascade (chantier C3, contrainte
-               d'adjacence) : elle est répétée là-bas, immédiatement sous la
-               cascade. Ne pas réintroduire ici de conversion en euros. -->
-          <div style="font-size:11.5px;color:var(--encre-3);line-height:1.5;max-width:74ch">La réserve à l'horizon figure en tête d'écran, dans « ce que le renouvellement produit », et sous la cascade de clôture — en kg/ha dans les deux cas. Ce qu'elle représente en euros n'est pas un indicateur à part : c'est un terme de la cascade.</div>
-
-          <div style="margin-top:16px;border-top:1px dotted var(--bordure);padding-top:14px">
-            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">
-              <span class="lbl">Réserve débloquée par l'arrachage</span>
-              <span class="hint">sortie « arrachage », en kg — total <b style="font-family:'JetBrains Mono',monospace;color:var(--accent)">{{ sortieTotalTxt }} kg</b></span>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px">
-              <sc-for list="{{ sortieAnnees }}" as="so" hint-placeholder-count="3">
-                <div style="background:var(--accent-fond);border-radius:6px;padding:6px 11px;display:flex;flex-direction:column;line-height:1.25">
-                  <span style="font-size:11.5px;color:var(--accent-fonce);text-transform:uppercase;letter-spacing:0.04em">Année {{ so.t }}</span>
-                  <span style="font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:500">{{ so.kg }} kg</span>
-                  <span style="font-size:11.5px;color:var(--encre-3)">≈ {{ so.eur }} mobilisés</span>
-                </div>
-              </sc-for>
-            </div>
-            <div style="font-size:11.5px;color:var(--encre-3);margin-top:10px">L'arrachage puise dans la réserve puis la reconstitue ; le statu quo la maintient. Chaque kg de réserve mobilisé est un coussin de sécurité entamé d'autant, pas un gain net.</div>
-          </div>
-        </div>
-        </div>
-        </sc-if>
-
-        <sc-if value="{{ onglet2 }}" hint-placeholder-val="{{ false }}">
-        <div role="tabpanel" id="onglet-panneau-2" aria-labelledby="onglet-btn-2">
-        <!-- ============ BLOC 4 — Main d'œuvre et charges ============ -->
-        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px;max-width:76ch">La parcelle renouvelée reste entretenue tout au long de la transition — mais pas de la même façon selon la phase : le repos n'engage quasiment aucun travail, le plantier en engage un réel (formation, protection, remplacement des manquants, désherbage), seule la vendange est franchement économisée tant qu'il n'y a rien à récolter. Charges de surface reprises du panneau Hypothèses.</div>
+        <!-- Thème 6, en détail — l'ancien onglet « Main d'œuvre et charges ».
+             Il reste entier : c'est le seul endroit qui dise pourquoi la piste
+             « Entretien » de la frise ne descend pas à zéro pendant la
+             transition. Le repos n'engage quasiment aucun travail, le plantier
+             en engage un réel (formation, protection, remplacement des
+             manquants, désherbage), seule la vendange est franchement
+             économisée tant qu'il n'y a rien à récolter. -->
+        <div class="t3-detail">
+          <div class="t3-num" style="margin-bottom:4px">6 · Entretien — le détail par régime de travail</div>
+          <div class="n4" style="margin-bottom:14px;max-width:76ch">La parcelle renouvelée reste entretenue tout au long de la transition — mais pas de la même façon selon la phase. Charges de surface reprises du panneau Hypothèses.</div>
           <div style="display:grid;grid-template-columns:1.6fr repeat(4,auto);gap:2px 14px;font-size:11.5px;align-items:center">
-            <div style="font-size:11.5px;text-transform:uppercase;color:var(--encre-3);padding:5px 0;border-bottom:1px solid var(--bordure)">Régime</div>
-            <div style="font-size:11.5px;text-transform:uppercase;color:var(--encre-3);padding:5px 0;border-bottom:1px solid var(--bordure);text-align:right">Durée</div>
-            <div style="font-size:11.5px;text-transform:uppercase;color:var(--encre-3);padding:5px 0;border-bottom:1px solid var(--bordure);text-align:right">Travail manuel</div>
-            <div style="font-size:11.5px;text-transform:uppercase;color:var(--encre-3);padding:5px 0;border-bottom:1px solid var(--bordure);text-align:right">Charge de surface</div>
-            <div style="font-size:11.5px;text-transform:uppercase;color:var(--encre-3);padding:5px 0;border-bottom:1px solid var(--bordure);text-align:right">Vendange</div>
+            <div class="th">Régime</div>
+            <div class="th r">Durée</div>
+            <div class="th r">Travail manuel</div>
+            <div class="th r">Charge de surface</div>
+            <div class="th r">Vendange</div>
             <sc-for list="{{ regimesTravail }}" as="rt" hint-placeholder-count="3">
               <div style="padding:9px 0;border-bottom:1px dotted var(--bordure-claire)">
                 <b>{{ rt.lib }}</b>
-                <div style="font-size:11.5px;color:var(--encre-3);margin-top:2px;font-weight:400">{{ rt.messageTxt }}</div>
+                <div class="n4" style="margin-top:2px;font-weight:400">{{ rt.messageTxt }}</div>
               </div>
               <div style="padding:9px 0;border-bottom:1px dotted var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace;white-space:nowrap">{{ rt.nbAnneesTxt }}</div>
               <div style="padding:9px 0;border-bottom:1px dotted var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace;white-space:nowrap">{{ rt.heuresTxt }}</div>
@@ -1705,214 +1700,116 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
               <div style="padding:9px 0;border-bottom:1px dotted var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace;color:{{ rt.vendangeFg }}">{{ rt.vendangeTxt }}</div>
             </sc-for>
           </div>
-          <div style="font-size:11.5px;color:var(--encre-3);margin-top:8px">Colonne « travail manuel » : heures/ha estimées (référentiel Avenant 217) — la vigne mature demande le même travail, quel que soit le scénario.</div>
+          <div class="n4" style="margin-top:8px">Colonne « travail manuel » : heures/ha estimées (référentiel Avenant 217) — la vigne mature demande le même travail, quel que soit le scénario.</div>
 
           <div style="background:var(--accent-fond);border:1px solid var(--bordure);border-radius:8px;padding:16px 20px;margin-top:16px;font-size:13.5px;line-height:1.6">
-            <b>Main d'œuvre manuelle économisée sur l'ensemble de la transition (repos + plantier)</b> <span style="color:var(--encre-3)">— indicateur physique, jamais dans la trésorerie</span><br>
+            <b>Main d'œuvre manuelle économisée sur l'ensemble de la transition (repos + plantier)</b> <span style="color:var(--encre-3)">— indicateur physique, jamais additionné à un montant</span><br>
             ≈ <b class="mono">{{ moHeuresTxt }}</b> de main d'œuvre manuelle non engagée sur la transition — une heure non travaillée sur la parcelle en repos est aussi une heure de vendange en moins sur cette même parcelle.
             <sc-if value="{{ moExterne }}" hint-placeholder-val="{{ true }}">
-              <br>≈ <b class="mono">{{ moEuroTxt }}</b> de prestation évitée <span style="color:var(--alerte)">— indicatif, hors trésorerie</span>.
+              <br>≈ <b class="mono">{{ moEuroTxt }}</b> de prestation évitée <span style="color:var(--alerte)">— indicatif, hors de tout total en euros</span>.
             </sc-if>
             <sc-if value="{{ moFamilialeActive }}" hint-placeholder-val="{{ false }}">
               <br><span style="color:var(--encre-3)">Temps redéployable sur l'exploitation.</span>
             </sc-if>
           </div>
         </div>
-        </div>
-        </sc-if>
 
-        <sc-if value="{{ onglet3 }}" hint-placeholder-val="{{ false }}">
-        <div role="tabpanel" id="onglet-panneau-3" aria-labelledby="onglet-btn-3">
-        <!-- ============ BLOC 1 — Récapitulatif technique ============ -->
-        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin:20px 0">
-          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px;max-width:74ch">Récapitulatif technique de l'opération, sur la parcelle désignée au temps 1.</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
-            <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">Surface renouvelée</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapSurfaceTxt }}</div>
-            </div>
-            <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">Densité de plantation</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapDensiteTxt }}</div>
-            </div>
-            <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">Matériel végétal</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ recapPiedsTxt }}</div>
-              <div style="font-size:11.5px;color:var(--encre-3);margin-top:2px">{{ recapMaterielTxt }}</div>
-            </div>
-            <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">Matériel de palissage</div>
-              <div style="font-size:13.5px;margin-top:6px;line-height:1.4">{{ recapPalissageTxt }}</div>
-            </div>
+        <!-- Bande de récapitulatif technique — l'ancien onglet « Ce qui est
+             replanté », ramené à une rangée de valeurs. Il ne portait aucun
+             calcul propre : quatre grandeurs déjà décidées au temps 1 et au
+             temps 2, rappelées ici pour mémoire. Un onglet entier pour quatre
+             valeurs constantes, c'était un onglet de trop. -->
+        <div class="t3-bande">
+          <div>
+            <div class="n4" style="text-transform:uppercase;letter-spacing:0.05em">Surface renouvelée</div>
+            <div class="n3" style="font-weight:600;margin-top:2px"><span class="mono">{{ recapSurfaceTxt }}</span></div>
+          </div>
+          <div>
+            <div class="n4" style="text-transform:uppercase;letter-spacing:0.05em">Densité de plantation</div>
+            <div class="n3" style="font-weight:600;margin-top:2px"><span class="mono">{{ recapDensiteTxt }}</span></div>
+          </div>
+          <div>
+            <div class="n4" style="text-transform:uppercase;letter-spacing:0.05em">Matériel végétal</div>
+            <div class="n3" style="font-weight:600;margin-top:2px"><span class="mono">{{ recapPiedsTxt }}</span></div>
+            <div class="n4" style="margin-top:2px">{{ recapMaterielTxt }}</div>
+          </div>
+          <div>
+            <div class="n4" style="text-transform:uppercase;letter-spacing:0.05em">Matériel de palissage</div>
+            <div class="n3" style="margin-top:4px;line-height:1.4">{{ recapPalissageTxt }}</div>
           </div>
         </div>
-        </div>
-        </sc-if>
 
-        <sc-if value="{{ onglet4 }}" hint-placeholder-val="{{ false }}">
-        <div role="tabpanel" id="onglet-panneau-4" aria-labelledby="onglet-btn-4">
-        <!-- ============ BLOC 5 — Rajeunissement du vignoble ============ -->
-        <figure style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;padding:18px 20px;margin:20px 0">
-          <figcaption style="font-family:'Newsreader',serif;font-weight:600;font-size:22px">Âge moyen du vignoble, avant / après</figcaption>
-          <div style="font-size:11.5px;color:var(--encre-3);margin:2px 0 12px;max-width:74ch">Âge moyen de l'exploitation (parcelle désignée + reste), en années. Pendant le repos du sol, la parcelle sort du calcul : aucun rajeunissement affiché avant qu'une vigne ne soit effectivement replantée.</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:14px">
-            <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">Aujourd'hui</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px">{{ ageAvantTxt }}</div>
-            </div>
-            <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">À {{ horizonTxt }} · statu quo</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px;color:var(--encre-4)">{{ ageApresSQTxt }}</div>
-            </div>
-            <div>
-              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">À {{ horizonTxt }} · arrachage</div>
-              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin-top:2px;color:var(--accent)">{{ ageApresArrTxt }}</div>
-            </div>
-          </div>
-        </figure>
-        </div>
-        </sc-if>
+        <!-- ============ MATRICE ANNUELLE PAR THÈME (refonte 08/09/2026) ====
+             Remplace le tableau « mode technique ». Celui-ci alignait huit
+             colonnes de moteur — surface productive, VolCo vendu, sortie pour
+             insuffisance, cash net — qui disaient le CALCUL, pas la
+             trajectoire, et dont la dernière était un flux de trésorerie
+             annuel, la grandeur même que cette refonte retire de l'écran.
 
-        <!-- ============ Annexe technique (hors des 5 blocs) ============ -->
+             La matrice porte les six thèmes, dans l'ordre des pistes, une
+             ligne par année, avec sa ligne de totaux. Cliquer une ligne
+             sélectionne l'année : c'est le MÊME état que les pastilles de
+             l'axe (state.anneeFrise), il n'y a qu'une seule année retenue à
+             l'écran. Le bouton de la première cellule porte l'action au
+             clavier, que la ligne cliquable ne peut pas porter seule.
+             Elle reste dans son volet repliable — onze lignes de neuf colonnes
+             ne sont pas la lecture par défaut de l'écran. -->
         <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;margin-top:16px;overflow:hidden">
           <button onClick="{{ toggleDetail }}" class="fold-btn">
-            <span style="font-size:13.5px;font-weight:600">Mode technique — détail annuel (scénario arrachage)</span>
-            <span class="hint">— {{ detailEnteteTxt }}</span>
+            <span style="font-size:13.5px;font-weight:600">Détail annuel par thème</span>
+            <span class="hint">— {{ matriceEnteteTxt }}</span>
             <span class="fold-sign">{{ detailChevron }}</span>
           </button>
           <sc-if value="{{ detailOuvert }}" hint-placeholder-val="{{ false }}">
             <div style="padding:0 20px 18px;overflow-x:auto">
-              <div style="display:grid;grid-template-columns:36px repeat(8,1fr);gap:0;font-size:11.5px;min-width:720px">
-                <div class="th">t</div>
-                <div class="th r">Surf. prod</div>
-                <div class="th r">Récolte</div>
-                <div class="th r">VolCo vendu</div>
-                <div class="th r">Mise rés.</div>
-                <div class="th r">Sortie insuff.</div>
-                <div class="th r">Sortie arr.</div>
-                <div class="th r">Stock kg/ha</div>
-                <div class="th r">Cash net</div>
-                <sc-for list="{{ detailRows }}" as="r" hint-placeholder-count="4">
-                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);font-family:'JetBrains Mono',monospace">{{ r.t }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.surfProd }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.recolte }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.volcoVendu }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.mise }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.sortieInsuff }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.sortieArr }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.stockHa }}</div>
-                  <div style="padding:5px 6px;border-bottom:1px solid var(--bordure-claire);text-align:right;font-family:'JetBrains Mono',monospace">{{ r.cashNet }}</div>
-                </sc-for>
-              </div>
+              <table class="mat-t">
+                <thead><tr>
+                  <th class="l">Année</th>
+                  <th class="l">Phase</th>
+                  <th>Stock (kg/ha)</th>
+                  <th>Déblocage (kg)</th>
+                  <th>Déblocage (€)</th>
+                  <th>Bloqué (kg)</th>
+                  <th>dont autres parcelles</th>
+                  <th>Investissement (€)</th>
+                  <th>Entretien (h)</th>
+                  <th>Entretien (h/ha)</th>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ matriceRows }}" as="mr" hint-placeholder-count="4">
+                    <tr onClick="{{ mr.go }}" style="background:{{ mr.fond }}">
+                      <td class="l"><button onClick="{{ mr.go }}" class="mat-btn" aria-pressed="{{ mr.actif }}">{{ mr.t }}</button></td>
+                      <td class="l">{{ mr.phase }}</td>
+                      <td>{{ mr.stock }}</td>
+                      <td>{{ mr.deblocKg }}</td>
+                      <td>{{ mr.deblocEur }}</td>
+                      <td>{{ mr.bloque }}</td>
+                      <td>{{ mr.bloqueAutres }}</td>
+                      <td>{{ mr.invest }}</td>
+                      <td>{{ mr.heures }}</td>
+                      <td>{{ mr.heuresHa }}</td>
+                    </tr>
+                  </sc-for>
+                  <tr class="tot">
+                    <td class="l">Total</td>
+                    <td class="l">sur {{ horizonTxt }}</td>
+                    <td>{{ matriceTotaux.stock }}</td>
+                    <td>{{ matriceTotaux.deblocKg }}</td>
+                    <td>{{ matriceTotaux.deblocEur }}</td>
+                    <td>{{ matriceTotaux.bloque }}</td>
+                    <td>{{ matriceTotaux.bloqueAutres }}</td>
+                    <td>{{ matriceTotaux.invest }}</td>
+                    <td>{{ matriceTotaux.heures }}</td>
+                    <td>{{ matriceTotaux.heuresHa }}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="n4" style="margin-top:8px;max-width:88ch">Colonne « Stock » : la ligne de total porte le stock à l'horizon, pas une somme — un stock ne s'additionne pas d'une année sur l'autre.</div>
             </div>
           </sc-if>
         </div>
 
-        <!-- Hypothèses de comparaison — prompt C1.
-
-             `declinSQ` était saisi à l'écran 2, au milieu des caractéristiques de
-             la parcelle, alors qu'il ne décrit pas la parcelle : il décrit le
-             CONTRE-FACTUEL, c'est-à-dire ce qu'on suppose qu'il arriverait si on
-             ne renouvelait pas. Son seul effet visible est le tableau « Manque à
-             gagner » ci-dessous. Il est donc déplacé ici, à côté de ce qu'il
-             pilote, où l'on voit immédiatement ce que le chiffre change. -->
-        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;margin-top:12px;padding:16px 20px">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Hypothèses de comparaison</div>
-          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:12px;max-width:76ch">Le repère de comparaison n'est pas la parcelle d'aujourd'hui figée : on suppose qu'elle continuerait de décliner si elle n'était pas renouvelée. Ce seul chiffre commande l'écart affiché ci-dessous.</div>
-          <div class="field" style="max-width:260px">
-            <label class="lbl" for="f-declinSQ">Déclin annuel si rien n'est fait</label>
-            <div class="row"><input id="f-declinSQ" type="number" step="0.1" min="0" max="10" value="{{ v.declinSQ }}" onInput="{{ on.declinSQ }}" class="inp"><span class="unit">%/an</span></div>
-            <span class="hint warn">perte de rendement attendue si la parcelle n'est pas renouvelée — 1 %/an par défaut, à ajuster</span>
-          </div>
-        </div>
-
-        <!-- chantier C5 — le bloc repliable « Manque à gagner par rapport au
-             statu quo » a été retiré de l'écran. Ce n'était pas un terme de la
-             cascade : `manqueAGagner` applique un max(0, …) année par année et
-             ne porte que sur `volcoVendu`, ce qui le rend NON RECOMPOSABLE avec
-             le différentiel (23 921 € d'écart mesuré sur le paramétrage
-             dégradé). Sa place est prise par le terme « Écart de recettes
-             raisin » de la cascade ci-dessous, qui, lui, est exact.
-             La fonction reste exportée et testée (@deprecated chantier C5). -->
-
-        <!-- ============ PAR RAPPORT À NE RIEN FAIRE — chantier C4 ============
-
-             UNE LIGNE, en clôture de l'écran, affichée TOUJOURS, quel que soit
-             le signe. C'est le seul chiffre différentiel de l'interface.
-
-             Pourquoi elle existe : un simulateur d'IMPACT dont tous les chiffres
-             sont absolus ne mesure aucun impact — « impact » est un mot
-             différentiel. Avant ce chantier, basculer le test de résistance
-             climatique (la variable qui décide de tout) ne faisait bouger aucun
-             des deux KPI de tête : le même « 0 € » et le même point bas
-             s'affichaient dans deux mondes séparés par des dizaines de milliers
-             d'euros par hectare.
-
-             CE QUE CE CHANTIER NE RÉTABLIT PAS — et qu'une session ultérieure ne
-             doit pas « compléter » :
-               · aucune seconde courbe sur les graphiques ;
-               · aucune colonne « statu quo » dans un tableau ;
-               · aucun champ de saisie relatif au scénario de référence ;
-               · ce chiffre ne monte PAS dans les trois chiffres de tête (36 px) —
-                 teteRetour / teteEffort / teteAge restent inchangés ;
-               · aucune formulation évaluative (« favorable », « rentable »,
-                 « perdant ») : un montant signé et son libellé, rien d'autre.
-                 Le principe « aucune recommandation » tient.
-             Le contrefactuel reste invisible COMME SCÉNARIO CONFIGURABLE et
-             devient visible COMME POINT DE RÉFÉRENCE ARITHMÉTIQUE. -->
-        <!-- ==== LA CASCADE — chantier C5 ====
-             La cascade REMPLACE, à l'écran, l'affichage épars des montants en
-             euros (investissement brut, réserve mobilisée, solde
-             investissement/réserve, manque à gagner). Ils mélangeaient trois
-             axes — parcelle / exploitation, absolu / différentiel, ponctuel /
-             flux — sans qu'aucun ne dise sa convention.
-
-             Ses quatre termes sont une décomposition EXACTE du différentiel de
-             C4, pas un empilement d'indicateurs. Le moteur lève une exception
-             si la somme s'écarte du total de plus de 1 € : une cascade fausse
-             doit casser bruyamment, pas dériver en silence.
-
-             Restent HORS cascade, clairement séparés sous le trait, parce
-             qu'ils ne sont pas des termes d'une somme :
-               · la réserve à l'horizon (kg/ha) — physique, jamais additionnable
-                 à des euros (et adjacence C3 : elle ne quitte pas le voisinage
-                 du terme « réserve mobilisée ») ;
-               · le point bas de trésorerie (€, année) — un EXTREMUM, pas un
-                 cumul : il ne s'additionne à rien.
-             Ne pas les faire entrer dans le tableau au motif qu'ils sont « du
-             même sujet ». -->
-        <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-radius:8px;margin-top:12px;padding:16px 20px">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">{{ cascadeLib }}</div>
-          <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:14px;max-width:78ch;line-height:1.5">{{ cascadeIntroTxt }}</div>
-          <div style="display:grid;grid-template-columns:1fr auto;gap:2px 16px;font-size:13.5px;align-items:baseline">
-            <sc-for list="{{ cascadeRows }}" as="cx" hint-placeholder-count="4">
-              <div style="padding:8px 0;border-bottom:1px dotted var(--bordure)">{{ cx.lib }}<span style="color:var(--encre-4);font-size:11.5px"> — {{ cx.note }}</span></div>
-              <div style="padding:8px 0;border-bottom:1px dotted var(--bordure);text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap;color:{{ cx.fg }}">{{ cx.val }}</div>
-            </sc-for>
-            <div style="padding:10px 0;font-weight:600;border-top:2px solid var(--encre)">{{ differentielLib }}</div>
-            <div style="padding:10px 0;text-align:right;font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;white-space:nowrap;border-top:2px solid var(--encre)">{{ differentielTxt }}</div>
-          </div>
-          <div style="font-size:11.5px;color:var(--encre-3);margin-top:8px;max-width:78ch;line-height:1.5">{{ differentielDet }}</div>
-
-          <!-- Sous le trait : ce qui n'est PAS un terme de la somme. -->
-          <div style="margin-top:16px;border-top:1px dotted var(--bordure);padding-top:14px">
-            <div style="font-size:11.5px;color:var(--encre-3);margin-bottom:10px;max-width:78ch;line-height:1.5">Les deux grandeurs ci-dessous ne s'ajoutent pas à la cascade : l'une est un stock physique, l'autre un extremum. Elles répondent à d'autres questions.</div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
-              <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-left:4px solid var(--accent);border-radius:6px;padding:14px 16px">
-                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiReserveHorizon.lib }}</div>
-                <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--encre)">{{ kpiReserveHorizon.val }}</div>
-                <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiReserveHorizon.det }}</div>
-              </div>
-              <div style="background:var(--surface-haute);border:1px solid var(--bordure);border-left:4px solid var(--alerte);border-radius:6px;padding:14px 16px">
-                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--encre-3)">{{ kpiPointBas.lib }}</div>
-                <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600;margin:3px 0;line-height:1.1;color:var(--alerte)">{{ kpiPointBas.val }}</div>
-                <div style="font-size:11.5px;color:var(--encre-3);line-height:1.45">{{ kpiPointBas.det }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <p style="font-size:11.5px;color:var(--encre-3);max-width:78ch;margin-top:24px;border-top:1px solid var(--bordure);padding-top:14px;line-height:1.6">Simulation pédagogique construite sur vos seules saisies — hypothèses, sources et formule de chaque chiffre : fiche imprimable ci-dessus (« 🖨 Imprimer la fiche »).</p>
+        <p class="n4" style="max-width:78ch;margin-top:24px;border-top:1px solid var(--bordure);padding-top:14px;line-height:1.6">Simulation pédagogique construite sur vos seules saisies — hypothèses, sources et formule de chaque chiffre : fiche d'audit imprimable ci-dessus.</p>
 
       </sc-if>
 
@@ -1958,9 +1855,15 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
             <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)"><span style="color:var(--encre-3)">Réserve mobilisée</span><b style="font-family:'JetBrains Mono',monospace;color:var(--accent)">{{ reserveReelleTxt }}</b></div>
             <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0"><span style="color:var(--encre-3)">Investissement net de la réserve</span><b style="font-family:'JetBrains Mono',monospace;color:var(--vegetal)">{{ soldeReserveTxt }}</b></div>
 
-            <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--encre-4);letter-spacing:0.08em;margin:14px 0 6px">RISQUE</div>
-            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)"><span style="color:var(--encre-3)">Tension max trésorerie</span><b style="font-family:'JetBrains Mono',monospace;color:var(--alerte)">{{ creuxTxt }}</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0"><span style="color:var(--encre-3)">Réserve min transition</span><b style="font-family:'JetBrains Mono',monospace;color:{{ stockMinC }}">{{ stockMinTxt }} kg/ha</b></div>
+            <!-- Refonte du 08/09/2026 — le surtitre passe de RISQUE à RÉSERVE,
+                 et la ligne « Tension max trésorerie » est retirée : elle lisait
+                 un extremum de série cumulée en euros, sortie de l'écran avec la
+                 troisième piste de la frise. Les deux lignes qui restent sont
+                 PHYSIQUES, en kilos — le plancher atteint pendant la transition,
+                 et ce que l'arrachage a effectivement débloqué. -->
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--encre-4);letter-spacing:0.08em;margin:14px 0 6px">RÉSERVE</div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;border-bottom:1px dotted var(--bordure)"><span style="color:var(--encre-3)">Réserve min transition</span><b style="font-family:'JetBrains Mono',monospace;color:{{ stockMinC }}">{{ stockMinTxt }} kg/ha</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0"><span style="color:var(--encre-3)">Débloqué sur la transition</span><b style="font-family:'JetBrains Mono',monospace;color:var(--accent)">{{ deblocTotalKgTxt }} kg</b></div>
           </div>
           <button onClick="{{ allerResultats }}" style="width:100%;border:0;border-top:1px solid var(--bordure);background:var(--accent-fond);padding:11px;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--encre)">Voir les résultats détaillés →</button>
         </div>
@@ -2011,7 +1914,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
       </div>
 
       <div class="n2" style="font-size:16px;margin-bottom:8px">La trajectoire de la parcelle, année par année</div>
-      {{ friseTrajectoire }}
+      {{ friseTrajectoireImprimee }}
       <div class="n4" style="margin:6px 0 14px">{{ friseLegendeTxt }}</div>
 
       <div style="font-size:12px;line-height:1.55;border:1px solid var(--bordure);border-radius:8px;padding:12px 14px;margin-bottom:12px">{{ syntheseTxt }}</div>
@@ -2068,23 +1971,46 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
         </tbody>
       </table>
 
-      <h3 style="font-size:13.5px;margin:16px 0 8px">3. Détail annuel — scénario Arrachage-replantation</h3>
+      <!-- Refonte du 08/09/2026 — la fiche d'audit reprend la MATRICE ANNUELLE
+           PAR THÈME, la même construction que l'écran (out.matriceRows) : une
+           seule source, donc aucune divergence possible entre ce qui est
+           montré et ce qui est imprimé.
+
+           Les colonnes de l'ancien tableau (surface productive, VolCo vendu,
+           sortie pour insuffisance, cash net) disaient le calcul intermédiaire
+           du moteur, pas la trajectoire ; la dernière était un flux de
+           trésorerie annuel, la grandeur que cette refonte retire. Ne pas la
+           réintroduire ici : la fiche d'audit documente ce que l'outil affiche,
+           elle n'est pas un dépotoir de séries retirées de l'écran. -->
+      <h3 style="font-size:13.5px;margin:16px 0 8px">3. Détail annuel par thème — scénario Arrachage-replantation</h3>
       <table>
         <thead><tr>
-          <th style="text-align:left">t</th><th style="text-align:right">Surf. prod (ha)</th><th style="text-align:right">Récolte (kg)</th>
-          <th style="text-align:right">VolCo vendu (kg)</th><th style="text-align:right">Mise rés. (kg)</th><th style="text-align:right">Sortie insuff. (kg)</th>
-          <th style="text-align:right">Sortie arr. (kg)</th><th style="text-align:right">Stock (kg/ha)</th><th style="text-align:right">Cash net (€)</th>
+          <th style="text-align:left">Année</th><th style="text-align:left">Phase</th>
+          <th style="text-align:right">Stock (kg/ha)</th><th style="text-align:right">Déblocage (kg)</th>
+          <th style="text-align:right">Déblocage (€)</th><th style="text-align:right">Bloqué (kg)</th>
+          <th style="text-align:right">dont autres parc. (kg)</th><th style="text-align:right">Investissement (€)</th>
+          <th style="text-align:right">Entretien (h)</th><th style="text-align:right">Entretien (h/ha)</th>
         </tr></thead>
         <tbody>
-          <sc-for list="{{ printDetailArr }}" as="r" hint-placeholder-count="4">
+          <sc-for list="{{ matriceRows }}" as="r" hint-placeholder-count="4">
             <tr>
-              <td>{{ r.t }}</td><td style="text-align:right">{{ r.surfProd }}</td><td style="text-align:right">{{ r.recolte }}</td>
-              <td style="text-align:right">{{ r.volcoVendu }}</td><td style="text-align:right">{{ r.mise }}</td><td style="text-align:right">{{ r.sortieInsuff }}</td>
-              <td style="text-align:right">{{ r.sortieArr }}</td><td style="text-align:right">{{ r.stockHa }}</td><td style="text-align:right">{{ r.cashNet }}</td>
+              <td>{{ r.t }}</td><td>{{ r.phase }}</td>
+              <td style="text-align:right">{{ r.stock }}</td><td style="text-align:right">{{ r.deblocKg }}</td>
+              <td style="text-align:right">{{ r.deblocEur }}</td><td style="text-align:right">{{ r.bloque }}</td>
+              <td style="text-align:right">{{ r.bloqueAutres }}</td><td style="text-align:right">{{ r.invest }}</td>
+              <td style="text-align:right">{{ r.heures }}</td><td style="text-align:right">{{ r.heuresHa }}</td>
             </tr>
           </sc-for>
+          <tr>
+            <td><b>Total</b></td><td>sur {{ horizonTxt }}</td>
+            <td style="text-align:right">{{ matriceTotaux.stock }}</td><td style="text-align:right">{{ matriceTotaux.deblocKg }}</td>
+            <td style="text-align:right">{{ matriceTotaux.deblocEur }}</td><td style="text-align:right">{{ matriceTotaux.bloque }}</td>
+            <td style="text-align:right">{{ matriceTotaux.bloqueAutres }}</td><td style="text-align:right">{{ matriceTotaux.invest }}</td>
+            <td style="text-align:right">{{ matriceTotaux.heures }}</td><td style="text-align:right">{{ matriceTotaux.heuresHa }}</td>
+          </tr>
         </tbody>
       </table>
+      <div style="font-size:11.5px;margin:-8px 0 12px">Colonne « Stock » : la ligne de total porte le stock lu à l'horizon, pas une somme — un stock ne s'additionne pas d'une année sur l'autre.</div>
 
       <!-- ============ HYPOTHÈSES NON MODÉLISÉES — chantier C7 ============
            La fiche d'audit vise le conseiller / comptable, pas le banquier
@@ -2465,12 +2391,6 @@ class Component extends DCLogic {
       // instantané écrit par une version antérieure.
       // chantier C5 : le repli du solde a disparu avec son cartouche — la
       // cascade le remplace et n'est pas repliable (c'est la lecture principale).
-      // prompt 9 — inversion. Les deux seuls graphiques de l'écran 5 étaient
-      // repliés derrière des boutons pendant que les tableaux de chiffres
-      // étaient dépliés : l'information la plus lisible était celle qui était
-      // cachée. Les graphiques s'affichent maintenant d'emblée, leurs boutons
-      // de repli restent.
-      stockChartOuvert: true, ageChartOuvert: true,
       voletProdOuvert: false, voletProdOverrides: {},
       voletReposOuvert: false, voletReposOverrides: {}, voletReposCourtNoue: false,
       voletPlantierOuvert: false, voletPlantierOverrides: {},
@@ -2509,9 +2429,13 @@ class Component extends DCLogic {
       // que soit l'état où on l'a laissé. C'est un état de navigation, pas
       // une donnée de l'utilisateur — même règle que `step` ou `refAideOuverte`.
       registreOuvert: false, importOuvert: false,
-      // prompt 8 — onglet visible de l'écran de résultats. État d'interface :
-      // hors instantané localStorage, comme l'étape courante et les volets.
-      ongletResultat: 0,
+      // Refonte du 08/09/2026 — année retenue sur l'axe de la frise du temps 3.
+      // Remplace `ongletResultat` (les cinq onglets ont disparu) : l'écran ne
+      // se navigue plus par bloc de contenu mais par ANNÉE, et les six pistes,
+      // le panneau de détail et la matrice lisent tous cette seule valeur.
+      // État d'interface : hors instantané localStorage, comme l'étape courante
+      // et les volets. Démarre à l'année 0, l'année de l'arrachage.
+      anneeFrise: 0,
       // prompt 10 — panneau « Hypothèses ». État d'interface, hors instantané :
       // les VALEURS qu'il porte vivent dans state.v et restent persistées.
       hypothesesOuvert: false,
@@ -2955,7 +2879,7 @@ class Component extends DCLogic {
     // Marqueurs de forme par série (accessibilité vision dichromate — ne pas
     // reposer sur la seule couleur) : opt-in via s.marker ('circle'|'square'|
     // 'triangle'), tracés à chaque point t. Séries existantes sans s.marker
-    // inchangées (ex. chartStock).
+    // inchangées.
     const markerShape = (shape, key, cx, cy, r, fill) => {
       if (shape === 'square') return e('rect', { key, x: cx - r, y: cy - r, width: 2 * r, height: 2 * r, fill });
       if (shape === 'triangle') return e('polygon', { key, points: `${cx},${cy - r * 1.15} ${cx - r},${cy + r * 0.85} ${cx + r},${cy + r * 0.85}`, fill });
@@ -2984,65 +2908,137 @@ class Component extends DCLogic {
     return e('svg', { width: w, height: h, viewBox: `0 0 ${w} ${h}` }, ch);
   }
 
-  /* Frise de trajectoire — prompt 7.
+  /* Frise de trajectoire — prompt 7, refondue le 08/09/2026.
 
-     Le cœur de la refonte. Le temps est partout dans l'outil (« années 3-4 »,
+     Le cœur de l'écran. Le temps est partout dans l'outil (« années 3-4 »,
      « repos », « plantier », « à 10 ans ») et n'était jamais dessiné : il se
-     lisait dans six blocs séparés, chacun avec son unité — années, kilos,
-     euros, heures. Il est dessiné ici une seule fois, avec les trois échelles
-     alignées sur le MÊME axe horizontal, pour que le lien de cause à effet
-     — récolte courte, creux de réserve, point bas de trésorerie décalé — se
+     lisait dans des blocs séparés, chacun avec son unité — années, kilos,
+     euros, heures. Il est dessiné ici une seule fois, toutes les échelles
+     alignées sur le MÊME axe horizontal, pour que le lien de cause à effet se
      voie sans être expliqué.
 
-     Construit avec React.createElement (pas dans le gabarit) : les trois
-     pistes doivent partager exactement la même géométrie de colonnes, ce qui
-     suppose de la calculer une fois et de la distribuer.
+     SIX PISTES, UN AXE, ONZE COLONNES. Un thème par piste, dans l'ordre où on
+     les regarde : ce qu'est la parcelle cette année-là (phase), ce qu'il reste
+     en réserve (stock), ce qu'on en sort (déblocage), ce qu'on y met
+     (blocage), ce qu'on paie (investissement), ce qu'on y travaille
+     (entretien).
+
+     CE QUI A ÉTÉ RETIRÉ, ET QU'IL NE FAUT PAS RÉTABLIR. La troisième piste
+     historique portait la trésorerie cumulée de la parcelle seule. Sur dix ans
+     avec deux vendanges déficitaires par défaut, elle est négative dans la
+     quasi-totalité des configurations : lue en premier, elle ne dit qu'une
+     chose déjà connue — un renouvellement coûte avant de rapporter — et rend
+     le reste illisible. Le moteur la calcule toujours (OAD.tresorerieCumulee,
+     @deprecated), l'écran ne la montre plus. Voir README §18bis / §19ter.
+
+     Construit avec React.createElement (pas dans le gabarit) : les six pistes
+     doivent partager exactement la même géométrie de colonnes, ce qui suppose
+     de la calculer une fois et de la distribuer. C'est aussi pourquoi les
+     couleurs de SÉRIE sont littérales ici — le gabarit, lui, n'en porte
+     aucune (test §27).
 
      Aucune interpolation, aucun lissage : les valeurs tracées sont celles du
      moteur, année par année. Les points de la courbe tombent au CENTRE de
      leur colonne d'année — x = (i + 0,5) x largeur / nombre d'années — et non
      à ses bords, sans quoi la courbe se décalerait d'une demi-colonne par
      rapport aux barres et à la graduation. */
+  /* `d.compact` — la variante IMPRIMÉE de la même frise.
+
+     Deux raisons, et aucune n'est cosmétique.
+       1. La feuille d'impression masque tous les `button` (elle a raison : on
+          n'imprime pas des contrôles). Or l'axe des années est devenu un jeu
+          de onze boutons : imprimée telle quelle, la frise perdrait sa
+          graduation, donc son axe de temps. La variante compacte rend l'axe
+          en texte simple, et ne teinte aucune année — sur une feuille remise
+          au vigneron, une sélection faite à l'écran n'a pas de sens.
+       2. La remise au vigneron tient sur UNE page : c'est sa contrainte de
+          conception, pas un espoir (test §28). Six pistes aux hauteurs de
+          l'écran ne passeraient pas ; les hauteurs sont donc réduites d'un
+          tiers environ pour la sortie papier.
+     Le reste — séries, géométrie, couleurs, ordre des pistes — est le MÊME
+     code. Une seconde fonction dupliquerait la frise, et les deux
+     divergeraient. */
   friseTrajectoire(d) {
     const e = React.createElement;
     const N = d.annees.length;              // nombre de colonnes d'année
+    const compact = !!d.compact;
+    // Aucune année teintée sur la sortie papier : `-1` ne désigne aucune
+    // colonne, ce qui neutralise la sélection dans les six pistes à la fois.
+    const sel = compact ? -1 : d.anneeSel;  // année retenue par l'utilisateur
     const COUL_PHASE = {
       arrachage:  { fond: '#A5433A', encre: '#FAF9F5' },
       repos:      { fond: '#CFC6B0', encre: '#42473F' },
       plantier:   { fond: '#B8D3BC', encre: '#2F5B3C' },
       production: { fond: '#4C7A57', encre: '#FAF9F5' }
     };
+    // Teintes de série de la réserve et du travail — les mêmes que les
+    // graphiques de l'écran, pour qu'un kilo se reconnaisse d'une piste à
+    // l'autre.
+    const COUL_RESERVE = '#A97F26', COUL_RESERVE_CLAIRE = '#F1E6CC';
+    const COUL_HEURES = '#4C7A57';
     const libelle = (k, principal, secondaire) => e('div', { key: k,
       style: { fontSize: '11.5px', color: 'var(--encre-2)', textAlign: 'right', lineHeight: 1.35 } },
       principal, e('br', { key: 'br' }),
       e('span', { key: 'sec', style: { color: 'var(--accent-fonce)' } }, secondaire));
 
+    /* Fabrique commune des pistes en barres (thèmes 3 à 6). Toutes partagent
+       la même géométrie — `flex:1` et `gap:3px` — que la graduation, sans quoi
+       une barre ne tomberait pas sous son année. `contenu(i, h)` rend
+       l'intérieur d'une colonne, en pixels de hauteur déjà mis à l'échelle du
+       maximum de la série ; l'année retenue est teintée par la cellule qui
+       l'enveloppe, jamais par la barre elle-même (sa couleur porte le thème,
+       pas la sélection). */
+    const pisteBarres = (k, hauteur, valeurs, titres, contenu, aria) => {
+      const maxV = Math.max.apply(null, valeurs.concat([0]));
+      const cols = valeurs.map((v, i) => {
+        const h = maxV > 0 ? Math.max(v > 0 ? 2 : 0, Math.round(hauteur * v / maxV)) : 0;
+        return e('div', { key: k + i, title: titres[i],
+          style: { flex: '1', minWidth: 0, display: 'flex', flexDirection: 'column',
+            justifyContent: 'flex-end', height: hauteur + 'px', borderRadius: '3px',
+            background: i === sel ? 'var(--accent-fond)' : 'transparent' } },
+          contenu(i, h));
+      });
+      return e('div', { key: k, role: 'img', 'aria-label': aria,
+        style: { display: 'flex', alignItems: 'flex-end', gap: '3px',
+          height: hauteur + 'px', borderTop: '1px solid var(--bordure)' } }, cols);
+    };
+
     /* ---- piste 1 : phase de la parcelle ---------------------------------
        Segments proportionnels aux durées RÉELLES (flexGrow = nombre
-       d'années), donc calés sur les mêmes colonnes que les deux pistes du
-       dessous. Un segment d'une seule année est trop étroit pour porter son
-       nom : il affiche « an N » et garde son nom en title. */
+       d'années), donc calés sur les mêmes colonnes que les pistes du dessous.
+       Un segment d'une seule année est trop étroit pour porter son nom : il
+       affiche « an N » et garde son nom en title.
+       La sélection ne peut pas être teintée colonne par colonne ici — il n'y a
+       pas de colonne, il y a des segments : c'est le segment CONTENANT l'année
+       retenue qui est souligné. C'est d'ailleurs ce que la piste dit, la phase
+       d'une année n'ayant de sens que rapportée à sa durée. */
     const bandes = d.segments.map((seg, i) => {
       const duree = seg.fin - seg.debut;
       const c = COUL_PHASE[seg.id] || COUL_PHASE.production;
+      const contientSel = sel >= seg.debut && sel < seg.fin;
       const titre = seg.lib + (duree > 1 ? ' — années ' + seg.debut + ' à ' + (seg.fin - 1)
                                          : ' — année ' + seg.debut);
       return e('div', { key: 'ph' + i, title: titre,
         style: { flexGrow: duree, flexBasis: 0, background: c.fond, borderRadius: '4px',
           display: 'grid', placeItems: 'center', color: c.encre, fontSize: '11.5px',
-          overflow: 'hidden', whiteSpace: 'nowrap', padding: '0 4px' } },
+          overflow: 'hidden', whiteSpace: 'nowrap', padding: '0 4px',
+          boxShadow: contientSel ? '0 0 0 2px var(--accent)' : 'none' } },
         duree >= 2 ? seg.lib : 'an ' + seg.debut);
     });
-    const piste1 = e('div', { key: 'p1', style: { display: 'flex', gap: '3px', height: '38px' } }, bandes);
+    const piste1 = e('div', { key: 'p1', role: 'img',
+      'aria-label': 'Phase de la parcelle année par année : '
+        + d.segments.map(s => s.lib + ' de l\'année ' + s.debut + ' à ' + (s.fin - 1)).join(' ; ') + '.',
+      style: { display: 'flex', gap: '3px', height: (compact ? 24 : 34) + 'px' } }, bandes);
 
     /* ---- piste 2 : stock de réserve --------------------------------------
-       preserveAspectRatio="none" : la piste occupe toute la largeur
-       disponible quelle qu'elle soit, comme les deux autres. C'est aussi
-       pourquoi l'annotation du creux n'est PAS dans le SVG — un texte y
-       serait étiré horizontalement — mais dans un div positionné au-dessus.
+       INCHANGÉE par la refonte : même géométrie, même point du creux, même
+       étiquette. preserveAspectRatio="none" : la piste occupe toute la largeur
+       disponible quelle qu'elle soit, comme les autres. C'est aussi pourquoi
+       l'annotation du creux n'est PAS dans le SVG — un texte y serait étiré
+       horizontalement — mais dans un div positionné au-dessus.
        L'échelle monte jusqu'au plafond de réserve : un creux se juge par
        rapport au plafond, pas par rapport au maximum de la courbe. */
-    const W = 1000, H = 88;
+    const W = 1000, H = compact ? 54 : 80;
     const X = (i) => (i + 0.5) * W / N;
     const yMax = Math.max(d.plafond, Math.max.apply(null, d.stock), 1);
     const Y = (v) => H - 6 - (H - 12) * (v / yMax);
@@ -3054,8 +3050,12 @@ class Component extends DCLogic {
       'aria-label': 'Stock de réserve individuelle en kilos par hectare, année par année ; creux de '
         + d.creuxTxt + ' en année ' + d.creuxT + '.',
       style: { width: '100%', height: H + 'px', display: 'block' } }, [
-      e('polygon', { key: 'aire', points: [bordG].concat(pts, [bordD, W + ',' + H, '0,' + H]).join(' '), fill: '#F1E6CC' }),
-      e('polyline', { key: 'ligne', points: [bordG].concat(pts, [bordD]).join(' '), fill: 'none', stroke: '#A97F26', strokeWidth: 2.5 }),
+      // Bande de l'année retenue, tracée SOUS la courbe : la sélection se
+      // repère, elle ne masque pas la donnée.
+      e('rect', { key: 'sel', x: (sel * W / N).toFixed(1), y: 0, width: (W / N).toFixed(1), height: H,
+        fill: 'var(--accent-fond)' }),
+      e('polygon', { key: 'aire', points: [bordG].concat(pts, [bordD, W + ',' + H, '0,' + H]).join(' '), fill: COUL_RESERVE_CLAIRE }),
+      e('polyline', { key: 'ligne', points: [bordG].concat(pts, [bordD]).join(' '), fill: 'none', stroke: COUL_RESERVE, strokeWidth: 2.5 }),
       e('circle', { key: 'creux', cx: X(d.creuxT), cy: Y(d.stock[d.creuxT]), r: 4.5, fill: '#A5433A' })
     ]);
     const aDroite = d.creuxT > (N - 1) * 0.7;   // l'étiquette ne doit pas sortir de la piste
@@ -3068,36 +3068,110 @@ class Component extends DCLogic {
         'creux ' + d.creuxTxt)
     ]);
 
-    /* ---- piste 3 : trésorerie cumulée -------------------------------------
-       Une barre par année, suspendue à la règle du haut : le déficit se lit
-       comme ce qu'il est, une descente. Quatre couleurs, dans cet ordre de
-       priorité : le retour au positif, puis le point bas, puis la remontée
-       encore négative, puis la descente. */
-    const HB = 74;
-    const maxAbs = Math.max(1, Math.max.apply(null, d.treso.map(v => Math.abs(v))));
-    const barres = d.treso.map((v, i) => {
-      const h = Math.max(2, Math.round(HB * Math.abs(v) / maxAbs));
-      const c = v >= 0 ? '#B8D3BC'
-        : i === d.pointBasT ? '#8E3A32'
-        : i > d.pointBasT ? '#C98178'
-        : '#A5433A';
-      return e('div', { key: 'tb' + i, title: 'année ' + i + ' : ' + d.tresoTxt[i],
-        style: { flex: '1', display: 'flex', flexDirection: 'column' } },
-        e('div', { style: { height: h + 'px', background: c, borderRadius: '0 0 3px 3px' } }));
-    });
-    const piste3 = e('div', { key: 'p3', style: { display: 'flex', alignItems: 'flex-start', gap: '3px',
-      height: HB + 'px', borderTop: '1px solid var(--bordure)' } }, barres);
+    /* ---- piste 3 : déblocage de réserve ----------------------------------
+       Ce que l'arrachage AUTORISE À SORTIR de la réserve, en kilos. Les euros
+       sont la même barre lue autrement (kg x prix du raisin) : ils vivent dans
+       le title et dans le panneau de l'année, jamais dans une seconde piste —
+       deux barres pour un seul fait se liraient comme deux faits. */
+    const piste3 = pisteBarres('db', compact ? 36 : 54, d.debloc.kg,
+      d.debloc.kg.map((v, i) => v > 0
+        ? 'année ' + i + ' : ' + d.debloc.kgTxt[i] + ' kg débloqués · ' + d.debloc.eurTxt[i]
+        : 'année ' + i + ' : aucun déblocage'),
+      (i, h) => h > 0 ? e('div', { style: { height: h + 'px', background: COUL_RESERVE,
+        borderRadius: '3px 3px 0 0' } }) : null,
+      'Réserve débloquée par l\'arrachage, en kilos, année par année.');
 
-    /* ---- graduation : mêmes colonnes flex:1 et même gap que les barres --- */
-    const graduation = e('div', { key: 'grad', style: { display: 'flex', gap: '3px',
-      fontFamily: "'JetBrains Mono',monospace", fontSize: '11.5px', color: 'var(--encre-3)' } },
-      d.annees.map(t => e('div', { key: 'g' + t, style: { flex: '1', textAlign: 'center' } }, String(t))));
+    /* ---- piste 4 : bloqué en réserve -------------------------------------
+       Barres CREUSES, à l'inverse des pleines de la piste du dessus : ce qui
+       entre en réserve n'est pas encaissé, c'est mis de côté. La part remplie
+       est celle des AUTRES parcelles de l'exploitation — la mise en réserve
+       est un flux de l'exploitation entière, pas de la seule parcelle
+       renouvelée, et la piste doit le dire plutôt que de laisser croire que
+       tout vient d'ici. */
+    const piste4 = pisteBarres('bl', compact ? 30 : 46, d.bloque.kg,
+      d.bloque.kg.map((v, i) => v > 0
+        ? 'année ' + i + ' : ' + d.bloque.kgTxt[i] + ' kg bloqués, dont '
+          + d.bloque.autresTxt[i] + ' kg venus des autres parcelles'
+        : 'année ' + i + ' : aucune mise en réserve'),
+      (i, h) => {
+        if (h <= 0) return null;
+        const part = d.bloque.kg[i] > 0 ? d.bloque.autres[i] / d.bloque.kg[i] : 0;
+        return e('div', { style: { height: h + 'px', boxSizing: 'border-box',
+          border: '1.5px solid ' + COUL_RESERVE, borderRadius: '3px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' } },
+          e('div', { style: { height: (part * 100) + '%', background: COUL_RESERVE_CLAIRE } }));
+      },
+      'Mise en réserve de l\'exploitation, en kilos, année par année ; la part remplie est celle des autres parcelles.');
+
+    /* ---- piste 5 : investissements ---------------------------------------
+       Barres EMPILÉES par poste, en euros. Les postes sont exactement ceux du
+       tableau « coût de l'investissement » et leur somme est
+       sc.arrachage.investissement — un test le vérifie. Deux colonnes seulement
+       portent quelque chose (l'année 0 pour l'arrachage, l'année de plantation
+       pour l'installation) : c'est le fait, et l'étaler serait le trahir. */
+    const piste5 = pisteBarres('iv', compact ? 36 : 54, d.invest.total,
+      d.invest.total.map((v, i) => v > 0
+        ? 'année ' + i + ' : ' + d.invest.totalTxt[i] + ' — '
+          + d.invest.postes.filter(p => p.val[i] > 0).map(p => p.lib).join(', ')
+        : 'année ' + i + ' : aucun engagement'),
+      (i, h) => {
+        if (h <= 0) return null;
+        const tot = d.invest.total[i];
+        return e('div', { style: { height: h + 'px', display: 'flex', flexDirection: 'column',
+          borderRadius: '3px', overflow: 'hidden' } },
+          d.invest.postes.filter(p => p.val[i] > 0).map((p, j) => e('div', { key: 'sg' + j,
+            title: p.lib + ' — ' + p.valTxt[i],
+            style: { height: (p.val[i] / tot * 100) + '%', background: p.coul } })));
+      },
+      'Investissement engagé, en euros, année par année, empilé par poste.');
+
+    /* ---- piste 6 : entretien ---------------------------------------------
+       Les heures de travail MANUEL de la parcelle, la seule piste dont l'unité
+       n'est ni un kilo ni un euro. Elle ne descend jamais à zéro sur toute la
+       transition : le plantier travaille, c'est précisément ce que l'écran
+       doit cesser de laisser croire. */
+    const piste6 = pisteBarres('hr', compact ? 30 : 46, d.heures.total,
+      d.heures.total.map((v, i) => 'année ' + i + ' : ' + d.heures.totalTxt[i]
+        + ' (' + d.heures.haTxt[i] + ')'),
+      (i, h) => h > 0 ? e('div', { style: { height: h + 'px', background: COUL_HEURES,
+        borderRadius: '3px 3px 0 0' } }) : null,
+      'Heures de travail manuel sur la parcelle, année par année.');
+
+    /* ---- graduation : onze boutons, mêmes colonnes flex:1 et même gap -----
+       L'axe n'est plus une légende, c'est le contrôle de l'écran : chaque
+       année s'y sélectionne, et le panneau du dessous donne ses six chiffres.
+       `aria-pressed` plutôt qu'un `role="tab"` : ce sont onze boutons à deux
+       états sur un axe, pas un jeu d'onglets. */
+    // Sortie papier : la graduation redevient ce qu'elle était, une suite de
+    // nombres. La feuille d'impression masque tous les `button`, et un axe de
+    // temps sans ses années ne dit plus rien.
+    const graduation = compact
+      ? e('div', { key: 'grad',
+          style: { display: 'flex', gap: '3px',
+            fontFamily: "'JetBrains Mono',monospace", fontSize: '11.5px', color: 'var(--encre-3)' } },
+          d.annees.map(t => e('div', { key: 'g' + t, style: { flex: '1', textAlign: 'center' } }, String(t))))
+      : e('div', { key: 'grad', role: 'group',
+      'aria-label': "Année détaillée sous la frise",
+      style: { display: 'flex', gap: '3px',
+        fontFamily: "'JetBrains Mono',monospace", fontSize: '11.5px' } },
+      d.boutonsAnnee.map(b => e('button', { key: 'g' + b.t, onClick: b.go,
+        'aria-pressed': b.actif, 'aria-label': b.aria,
+        style: { flex: '1', minWidth: 0, textAlign: 'center', cursor: 'pointer',
+          fontFamily: "'JetBrains Mono',monospace", fontSize: '11.5px', padding: '4px 0',
+          border: '1px solid ' + (b.actif === 'true' ? 'var(--accent)' : 'transparent'),
+          borderRadius: '4px',
+          background: b.actif === 'true' ? 'var(--accent-fond)' : 'transparent',
+          color: b.actif === 'true' ? 'var(--encre)' : 'var(--encre-3)',
+          fontWeight: b.actif === 'true' ? 600 : 400 } }, String(b.t))));
 
     return e('div', { style: { display: 'grid', gridTemplateColumns: '118px 1fr',
       gap: '10px 14px', alignItems: 'center' } }, [
       libelle('l1', 'Phase de la', 'parcelle'), piste1,
       libelle('l2', 'Stock de réserve', 'kg/ha'), piste2,
-      libelle('l3', 'Trésorerie cumulée', 'parcelle seule'), piste3,
+      libelle('l3', 'Déblocage', 'kg et €'), piste3,
+      libelle('l4', 'Bloqué en réserve', 'kg'), piste4,
+      libelle('l5', 'Investissements', '€'), piste5,
+      libelle('l6', 'Entretien', 'heures'), piste6,
       e('div', { key: 'vide' }), graduation
     ]);
   }
@@ -3374,7 +3448,7 @@ class Component extends DCLogic {
     const sousTitres = [
       'registre, surface, âge, faire-valoir',
       'cépage, densité, palissage, coûts',
-      'réserve, trésorerie, âge, fiche'
+      'réserve, déblocages, investissement, entretien'
     ];
     const etapes = labels.map((label, i) => ({
       num: String(i + 1), label, sub: sousTitres[i],
@@ -3701,15 +3775,6 @@ class Component extends DCLogic {
       refClonesChevron: s.refClonesOuverte ? '−' : '+',
       detailOuvert: s.detailOuvert, toggleDetail: () => this.setState(st => ({ detailOuvert: !st.detailOuvert })),
       detailChevron: s.detailOuvert ? '−' : '+',
-      stockChartOuvert: s.stockChartOuvert, toggleStockChart: () => this.setState(st => ({ stockChartOuvert: !st.stockChartOuvert })),
-      // prompt 9 — les graphiques étant ouverts par défaut, le bouton propose
-      // désormais de les MASQUER : un bouton « Afficher » sous un graphique
-      // déjà affiché ne veut rien dire.
-      stockChartLabel: (s.stockChartOuvert ? 'Masquer' : 'Afficher') + ' la trajectoire du stock (kg/ha)',
-      stockChartChevron: s.stockChartOuvert ? '−' : '+',
-      ageChartOuvert: s.ageChartOuvert, toggleAgeChart: () => this.setState(st => ({ ageChartOuvert: !st.ageChartOuvert })),
-      ageChartLabel: (s.ageChartOuvert ? 'Masquer' : 'Afficher') + " la trajectoire d'âge du vignoble",
-      ageChartChevron: s.ageChartOuvert ? '−' : '+',
       voletProdOuvert: s.voletProdOuvert, toggleVoletProd: () => this.setState(st => ({ voletProdOuvert: !st.voletProdOuvert })),
       voletProdChevron: s.voletProdOuvert ? '−' : '+',
       voletProdLignes,
@@ -3734,42 +3799,17 @@ class Component extends DCLogic {
       vueBg1: s.vueFV === '1' ? '#20291F' : '#fff', vueFg1: s.vueFV === '1' ? '#FAF9F5' : '#20291F',
       vueBgExp: s.vueFV === 'exp' ? '#20291F' : '#fff', vueFgExp: s.vueFV === 'exp' ? '#FAF9F5' : '#20291F',
       vueBgProp: s.vueFV === 'prop' ? '#20291F' : '#fff', vueFgProp: s.vueFV === 'prop' ? '#FAF9F5' : '#20291F',
-      // Onglets de l'écran de résultats — prompt 8. Le libellé de chaque
-      // onglet décrit son contenu ; l'ordre est celui du handoff.
-      ongletsResultat: ['Coût, poste par poste', 'Réserve individuelle',
-        "Main d'œuvre et charges", 'Ce qui est replanté', 'Rajeunissement du vignoble']
-        .map((label, i) => ({
-          label, id: 'onglet-btn-' + i, panneau: 'onglet-panneau-' + i,
-          aria: s.ongletResultat === i ? 'true' : 'false',
-          // Un seul onglet dans l'ordre de tabulation (motif « tabs » ARIA) :
-          // on entre dans la barre par Tab, on s'y déplace par les flèches.
-          tabindex: s.ongletResultat === i ? '0' : '-1',
-          bg: s.ongletResultat === i ? 'var(--surface-haute)' : 'var(--surface-basse)',
-          fg: s.ongletResultat === i ? 'var(--encre)' : 'var(--encre-3)',
-          poids: s.ongletResultat === i ? '600' : '400',
-          souligne: s.ongletResultat === i ? 'var(--accent)' : 'transparent',
-          go: () => this.setState({ ongletResultat: i })
-        })),
-      onglet0: s.ongletResultat === 0, onglet1: s.ongletResultat === 1,
-      onglet2: s.ongletResultat === 2, onglet3: s.ongletResultat === 3,
-      onglet4: s.ongletResultat === 4,
-      // Navigation au clavier : flèches gauche/droite en boucle, Origine et
-      // Fin aux extrémités. Le focus suit la sélection, sans quoi la flèche
-      // déplacerait l'onglet actif en laissant le curseur derrière.
-      ongletsClavier: (ev) => {
-        const n = 5;
-        const cible = ev.key === 'ArrowRight' ? (s.ongletResultat + 1) % n
-          : ev.key === 'ArrowLeft' ? (s.ongletResultat + n - 1) % n
-          : ev.key === 'Home' ? 0
-          : ev.key === 'End' ? n - 1
-          : null;
-        if (cible === null) return;
-        ev.preventDefault();
-        this.setState({ ongletResultat: cible }, () => {
-          const el = document.getElementById('onglet-btn-' + cible);
-          if (el) el.focus();
-        });
-      },
+      // Refonte du 08/09/2026 — les cinq onglets de résultats ont disparu.
+      // Ils rangeaient les résultats par BLOC DE CODE (« Coût, poste par
+      // poste », « Réserve individuelle », « Main d’œuvre et charges »,
+      // « Ce qui est replanté », « Rajeunissement du vignoble ») et n’en
+      // montraient qu’un à la fois : un conseiller ne peut pas expliquer une
+      // trajectoire en dépliant cinq onglets l’un après l’autre. Le contenu
+      // est réparti par THÈME dans les six cartes de synthèse, dans la matrice
+      // annuelle et dans la bande de récapitulatif technique.
+      // `state.ongletResultat` et sa navigation clavier sont supprimés avec
+      // eux ; `state.anneeFrise` les remplace comme état d’interface de cet
+      // écran — l’axe de la frise sélectionne une ANNÉE, pas un onglet.
       // Panneau « Hypothèses » — prompt 10. Discipline de focus : le focus
       // entre sur le bouton de fermeture, Échap ferme, et le focus revient au
       // bouton qui a ouvert.
@@ -3973,7 +4013,14 @@ class Component extends DCLogic {
       { lib: 'Âge de la parcelle', val: nf(inp.ageParc, 0), unite: 'ans', origine: modeRegistre ? `Dérivé du registre — moyenne pondérée par surface de la sélection (idu ${s.parcelleIdu}), campagne ${campagne}` : 'Saisi' },
       { lib: 'Pieds manquants', val: nf(inp.manquants * 100, 1), unite: '%', origine: modeRegistre ? 'Dérivé du registre — moyenne pondérée par surface de la sélection' : 'Saisi' },
       { lib: 'Rendement estimé de la parcelle', val: nf(inp.rendEstime, 0), unite: 'kg/ha', origine: 'Saisi' },
-      { lib: 'Déclin annuel en statu quo', val: nf(inp.declinSQ * 100, 2), unite: '%/an', origine: 'Saisi — volet « hypothèses de comparaison » du temps 3 (prompt C1)' },
+      // Refonte du 08/09/2026 — `declinSQ` n'est plus SAISISSABLE. Le volet
+      // « Hypothèses de comparaison » qui le portait a été retiré du temps 3
+      // avec le différentiel et la cascade, seuls affichages qu'il pilotait.
+      // La clé reste dans `state.v` et dans `inp` : le moteur la lit pour
+      // construire `sc.reference`, et la fiche d'audit doit donc continuer de
+      // dire sa valeur — en la marquant NON SAISISSABLE, sans quoi le lecteur
+      // chercherait à l'écran un champ qui n'existe plus.
+      { lib: 'Déclin annuel en statu quo', val: nf(inp.declinSQ * 100, 2), unite: '%/an', origine: 'NON SAISISSABLE — valeur par défaut (1 %/an), lue par le moteur pour bâtir le scénario de référence ; le champ a été retiré de l’écran le 08/09/2026 avec le différentiel qu’il pilotait' },
       { lib: 'Régime de faire-valoir', val: regimeParcelle, unite: '—', origine: modeRegistre ? "Dérivé du registre — mode d'exploitation dominant en surface parmi les lignes retenues" : 'Saisi' },
       { lib: 'Loyer annuel (fermage)', val: nf(+v.loyerHa || 0, 0), unite: '€/ha/an', origine: 'Saisi — utilisé si régime = fermage' },
       { lib: 'Loyer annuel × surface parcelle', val: nf(inp.fv.loyerAn, 0), unite: '€/an', origine: 'Dérivé — loyer/ha × surface réelle de la parcelle' },
@@ -4465,13 +4512,39 @@ class Component extends DCLogic {
     const investProtectionMat = surfParcResolu * inp.coutProtectionHa;
     const investPalissageMat = surfParcResolu * inp.coutPalissageHa;
     const investIrrigationMat = inp.irrigation ? surfParcResolu * inp.coutIrrigHa : 0;
-    out.investLignes = [
-      { lib: "Arrachage et préparation du sol", val: this.fmtE0(investArrachagePrepa), quand: 'année 0', note: 'forfait MHCS tout compris' },
-      { lib: 'Matériel végétal (plants)', val: this.fmtE0(investMaterielVegetal), quand: `année ${inp.repos}`, note: `${nf(piedsAffiches, 0)} pieds × ${nf(inp.coutPlant, 2)} €` },
-      { lib: 'Palissage', val: this.fmtE0(investPalissageMat), quand: `année ${inp.repos}`, note: out.palisBadge.replace(/^·\s*/, '') },
-      { lib: 'Protection du jeune plant', val: this.fmtE0(investProtectionMat), quand: `année ${inp.repos}`, note: out.protectionBadge.replace(/^·\s*/, '') }
+    /* Refonte du 08/09/2026 — UNE SEULE liste de postes, trois rendus.
+       Elle alimente le tableau « poste par poste » du thème 5, la carte de
+       synthèse du même thème, et la piste empilée « Investissements » de la
+       frise. Avant, la frise aurait redéclaré les mêmes montants de son côté :
+       deux listes du même fait finissent toujours par diverger d'un poste.
+       `t` (l'année d'engagement) et `coul` (la teinte de série, littérale ici
+       et jamais dans le gabarit) sont les deux seules colonnes que la piste
+       ajoute au tableau. */
+    const POSTES_INVEST = [
+      { lib: "Arrachage et préparation du sol", t: 0, montant: investArrachagePrepa,
+        coul: '#A5433A', note: 'forfait MHCS tout compris' },
+      { lib: 'Matériel végétal (plants)', t: inp.repos, montant: investMaterielVegetal,
+        coul: '#4C7A57', note: `${nf(piedsAffiches, 0)} pieds × ${nf(inp.coutPlant, 2)} €` },
+      { lib: 'Palissage', t: inp.repos, montant: investPalissageMat,
+        coul: '#CFC6B0', note: out.palisBadge.replace(/^·\s*/, '') },
+      { lib: 'Protection du jeune plant', t: inp.repos, montant: investProtectionMat,
+        coul: '#B8D3BC', note: out.protectionBadge.replace(/^·\s*/, '') }
     ];
-    if (inp.irrigation) out.investLignes.push({ lib: 'Arrosage du plantier', val: this.fmtE0(investIrrigationMat), quand: `année ${inp.repos}`, note: '' });
+    if (inp.irrigation) POSTES_INVEST.push({ lib: 'Arrosage du plantier', t: inp.repos,
+      montant: investIrrigationMat, coul: '#A97F26', note: '' });
+    out.investLignes = POSTES_INVEST.map(p => ({
+      lib: p.lib, val: this.fmtE0(p.montant), quand: 'année ' + p.t, note: p.note }));
+    /* chantier C5 — total de la table « coût de l’investissement », qui a
+       remplacé l’ancien cartouche KPI « investissement brut ». Ce n’est pas un
+       indicateur concurrent : c’est la somme des lignes juste au-dessus, et
+       c’est aussi le total de la carte du thème 5 et de la piste
+       « Investissements » de la frise — une seule définition, trois rendus.
+       Assigné ICI, avec les lignes qu’il totalise, parce que la carte du
+       thème 5 le lit plus bas : un `out.` renseigné après sa lecture vaudrait
+       `undefined` sans rien casser bruyamment. */
+    out.investTotalLib = out.investLibelleCap;
+    out.investTotalDet = "Arrachage + installation, hors charges d'entretien — "
+      + out.investLibelleNote + ".";
 
     // fv hint — chantier 5 : le régime ne s'applique qu'aux flux de la parcelle
     out.fvHint = regimeParcelle === 'propriete' ? '100 % exploitant'
@@ -4488,77 +4561,55 @@ class Component extends DCLogic {
       : '';
     if (!OAD || out.erreurSurface) {
       const kpiVide = { lib: '…', val: '…', det: '' };
-      // chantier C3 — kpiSoldeReserve et kpiReserveHorizon sont repliés
-      // ENSEMBLE sur le même kpiVide : la contrainte d'adjacence vaut aussi
-      // pour l'état dégradé, où l'un ne doit pas apparaître sans l'autre.
+      // chantier C3 — kpiSoldeReserve et le texte de réserve à l'horizon sont
+      // repliés ENSEMBLE : la contrainte d'adjacence vaut aussi pour l'état
+      // dégradé, où l'un ne doit pas apparaître sans l'autre.
       Object.assign(out, { investTxt: '…', reserveReelleTxt: '…', reserveTheoTxt: '…',
         soldeReserveTxt: '…', soldeReserveAbsTxt: '…', soldeEstNegatif: false,
         reserveHorizonTxt: '…', syntheseSoldeTxt: '…',
-        creuxTxt: '…', creuxT: '…', creuxAbsTxt: '…', creuxAbsT: '…', stockMinTxt: '…', stockMinC: 'var(--accent)', tMin: '…',
-        kpiInvestTotal: kpiVide, kpiPointBas: kpiVide, kpiAmortisseur: kpiVide,
-        kpiSoldeReserve: kpiVide, kpiReserveHorizon: kpiVide,
-        kpiReserveMin: kpiVide, kpiEcartAge: kpiVide, kpiStockReserve: kpiVide, regimesTravail: [],
+        stockMinTxt: '…', stockMinC: 'var(--accent)', tMin: '…', deblocTotalKgTxt: '…',
+        kpiInvestTotal: kpiVide, kpiAmortisseur: kpiVide,
+        kpiSoldeReserve: kpiVide, regimesTravail: [],
         // prompt 5 — les trois chiffres de tête ont le même repli que les KPI :
         // sans moteur ou sur une saisie incohérente, ils ne montrent rien plutôt
         // qu'un chiffre faux en 36 px.
         teteRetour: kpiVide, teteEffort: kpiVide, teteAge: kpiVide,
-        friseTrajectoire: null, friseLegendeTxt: '',
-        detailEnteteTxt: '…',
-        ageAvantTxt: '…', ageApresArrTxt: '…', ageApresSQTxt: '…',
-        chartStock: null, chartAge: null, ageLegendItems: [], detailRows: [], lectureTreso: '',
-        syntheseCouvTxt: '…', syntheseCouvSuffixTxt: '', syntheseAbsorptionTxt: '',
-        syntheseStockLeadTxt: '…', syntheseStockTailTxt: '…', syntheseHorizonTxt: '…',
+        friseTrajectoire: null, friseTrajectoireImprimee: null, friseLegendeTxt: '', friseLegendeSeries: null,
+        // Refonte du 08/09/2026 — les six thèmes ont le même repli que les KPI :
+        // une carte sans chiffre plutôt qu'un chiffre faux. Le panneau d'année
+        // et la matrice se replient sur des listes vides, ce que les `sc-for`
+        // du gabarit rendent sans rien afficher.
+        anneeSelTxt: '…', anneePanneau: [], themeCartes: [],
+        matriceRows: [], matriceTotaux: {}, matriceEnteteTxt: '…',
+        syntheseCouvTxt: '…', syntheseCouvSuffixTxt: '',
+        syntheseStockLeadTxt: '…', syntheseStockTailTxt: '…',
         syntheseTxt: '…',
-        // chantier C4 — la ligne « par rapport à ne rien faire » est affichée
-        // TOUJOURS, quel que soit le signe : elle a donc aussi son repli ici.
-        differentielLib: '…', differentielTxt: '…', differentielDet: '',
-        // chantier C5 — la cascade a le même repli : elle est le même nombre,
-        // décomposé. Aucun des deux ne doit apparaître sans l'autre.
-        cascadeLib: '…', cascadeIntroTxt: '', cascadeRows: [],
-        printCascadeRows: [],
         investTotalLib: '…', investTotalDet: '',
         printLimitesRows: [],
-        printKpiRows: [], printDetailArr: [] });
+        printKpiRows: [] });
       return out;
     }
     const sc = OAD.construireScenarios(inp);
-    // prompt 7 — l'assemblage de la trésorerie cumulée (report de la vue de
-    // faire-valoir, puis cumul) est parti dans le moteur : la frise la dessine
-    // désormais, et une courbe qui divergerait du tableau d'un arrondi serait
-    // impossible à départager à l'écran. Un test fige que le déplacement n'a
-    // rien changé aux chiffres.
-    const cumTreso = (scn, parcelleSeule) =>
-      OAD.tresorerieCumulee(scn, inp.fv, s.vueFV, { parcelleSeule }).cumulee;
-    const arr = cumTreso(sc.arrachage, false);
-    const compl = cumTreso(sc.complantation, false);
-    const sq = cumTreso(sc.statuquo, false);
-    let creux = { v: Infinity, t: 0 };
-    arr.forEach((val, t) => { const d = val - sq[t]; if (d < creux.v) creux = { v: d, t }; });
-    // Point bas de trésorerie ABSOLU de la PARCELLE seule (pas relatif au statu quo,
-    // pas noyé dans le reste de l'exploitation) — répond à « combien cette opération
-    // me coûte-t-elle à financer, et quand ». Isoler la parcelle est nécessaire : sur
-    // `arr` (trésorerie de toute l'exploitation), le revenu du reste du domaine masque
-    // presque toujours l'effort propre à l'opération (vérifié en test P6 : `arr` peut
-    // rester positif toute la période sur une exploitation où la parcelle est petite,
-    // alors que la parcelle seule, elle, creuse). Réutilise `OAD.repartir()` tel quel
-    // (aucune logique nouvelle dans moteur-oad.js) en neutralisant le flux du reste
-    // (venteRaisinReste/coutsReste à 0) — même procédé que `cashRI:0` employé plus haut
-    // dans le code pour simuler « sans réserve ».
-    const arrParcelle = cumTreso(sc.arrachage, true);
-    let creuxAbs = { v: Infinity, t: 0 };
-    arrParcelle.forEach((val, t) => { if (val < creuxAbs.v) creuxAbs = { v: val, t }; });
-    /* chantier C4 — différentiel par rapport à « ne rien faire ».
-       Calculé par le moteur (OAD.differentielTresorerie), qui réutilise TELLE
-       QUELLE la trésorerie cumulée des deux scénarios : aucune règle nouvelle,
-       une soustraction terme à terme.
-         · `parcelleSeule: true`, et non la trésorerie de l'exploitation : sur
-           l'exploitation entière, le revenu du reste du domaine noie l'effet de
-           l'opération (déjà vérifié au test P6) ;
-         · `s.vueFV`, la MÊME vue de faire-valoir que le reste de l'écran, sans
-           exception ;
-         · `sc.reference`, jamais l'alias historique `sc.statuquo` — c'est la
-           clé que doit lire tout code nouveau. */
-    const diffTreso = OAD.differentielTresorerie(sc.arrachage, sc.reference, inp.fv, s.vueFV, { parcelleSeule: true });
+    /* Refonte du temps 3, 08/09/2026 — CE QUI A ÉTÉ RETIRÉ ICI.
+
+       Cet endroit assemblait quatre séries cumulées en euros (exploitation
+       entière et parcelle seule, scénario et référence), en dérivait le point
+       bas, la tension maximale et le différentiel à l'horizon, puis les
+       distribuait dans une piste de la frise, deux cartouches, une cascade de
+       quatre termes et six lignes de fiche d'audit.
+
+       Rien de tout cela n'était faux ; c'était illisible. Sur dix ans avec deux
+       vendanges déficitaires par défaut, ces séries sont négatives dans la
+       quasi-totalité des configurations : lues en premier, elles ne disent
+       qu'une chose déjà connue — un renouvellement coûte avant de rapporter —
+       et le reste de l'écran ne se lit plus. Le temps 3 est désormais organisé
+       par THÈME et par ANNÉE, et ces cumuls n'y ont pas de colonne où se poser.
+
+       `OAD.tresorerieCumulee` et `OAD.differentielTresorerie` restent
+       EXPORTÉES et TESTÉES, marquées @deprecated dans moteur-oad.js : le
+       calcul est conservé, c'est son affichage qui est retiré. Un chantier
+       ultérieur ne doit RÉTABLIR sur cet écran ni piste de cumul en euros, ni
+       cascade différentielle. Voir README §18bis et §19ter. */
     /* chantier C3 — le solde investissement/réserve est calculé PAR LE MOTEUR
        (OAD.soldeInvestissementReserve), plus ici : c'est de la logique
        financière, sa place est dans moteur-oad.js. Il est SIGNÉ : l'ancien
@@ -4658,14 +4709,14 @@ class Component extends DCLogic {
       };
     });
 
-    // Bloc 5 (écran 5, chantier B5) — rajeunissement du vignoble, FACTUEL
-    // uniquement (âge moyen avant/après, OAD.trajectoireAge déjà calculée
-    // ci-dessus) : pas de jugement sur la décision du vigneron, pas de
-    // comparaison à un objectif collectif de filière — voir README §17/P7.
-    out.ageAvantTxt = nf(trajAge.statuquo[0], 1) + ' ans';
-    out.ageApresArrTxt = nf(trajAge.arrachage[inp.horizon], 1) + ' ans';
-    out.ageApresSQTxt = nf(trajAge.statuquo[inp.horizon], 1) + ' ans';
-
+    /* Refonte du 08/09/2026 — `ageAvantTxt`, `ageApresArrTxt` et
+       `ageApresSQTxt` sont supprimés avec l’onglet « Rajeunissement du
+       vignoble » qui les portait. Le rajeunissement reste à l’écran, en
+       meilleure place : c’est le TROISIÈME CHIFFRE DE TÊTE (`out.teteAge`),
+       dont le détail énonce déjà les deux âges comparés. Trois cartouches de
+       22 px pour répéter ce qu’un chiffre de 36 px dit avec sa légende, c’est
+       la redondance que cette refonte supprime. `OAD.trajectoireAge` reste
+       appelée, et son graphique repliable reste à l’écran. */
     out.investTxt = this.fmtE0(invest);
     out.reserveReelleTxt = this.fmtE0(reserveReelle);
     out.reserveTheoTxt = this.fmtE0(reserveTheo);
@@ -4710,46 +4761,333 @@ class Component extends DCLogic {
         + nf(trajAge.arrachage[inp.horizon], 1) + ' ans après renouvellement'
     };
 
-    /* Frise de trajectoire — prompt 7.
-       Les trois séries viennent du moteur, aucune n'est recomposée ici : les
-       phases de OAD.phasesParcelle, le stock de la couche kg du scénario
-       arrachage (la MÊME que le graphique « trajectoire du stock »), la
-       trésorerie de OAD.tresorerieCumulee (la MÊME que le KPI « point bas »).
-       Le creux et le point bas affichés sont donc, par construction, les
-       années que la synthèse textuelle annonce. */
-    const anneesFrise = sc.arrachage.kg.map(r => r.t);
-    const stockFrise = sc.arrachage.kg.map(r => r.stockHa);
-    out.friseTrajectoire = this.friseTrajectoire({
+    /* ==================================================================
+       TEMPS 3 — SIX THÈMES SUR UN AXE DE ONZE ANNÉES (refonte du 08/09/2026)
+
+       Toutes les séries ci-dessous viennent de `sc.arrachage` ou d'une
+       fonction du moteur. AUCUNE n'est recomposée ici : ce bloc met en forme,
+       il ne calcule pas. C'est la règle de CLAUDE.md, et elle est ce qui
+       garantit que la frise, les cartes de synthèse, le panneau d'année et la
+       matrice annuelle racontent le même chiffre — ils lisent tous les mêmes
+       tableaux.
+
+       Les six thèmes, dans l'ordre où on les regarde :
+         1 · phase de la parcelle    OAD.phasesParcelle / phaseParAnnee
+         2 · stock de réserve        kg[i].stockHa, échelle jusqu'à inp.plafond
+         3 · déblocage de réserve    kg[i].sortieArr           (kg et €)
+         4 · bloqué en réserve       kg[i].mise                (kg)
+         5 · investissements         mêmes postes que investLignes (€)
+         6 · entretien               OAD.heuresManuellesParAnnee (heures)
+
+       UNITÉS. Le total (parcelle) vient en premier, l'unité à l'hectare en
+       second, partout où les deux ont un sens. Le stock, lui, reste en kg/ha
+       et n'est JAMAIS converti en euros — c'est un stock physique, pas une
+       créance (README §19, chantier C3).
+       ================================================================== */
+    const kgRows = sc.arrachage.kg;
+    const eurRows = sc.arrachage.eur;
+    const anneesFrise = kgRows.map(r => r.t);
+    const stockFrise = kgRows.map(r => r.stockHa);
+    const segmentsFrise = OAD.phasesParcelle(inp.repos, inp.horizon);
+    const phaseAn = OAD.phaseParAnnee(inp.repos, inp.horizon);
+    const LIB_PHASE = { arrachage: 'arrachage', repos: 'repos du sol',
+      plantier: 'plantier', production: 'en production' };
+
+    /* Thème 3 — déblocage. Les euros ne sont pas une seconde façon de compter :
+       `sortieArr × prixKg` EST `cashRI` (coucheEuro, moteur-oad.js). Les deux
+       chemins ne peuvent pas diverger, et un test fige que leurs sommes
+       coïncident — sans quoi l'écran afficherait deux montants pour un seul
+       déblocage. */
+    const deblocKg = kgRows.map(r => r.sortieArr);
+    const deblocEur = kgRows.map(r => r.sortieArr * inp.prixKg);
+    const deblocKgHa = kgRows.map(r => inp.surfParc > 0 ? r.sortieArr / inp.surfParc : 0);
+    const deblocKgTot = deblocKg.reduce((a, v) => a + v, 0);
+    const deblocEurTot = deblocEur.reduce((a, v) => a + v, 0);
+    const anneesDebloc = anneesFrise.filter(t => deblocKg[t] > 0.5);
+
+    /* La vue de faire-valoir, après la refonte du 08/09/2026.
+
+       PROBLÈME RENCONTRÉ, ET RÉSOLU ICI PLUTÔT QUE TU. Le sélecteur
+       « ensemble / part exploitant / part propriétaire » ne pilotait QUE les
+       séries de trésorerie cumulée, toutes retirées de l'écran. Laissé tel
+       quel, il serait devenu un contrôle qui ne change rien — un bouton qui
+       ment. Il est donc rebranché sur le seul montant en euros que le régime
+       de faire-valoir partage réellement et qui reste affiché : la réserve
+       débloquée.
+
+       AUCUNE RÈGLE NOUVELLE, ET AUCUNE FONCTION NOUVELLE DANS LE MOTEUR. Le
+       coefficient est LU sur `OAD.repartir` elle-même, par différence entre un
+       euro de `cashRI` et zéro : `repartir` est affine en `cashRI`, donc cette
+       différence EST son coefficient, quel que soit le régime — 1 en propriété,
+       1 en fermage (le loyer est un forfait annuel, il s'annule dans la
+       différence), (1 − partRecolte) en métayage. Recopier une table de
+       régimes ici serait au contraire une règle métier dupliquée, qui
+       divergerait le jour où `repartir` changerait.
+
+       Le MONTANT DE TÊTE du thème 3 reste celui de l'ENSEMBLE
+       (`sortieArr × prixKg`, identique à `cashRI`) : c'est un stock physique
+       monétisé, il ne dépend pas de qui l'encaisse. La vue n'ajoute qu'une
+       ligne de détail, qui dit sa part et sous quel régime. */
+    const ZERO_FV = { venteRaisinParcelle: 0, cashRI: 0, coutsParcelle: 0,
+      venteRaisinReste: 0, coutsReste: 0 };
+    const fvBase = OAD.repartir(ZERO_FV, inp.fv);
+    const fvUnite = OAD.repartir({ ...ZERO_FV, cashRI: 1 }, inp.fv);
+    const coefDeblocExp = fvUnite.exp - fvBase.exp;
+    const coefDeblocProp = fvUnite.prop - fvBase.prop;
+    const deblocPartLib = s.vueFV === 'exp' ? 'Part exploitant'
+      : s.vueFV === 'prop' ? 'Part propriétaire' : 'Répartition';
+    const deblocPartTxt = s.vueFV === 'exp' ? this.fmtE0(deblocEurTot * coefDeblocExp)
+      : s.vueFV === 'prop' ? this.fmtE0(deblocEurTot * coefDeblocProp)
+      : this.fmtE0(deblocEurTot * coefDeblocExp) + ' exploitant · '
+        + this.fmtE0(deblocEurTot * coefDeblocProp) + ' propriétaire';
+
+    /* Thème 4 — mise en réserve. C'est un flux de l'EXPLOITATION ENTIÈRE :
+       `mise` porte sur la récolte totale, pas sur la seule parcelle
+       renouvelée. La part venue des autres parcelles est donc affichée — c'est
+       la demande, et sans elle la piste laisserait croire que tout ce qui
+       entre en réserve vient d'ici, alors que la parcelle en repos ne récolte
+       rien du tout. Répartition au prorata des récoltes, la même convention
+       que `coucheEuro` pour le VolCo. */
+    const bloqueKg = kgRows.map(r => r.mise);
+    const bloqueAutres = kgRows.map(r => r.recolte > 0 ? r.mise * r.recolteReste / r.recolte : 0);
+    const bloqueKgTot = bloqueKg.reduce((a, v) => a + v, 0);
+    const bloqueAutresTot = bloqueAutres.reduce((a, v) => a + v, 0);
+
+    /* Thème 5 — investissement, par année et par poste. Les postes sont
+       EXACTEMENT ceux du tableau « coût de l'investissement » (out.investLignes,
+       plus haut) : mêmes montants, même calendrier — arrachage en année 0,
+       installation en année `repos`. Leur somme est `sc.arrachage.investissement`,
+       rendu par le moteur et jamais recalculé ici ; un test le vérifie, sans
+       quoi la frise et le total du tableau pourraient dériver l'un de l'autre.
+       Les teintes sont des couleurs de SÉRIE, littérales et identiques dans les
+       deux thèmes — le gabarit n'en porte aucune (test §27). */
+    const investPostes = POSTES_INVEST.map(p => {
+      const val = anneesFrise.map(t => (t === p.t ? p.montant : 0));
+      return { lib: p.lib, coul: p.coul, val, valTxt: val.map(x => this.fmtE0(x)) };
+    });
+    const investTotalAn = anneesFrise.map((t, i) =>
+      investPostes.reduce((a, p) => a + p.val[i], 0));
+
+    /* Thème 6 — entretien. Heures de travail MANUEL, en h/ha depuis le moteur,
+       remises à l'échelle de la parcelle par multiplication. La piste ne
+       descend à zéro que pendant le repos du sol : le plantier travaille, et
+       c'est précisément ce que l'écran doit cesser de laisser croire. */
+    const heuresHa = OAD.heuresManuellesParAnnee('arrachage', kgRows, inp);
+    const heuresTot = heuresHa.map(hh => hh * inp.surfParc);
+    const heuresHaTot = heuresHa.reduce((a, v) => a + v, 0);
+    const heuresTotTot = heuresTot.reduce((a, v) => a + v, 0);
+
+    /* Année retenue. État de NAVIGATION : hors instantané localStorage, comme
+       `step`, l'onglet d'autrefois et les volets. Bornée à l'horizon pour
+       qu'un changement de paramétrage ne laisse jamais une sélection hors
+       axe. */
+    const anneeSel = Math.max(0, Math.min(inp.horizon, +s.anneeFrise || 0));
+    const hTxt = (x) => nf(x, 1) + ' h';
+    const boutonsAnnee = anneesFrise.map(t => ({
+      t, actif: t === anneeSel ? 'true' : 'false',
+      aria: 'Année ' + t + ', ' + LIB_PHASE[phaseAn[t]] + " — afficher le détail de l'année",
+      go: () => this.setState({ anneeFrise: t })
+    }));
+
+    const donneesFrise = {
       annees: anneesFrise,
-      segments: OAD.phasesParcelle(inp.repos, inp.horizon),
+      segments: segmentsFrise,
       stock: stockFrise,
       plafond: inp.plafond,
       creuxT: tMin,
       creuxTxt: this.fmtKg(stockMin) + ' kg/ha',
-      treso: arrParcelle,
-      tresoTxt: arrParcelle.map(v => this.fmtE0(v)),
-      pointBasT: creuxAbs.t
-    });
-    /* La légende dit la CAUSALITÉ, pas la lecture du graphique : c'est la
-       phrase de synthèse actuelle, rendue en image. Elle nomme l'aléa
-       effectivement simulé — sans lui, la chaîne « récolte courte → creux de
-       réserve → point bas de trésorerie » n'a pas de premier maillon. */
+      debloc: { kg: deblocKg, kgTxt: deblocKg.map(x => this.fmtKg(x)),
+        eur: deblocEur, eurTxt: deblocEur.map(x => this.fmtE0(x)) },
+      bloque: { kg: bloqueKg, kgTxt: bloqueKg.map(x => this.fmtKg(x)),
+        autres: bloqueAutres, autresTxt: bloqueAutres.map(x => this.fmtKg(x)) },
+      invest: { postes: investPostes, total: investTotalAn,
+        totalTxt: investTotalAn.map(x => this.fmtE0(x)) },
+      heures: { total: heuresTot, totalTxt: heuresTot.map(hTxt),
+        ha: heuresHa, haTxt: heuresHa.map(x => nf(x, 1) + ' h/ha') },
+      anneeSel, boutonsAnnee
+    };
+    out.friseTrajectoire = this.friseTrajectoire(donneesFrise);
+    /* La MÊME frise, en variante papier : mêmes séries, mêmes couleurs, mêmes
+       six pistes, mais des hauteurs réduites et un axe en texte simple. Deux
+       raisons, détaillées au-dessus de `friseTrajectoire` : la feuille
+       d'impression masque tous les `button` — l'axe interactif y perdrait sa
+       graduation — et la remise au vigneron tient sur une seule page.
+       Un seul jeu de données, une seule fonction : les deux rendus ne peuvent
+       pas raconter deux trajectoires différentes. */
+    out.friseTrajectoireImprimee = this.friseTrajectoire({ ...donneesFrise, compact: true });
+
+    /* La légende dit la CAUSALITÉ, pas la lecture du graphique. Elle nomme
+       l'aléa effectivement simulé — sans lui, la chaîne « récolte courte →
+       creux de réserve » n'a pas de premier maillon — puis les deux repères
+       physiques de la transition. Elle ne porte plus de point bas en euros :
+       la piste qui le portait a été retirée (voir plus haut). */
     out.friseLegendeTxt = (nbAnneesStress === 2
         ? 'Les deux récoltes courtes des années 3 et 4 se lisent au même endroit que leur effet : '
         : nbAnneesStress === 1
           ? 'La récolte courte de l’année 1 se lit au même endroit que son effet : '
           : 'Sans aléa climatique simulé, seule la transition creuse la trajectoire : ')
       + 'le creux de réserve en année ' + tMin + ' (' + this.fmtKg(stockMin) + ' kg/ha), '
-      + 'puis le point bas de trésorerie en année ' + creuxAbs.t + ' ('
-      + this.fmtE0(creuxAbs.v) + '), et le retour en production en année '
-      + nf(retourProd, 0) + '.';
-    out.creuxTxt = this.fmtE0(creux.v);
-    out.creuxT = String(creux.t);
-    out.creuxAbsTxt = this.fmtE0(creuxAbs.v);
-    out.creuxAbsT = String(creuxAbs.t);
+      + 'les ' + anneesDebloc.length + ' années de déblocage, et le retour en production '
+      + 'en année ' + nf(retourProd, 0) + '. Cliquez une année de l’axe pour son détail.';
+
+    /* Légende des couleurs de série. Construite ici, en React.createElement,
+       pour la même raison que la frise : le gabarit ne porte aucune couleur
+       littérale. Elle ne nomme que les teintes qu'un lecteur doit pouvoir
+       rattacher à un poste — les phases et les postes d'investissement ; les
+       pistes à une seule teinte (réserve, heures) portent leur nom dans le
+       libellé de la piste, une pastille n'y ajouterait rien. */
+    const pastille = (k, coul, lib) => React.createElement('span', { key: k,
+      style: { display: 'inline-flex', alignItems: 'center', gap: '6px',
+        fontSize: '11.5px', color: 'var(--encre-2)' } }, [
+      React.createElement('span', { key: 'c', style: { width: '11px', height: '11px',
+        borderRadius: '3px', background: coul, flex: 'none' } }),
+      React.createElement('span', { key: 'l' }, lib)
+    ]);
+    const COUL_PHASE_FRISE = { arrachage: '#A5433A', repos: '#CFC6B0',
+      plantier: '#B8D3BC', production: '#4C7A57' };
+    out.friseLegendeSeries = React.createElement('div', {
+      style: { display: 'flex', gap: '16px', flexWrap: 'wrap' } },
+      segmentsFrise.map((sg, i) => pastille('ph' + i, COUL_PHASE_FRISE[sg.id], sg.lib))
+        .concat(investPostes.map((p, i) => pastille('iv' + i, p.coul, p.lib))));
+
+    /* ---- Panneau « Année N » ------------------------------------------
+       Les six chiffres de l'année retenue, un par thème, dans l'ordre des
+       pistes. C'est ce que la frise rend visible et que seul un survol
+       donnait jusqu'ici : un title au survol n'existe pas au vidéoprojecteur,
+       ni au clavier. */
+    const iSel = anneeSel;
+    const phaseSel = phaseAn[iSel];
+    const investPostesSel = investPostes.filter(p => p.val[iSel] > 0);
+    out.anneeSelTxt = String(anneeSel);
+    out.anneePanneau = [
+      { num: '1', lib: 'Phase de la parcelle', val: LIB_PHASE[phaseSel],
+        det: (function (sg) {
+          if (!sg) return '';
+          const duree = sg.fin - sg.debut;
+          return duree > 1 ? 'années ' + sg.debut + ' à ' + (sg.fin - 1) + ' — ' + duree + ' ans'
+            : 'année ' + sg.debut + ' — 1 an';
+        })(segmentsFrise.find(sg => iSel >= sg.debut && iSel < sg.fin)) },
+      { num: '2', lib: 'Stock de réserve', val: this.fmtKg(stockFrise[iSel]) + ' kg/ha',
+        det: 'plafond ' + this.fmtKg(inp.plafond) + ' kg/ha'
+          + (iSel === tMin ? ' · c’est le creux de la transition' : '') },
+      { num: '3', lib: 'Déblocage de réserve',
+        val: deblocKg[iSel] > 0.5 ? this.fmtKg(deblocKg[iSel]) + ' kg' : 'aucun',
+        det: deblocKg[iSel] > 0.5
+          ? this.fmtE0(deblocEur[iSel]) + ' · ' + this.fmtKg(deblocKgHa[iSel]) + ' kg/ha de parcelle'
+          : 'hors fenêtre de déblocage (années 1 à ' + inp.nbSortie + ')' },
+      { num: '4', lib: 'Bloqué en réserve',
+        val: bloqueKg[iSel] > 0.5 ? this.fmtKg(bloqueKg[iSel]) + ' kg' : 'aucune mise',
+        det: bloqueKg[iSel] > 0.5
+          ? 'dont ' + this.fmtKg(bloqueAutres[iSel]) + ' kg venus des autres parcelles'
+          : 'la récolte de l’exploitation ne dépasse pas son volume commercialisable' },
+      { num: '5', lib: 'Investissement',
+        val: investTotalAn[iSel] > 0 ? this.fmtE0(investTotalAn[iSel]) : 'aucun engagement',
+        det: investPostesSel.length
+          ? investPostesSel.map(p => p.lib + ' ' + p.valTxt[iSel]).join(' · ')
+          : 'les engagements tombent en année 0 et en année ' + inp.repos },
+      { num: '6', lib: 'Entretien', val: hTxt(heuresTot[iSel]),
+        det: nf(heuresHa[iSel], 1) + ' h/ha · charge de surface '
+          + nf(chargeSurfaceParRegime[phaseSel] || 0, 0) + ' €/ha/an' }
+    ];
+
+    /* ---- Six cartes de synthèse ---------------------------------------
+       Une carte par thème, son total sur l'horizon, et trois à cinq lignes de
+       détail. Elles remplacent les cinq onglets : le même contenu, mais rangé
+       par SUJET plutôt que par bloc de code, et tout visible à la fois — un
+       conseiller ne peut pas montrer une trajectoire en dépliant cinq onglets
+       l'un après l'autre. */
+    const ligne = (lib, val) => ({ lib, val });
+    out.themeCartes = [
+      { num: '1', lib: 'Phase de la parcelle', unite: 'années',
+        val: segmentsFrise.length + (segmentsFrise.length > 1 ? ' phases' : ' phase'),
+        det: 'sur ' + out.horizonTxt + ', de l’arrachage au retour en production',
+        lignes: segmentsFrise.map(sg => ligne(sg.lib,
+          (sg.fin - sg.debut) > 1 ? 'années ' + sg.debut + ' à ' + (sg.fin - 1) : 'année ' + sg.debut)) },
+      { num: '2', lib: 'Stock de réserve', unite: 'kg/ha',
+        val: this.fmtKg(resHorizon.arrachageKgHa) + ' kg/ha',
+        det: 'à ' + out.horizonTxt + ', contre ' + this.fmtKg(resHorizon.referenceKgHa)
+          + ' kg/ha sans renouvellement',
+        lignes: [
+          ligne('Au départ', this.fmtKg(stockFrise[0]) + ' kg/ha'),
+          ligne('Creux de la transition', this.fmtKg(stockMin) + ' kg/ha, année ' + tMin),
+          ligne('Seuil de vigilance', this.fmtKg(seuil) + ' kg/ha'),
+          ligne('Plafond réglementaire', this.fmtKg(inp.plafond) + ' kg/ha')
+        ] },
+      { num: '3', lib: 'Déblocage de réserve', unite: 'kg et €',
+        val: this.fmtKg(deblocKgTot) + ' kg',
+        det: 'soit ' + this.fmtE0(deblocEurTot) + ' mobilisés — un stock prélevé, pas un revenu nouveau',
+        lignes: [
+          ligne('Années de déblocage', anneesDebloc.length
+            ? anneesDebloc.join(', ') + ' (' + anneesDebloc.length + ' ans)' : 'aucune'),
+          ligne('Volume annuel autorisé', this.fmtKg(inp.volSortieArr) + ' kg/ha'),
+          ligne('Sur la parcelle', this.fmtKg(inp.surfParc > 0 ? deblocKgTot / inp.surfParc : 0) + ' kg/ha au total'),
+          ligne(deblocPartLib, deblocPartTxt)
+        ] },
+      { num: '4', lib: 'Bloqué en réserve', unite: 'kg',
+        val: this.fmtKg(bloqueKgTot) + ' kg',
+        det: 'mise en réserve de l’exploitation entière sur ' + out.horizonTxt,
+        lignes: [
+          ligne('Part des autres parcelles', this.fmtKg(bloqueAutresTot) + ' kg'),
+          ligne('Part de la parcelle renouvelée', this.fmtKg(bloqueKgTot - bloqueAutresTot) + ' kg'),
+          ligne('Années avec mise en réserve',
+            String(bloqueKg.filter(x => x > 0.5).length) + ' sur ' + anneesFrise.length)
+        ] },
+      { num: '5', lib: 'Investissements', unite: '€',
+        val: this.fmtE0(sc.arrachage.investissement),
+        det: out.investTotalDet,
+        lignes: POSTES_INVEST.map(p => ligne(p.lib, this.fmtE0(p.montant) + ' — année ' + p.t)) },
+      { num: '6', lib: 'Entretien', unite: 'heures',
+        val: hTxt(heuresTotTot),
+        det: nf(heuresHaTot, 1) + ' h/ha cumulées sur ' + out.horizonTxt
+          + ' — travail manuel, référentiel Avenant 217',
+        lignes: regimes.map(r => ligne(r.lib,
+          nf(r.heuresHaAn, 0) + ' h/ha/an × ' + r.nbAnnees + (r.nbAnnees > 1 ? ' ans' : ' an'))) }
+    ];
+
+    /* ---- Matrice annuelle par thème ------------------------------------
+       Le tableau « mode technique » d'autrefois alignait huit colonnes de
+       moteur (surface productive, VolCo vendu, sortie pour insuffisance, cash
+       net…) : il disait le calcul, pas la trajectoire. La matrice dit les six
+       thèmes, dans l'ordre des pistes, une ligne par année. Cliquer une ligne
+       sélectionne l'année — c'est le même état que les pastilles de l'axe, il
+       n'y a qu'une seule année retenue à l'écran.
+       Elle sert aussi la fiche d'audit : une seule construction, donc aucune
+       possibilité que l'écran et l'imprimé divergent. */
+    out.matriceRows = anneesFrise.map((t, i) => ({
+      t: String(t),
+      phase: LIB_PHASE[phaseAn[i]],
+      stock: this.fmtKg(stockFrise[i]),
+      deblocKg: deblocKg[i] > 0.5 ? this.fmtKg(deblocKg[i]) : '—',
+      deblocEur: deblocKg[i] > 0.5 ? this.fmtE0(deblocEur[i]) : '—',
+      bloque: bloqueKg[i] > 0.5 ? this.fmtKg(bloqueKg[i]) : '—',
+      bloqueAutres: bloqueKg[i] > 0.5 ? this.fmtKg(bloqueAutres[i]) : '—',
+      invest: investTotalAn[i] > 0 ? this.fmtE0(investTotalAn[i]) : '—',
+      heures: nf(heuresTot[i], 1),
+      heuresHa: nf(heuresHa[i], 1),
+      actif: t === anneeSel ? 'true' : 'false',
+      fond: t === anneeSel ? 'var(--accent-fond)' : 'transparent',
+      go: () => this.setState({ anneeFrise: t })
+    }));
+    out.matriceTotaux = {
+      stock: this.fmtKg(resHorizon.arrachageKgHa),
+      deblocKg: this.fmtKg(deblocKgTot),
+      deblocEur: this.fmtE0(deblocEurTot),
+      bloque: this.fmtKg(bloqueKgTot),
+      bloqueAutres: this.fmtKg(bloqueAutresTot),
+      invest: this.fmtE0(sc.arrachage.investissement),
+      heures: nf(heuresTotTot, 1),
+      heuresHa: nf(heuresHaTot, 1)
+    };
+    out.matriceEnteteTxt = anneesFrise.length + ' années × 6 thèmes · '
+      + 'déblocage ' + this.fmtKg(deblocKgTot) + ' kg · investissement '
+      + this.fmtE0(sc.arrachage.investissement) + ' · entretien ' + hTxt(heuresTotTot);
+
     out.stockMinTxt = this.fmtKg(stockMin);
     out.stockMinC = stockMin < seuil ? 'var(--alerte)' : 'var(--vegetal)';
     out.tMin = String(tMin);
+    // Thème 3, vu depuis la synthèse latérale : ce que la transition a
+    // effectivement débloqué, en kilos. Physique, jamais converti ici.
+    out.deblocTotalKgTxt = this.fmtKg(deblocKgTot);
 
     // Synthèse rédigée (étape 5, bloc sombre) — texte assemblé selon les résultats,
     // jamais une conclusion fixe (voir CLAUDE.md : les conclusions dépendent des chiffres).
@@ -4769,22 +5107,15 @@ class Component extends DCLogic {
       out.syntheseStockTailTxt = `en année ${tMin}.`;
     }
 
-    const seuilAtteintH = arr[h] >= sq[h];
-    out.syntheseAbsorptionTxt = seuilAtteintH
-      ? `, résorbé d'ici ${out.horizonTxt} : pas un coût définitif`
-      : `, non résorbé à ${out.horizonTxt} d'après vos hypothèses`;
-
-    if (arr[h] < sq[h]) {
-      const hBack = Math.min(3, h);
-      const ecartNow = sq[h] - arr[h];
-      const ecartBack = sq[h - hBack] - arr[h - hBack];
-      const tendance = hBack > 0 ? (ecartBack - ecartNow) / hBack : 0;
-      out.syntheseHorizonTxt = tendance > 0
-        ? `À ${out.horizonTxt}, le statu quo reste devant en trésorerie cumulée — l'écart se résorbe d'environ ${this.fmtE0(tendance)} par an en fin de période.`
-        : `À ${out.horizonTxt}, le statu quo reste devant en trésorerie cumulée, sans tendance nette au rattrapage sur la période.`;
-    } else {
-      out.syntheseHorizonTxt = `À ${out.horizonTxt}, l'arrachage-replantation devance le statu quo en trésorerie cumulée, de ${this.fmtE0(arr[h] - sq[h])}.`;
-    }
+    /* Refonte du 08/09/2026 — `syntheseAbsorptionTxt` (« résorbé d'ici dix
+       ans ») et `syntheseHorizonTxt` (« le statu quo reste devant en
+       trésorerie cumulée ») ont été RETIRÉS de la phrase. Tous deux lisaient
+       des séries cumulées en euros, retirées de l'écran avec la troisième
+       piste de la frise ; les garder aurait laissé la phrase commenter un
+       graphique qui n'est plus là. La phrase se referme désormais sur ce
+       qu'elle peut montrer : la réserve mobilisée, l'investissement, le
+       solde, la réserve à l'horizon et le plancher de réserve.
+       Ne pas y réintroduire de cumul en euros. */
 
     /* prompt 14 — la même phrase, en texte plat, pour la sortie « remise au
        vigneron ». Assemblée des MÊMES morceaux que le bloc sombre de l'écran :
@@ -4812,9 +5143,7 @@ class Component extends DCLogic {
       + `La réserve mobilisable — ${out.reserveReelleTxt} réellement mobilisés `
       + `(${out.reserveTheoTxt} théoriques) — ${out.syntheseCouvTxt} ${out.investTxt}`
       + `${out.syntheseCouvSuffixTxt}. ${out.syntheseSoldeTxt} ${out.reserveHorizonTxt} `
-      + `Tension de trésorerie maximale en année ${out.creuxT} (${out.creuxTxt})`
-      + `${out.syntheseAbsorptionTxt}. ${out.syntheseStockLeadTxt} ${out.stockMinTxt} kg/ha `
-      + `${out.syntheseStockTailTxt} ${out.syntheseHorizonTxt}`;
+      + `${out.syntheseStockLeadTxt} ${out.stockMinTxt} kg/ha ${out.syntheseStockTailTxt}`;
 
     // Famille 1 — décision financière (€), toujours visible. Le taux de couverture
     // sort du % au-delà de 100 % (point 2 du chantier P6) : illisible et trompeur en
@@ -4822,16 +5151,16 @@ class Component extends DCLogic {
     const couvDet = couv >= 1
       ? `mobilise l'investissement en totalité · +${this.fmtE0(reserveReelle - invest)} mobilisés au-delà · ${this.fmtE0(reserveTheo)} théoriques`
       : `mobilise ${Math.round(couv * 100)} % de l'investissement · ${this.fmtE0(reserveTheo)} théoriques`;
-    // Bloc 2 — coût de l'investissement : total (détail des lignes déjà
-    // construit plus haut, out.investLignes) + ce qu'il faut être en mesure
-    // de financer au plus bas.
+    // Coût de l'investissement : le total (détail des lignes déjà construit
+    // plus haut, out.investLignes) est celui de la carte du thème 5.
     // chantier C5 — `out.kpiInvestTotal` supprimé : l'investissement brut n'est
     // plus un cartouche KPI concurrent des autres montants, c'est le total du
     // tableau « coût de l'investissement » (out.investTotalLib/investTotalDet,
-    // plus haut) et le premier terme de la cascade. Le libellé « référence
-    // Champagne / votre investissement » (prompt B4, arbitrage 11) est conservé,
-    // porté par out.investLibelleCap.
-    out.kpiPointBas = { lib: 'Point bas de trésorerie', val: this.fmtE0(creuxAbs.v), det: `trésorerie cumulée de la parcelle seule, année ${creuxAbs.t} — hors reste de l'exploitation, ce qu'il faut être en mesure de financer au plus bas` };
+    // plus haut). Le libellé « référence Champagne / votre investissement »
+    // (prompt B4, arbitrage 11) est conservé, porté par out.investLibelleCap.
+    // Refonte du 08/09/2026 — `out.kpiPointBas` supprimé à son tour : c'était
+    // un extremum d'une série cumulée en euros, retirée de l'écran avec la
+    // troisième piste de la frise. Ne pas le rétablir sur cet écran.
 
     // Bloc 3 — impact sur la réserve : ce qui est mobilisé (jamais un
     // "gain", voir couvDet plus haut — vocabulaire "mobilise"), le solde
@@ -4860,8 +5189,9 @@ class Component extends DCLogic {
        qu'il était plat à 0 sur la majeure partie de la plage. Le `det` le dit
        en clair et en positif. Vocabulaire INTERDIT ici : « excédent », « gain »,
        « bénéfice ». Ce n'est pas un profit, c'est un DÉSTOCKAGE — sa
-       contrepartie physique est la ligne kpiReserveHorizon ci-dessous, dont il
-       ne doit jamais être séparé. */
+       contrepartie physique est la réserve à l'horizon en kg/ha
+       (out.reserveHorizonTxt ci-dessous, et la ligne « Réserve à N ans » de la
+       fiche d'audit), dont il ne doit jamais être séparé. */
     out.kpiSoldeReserve = {
       lib: 'Investissement net de la réserve mobilisée',
       val: this.fmtE0(soldeInvestReserve),
@@ -4870,170 +5200,68 @@ class Component extends DCLogic {
         : `investissement ${this.fmtE0(invest)} − réserve mobilisée ${this.fmtE0(reserveReelle)} · réserve mobilisée au-delà de l'investissement : ${this.fmtE0(Math.abs(soldeInvestReserve))}`
     };
     /* chantier C3 — CONTRAINTE D'ADJACENCE, NON NÉGOCIABLE.
-       Cette ligne est rendue immédiatement sous kpiSoldeReserve, dans le même
-       bloc de template. Il ne doit exister AUCUN état de l'interface où le
+       Cette contrepartie physique est rendue dans la même phrase de synthèse
+       que le solde (temps 3) et immédiatement sous lui dans la fiche d'audit.
+       Il ne doit exister AUCUN état de l'interface où le
        solde s'affiche sans elle : le solde en euros est muet sur le fait que
        la réserve mobilisée est un stock prélevé, et le lire seul fait croire
        que le déstockage est gratuit. Une session ultérieure qui voudrait
-       « aérer la mise en page » ne doit pas les séparer. Le commentaire est
-       répété côté template, à l'endroit du rendu.
+       « aérer la mise en page » ne doit pas les séparer.
+       Le KPI out.kpiReserveHorizon a disparu avec la carte « Ce que le
+       renouvellement produit » (08/09/2026) : l'adjacence est désormais portée
+       par la phrase de synthèse et par la fiche d'audit, plus par une carte.
        En kg/ha UNIQUEMENT : ne jamais convertir en euros, y compris entre
        parenthèses, y compris avec une mention « indicatif » — un lecteur qui
        voit un euro le soustrait, quel que soit l'avertissement. */
-    out.kpiReserveHorizon = {
-      lib: `Réserve à ${inp.horizon} ans`,
-      val: this.fmtKg(resHorizon.arrachageKgHa) + ' kg/ha',
-      det: `contre ${this.fmtKg(resHorizon.referenceKgHa)} kg/ha sans renouvellement`
-    };
     out.reserveHorizonTxt = `Réserve à ${inp.horizon} ans : ${this.fmtKg(resHorizon.arrachageKgHa)} kg/ha, `
       + `contre ${this.fmtKg(resHorizon.referenceKgHa)} kg/ha sans renouvellement.`;
     // chantier C5 — `out.kpiStockReserve` supprimé : il doublonnait la réserve
-    // à l'horizon du chantier C3 (out.kpiReserveHorizon, ci-dessus), avec deux
+    // à l'horizon du chantier C3 (out.reserveHorizonTxt, ci-dessus), avec deux
     // défauts en propre — il était recalculé dans la vue au lieu de venir du
     // moteur, et son détail portait un jugement (« s'est entièrement
     // reconstituée ») là où C3 s'en tient à la comparaison de deux nombres.
     // Une seule définition désormais, adossée à OAD.reserveHorizon.
-    out.kpiReserveMin = { lib: 'Réserve min en transition', val: this.fmtKg(stockMin) + ' kg/ha', det: `année ${tMin} · ${stockMin < seuil ? '⚠ sous ' + this.fmtKg(seuil) + ' — coussin de sécurité entamé' : 'coussin suffisant, réserve mobilisée puis reconstituée'}` };
-    /* chantier C4 — la ligne « par rapport à ne rien faire ».
-       Un montant SIGNÉ et son libellé, rien d'autre. AUCUNE formulation
-       évaluative : ni « favorable », ni « rentable », ni « perdant », ni
-       « gagnant » — le principe « aucune recommandation » tient, et le signe se
-       lit tout seul. Le détail dit la CONVENTION du chiffre (parcelle seule,
-       horizon, vue de faire-valoir), parce qu'un différentiel dont on ne
-       connaît pas l'assiette n'est pas interprétable ; il ne dit rien de ce
-       qu'il faudrait en conclure.
-       Depuis C5, ce montant est le TOTAL de la cascade ci-dessous : les deux
-       sont le même nombre, calculé une seule fois par le moteur. */
-    out.differentielLib = `Par rapport à ne rien faire, à ${inp.horizon} ans`;
-    out.differentielTxt = this.fmtE0(diffTreso.aHorizon);
-    out.differentielDet = `Trésorerie cumulée de la parcelle sur ${inp.horizon} ans, `
-      + `moins celle de la même parcelle non renouvelée. Parcelle seule, hors reste de `
-      + `l'exploitation, sur la vue de faire-valoir affichée. `
-      + `Le déclin supposé sans renouvellement (${nf((inp.declinSQ || 0) * 100, 1)} %/an) commande ce chiffre.`;
+    /* Refonte du 08/09/2026 — CE QUI A ÉTÉ RETIRÉ ICI.
 
-    /* chantier C5 — la cascade. Quatre termes qui SOMMENT EXACTEMENT au
-       différentiel ci-dessus : le moteur lève si l'écart dépasse 1 €.
-       Les libellés viennent du moteur (source unique) ; la vue n'ajoute que la
-       note de provenance et la couleur. AUCUNE formulation évaluative ici non
-       plus : les notes disent d'où vient chaque terme, jamais ce qu'il faudrait
-       en penser. */
-    const cascade = OAD.cascadeDifferentielle(sc.arrachage, sc.reference, inp, inp.fv, s.vueFV);
-    const CASCADE_NOTES = {
-      investissement: "engagé en année 0 puis en année " + inp.repos + " — la parcelle non renouvelée n'en porte aucun",
-      reserve: "sortie « arrachage » monétisée, sur " + inp.nbSortie + " ans — un stock prélevé, voir la réserve à l'horizon ci-dessous",
-      recettes: "la parcelle ne produit pas pendant le repos et le plantier, puis remonte en charge",
-      charges: "ni entretien de vigne en production, ni charge de vendange, pendant la transition"
-    };
-    out.cascadeLib = 'Ce que change le renouvellement, terme à terme';
-    out.cascadeIntroTxt = `Décomposition exacte du chiffre du bas : chaque ligne est un écart entre la `
-      + `parcelle renouvelée et la même parcelle laissée en l'état, cumulé sur ${inp.horizon} ans. `
-      + `Les quatre lignes s'additionnent au total, sans reste.`;
-    out.cascadeRows = cascade.termes.map(t => ({
-      lib: t.lib,
-      note: CASCADE_NOTES[t.id] || '',
-      val: this.fmtE0(t.montant),
-      // Le jeton, pas la teinte : le template ne porte aucune couleur littérale.
-      fg: t.montant < 0 ? 'var(--alerte)' : 'var(--vegetal)'
-    }));
+       Deux constructions ont disparu de la vue :
+         · la ligne « Par rapport à ne rien faire, à 10 ans » (chantier C4) ;
+         · la cascade de quatre termes qui la décomposait (chantier C5).
 
-    /* chantier C5 — les mêmes quatre termes pour la fiche d'audit, chacun avec
-       SA formule. Ils y remplacent « Manque à gagner » et « Charges évitées »,
-       retirés parce qu'ils ne se recomposent pas avec le différentiel.
-       Les coefficients de faire-valoir cités ci-dessous sont hérités de
-       `repartir()`, qui est linéaire en revParcelle et en coutsParcelle : en
-       métayage les termes « réserve » et « recettes » portent (1 − partRecolte)
-       côté exploitant, les termes « investissement » et « charges » portent
-       (1 − partCouts) ; en fermage le loyer, identique dans les deux scénarios,
-       s'annule dans le différentiel — il n'y a donc pas de cinquième terme. */
-    const CASCADE_FORMULES = {
-      investissement: '− Σ invArr (arrachage année 0 + installation année repos) — le scénario de référence n\'en porte aucun',
-      reserve: '+ Σₜ (cashRIₜ arrachage − cashRIₜ référence) = Σₜ sortieArrₜ × prixKg — sortie « arrachage » de la réserve, monétisée',
-      recettes: 'Σₜ (venteRaisinParcelleₜ arrachage − venteRaisinParcelleₜ référence) — SANS max(0, …) et sur tout l\'horizon, contrairement à l\'ancien « manque à gagner »',
-      charges: '− Σₜ (chargesEntretien.parcelleₜ arrachage − chargesEntretien.parcelleₜ référence) — SANS max(0, …) et sur tout l\'horizon, contrairement à l\'ancien « charges évitées »'
-    };
-    const cascadeVue = s.vueFV === 'exp' ? 'part exploitant'
-      : s.vueFV === 'prop' ? 'part propriétaire' : 'ensemble';
-    out.printCascadeRows = cascade.termes.map(t => ({
-      lib: 'Cascade — ' + t.lib,
-      val: this.fmtE0(t.montant),
-      formule: (CASCADE_FORMULES[t.id] || '')
-        + `, sur la parcelle seule, vue « ${cascadeVue} », régime ${inp.fv.regime}`
-        + ' · les quatre termes somment EXACTEMENT au différentiel ci-dessus'
-        + ' (OAD.cascadeDifferentielle lève une exception au-delà de 1 € d\'écart)'
-    }));
+       Toutes deux lisaient `OAD.differentielTresorerie`, donc des séries
+       cumulées en euros sur dix ans. Le temps 3 est désormais organisé par
+       THÈME et par ANNÉE : un cumul différentiel n’y a pas de colonne où se
+       poser, et il ne se lisait qu’adossé à la piste de trésorerie, elle-même
+       retirée pour illisibilité (voir plus haut, et README §18bis / §19ter).
 
-    /* chantier C5 — total de la table « coût de l'investissement », qui a
-       remplacé l'ancien cartouche KPI « investissement brut ». Ce n'est pas un
-       indicateur concurrent : c'est la somme des lignes juste au-dessus, et
-       elle entre dans la cascade comme premier terme. */
-    out.investTotalLib = out.investLibelleCap;
-    out.investTotalDet = 'Arrachage + installation, hors charges d\'entretien — '
-      + out.investLibelleNote + '. Ce total est le premier terme de la cascade, en clôture d\'écran.';
+       `OAD.differentielTresorerie` et `OAD.cascadeDifferentielle` restent
+       EXPORTÉES et TESTÉES — leur arithmétique est juste, et le garde-fou de
+       la cascade (exception au-delà de 1 € d’écart) continue de la protéger.
+       Ce qui est retiré, c’est l’AFFICHAGE.
 
-    // Bloc 5 — écart d'âge à l'horizon, avec sa contrepartie dans la même
-    // phrase (arbitrage P6 : jamais un gain énoncé seul) — factuel, voir
-    // out.ageAvantTxt/out.ageApresArrTxt/out.ageApresSQTxt plus haut pour
-    // le rappel avant/après sans commentaire normatif.
-    out.kpiEcartAge = { lib: `Écart d'âge à ${inp.horizon} ans`, val: '−' + nf(gainAgeHorizon, 1) + ' an' + (gainAgeHorizon >= 2 ? 's' : ''), det: `âge moyen du vignoble à ${inp.horizon} ans : ${nf(trajAge.statuquo[inp.horizon], 1)} ans en statu quo → ${nf(trajAge.arrachage[inp.horizon], 1)} ans en arrachage — un vignoble plus jeune, mais un rendement à reconstruire durant la transition (voir trajectoire ci-dessous)` };
+       CE QU’UN CHANTIER ULTÉRIEUR NE DOIT PAS « RÉTABLIR » sur cet écran :
+       aucune piste de trésorerie, aucune cascade différentielle, aucune ligne
+       de différentiel cumulé. `declinSQ`, qui commandait ce chiffre, reste
+       dans `state.v` et dans `inp` — le moteur le lit — mais n’est plus
+       saisissable : voir la fiche d’audit, où il figure « NON SAISISSABLE ». */
 
-    // chantier C1 — seul le scénario arrachage est affichable (§12bis décision 1) :
-    // plus de courbe statu quo ni complantation sur le stock de réserve, qui n'a pas
-    // de KPI de comparaison associé (contrairement à la trajectoire d'âge ci-dessous).
-    out.chartStock = this.chart([
-      { pts: sc.arrachage.kg.map(r => r.stockHa), c: '#A97F26', w: 2.6 }
-    ], { fmt: x => this.fmtKg(x), y0: 0, ref: { v: 10000, label: 'plafond 10 000' },
-      annot: [{ serie: sc.arrachage.kg.map(r => r.stockHa), t: tMin, label: this.fmtKg(stockMin), c: '#A97F26' }],
-      yTitle: 'kg/ha', xTitle: 'année' });
+    /* Refonte du 08/09/2026 — le tableau « mode technique » et son doublon de
+       fiche d'audit (`detailRows` / `printDetailArr`) sont remplacés par la
+       MATRICE ANNUELLE PAR THÈME (`out.matriceRows`, construite plus haut avec
+       les six séries qu'elle affiche).
 
-    // Trajectoire d'âge du vignoble (chantier P7) — symétrique du graphique
-    // de stock de réserve ci-dessus. Marqueurs de forme + traits distincts
-    // (pas seulement la couleur, voir chart()) pour rester lisible en
-    // vision dichromate. Chantier C1 : la complantation (@deprecated, hors
-    // interface) est retirée ; le statu quo, lui, reste affiché — c'est le
-    // contre-factuel dont dépend directement le KPI « Écart d'âge » ci-dessus
-    // (§12bis décision 1 : contre-factuel silencieux, pas absent).
-    out.chartAge = this.chart([
-      { pts: trajAge.statuquo, c: '#9A9E97', w: 2, marker: 'circle' },
-      { pts: trajAge.arrachage, c: '#A97F26', w: 2.6, dash: '2 3', marker: 'triangle' }
-    ], { fmt: x => nf(x, 1), y0: 0,
-      annot: [{ serie: trajAge.arrachage, t: inp.horizon, label: '−' + nf(gainAgeHorizon, 1) + ' an' + (gainAgeHorizon >= 2 ? 's' : ''), c: '#A97F26' }],
-      yTitle: 'âge moyen (ans)', xTitle: 'année' });
-    // Légende à trait+marqueur (pas seulement couleur), même ordre que les séries ci-dessus.
-    out.ageLegendItems = [
-      { label: 'arrachage-replantation', swatch: this.legendSwatch('#A97F26', '2 3', 'triangle') },
-      { label: 'statu quo (référence)', swatch: this.legendSwatch('#9A9E97', undefined, 'circle') }
-    ];
+       Ses huit colonnes disaient le calcul du moteur — surface productive,
+       VolCo vendu, sortie pour insuffisance, cash net — et non la trajectoire :
+       aucun de ces intitulés ne correspondait à une question que l'utilisateur
+       se pose, et la dernière colonne était un flux de trésorerie annuel, la
+       grandeur même que cette refonte retire de l'écran. La matrice porte les
+       six thèmes, dans l'ordre des pistes, avec sa ligne de totaux.
 
-    const sorties = sc.arrachage.kg.filter(r => r.sortieArr > 0.5);
-    out.sortieAnnees = sorties.map(r => ({ t: String(r.t), kg: this.fmtKg(r.sortieArr), eur: this.fmtE0(r.sortieArr * inp.prixKg) }));
-    out.sortieTotalTxt = this.fmtKg(sorties.reduce((a, r) => a + r.sortieArr, 0));
-
-    const buildDetailRows = (kgRows, eurRows) => kgRows.map((r, i) => ({
-      t: String(r.t), surfProd: r.surfProd.toFixed(2), recolte: this.fmtKg(r.recolte),
-      volcoVendu: this.fmtKg(r.volcoVendu), mise: this.fmtKg(r.mise),
-      sortieInsuff: this.fmtKg(r.sortieInsuff), sortieArr: this.fmtKg(r.sortieArr),
-      stockHa: this.fmtKg(r.stockHa), cashNet: this.fmtE(eurRows[i].cashNet)
-    }));
-    out.detailRows = buildDetailRows(sc.arrachage.kg, sc.arrachage.eur);
-    // prompt 9 — le seul tableau de plus de six lignes encore présent sur
-    // l'écran 5 ; son en-tête dit sa hauteur et le chiffre qui le résume.
-    out.detailEnteteTxt = out.detailRows.length + ' années · trésorerie cumulée à '
-      + out.horizonTxt + ' : ' + this.fmtE0(arrParcelle[inp.horizon]) + ' sur la parcelle';
-    // chantier C5 — le tableau « manque à gagner » (out.magRows / magEnteteTxt)
-    // et son état de repli ont été supprimés avec le bloc d'écran qui les
-    // affichait. `OAD.manqueAGagner` reste exportée et testée
-    // (@deprecated chantier C5) mais n'est plus appelée ici : elle n'est pas
-    // recomposable avec le différentiel (max(0, …) année par année, et assiette
-    // volcoVendu au lieu de venteRaisinParcelle). Le terme « Écart de recettes
-    // raisin » de la cascade la remplace, exactement.
-    // Historique conservé : chantier C1 — la colonne « Complantation » avait été
-    // retirée de ce tableau (scénario @deprecated, hors interface), la colonne
-    // « Statu quo » y était codée en dur à 0 € (elle se comparait à elle-même).
-
-    // Fiche d'audit imprimable — détail annuel du seul scénario arrachage
-    // (chantier C1 : complantation et statu quo retirés de la fiche, alignée sur
-    // ce qui est effectivement affiché à l'écran — §12bis décision 1).
-    out.printDetailArr = out.detailRows;
+       Une seule construction sert l'écran ET la fiche d'audit : c'est ce qui
+       garantit que les deux ne peuvent pas diverger.
+       Historique conservé : chantier C5 — le tableau « manque à gagner »
+       (out.magRows / magEnteteTxt) avait déjà été supprimé, `OAD.manqueAGagner`
+       restant exportée et testée (@deprecated). Chantier C1 — les colonnes
+       « Complantation » et « Statu quo » avaient été retirées avant lui. */
     /* chantier C7 — « ce que ce calcul ne modélise pas », en pied de fiche
        d'audit. Six omissions STRUCTURANTES, une ligne chacune, sans euphémisme.
 
@@ -5056,9 +5284,9 @@ class Component extends DCLogic {
       { titre: "Aucune valeur terminale d'actif.",
         texte: 'Le stock de réserve restant et le rajeunissement du vignoble ne sont jamais convertis en euros, y compris à l\'horizon. Ils sont exposés en kg/ha et en années, séparément.' },
       { titre: 'Aucun coût de financement.',
-        texte: "Aucun taux d'emprunt, aucune durée, aucun différé. Le solde investissement / réserve n'est donc pas un coût de crédit, et le point bas de trésorerie n'est pas un besoin de financement chiffré." },
+        texte: "Aucun taux d'emprunt, aucune durée, aucun différé. Le solde investissement / réserve n'est donc pas un coût de crédit, et aucun besoin de financement n'est chiffré nulle part dans cette fiche." },
       { titre: 'Aucun échéancier de paiement.',
-        texte: `Trésorerie en année pleine. Pour mémoire, campagne 2026 : première échéance à 25 % du volume commercialisable (2 200 kg/ha) au 5 décembre, solde en trois versements égaux — valeur annuelle, à revérifier à chaque campagne. Les années du point bas et du creux de réserve sont donc des années, pas des dates.` },
+        texte: `Tous les flux sont datés en année pleine. Pour mémoire, campagne 2026 : première échéance à 25 % du volume commercialisable (2 200 kg/ha) au 5 décembre, solde en trois versements égaux — valeur annuelle, à revérifier à chaque campagne. L'année d'un déblocage de réserve ou du creux de réserve est donc une année, pas une date.` },
       { titre: 'Prix du raisin unique et constant.',
         texte: `${nf(inp.prixKg, 2)} €/kg sur tout l'horizon, sans distinction de cépage, de cru ni de millésime, et sans inflation.` },
       { titre: 'Rendement butoir non modélisé.',
@@ -5099,33 +5327,29 @@ class Component extends DCLogic {
       { lib: `Réserve à ${inp.horizon} ans (kg/ha)`,
         val: `${this.fmtKg(resHorizon.arrachageKgHa)} kg/ha (contre ${this.fmtKg(resHorizon.referenceKgHa)} kg/ha sans renouvellement)`,
         formule: `OAD.reserveHorizon(arrachage, reference, ${inp.horizon}) : stockHa lu à t = horizon sur chacune des deux séries kg — indicateur PHYSIQUE, aucun paramètre monétaire dans la signature de la fonction, le stock de réserve n'est jamais monétisé (README §19)` },
-      { lib: 'Point bas de trésorerie', val: `${this.fmtE0(creuxAbs.v)} (année ${creuxAbs.t})`,
-        formule: "minₜ cumulParcelleₜ = minₜ Σ(venteRaisinParcelle + cashRI − coutsParcelle), sur la vue faire-valoir affichée — parcelle seule, hors reste de l'exploitation, absolu (pas relatif au statu quo)" },
-      // chantier C4 — le seul chiffre différentiel de l'outil. Il figure sur la
-      // fiche d'audit avec sa formule, comme tous les autres : c'est le document
-      // où un chiffre doit pouvoir être retracé jusqu'à son calcul.
-      { lib: `Par rapport à ne rien faire, à ${inp.horizon} ans`, val: this.fmtE0(diffTreso.aHorizon),
-        formule: `OAD.differentielTresorerie(arrachage, reference, fv, vue, { parcelleSeule: true }).aHorizon = tresorerieCumulee(arrachage)[${inp.horizon}] − tresorerieCumulee(reference)[${inp.horizon}], soustraction terme à terme de deux séries déjà produites par le moteur — parcelle seule (sur l'exploitation entière, le revenu du reste du domaine noie l'effet de l'opération), sur la vue faire-valoir affichée, montant SIGNÉ. Piloté par le déclin supposé sans renouvellement (declinSQ)` },
-      { lib: 'Tension max vs statu quo', val: `${this.fmtE0(creux.v)} (année ${creux.t})`,
-        formule: 'minₜ (cumulArrachageₜ − cumulStatuQuoₜ), sur la vue faire-valoir affichée — non affiché à l\'écran, conservé ici' },
+      /* Refonte du 08/09/2026 — trois entrées RETIRÉES de la fiche d’audit :
+         « Point bas de trésorerie », « Par rapport à ne rien faire, à N ans »
+         et « Tension max vs statu quo ». Toutes trois lisaient des séries
+         cumulées en euros, retirées de l’écran du temps 3 ; la fiche d’audit
+         documente ce que l’outil AFFICHE, elle ne conserve pas indéfiniment ce
+         qu’il a cessé de montrer. Les fonctions du moteur restent exportées et
+         testées, marquées @deprecated (voir moteur-oad.js). La matrice annuelle
+         par thème, plus bas dans cette même fiche, porte désormais le détail
+         année par année. */
       { lib: 'Réserve min en transition', val: `${this.fmtKg(stockMin)} kg/ha (année ${tMin})`,
         formule: `minₜ stockHaₜ (scénario arrachage) ; seuil d'alerte câblé en dur = ${this.fmtKg(seuil)} kg/ha` },
       { lib: `Écart d'âge à ${inp.horizon} ans (trajectoire)`, val: '−' + nf(gainAgeHorizon, 1) + ' an' + (gainAgeHorizon >= 2 ? 's' : ''),
         formule: "OAD.trajectoireAge(inp) : parcelle exclue du numérateur ET du dénominateur pendant le repos (t < repos, option B — même règle que les lignes \"Arrachée\" du registre) ; redémarre à l'âge 0 à t = repos (replantation physique, pas l'entrée en production) ; complantation = mix pondéré (1−manquants)×(âgeParcelle+t) + manquants×t" },
       /* chantier C5 — les entrées « Manque à gagner cumulé » et « Charges
-         évitées en transition » ont été RETIRÉES de la fiche d'audit et
-         remplacées par les quatre termes de la cascade ci-dessous.
-
-         Ce n'est pas un allègement de présentation : ces deux quantités ne se
-         recomposent PAS avec le différentiel. `chargesEvitees` ne sommait que
-         sur t < returnYear et ne retenait que les écarts positifs
-         (max(0, …)) ; `manqueAGagner` applique lui aussi un max(0, …) et ne
-         porte que sur volcoVendu. Sur le paramétrage dégradé,
-         « −invest + réserve + chargesEvitees − manqueAGagner » donnait
-         −44 054 € contre −67 975 € de différentiel réel : 23 921 € d'écart.
-         Laisser coexister deux jeux de chiffres aux périmètres différents
-         recréerait exactement le problème que ce chantier résout. */
-      ...out.printCascadeRows,
+         évitées en transition » avaient été retirées de la fiche d’audit et
+         remplacées par les quatre termes de la cascade : ces deux quantités ne
+         se recomposent PAS avec le différentiel (max(0, …) année par année, et
+         assiettes tronquées). Sur le paramétrage dégradé, l’empilement donnait
+         −44 054 € contre −67 975 € de différentiel réel : 23 921 € d’écart.
+         Refonte du 08/09/2026 — la cascade elle-même a quitté la fiche avec le
+         différentiel qu’elle décomposait. Ne réintroduire NI l’empilement
+         historique, NI la cascade : la fiche porte des grandeurs physiques et
+         l’investissement, pas des cumuls de trésorerie. */
     ];
 
     return out;

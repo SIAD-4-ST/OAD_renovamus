@@ -1475,6 +1475,17 @@ section('18. Cohérence interface / moteur (prompt B3)');
 const INDEX_HTML = require('fs').readFileSync(
   require('path').join(__dirname, '..', 'index.html'), 'utf8');
 
+ /* Le CODE seul, commentaires retirés. Plusieurs tests portent sur ce qui est
+    ÉCRIT ET EXÉCUTÉ, jamais sur le fichier entier : les commentaires du dépôt
+    citent volontairement les noms et les blocs supprimés, pour documenter les
+    arbitrages successifs, et un test qui lirait le fichier brut échouerait sur
+    sa propre documentation. Déclaré ici, juste sous INDEX_HTML, parce que les
+    sections 28 et suivantes en ont besoin. */
+const CODE_SANS_COMMENTAIRES = INDEX_HTML
+  .replace(/\/\*[\s\S]*?\*\//g, ' ')      // blocs /* … */ (script)
+  .replace(/^[ \t]*\/\/.*$/gm, ' ')       // lignes // … (script)
+  .replace(/<!--[\s\S]*?-->/g, ' ');      // commentaires HTML (template)
+
 test('le VolCo par défaut de l\'interface (V_DEFAUTS.volco) vaut bien OAD.VOLCO_CAMPAGNE — 8 800 kg/ha, campagne 2026', () => {
   const m = INDEX_HTML.match(/\n\s*volco:\s*(\d+),/);
   assert.ok(m, 'V_DEFAUTS.volco introuvable dans index.html');
@@ -1770,34 +1781,67 @@ test('tresorerieCumulee : le cumul est bien le cumul de l\'annuelle, et rien n\'
     'tresorerieCumulee ne doit muter ni le scénario ni ses lignes');
 });
 
-section('23. Écran de résultats en onglets (prompts 8 et 9)');
+section("23. Écran de résultats par thème et par année (refonte du 08/09/2026)");
 
-test("les cinq blocs sont devenus cinq onglets, et « Bloc N » a disparu", () => {
-  assert.ok(!/Bloc [1-5] ·/.test(INDEX_HTML),
-    'les intitulés « Bloc 1 » à « Bloc 5 » numérotaient l\'ordre du code : ils ne doivent plus être affichés');
-  assert.strictEqual((INDEX_HTML.match(/role="tabpanel"/g) || []).length, 5,
-    'cinq panneaux, un par onglet');
-  assert.ok(/role="tablist"/.test(INDEX_HTML) && /role="tab"/.test(INDEX_HTML),
-    'la barre d\'onglets doit être annoncée aux technologies d\'assistance');
-  ['Coût, poste par poste', 'Réserve individuelle', "Main d'œuvre et charges",
-   'Ce qui est replanté', 'Rajeunissement du vignoble'].forEach(lib => {
-    assert.ok(INDEX_HTML.indexOf(lib) >= 0, 'libellé d\'onglet présent : ' + lib);
+/* Cette section figeait le contraire : « les cinq blocs sont devenus cinq
+   onglets ». Les onglets sont supprimés, et les attentes sont inversées
+   VOLONTAIREMENT — ce n’est pas une mise à jour silencieuse d’un chiffre
+   attendu, c’est un arbitrage daté (README §18bis / §19ter).
+
+   POURQUOI. Les cinq onglets rangeaient l’écran par BLOC DE CODE (« Coût,
+   poste par poste », « Réserve individuelle », « Main d’œuvre et charges »,
+   « Ce qui est replanté », « Rajeunissement du vignoble ») et n’en montraient
+   qu’un à la fois. Un conseiller ne peut pas expliquer une trajectoire en
+   dépliant cinq onglets l’un après l’autre, et rien à l’écran ne disait qu’il
+   en restait quatre. Le contenu est réparti par THÈME — six thèmes, ceux des
+   six pistes de la frise — et tout est visible d’un seul défilement. */
+test("les cinq onglets ont disparu, avec leur état et leur navigation clavier", () => {
+  assert.ok(!/role="tablist"/.test(INDEX_HTML) && !/role="tabpanel"/.test(INDEX_HTML),
+    "plus aucun jeu d’onglets à l’écran de résultats");
+  // Sur le CODE, pas sur le fichier : les commentaires citent volontairement
+  // l'ancien nom pour documenter ce qui le remplace (même procédé qu'aux
+  // chantiers C2 et C3).
+  assert.ok(!/ongletResultat/.test(CODE_SANS_COMMENTAIRES),
+    "l’état de l’onglet actif est supprimé, pas seulement masqué");
+  assert.ok(!/ongletsClavier|onglet-btn-|onglet-panneau-/.test(CODE_SANS_COMMENTAIRES),
+    "la navigation clavier des onglets disparaît avec eux");
+  // Le contenu, lui, ne disparaît pas : chaque onglet a un point de chute.
+  ["poste par poste", "Entretien — le détail par régime de travail",
+   "Surface renouvelée", "Détail annuel par thème"].forEach(ancre => {
+    assert.ok(INDEX_HTML.indexOf(ancre) >= 0,
+      "le contenu de l’ancien onglet doit rester à l’écran : " + ancre);
   });
 });
 
-test("l'onglet actif est un état d'interface, hors instantané localStorage", () => {
-  assert.ok(/ongletResultat:\s*0/.test(INDEX_HTML),
-    'state.ongletResultat doit exister et démarrer sur le premier onglet');
+test("l’année retenue est un état d’interface, hors instantané localStorage", () => {
+  assert.ok(/anneeFrise:\s*0/.test(INDEX_HTML),
+    "state.anneeFrise doit exister et démarrer sur l’année 0, celle de l’arrachage");
   const ecriture = INDEX_HTML.match(/function ecrireInstantane[\s\S]{0,600}?\n\}/);
-  assert.ok(ecriture && !/ongletResultat/.test(ecriture[0]),
-    "l'onglet actif ne doit pas entrer dans l'instantané localStorage");
+  assert.ok(ecriture && !/anneeFrise/.test(ecriture[0]),
+    "l’année retenue ne doit pas entrer dans l’instantané localStorage — c’est de la navigation, comme l’étape courante et les volets");
+  assert.ok(/this\.setState\(\{ anneeFrise: t \}\)/.test(INDEX_HTML),
+    "l’axe de la frise et la matrice écrivent le même état : une seule année retenue à l’écran");
 });
 
-test('prompt 9 : les graphiques sont ouverts par défaut, leurs boutons de repli conservés', () => {
-  assert.ok(/stockChartOuvert:\s*true/.test(INDEX_HTML) && /ageChartOuvert:\s*true/.test(INDEX_HTML),
-    "l'information la plus lisible ne doit plus être celle qui est cachée");
-  assert.ok(/toggleStockChart/.test(INDEX_HTML) && /toggleAgeChart/.test(INDEX_HTML),
-    'les boutons de repli restent : ouvert par défaut ne veut pas dire imposé');
+/* Suppression du 08/09/2026 — la carte « Ce que le renouvellement produit » a
+   quitté le temps 3 sur demande explicite : ses trois KPI (écart d'âge, réserve
+   à l'horizon, réserve minimale) doublonnaient les chiffres de tête et la carte
+   de thème « Réserve », et les deux graphiques repliables du prompt 9 qu'elle
+   portait sont partis avec elle. Le test du prompt 9 (« ouverts par défaut,
+   boutons de repli conservés ») n'a donc plus d'objet ; il devient le garde-fou
+   de la suppression, pour qu'un chantier ultérieur ne réintroduise pas la carte
+   sans décision. Ce qui reste vrai et testé ailleurs : la réserve à l'horizon et
+   son plancher restent affichés — dans la phrase de synthèse et sur la fiche
+   d'audit (voir ADJACENCE, section 32). */
+test("la carte « Ce que le renouvellement produit » et ses deux graphiques ont quitté le temps 3", () => {
+  assert.ok(!/Ce que le renouvellement produit/.test(CODE_SANS_COMMENTAIRES),
+    'le titre de la carte ne doit plus être rendu (les mentions restantes sont des commentaires historiques)');
+  for (const nom of ['chartStock', 'chartAge', 'ageLegendItems',
+                     'stockChartOuvert', 'ageChartOuvert', 'toggleStockChart', 'toggleAgeChart',
+                     'kpiReserveHorizon', 'kpiReserveMin', 'kpiEcartAge']) {
+    assert.ok(!new RegExp(nom).test(CODE_SANS_COMMENTAIRES),
+      '« ' + nom + ' » est parti avec la carte : ni état, ni exposition au gabarit, ni construction dans renderVals()');
+  }
 });
 
 section('24. Panneau « Hypothèses » (prompt 10)');
@@ -1818,17 +1862,37 @@ section('24. Panneau « Hypothèses » (prompt 10)');
    un contrôle perdu mais un contrôle déplacé, et rendu plus fin ; le test qui
    suit vérifie qu'il n'est pas rouvert ailleurs. `loyerHa`, `partRecolte` et
    `partCouts` restent des saisies : ce sont des montants, pas un régime. */
-test('les 33 contrôles liés à state.v sont toujours présents, une fois et une seule', () => {
+/* 33 → 32 : `declinSQ` n'est plus SAISISSABLE (refonte du temps 3, 08/09/2026).
+   Le volet « Hypothèses de comparaison » qui le portait a été retiré avec le
+   différentiel et la cascade, seuls affichages qu'il pilotait : un champ dont
+   on ne voit plus l'effet est un champ qui invite à régler au hasard.
+
+   Ce n'est PAS un contrôle déplacé, comme l'étaient `regime` et `materiel` :
+   c'est un contrôle SUPPRIMÉ. La clé reste dans `state.v` et dans `inp` — le
+   moteur la lit pour bâtir `sc.reference`, dont dépend `reserveHorizon`, encore
+   affichée — et la fiche d'audit continue d'en donner la valeur, marquée
+   « NON SAISISSABLE ». Le test ci-dessous garde les deux portes : celle du
+   champ, fermée, et celle de l'état, ouverte. */
+test('les 32 contrôles liés à state.v sont toujours présents, une fois et une seule', () => {
   const cles = ['volco', 'prixKg', 'riPct', 'coutSurfaceProdHaAn', 'coutRdtParKg',
     'tauxHoraire', 'ecartRang', 'ecartPied', 'rendEstime', 'nbRangs', 'loyerHa',
     'partRecolte', 'partCouts', 'cepage', 'calcaireActif', 'profondeurSol', 'drainageSol',
     'porteGreffe', 'typeTaille', 'nbFils', 'espPiquet', 'anneePleineProd',
     'repos', 'coutArrachageHa', 'coutPlant', 'coutPalissageHa', 'coutProtectionHa',
-    'irrigation', 'coutIrrigHa', 'coutReposHaAn', 'coutPlantierHaAn', 'sequence', 'declinSQ'];
+    'irrigation', 'coutIrrigHa', 'coutReposHaAn', 'coutPlantierHaAn', 'sequence'];
   cles.forEach(k => {
     const n = (INDEX_HTML.match(new RegExp('on\\.' + k + ' \\}\\}', 'g')) || []).length;
     assert.strictEqual(n, 1, 'le contrôle « ' + k + ' » doit rester saisissable, exactement une fois');
   });
+  assert.ok(!/on\.declinSQ \}\}/.test(INDEX_HTML) && !/id="f-declinSQ"/.test(INDEX_HTML),
+    'declinSQ ne doit plus être saisissable : le champ a été retiré avec le différentiel qu\'il pilotait');
+  const defautsDecl = INDEX_HTML.match(/const V_DEFAUTS = \{[\s\S]*?\n\};/);
+  assert.ok(defautsDecl && /\bdeclinSQ:/.test(defautsDecl[0]),
+    'declinSQ reste dans V_DEFAUTS : le moteur la lit, elle n\'est simplement plus saisie');
+  assert.ok(/declinSQ: \(\+v\.declinSQ \|\| 0\) \/ 100/.test(INDEX_HTML),
+    'declinSQ doit continuer d\'être passée au moteur, dans `inp`');
+  assert.ok(/NON SAISISSABLE/.test(INDEX_HTML),
+    'la fiche d\'audit doit dire que ce paramètre n\'est plus saisissable, sans quoi son lecteur cherchera un champ qui n\'existe plus');
   assert.ok(!/on\.regime \}\}/.test(INDEX_HTML) && !/id="f-regime"/.test(INDEX_HTML),
     'le régime de faire-valoir ne doit pas rouvrir un champ global : il se corrige au registre, ligne par ligne');
   const defauts = INDEX_HTML.match(/const V_DEFAUTS = \{[\s\S]*?\n\};/);
@@ -2072,10 +2136,26 @@ test('la remise au vigneron tient sur une page, en vectoriel et en couleur', () 
   assert.ok(/@page \{ size: A4 portrait/.test(INDEX_HTML), 'A4 portrait');
   // La frise est un SVG construit en React, jamais une image : elle s'imprime
   // donc en vectoriel sans qu'on ait rien à demander.
+  //
+  // Refonte du 08/09/2026 : la remise porte la VARIANTE COMPACTE de la frise
+  // (`friseTrajectoireImprimee`), pas celle de l'écran. Deux raisons, et la
+  // première est un vrai piège : la feuille d'impression masque tous les
+  // `button`, or l'axe des années est devenu un jeu de onze boutons — imprimée
+  // telle quelle, la frise perdrait sa graduation, donc son axe de temps. La
+  // seconde est la contrainte d'une seule page, avec six pistes au lieu de
+  // trois. Les deux rendus sortent de la MÊME fonction et du MÊME jeu de
+  // données : ils ne peuvent pas raconter deux trajectoires différentes.
   const remise = INDEX_HTML.slice(INDEX_HTML.indexOf('class="print-remise"'));
-  assert.ok(remise.indexOf('{{ friseTrajectoire }}') >= 0
-    && remise.indexOf('{{ friseTrajectoire }}') < remise.indexOf('class="print-sheet"'),
+  const finRemise = remise.indexOf('class="print-sheet"');
+  assert.ok(remise.indexOf('{{ friseTrajectoireImprimee }}') >= 0
+    && remise.indexOf('{{ friseTrajectoireImprimee }}') < finRemise,
     'la frise doit être présente dans la sortie remise');
+  assert.ok(remise.slice(0, finRemise).indexOf('{{ friseTrajectoire }}') < 0,
+    "la remise ne doit pas rendre la frise interactive : ses boutons d'axe seraient masqués à l'impression");
+  assert.ok(/out\.friseTrajectoireImprimee = this\.friseTrajectoire\(\{ \.\.\.donneesFrise, compact: true \}\)/.test(INDEX_HTML),
+    'la variante papier doit sortir de la même fonction et du même jeu de données que celle de l\'écran');
+  assert.ok(/const graduation = compact/.test(INDEX_HTML),
+    "en variante papier, l'axe des années doit redevenir du texte : la feuille d'impression masque les boutons");
 });
 
 test('la synthèse imprimée est assemblée des mêmes morceaux que celle de l\'écran', () => {
@@ -2086,13 +2166,23 @@ test('la synthèse imprimée est assemblée des mêmes morceaux que celle de l\'
   // libellé sans « à financer »), et `reserveHorizonTxt` s'y ajoute — la
   // contrainte d'adjacence vaut aussi dans la phrase de synthèse, où un solde
   // négatif énoncé seul se lirait comme un excédent.
-  ['syntheseCouvTxt', 'syntheseCouvSuffixTxt', 'syntheseAbsorptionTxt',
-   'syntheseStockLeadTxt', 'syntheseStockTailTxt', 'syntheseHorizonTxt',
+  //
+  // Refonte du 08/09/2026 : `syntheseAbsorptionTxt` (« résorbé d'ici dix ans »)
+  // et `syntheseHorizonTxt` (« le statu quo reste devant en trésorerie
+  // cumulée ») sortent de la liste. Les deux commentaient des séries cumulées
+  // en euros retirées de l'écran ; une phrase qui commente un graphique absent
+  // ne se vérifie plus. Retrait volontaire, pas oubli — voir README §19ter.
+  ['syntheseCouvTxt', 'syntheseCouvSuffixTxt',
+   'syntheseStockLeadTxt', 'syntheseStockTailTxt',
    'reserveReelleTxt', 'investTxt', 'syntheseSoldeTxt', 'reserveHorizonTxt',
    'stockMinTxt'].forEach(k => {
     assert.ok(bloc.indexOf('out.' + k) >= 0,
       'la fiche remise au vigneron ne doit pas raconter autre chose que l\'écran : ' + k);
   });
+  for (const k of ['syntheseAbsorptionTxt', 'syntheseHorizonTxt']) {
+    assert.ok(!new RegExp('out\\.' + k).test(CODE_SANS_COMMENTAIRES),
+      `${k} doit avoir disparu du code, pas seulement de la phrase : il lisait un cumul en euros retiré de l'écran`);
+  }
 });
 
 
@@ -2608,10 +2698,6 @@ test('C3 — GARDE-FOU : reserveHorizon ne produit aucun euro', () => {
 // ci-dessous portent donc sur le CODE et sur les LIBELLÉS RENDUS, jamais sur le
 // fichier entier, sans quoi la documentation du chantier ferait échouer le test
 // qui la garde.
-const CODE_SANS_COMMENTAIRES = INDEX_HTML
-  .replace(/\/\*[\s\S]*?\*\//g, ' ')      // blocs /* … */ (script)
-  .replace(/^[ \t]*\/\/.*$/gm, ' ')       // lignes // … (script)
-  .replace(/<!--[\s\S]*?-->/g, ' ');      // commentaires HTML (template)
 
 test("C3 — la vue n'écrase plus le solde par un Math.max(0, …) et appelle le moteur", () => {
   assert.ok(/OAD\.soldeInvestissementReserve\(/.test(INDEX_HTML),
@@ -2630,8 +2716,13 @@ test("C3 — vocabulaire : ni « à financer » sur ce KPI, ni « excédent / ga
   assert.ok(INDEX_HTML.includes('Investissement net de la réserve'),
     'le nouveau libellé doit être affiché');
   // Le cas négatif est un déstockage, jamais un profit.
+  // Suppression du 08/09/2026 : l'ancre de fin était l'affectation
+  // out.kpiReserveMin, partie avec la carte « Ce que le renouvellement
+  // produit ». La tranche s'arrête désormais à la construction suivante,
+  // out.reserveHorizonTxt — même portée utile : l'objet du solde signé, et lui
+  // seul.
   const bloc = CODE_SANS_COMMENTAIRES.slice(CODE_SANS_COMMENTAIRES.indexOf('out.kpiSoldeReserve = {'),
-    CODE_SANS_COMMENTAIRES.indexOf('out.kpiReserveMin = {'));
+    CODE_SANS_COMMENTAIRES.indexOf('out.reserveHorizonTxt ='));
   assert.ok(bloc.length > 0 && bloc.length < 4000, 'la tranche analysée doit bien encadrer les KPI du solde');
   for (const mot of ['excédent', 'excedent', 'bénéfice', 'benefice']) {
     assert.ok(!new RegExp(mot, 'i').test(bloc),
@@ -2654,21 +2745,33 @@ test("C3 — vocabulaire : ni « à financer » sur ce KPI, ni « excédent / ga
 // kg/ha est rendue immédiatement sous la cascade, dans le même bloc.
 // Le solde signé reste calculé et reste sur la fiche d'audit (C3), où il est
 // suivi de la même ligne en kg/ha.
-test("C3/C5 — ADJACENCE : la réserve à l'horizon est rendue dans le même bloc que la monétisation de la réserve", () => {
-  // (a) À l'écran : le terme « réserve » de la cascade et la réserve à
-  //     l'horizon sont dans le même bloc, la seconde après le premier.
-  const iCascade = INDEX_HTML.indexOf('{{ cascadeRows }}') >= 0
-    ? INDEX_HTML.indexOf('{{ cascadeRows }}')
-    : INDEX_HTML.indexOf('list="{{ cascadeRows }}"');
-  const iReserve = INDEX_HTML.indexOf('{{ kpiReserveHorizon.lib }}', iCascade);
-  assert.ok(iCascade > 0, 'la cascade doit être rendue par le template');
-  assert.ok(iReserve > iCascade,
-    "la réserve à l'horizon doit être rendue APRÈS la cascade, dans le même bloc");
-  // Aucun sc-if ne s'ouvre entre les deux : pas d'état où la cascade
-  // (donc la réserve monétisée) s'affiche sans sa contrepartie physique.
-  const entre = INDEX_HTML.slice(iCascade, iReserve);
+// MISE À JOUR refonte du 08/09/2026 : la cascade a quitté l'écran avec le
+// différentiel qu'elle décomposait. La contrainte d'adjacence ne disparaît pas
+// pour autant — elle se déplace une seconde fois, sur le bloc « ce que le
+// renouvellement produit », le seul endroit de l'écran où la réserve est
+// désormais chiffrée. Ce qu'elle interdit reste le même : un état de
+// l'interface où la réserve À L'HORIZON s'afficherait sans le PLANCHER
+// traversé pour l'atteindre. Une réserve reconstituée à 4 500 kg/ha lue seule
+// ne dit pas qu'on est passé par 1 200.
+// MISE À JOUR suppression du 08/09/2026 : ce bloc a été retiré à son tour. La
+// contrainte se déplace une TROISIÈME fois, sur la PHRASE DE SYNTHÈSE du temps
+// 3, qui porte les deux grandeurs dans la même phrase — reserveHorizonTxt puis
+// stockMinTxt, sans conditionnel entre eux. La règle n'est pas relâchée : c'est
+// l'ancre du test (a) qui change, pas ce qu'il interdit.
+test("C3/C5 — ADJACENCE : la réserve à l'horizon n'est jamais rendue sans le plancher de la transition", () => {
+  // (a) À l'écran : les deux grandeurs sont dans la même phrase de synthèse, le
+  //     plancher après l'horizon, sans conditionnel entre eux.
+  const iReserve = INDEX_HTML.indexOf('{{ reserveHorizonTxt }}');
+  const iMin = INDEX_HTML.indexOf('{{ stockMinTxt }}', iReserve);
+  assert.ok(iReserve > 0, "la réserve à l'horizon doit être rendue par le template");
+  assert.ok(iMin > iReserve,
+    'le plancher de la transition doit être rendu APRÈS la réserve à l’horizon, dans la même phrase');
+  const entre = INDEX_HTML.slice(iReserve, iMin);
   assert.ok(!/<sc-if/.test(entre),
-    "aucun conditionnel entre la cascade et la réserve à l'horizon");
+    "aucun conditionnel entre la réserve à l'horizon et le plancher de la transition");
+  // La cascade, elle, ne doit pas être revenue par une porte dérobée.
+  assert.ok(!/cascadeRows|cascadeLib|cascadeIntroTxt/.test(CODE_SANS_COMMENTAIRES),
+    "la cascade différentielle ne doit pas réapparaître à l'écran du temps 3");
 
   // (b) Sur la fiche d'audit : le solde signé est immédiatement suivi de la
   //     réserve à l'horizon, en kg/ha.
@@ -2687,13 +2790,18 @@ test("C3/C5 — ADJACENCE : la réserve à l'horizon est rendue dans le même bl
 });
 
 test("C3 — la réserve à l'horizon n'est jamais convertie en euros dans la vue", () => {
-  // Ancrage sur l'AFFECTATION (`out.kpiReserveHorizon = {`), pas sur la simple
-  // mention du nom : le commentaire d'adjacence du template le cite bien plus
-  // haut dans le fichier, et une tranche partant de là engloberait tout l'écran.
-  const debut = INDEX_HTML.indexOf('out.kpiReserveHorizon = {');
-  const fin = INDEX_HTML.indexOf('out.kpiReserveMin = {');
-  assert.ok(debut > 0 && fin > debut, "les deux affectations doivent exister, dans cet ordre");
-  const bloc = INDEX_HTML.slice(debut, fin);
+  // Ancrage sur l'AFFECTATION, pas sur la simple mention du nom : les
+  // commentaires d'adjacence citent la réserve bien plus haut dans le fichier,
+  // et une tranche partant de là engloberait tout l'écran.
+  // Suppression du 08/09/2026 : les deux anciennes ancres (out.kpiReserveHorizon
+  // et out.kpiReserveMin) sont parties avec la carte. La seule construction de
+  // la réserve à l'horizon dans la vue est désormais out.reserveHorizonTxt ; la
+  // lecture se fait sur le code SANS COMMENTAIRES, sans quoi les blocs
+  // d'historique intercalés jusqu'à l'ancre de fin ramèneraient leurs « € ».
+  const debut = CODE_SANS_COMMENTAIRES.indexOf('out.reserveHorizonTxt =');
+  const fin = CODE_SANS_COMMENTAIRES.indexOf('const RENDEMENT_BUTOIR_2026');
+  assert.ok(debut > 0 && fin > debut, "les deux ancres doivent exister, dans cet ordre");
+  const bloc = CODE_SANS_COMMENTAIRES.slice(debut, fin);
   assert.ok(/kg\/ha/.test(bloc), 'la ligne doit être libellée en kg/ha');
   assert.ok(!/fmtE0?\(/.test(bloc),
     "aucun formatage monétaire sur cette ligne — même entre parenthèses, même « indicatif »");
@@ -2795,22 +2903,75 @@ test("C4 — le différentiel est bien celui de la PARCELLE SEULE, pas de l'expl
   const exploitation = OAD.differentielTresorerie(sc.arrachage, sc.reference, inp.fv, '1', {}).aHorizon;
   assert.ok(Math.abs(parcelle - exploitation) > 1,
     "parcelle seule et exploitation entière ne doivent pas donner le même chiffre, sinon la convention ne se voit pas");
-  assert.ok(/parcelleSeule:\s*true/.test(INDEX_HTML.slice(INDEX_HTML.indexOf('OAD.differentielTresorerie('),
-    INDEX_HTML.indexOf('OAD.differentielTresorerie(') + 200)),
-    "la vue doit appeler le différentiel avec parcelleSeule: true");
 });
 
-test('C4 — le code nouveau lit sc.reference, jamais l\'alias historique sc.statuquo', () => {
-  const appel = INDEX_HTML.slice(INDEX_HTML.indexOf('OAD.differentielTresorerie('),
-    INDEX_HTML.indexOf('OAD.differentielTresorerie(') + 200);
-  assert.ok(/sc\.reference/.test(appel), 'le différentiel doit être calculé sur sc.reference');
-  assert.ok(!/sc\.statuquo/.test(appel), "sc.statuquo est un alias de compatibilité : aucun code nouveau ne doit le lire");
+/* Les trois tests qui suivaient lisaient le GABARIT et le SCRIPT : ils
+   vérifiaient que la ligne différentielle était rendue, qu'aucun sc-if ne
+   pouvait la masquer selon son signe, et qu'aucune formulation évaluative ne
+   l'accompagnait. Ils sont remplacés par leur inverse, VOLONTAIREMENT et pour
+   une raison datée (refonte du temps 3, 08/09/2026, README §18bis / §19ter) :
+   la ligne a quitté l'écran, et avec elle la cascade qui la décomposait.
+
+   Ce n'est pas un revirement sur l'arbitrage de C4. C4 avait raison sur son
+   terrain : un simulateur d'impact a besoin d'un point de référence
+   arithmétique, et `differentielTresorerie` reste exportée, testée et juste —
+   les tests de moteur ci-dessus continuent de la couvrir en entier. Ce qui a
+   changé, c'est l'écran : le temps 3 est désormais organisé par THÈME et par
+   ANNÉE, et un cumul différentiel sur dix ans n'y a pas de colonne où se
+   poser. Il ne se lisait, de fait, qu'adossé à la piste de trésorerie, retirée
+   pour illisibilité.
+
+   Ce que les tests ci-dessous gardent verrouillé, c'est la porte : ni piste de
+   trésorerie, ni cascade, ni saisie du contrefactuel ne doivent revenir sur
+   cet écran sans un nouvel arbitrage. */
+test('C4 — le différentiel et sa cascade ont quitté l\'écran, et le moteur les garde intacts', () => {
+  // (a) Plus aucun appel dans la vue : c'est le retrait, pas un masquage.
+  assert.ok(!/OAD\.differentielTresorerie\(/.test(CODE_SANS_COMMENTAIRES),
+    'la vue ne doit plus appeler le différentiel');
+  assert.ok(!/OAD\.cascadeDifferentielle\(/.test(CODE_SANS_COMMENTAIRES),
+    'la vue ne doit plus appeler la cascade');
+  assert.ok(!/OAD\.tresorerieCumulee\(/.test(CODE_SANS_COMMENTAIRES),
+    'la vue ne doit plus appeler la trésorerie cumulée');
+  // (b) Plus aucune interpolation de ces grandeurs dans le gabarit.
+  for (const cle of ['differentielLib', 'differentielTxt', 'differentielDet',
+                     'cascadeRows', 'cascadeLib', 'kpiPointBas', 'creuxTxt',
+                     'printCascadeRows']) {
+    assert.ok(!new RegExp('\\{\\{\\s*' + cle).test(INDEX_HTML),
+      `« ${cle} » ne doit plus être rendu par le gabarit`);
+  }
+  // (c) Le moteur, lui, garde les trois fonctions — exportées et marquées.
+  ['tresorerieCumulee', 'differentielTresorerie', 'cascadeDifferentielle'].forEach(f => {
+    assert.strictEqual(typeof OAD[f], 'function', `${f} reste exportée`);
+  });
+  const MOTEUR = require('fs').readFileSync(path.join(__dirname, '..', 'moteur-oad.js'), 'utf8');
+  ['tresorerieCumulee', 'differentielTresorerie'].forEach(f => {
+    const i = MOTEUR.indexOf('function ' + f);
+    const avant = MOTEUR.slice(Math.max(0, i - 3000), i);
+    assert.ok(/@deprecated/.test(avant),
+      `${f} doit porter la marque @deprecated qui dit qu'elle n'est plus affichée`);
+  });
 });
 
-// Les interdictions du chantier sont le cœur de l'arbitrage : elles sont
-// testées, pas seulement écrites en commentaire.
-test('C4 — INTERDICTIONS : ni seconde courbe, ni colonne statu quo, ni champ de saisie du contrefactuel', () => {
-  // Le différentiel ne monte pas dans les trois chiffres de tête (36 px).
+test("C4 — aucune saisie du contrefactuel ne subsiste, et le paramètre reste lu par le moteur", () => {
+  // `declinSQ` était la seule saisie relative au scénario de référence. Le
+  // volet qui la portait ne pilotait plus que du différentiel : il part avec
+  // lui. La VALEUR, elle, reste — `sc.reference` en dépend, et `reserveHorizon`
+  // s'y compare toujours à l'écran.
+  assert.strictEqual((INDEX_HTML.match(/id="f-declinSQ"/g) || []).length, 0,
+    'plus aucun champ de saisie du contrefactuel');
+  assert.ok(!/Hypothèses de comparaison/.test(CODE_SANS_COMMENTAIRES),
+    'le volet « Hypothèses de comparaison » a été retiré avec le chiffre qu\'il pilotait');
+  assert.ok(/declinSQ: \(\+v\.declinSQ \|\| 0\) \/ 100/.test(INDEX_HTML),
+    'le moteur doit continuer de recevoir le déclin supposé, via `inp`');
+  // Et le contrefactuel reste un scénario NON CONFIGURABLE, comme depuis C4 :
+  // aucune colonne, aucune seconde courbe de statu quo hors trajectoire d'âge.
+  assert.ok(!/list="\{\{ *(sq|statuquo)/i.test(INDEX_HTML),
+    'aucune colonne « statu quo » dans un tableau');
+});
+
+test("C4 — INTERDICTIONS : le différentiel ne remonte pas dans les chiffres de tête", () => {
+  // Cette interdiction-ci survit intacte à la refonte : les trois chiffres de
+  // 36 px restent `teteRetour`, `teteEffort` et `teteAge`.
   for (const tete of ['out.teteRetour', 'out.teteEffort', 'out.teteAge']) {
     const i = INDEX_HTML.indexOf(tete + ' = {');
     assert.ok(i > 0, `${tete} doit exister`);
@@ -2818,51 +2979,15 @@ test('C4 — INTERDICTIONS : ni seconde courbe, ni colonne statu quo, ni champ d
     assert.ok(!/diffTreso|differentiel/i.test(bloc),
       `${tete} doit rester inchangé : le différentiel ne monte pas dans les chiffres de tête`);
   }
-  // Aucune seconde série n'est ajoutée aux graphiques à partir du différentiel.
   assert.ok(!/chart\w*\s*=\s*[^;]*diffTreso/i.test(INDEX_HTML),
     'aucun graphique ne doit consommer le différentiel : pas de seconde courbe');
-  // Aucun champ de saisie nouveau relatif au scénario de référence : `declinSQ`
-  // existait déjà avant ce chantier (déplacé par C1), il reste le seul.
-  const champsRef = (INDEX_HTML.match(/id="f-declinSQ"/g) || []).length;
-  assert.strictEqual(champsRef, 1,
-    "declinSQ reste l'unique saisie relative au contrefactuel — C4 n'en ajoute aucune");
-});
-
-test('C4 — aucune formulation évaluative sur la ligne différentielle', () => {
-  const debut = INDEX_HTML.indexOf('out.differentielLib');
-  const fin = INDEX_HTML.indexOf('\n', INDEX_HTML.indexOf('out.differentielDet'));
-  assert.ok(debut > 0 && fin > debut, 'les trois chaînes du différentiel doivent exister');
-  const bloc = INDEX_HTML.slice(debut, INDEX_HTML.indexOf('out.differentielDet') + 900);
-  for (const mot of ['favorable', 'défavorable', 'rentable', 'perdant', 'gagnant',
-                     'recommand', 'conseill', 'intérêt à', 'vaut mieux']) {
-    assert.ok(!new RegExp(mot, 'i').test(bloc),
-      `formulation évaluative interdite sur ce chiffre : « ${mot} » — un montant signé et son libellé, rien d'autre`);
-  }
-  assert.ok(/par rapport à ne rien faire/i.test(INDEX_HTML),
-    'le libellé imposé par le chantier doit être celui affiché');
-});
-
-test('C4 — la ligne est affichée TOUJOURS, quel que soit le signe', () => {
-  // La ligne vit à l'intérieur du `sc-if` du temps 3, comme tout le reste de
-  // l'écran de résultats — c'est normal et ce n'est pas ce qu'on teste. Ce
-  // qu'on teste, c'est qu'AUCUN conditionnel propre au différentiel ne
-  // l'entoure : rien ne doit pouvoir la masquer selon le signe du montant.
-  const i = INDEX_HTML.indexOf('{{ differentielLib }}');
-  assert.ok(i > 0, 'la ligne doit être rendue par le template');
-  // Depuis l'ouverture de son propre bloc jusqu'à l'interpolation : aucun sc-if.
-  const debutBloc = INDEX_HTML.lastIndexOf('PAR RAPPORT À NE RIEN FAIRE', i);
-  assert.ok(debutBloc > 0, 'le bloc de clôture doit porter son commentaire de chantier');
-  assert.ok(!/<sc-if/.test(INDEX_HTML.slice(debutBloc, i)),
-    "aucun sc-if entre l'ouverture du bloc et la ligne : elle s'affiche quel que soit le signe");
-  // Aucun conditionnel du template ne porte sur le différentiel, où qu'il soit.
-  const conditions = (INDEX_HTML.match(/<sc-if value="\{\{([^}]*)\}\}"/g) || []).join(' ');
-  assert.ok(!/differentiel|diffTreso/i.test(conditions),
-    'aucun sc-if ne doit être piloté par le différentiel');
-  // …et le script ne la construit pas conditionnellement non plus.
-  const bloc = INDEX_HTML.slice(INDEX_HTML.indexOf('out.differentielLib'),
-    INDEX_HTML.indexOf('out.differentielDet') + 900);
-  assert.ok(!/differentielTxt\s*=\s*[^;]*\?/.test(bloc),
-    'la valeur affichée ne doit pas dépendre du signe : un montant signé, tel quel');
+  // Trois N1 à l'ÉCRAN. La sortie « remise au vigneron » réutilise la même
+  // classe pour ses trois cartouches (ramenés à 28 px pour tenir sur une
+  // page) : on borne donc le décompte au gabarit d'écran, avant la page
+  // imprimée, sinon on compterait deux fois les mêmes trois chiffres.
+  const ecran = INDEX_HTML.slice(0, INDEX_HTML.indexOf('class="print-remise"'));
+  assert.strictEqual((ecran.match(/class="n1"/g) || []).length, 3,
+    'trois chiffres de 36 px à l\'écran, pas un de plus');
 });
 
 // ----------------------------------------------------------------------
@@ -3032,35 +3157,44 @@ test('C5 — manqueAGagner reste exportée et marquée @deprecated', () => {
 
 test("C5 — l'écran et la fiche d'audit ne portent plus les montants épars", () => {
   // Écran : plus de bloc « Manque à gagner », plus de cartouches en euros
-  // concurrents de la cascade.
+  // concurrents. Ces interdictions-ci survivent intactes à la refonte du
+  // 08/09/2026 — c'est la cascade qui les remplaçait qui est partie, pas le
+  // problème qu'elle résolvait.
   assert.ok(!/\{\{ magRows \}\}/.test(INDEX_HTML) && !/list="\{\{ magRows \}\}"/.test(INDEX_HTML),
     'le tableau « manque à gagner » ne doit plus être rendu à l\'écran');
   assert.ok(!/\{\{ kpiAmortisseur\./.test(INDEX_HTML),
-    '« Réserve mobilisée » est devenu un terme de la cascade, plus un cartouche');
+    '« Réserve mobilisée » ne doit pas redevenir un cartouche');
   assert.ok(!/\{\{ kpiSoldeReserve\./.test(INDEX_HTML),
-    'le solde investissement/réserve est devenu deux termes de la cascade à l\'écran');
+    'le solde investissement/réserve reste porté par le chiffre de tête et la fiche d\'audit, pas par un cartouche de plus');
   assert.ok(!/\{\{ kpiInvestTotal\./.test(INDEX_HTML),
-    '« investissement brut » est devenu le total de son propre tableau, plus un KPI concurrent');
-  // Fiche d'audit : les deux entrées non recomposables ont disparu, la cascade
-  // les remplace.
+    '« investissement brut » est le total de son propre tableau, plus un KPI concurrent');
+  // Fiche d'audit : ni les deux entrées non recomposables, ni la cascade qui
+  // les avait remplacées. Le détail annuel y est désormais la matrice par
+  // thème, construite une seule fois et partagée avec l'écran.
   const rows = INDEX_HTML.slice(INDEX_HTML.indexOf('out.printKpiRows = ['));
   assert.ok(!/lib: 'Charges évitées en transition'/.test(rows),
     "« Charges évitées » retirée de la fiche : non recomposable avec le différentiel");
-  assert.ok(/printCascadeRows/.test(rows),
-    'les quatre termes de la cascade doivent alimenter la fiche');
-  assert.ok(/Cascade — /.test(INDEX_HTML),
-    'chaque terme figure sur la fiche avec sa formule');
+  assert.ok(!/printCascadeRows/.test(CODE_SANS_COMMENTAIRES),
+    'la cascade a quitté la fiche avec le différentiel qu\'elle décomposait');
+  const feuille = INDEX_HTML.slice(INDEX_HTML.indexOf('class="print-sheet"'));
+  assert.ok(feuille.indexOf('{{ matriceRows }}') > 0,
+    "la fiche d'audit doit porter la matrice annuelle par thème");
+  assert.ok(!/\{\{ r\.cashNet \}\}/.test(INDEX_HTML),
+    "la colonne « cash net » de l'ancien détail annuel ne doit pas survivre dans la fiche");
 });
 
-test('C5 — hors cascade : la réserve en kg/ha et le point bas restent séparés', () => {
-  // Ce ne sont pas des termes d'une somme : l'un est physique, l'autre un
-  // extremum. Ils doivent rester visibles, mais hors du tableau qui s'additionne.
-  assert.ok(/\{\{ kpiReserveHorizon\.lib \}\}/.test(INDEX_HTML),
+test('C5 — la réserve en kg/ha reste affichée, et hors de toute somme en euros', () => {
+  // La réserve à l'horizon n'est ni un terme d'une somme, ni un montant : elle
+  // reste visible à l'écran, en kilos. Le point bas de trésorerie, lui, est
+  // parti avec la série cumulée dont il était l'extremum (refonte 08/09/2026).
+  // Suppression du 08/09/2026 : elle n'est plus portée par un cartouche de KPI
+  // mais par la phrase de synthèse du temps 3. Elle reste affichée, en kilos.
+  assert.ok(/\{\{ reserveHorizonTxt \}\}/.test(INDEX_HTML),
     "la réserve à l'horizon reste affichée");
-  assert.ok(/\{\{ kpiPointBas\.lib \}\}/.test(INDEX_HTML),
-    'le point bas de trésorerie reste affiché');
-  // Aucun des deux n'est une ligne de cascadeRows.
-  const idsCascade = ['investissement', 'reserve', 'recettes', 'charges'];
+  assert.ok(!/\{\{ kpiPointBas/.test(INDEX_HTML),
+    "le point bas de trésorerie a quitté l'écran avec la piste qui le portait");
+  // Le garde-fou du moteur, lui, ne bouge pas : la cascade reste incapable
+  // d'absorber un stock ou un extremum, quand bien même on la rappellerait.
   const MOTEUR = require('fs').readFileSync(path.join(__dirname, '..', 'moteur-oad.js'), 'utf8');
   const bloc = MOTEUR.slice(MOTEUR.indexOf('function cascadeDifferentielle'));
   const corps = bloc.slice(0, bloc.indexOf('\n}'));
@@ -3068,7 +3202,6 @@ test('C5 — hors cascade : la réserve en kg/ha et le point bas restent sépar�
     assert.ok(!new RegExp(mot).test(corps),
       `« ${mot} » ne doit pas entrer dans la cascade : ce n'est pas un terme d'une somme`);
   }
-  assert.strictEqual(idsCascade.length, 4);
 });
 
 // ----------------------------------------------------------------------
@@ -3178,6 +3311,187 @@ test("C7 — le bloc ne promet aucun module de financement", () => {
     assert.ok(!new RegExp(mot, 'i').test(bloc),
       `le bloc constate une limite, il ne promet rien : « ${mot} »`);
   }
+});
+
+// ----------------------------------------------------------------------
+// Section 36 — refonte du temps 3 : six thèmes sur un axe d'années
+// (arbitrage du 08/09/2026, README §18bis et §19ter).
+//
+// L'écran de résultats se lisait en cinq onglets rangés par bloc de code, et
+// sa frise portait une piste de trésorerie cumulée négative dans la
+// quasi-totalité des configurations. Il se lit désormais par THÈME et par
+// ANNÉE : six pistes, six cartes, un panneau d'année, une matrice.
+//
+// Ce que cette section verrouille, ce sont les DEUX invariants qui peuvent
+// devenir faux sans lever d'exception — les postes d'investissement qui ne
+// somment plus au total du moteur, et les deux chemins du déblocage en euros
+// qui divergent — plus la porte fermée sur la trésorerie.
+// ----------------------------------------------------------------------
+
+section("36. Temps 3 par thème et par année (refonte du 08/09/2026)");
+
+test("les postes d'investissement par année somment à sc.arrachage.investissement", () => {
+  /* La piste « Investissements » de la frise et la carte du thème 5 empilent
+     quatre postes (cinq avec l'arrosage), datés en année 0 puis en année
+     `repos`. Le TOTAL affiché, lui, vient du moteur. Si la décomposition de la
+     vue s'écarte de `invArr`, l'écran montre une pile dont la hauteur ne
+     correspond à aucun total — sans que rien ne casse.
+     On rejoue ici la décomposition d'index.html, terme à terme. */
+  const jeux = [
+    ['défauts', INP_A],
+    ['repos = 3', INP_B_REPOS3],
+    ['avec arrosage', { ...INP_A, irrigation: true, coutIrrigHa: 5000 }],
+    ['stress climatique', INP_C_STRESS]
+  ];
+  for (const [nom, inp] of jeux) {
+    const sc = OAD.construireScenarios(inp);
+    const S = inp.surfParc;
+    // `|| 0` sur la protection : même repli que `invArr` dans le moteur, dont
+    // cette décomposition doit être le décalque exact (chantier C2). Les
+    // fixtures antérieures au chantier P8 ne portent pas ce poste.
+    const postes = [
+      { t: 0, montant: S * inp.coutArrachageHa },
+      { t: inp.repos, montant: S * inp.densite * inp.coutPlant },
+      { t: inp.repos, montant: S * inp.coutPalissageHa },
+      { t: inp.repos, montant: S * (inp.coutProtectionHa || 0) }
+    ];
+    if (inp.irrigation) postes.push({ t: inp.repos, montant: S * inp.coutIrrigHa });
+    // Somme des postes, et somme des colonnes d'année : les deux doivent
+    // valoir le total du moteur, sans quoi la pile aurait perdu une colonne.
+    const parPoste = postes.reduce((a, p) => a + p.montant, 0);
+    const parAnnee = sc.arrachage.kg
+      .map(r => postes.filter(p => p.t === r.t).reduce((a, p) => a + p.montant, 0))
+      .reduce((a, v) => a + v, 0);
+    assertClose(parPoste, sc.arrachage.investissement, 1e-6,
+      `${nom} — la somme des postes doit être l'investissement du moteur`);
+    assertClose(parAnnee, sc.arrachage.investissement, 1e-6,
+      `${nom} — répartie sur les colonnes d'année, elle doit tomber sur le même total`);
+  }
+  // …et la vue ne déclare la liste qu'UNE fois, partagée par le tableau, la
+  // carte et la piste : deux listes du même fait finissent par diverger.
+  assert.ok(/const POSTES_INVEST = \[/.test(INDEX_HTML),
+    'les postes doivent être déclarés en un seul endroit');
+  assert.ok(/out\.investLignes = POSTES_INVEST\.map/.test(INDEX_HTML),
+    'le tableau poste par poste doit dériver de cette liste, pas la redéclarer');
+  assert.ok(/const investPostes = POSTES_INVEST\.map/.test(INDEX_HTML),
+    'la piste de la frise doit dériver de la même liste');
+});
+
+test("les deux chemins du déblocage en euros ne peuvent pas diverger", () => {
+  /* Le thème 3 affiche `sortieArr × prixKg`, tandis que la couche euro du
+     moteur produit `cashRI`. Ce sont deux écritures du MÊME fait
+     (coucheEuro : `cashRI = sortieArr × prixKg`) : si elles divergeaient, la
+     frise et la matrice montreraient un montant que le moteur ne connaît pas.
+     Le test balaie plusieurs paramétrages, dont un où la réserve est trop
+     basse pour servir tous les déblocages. */
+  const jeux = [
+    ['défauts', INP_A],
+    ['repos = 3', INP_B_REPOS3],
+    ['stress climatique', INP_C_STRESS],
+    ['réserve initiale basse', { ...INP_A, reserveInit: 500, volco: 12500 }],
+    ['prix élevé', { ...INP_A, prixKg: 9.4 }]
+  ];
+  for (const [nom, inp] of jeux) {
+    const sc = OAD.construireScenarios(inp);
+    const parKg = sc.arrachage.kg.reduce((a, r) => a + r.sortieArr * inp.prixKg, 0);
+    const parEuro = sc.arrachage.eur.reduce((a, r) => a + r.cashRI, 0);
+    assertClose(parKg, parEuro, 1e-6,
+      `${nom} — Σ sortieArr × prixKg doit égaler Σ cashRI`);
+    // Année par année aussi, pas seulement en somme : une compensation entre
+    // deux années passerait à travers un test sur le seul total.
+    sc.arrachage.kg.forEach((r, i) => {
+      assertClose(r.sortieArr * inp.prixKg, sc.arrachage.eur[i].cashRI, 1e-6,
+        `${nom} — année ${r.t}`);
+    });
+  }
+  // Et la vue lit bien cette formule-là, pas une autre.
+  assert.ok(/const deblocEur = kgRows\.map\(r => r\.sortieArr \* inp\.prixKg\)/.test(INDEX_HTML),
+    'le déblocage en euros doit être sortieArr × prixKg, la même écriture que cashRI');
+});
+
+test("le gabarit du temps 3 ne porte plus de trésorerie, ni à l'écran ni à l'impression", () => {
+  /* Critère de la refonte : le mot ne doit plus apparaître dans l'écran du
+     temps 3 ni dans les deux sorties d'impression. On lit le gabarit SANS ses
+     commentaires — ceux-ci documentent volontairement ce qui a été retiré et
+     pourquoi, et un test qui lirait le fichier brut échouerait sur sa propre
+     documentation (même procédé qu'aux chantiers C2, C3 et C5). */
+  const debut = CODE_SANS_COMMENTAIRES.indexOf('</helmet>');
+  const fin = CODE_SANS_COMMENTAIRES.indexOf('</x-dc>');
+  assert.ok(debut > 0 && fin > debut, 'le gabarit doit être délimitable');
+  const gabarit = CODE_SANS_COMMENTAIRES.slice(debut, fin);
+  assert.ok(!/trésorerie/i.test(gabarit),
+    'plus aucune occurrence de « trésorerie » dans le gabarit — écran et sorties d\'impression comprises');
+  // Ni appel au moteur sur ces deux fonctions, où que ce soit dans le code.
+  assert.ok(!/tresorerieCumulee|differentielTresorerie/.test(CODE_SANS_COMMENTAIRES),
+    'la vue ne doit plus appeler tresorerieCumulee ni differentielTresorerie');
+  // La frise porte bien SIX pistes, dont aucune de cumul en euros. On lit le
+  // CODE de la fonction (commentaires retirés), borné à son accolade fermante
+  // — le fichier est en CRLF, d'où le \r? de la borne.
+  const frise = CODE_SANS_COMMENTAIRES.slice(
+    CODE_SANS_COMMENTAIRES.indexOf('friseTrajectoire(d) {'));
+  const finCorps = frise.search(/\r?\n {2}\}\r?\n/);
+  assert.ok(finCorps > 0, 'la fonction friseTrajectoire doit être délimitable');
+  const corps = frise.slice(0, finCorps);
+  ['piste1', 'piste2', 'piste3', 'piste4', 'piste5', 'piste6'].forEach(p => {
+    assert.ok(new RegExp('const ' + p + ' =').test(corps), 'la frise doit porter ' + p);
+  });
+  assert.ok(!/treso|pointBas/i.test(corps),
+    'aucune piste de la frise ne doit lire une série de trésorerie ou son point bas');
+  assert.ok(!/const piste7 =/.test(corps),
+    'six pistes, pas sept : une piste de plus est un thème de plus, qui se décide, pas qui s\'ajoute');
+});
+
+test("la frise, le panneau d'année et la matrice lisent la même année retenue", () => {
+  // Une seule année sélectionnée à l'écran : l'axe et la matrice écrivent le
+  // même état, et les six pistes le lisent. Deux sélections concurrentes
+  // donneraient une frise qui souligne une année et un panneau qui en détaille
+  // une autre — faux sans jamais lever.
+  assert.ok(/anneeSel, boutonsAnnee/.test(INDEX_HTML),
+    'la frise doit recevoir l’année retenue et les boutons de l’axe');
+  const occurrences = (INDEX_HTML.match(/setState\(\{ anneeFrise: t \}\)/g) || []).length;
+  assert.strictEqual(occurrences, 2,
+    'deux points d’écriture, un pour l’axe et un pour la matrice, et pas un troisième état parallèle');
+  assert.ok(/const anneeSel = Math\.max\(0, Math\.min\(inp\.horizon, \+s\.anneeFrise \|\| 0\)\)/.test(INDEX_HTML),
+    'l’année retenue doit être bornée à l’horizon : un changement de paramétrage ne doit jamais laisser une sélection hors axe');
+  // Le panneau et la matrice sont bien rendus, et la matrice sert les deux
+  // sorties (écran et fiche d'audit) depuis une seule construction.
+  assert.ok(/list="\{\{ anneePanneau \}\}"/.test(INDEX_HTML),
+    'le panneau de l’année retenue doit être rendu');
+  assert.strictEqual((INDEX_HTML.match(/list="\{\{ matriceRows \}\}"/g) || []).length, 2,
+    'la matrice doit être rendue deux fois — à l’écran et sur la fiche d’audit — depuis la même construction');
+  assert.strictEqual((INDEX_HTML.match(/out\.matriceRows = /g) || []).length, 1,
+    'une seule construction de la matrice : l’écran et l’imprimé ne doivent pas pouvoir diverger');
+});
+
+test("phaseParAnnee couvre les onze années sans trou — déjà figé en §21", () => {
+  /* Ce test ne duplique pas la section 21, il vérifie que la garantie qu'elle
+     pose est bien celle dont la frise dépend : une entrée par colonne d'année,
+     aucune valeur absente, sur toutes les durées de repos offertes à l'écran.
+     Sans elle, une piste s'afficherait décalée d'une colonne par rapport aux
+     cinq autres. */
+  [1, 2, 3].forEach(repos => {
+    const phases = OAD.phaseParAnnee(repos, 10);
+    assert.strictEqual(phases.length, 11,
+      `repos = ${repos} : onze colonnes d'année, comme la graduation de la frise`);
+    phases.forEach((p, t) => {
+      assert.ok(['arrachage', 'repos', 'plantier', 'production'].includes(p),
+        `repos = ${repos}, année ${t} : phase inconnue « ${p} »`);
+    });
+    // Chaque année de phaseParAnnee retombe bien dans un segment de
+    // phasesParcelle : les deux découpes, celle des segments et celle des
+    // colonnes, doivent raconter la même chronologie.
+    const segs = OAD.phasesParcelle(repos, 10);
+    phases.forEach((p, t) => {
+      const seg = segs.find(sg => t >= sg.debut && t < sg.fin);
+      assert.ok(seg && seg.id === p,
+        `repos = ${repos}, année ${t} : la colonne et le segment doivent désigner la même phase`);
+    });
+  });
+  // Et la vue lit bien les deux, sans en recomposer une troisième.
+  assert.ok(/OAD\.phaseParAnnee\(inp\.repos, inp\.horizon\)/.test(INDEX_HTML),
+    'la phase par année doit venir du moteur');
+  assert.ok(/const segmentsFrise = OAD\.phasesParcelle\(inp\.repos, inp\.horizon\)/.test(INDEX_HTML),
+    'les segments doivent venir du moteur, et non être redécoupés dans la vue');
 });
 
 // ----------------------------------------------------------------------

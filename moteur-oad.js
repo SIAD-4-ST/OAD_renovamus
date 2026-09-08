@@ -1155,6 +1155,17 @@ function regimesTravailArrachage(scArr, scSQ, inp, opsManuel = REF_OPS_MANUEL, f
 /* =====================================================================
    Trésorerie cumulée d'un scénario — prompt 7.
 
+   @deprecated — retirée de l'écran du temps 3 (refonte du 08/09/2026).
+   La fonction reste EXPORTÉE et TESTÉE : elle est juste, et rien de ce qui
+   suit ne la remet en cause. Ce qui a été retiré, c'est son AFFICHAGE — la
+   troisième piste de la frise (« Trésorerie cumulée, parcelle seule ») et le
+   point bas qui en dérivait. Motif : sur un horizon de 10 ans avec deux
+   vendanges déficitaires par défaut, la courbe est négative dans la quasi-
+   totalité des configurations ; lue en premier, elle ne dit qu'une chose déjà
+   connue — un renouvellement coûte avant de rapporter — et rend le reste de
+   l'écran illisible. Voir README §18bis et §19ter.
+   NE PAS rétablir de piste de trésorerie sur l'écran du temps 3.
+
    Cette série existait, mais elle était assemblée dans index.html (`serieRep`
    / `serieRepParcelle` / `cum`). Elle passe ici parce que la frise de
    trajectoire la dessine : une courbe et un tableau qui divergeraient d'un
@@ -1282,6 +1293,17 @@ function reserveHorizon(scArr, scRef, horizon) {
 
 /* =====================================================================
    Différentiel de trésorerie par rapport à « ne rien faire » — chantier C4.
+
+   @deprecated — retirée de l'écran du temps 3 (refonte du 08/09/2026), en
+   même temps que la cascade différentielle qui la décomposait. La fonction
+   reste EXPORTÉE et TESTÉE : son arithmétique est juste et le garde-fou de
+   `cascadeDifferentielle` continue de s'appuyer dessus. Ce qui a été retiré,
+   c'est son AFFICHAGE. Motif : le temps 3 est désormais organisé par THÈME et
+   par ANNÉE (phase, stock, déblocage, blocage, investissement, entretien) ; un
+   chiffre différentiel cumulé sur dix ans n'y a pas de colonne où se poser, et
+   il ne se lisait qu'adossé à la piste de trésorerie, elle-même retirée.
+   Voir README §18bis et §19ter.
+   NE PAS rétablir de cascade différentielle sur l'écran du temps 3.
 
    POURQUOI. Un simulateur d'IMPACT dont tous les chiffres sont absolus ne
    mesure aucun impact : « impact » est un mot différentiel. Le différentiel
