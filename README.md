@@ -902,9 +902,13 @@ la sélection définitive.
 > 07/09/2026.** ⚠ Elle **évolue** : la revérifier à chaque diffusion. C'est le
 > seul entretien que demande la table `VARIETES`.
 >
-> Le référentiel de **clones**, lui, n'a pas bougé : 42 lignes, Chardonnay,
-> Pinot noir et Meunier seulement (§15). Pour les huit autres variétés, la table
-> n'est ni affichée vide ni comblée — le volet dit qu'aucune ligne n'existe au
+> Le référentiel de **clones** couvre depuis le prompt B9 les **onze** variétés
+> de cette table : 61 lignes, chaque entrée du sélecteur ouvre une table (§15).
+> La **profondeur** reste très inégale — les cépages confidentiels et les VIFA
+> n'ont souvent que leur année d'agrément et une remarque, et leurs cellules
+> vides le restent. Le message de cul-de-sac n'a pas disparu : il répond
+> désormais au seul cas d'un code de cépage venu du registre que
+> `cepageAffichage()` ne reconnaît pas. Il dit qu'aucune ligne n'existe au
 > référentiel retenu et renvoie au catalogue officiel, à plantgrape.fr ou au
 > Comité Champagne. C'est la même règle que les cellules vides de la table.
 
@@ -2832,31 +2836,107 @@ avec les seules notes du Guide).
 - PlantGrape (INRAE / IFV / Institut Agro Montpellier), www.plantgrape.fr —
   **relevé non daté, à confirmer avant diffusion**.
 
-**42 lignes** : 11 Chardonnay, 19 Pinot noir, 12 Meunier. 13 champs par
-ligne (`cepage`, `clone`, `sources`, `refAgronomiques`, `production`,
-`sucre`, `fertilite`, `typiciteChampagne`, `precocite`, `botrytis`,
-`multiplicationHa`, `remarqueGuide`, `remarquePlantGrape`).
+**61 lignes** (prompt B9), réparties sur les **onze variétés** du sélecteur :
+11 Chardonnay, 19 Pinot noir, 12 Meunier, 5 Pinot blanc, 7 Pinot gris,
+1 Arbane, 2 Petit Meslier, 1 Chardonnay rose, 1 Voltis, 1 Orellis, 1 Serelis.
 `OAD.clonesParCepage(cepage)` renvoie les lignes triées par **numéro** de
 clone croissant — tri numérique, pas lexicographique.
 
-> **Huit variétés du sélecteur n'ont aucune ligne ici** : pinot blanc, pinot
-> gris, arbane, petit meslier, chardonnay rose, et les trois VIFA (Voltis,
-> Orellis, Serelis). `clonesParCepage()` renvoie alors un tableau vide, et
-> l'écran (§4bis) affiche un message le disant, avec les pistes où chercher —
-> catalogue officiel des variétés (FranceAgriMer / IFV), plantgrape.fr, données
-> du Comité Champagne. Ni table vide, ni ligne inventée : c'est la même règle
-> que les cellules vides ci-dessous.
+**18 champs par ligne** : `cepage`, `clone`, `sources`, `origine`,
+`selection`, `anneeAgrement`, `refAgronomiques`, `production`, `fertilite`,
+`poidsGrappes`, `sucre`, `typiciteChampagne`, `precocite`, `botrytis`,
+`aptitudesOenologiques`, `multiplicationHa`, `remarqueGuide`,
+`remarquePlantGrape`.
+
+`sources` n'emploie que **trois** valeurs, et un test le fige : `Guide 2025`,
+`PlantGrape`, `PlantGrape (hors réf. Champagne)`. La troisième marque une
+ligne caractérisée par PlantGrape hors du vignoble champenois (Alsace,
+Bourgogne, Languedoc-Roussillon, Val-de-Loire) : la donnée existe, mais elle
+ne décrit pas le comportement du clone en Champagne.
+
+> **La couverture n'est pas la profondeur.** Les onze variétés ont une table,
+> mais les cépages confidentiels et les VIFA n'ont souvent que leur année
+> d'agrément et une remarque : PlantGrape ne publie pas, pour ces clones, de
+> caractérisation agronomique comparative. Les cellules vides le restent.
+>
+> Le message de cul-de-sac (`clonesAucunTxt`) est **conservé** : il reste
+> atteignable par un code de cépage venu du registre que `cepageAffichage()`
+> ne reconnaît pas. `clonesParCepage()` renvoie alors un tableau vide, et
+> l'écran (§4bis) affiche les pistes où chercher — catalogue officiel des
+> variétés (FranceAgriMer / IFV), plantgrape.fr, données du Comité Champagne.
+> Ni table vide, ni ligne inventée : c'est la même règle que les cellules
+> vides ci-dessous.
+
+**Provenance des cinq champs ajoutés en B9** (`origine`, `selection`,
+`anneeAgrement`, `poidsGrappes`, `aptitudesOenologiques`) — deux chemins de
+granularité inégale, et l'en-tête du littéral le dit :
+
+- **44 lignes** (Chardonnay, Pinot noir, Meunier, Petit Meslier) : relevé
+  **tabulaire** PlantGrape, base documentaire Excel du projet, hors dépôt ;
+- **17 lignes** (Pinot blanc, Pinot gris, Arbane, Chardonnay rose, Voltis,
+  Orellis, Serelis) : extraites du **texte** des fiches PlantGrape, pas d'un
+  tableau — la granularité y est moins garantie.
+
+La réserve sur la **datation** du relevé PlantGrape vaut pour les dix-huit
+champs : B9 ne la lève pas.
+
+⚠ **Les échelles PlantGrape sont relatives.** `production`, `fertilite`,
+`poidsGrappes` et `sucre` se lisent par rapport à la population clonale **de
+la variété concernée**, pas dans l'absolu. Comparer deux clones d'un même
+cépage est légitime ; comparer entre cépages ne l'est pas. L'écran n'affiche
+qu'un cépage à la fois, ce qui contient le risque — la note d'écran devra
+néanmoins le dire au moment où ces champs seront rendus.
 
 Une copie de travail lisible est commitée sous `data/clones-champagne.json` ;
 le littéral du moteur en est la transcription (le projet n'a ni build ni
-dépendance, le navigateur ne peut pas charger le JSON).
+dépendance, le navigateur ne peut pas charger le JSON). **Les deux doivent
+être écrits ensemble** — un test compare champ à champ, ligne à ligne.
 
 **Aucune cellule vide n'est comblée.** `botrytis` n'est renseigné que sur
-**5 des 42 lignes** (Pinot noir 236 et 665, Meunier 818, 900 et 924) ; les 37
-autres restent vides à l'écran, avec la note renvoyant aux données CIVC ou à
-plantgrape.fr (arbitrage 5). Trois lignes portent une **origine partielle** :
-Pinot noir 115 et Meunier 925 (PlantGrape hors référence Champagne),
-Meunier 458 (PlantGrape seul, absent du Guide).
+**10 des 61 lignes** (Pinot noir 236 et 665, Meunier 818, 900 et 924, Pinot
+blanc 1294, 1295 et 1296, Pinot gris 1329 et 1344) ; les 51 autres restent
+vides à l'écran, avec la note renvoyant aux données CIVC ou à plantgrape.fr
+(arbitrage 5). **22 lignes** portent une **origine partielle** — les 3
+d'avant B9 et les 19 ajoutées — dont **13** le marqueur *hors réf. Champagne*
+(Pinot noir 115, Meunier 925, Pinot blanc 54 · 55 · 1294 · 1295 · 1296,
+Pinot gris 52 · 53 · 457 · 1329 · 1344, Petit Meslier 1195).
+
+**Les vingt trous des cinq nouveaux champs sont figés**, tous sur des clones
+dont PlantGrape ne publie pas la donnée. Aucun passage ultérieur ne doit les
+« compléter » par déduction ; un test verrouille les taux de remplissage.
+
+| champ | rempli | vide sur |
+|---|---|---|
+| `anneeAgrement` | **61/61** | — seul champ complet du référentiel |
+| `selection` | 60/61 | Chardonnay rose 1284 |
+| `origine` | 59/61 | Arbane 1178, Voltis 1266 |
+| `aptitudesOenologiques` | 53/61 | Pinot noir 386, Chardonnay rose 1284, Pinot gris 1237 et 1238, Arbane 1178, Voltis 1266, Orellis 1420, Serelis 1421 |
+| `poidsGrappes` | 52/61 | Petit Meslier 1088 et 1195, Chardonnay rose 1284, Pinot gris 1237 et 1238, Arbane 1178, Voltis 1266, Orellis 1420, Serelis 1421 |
+
+**Les cinq nouveaux champs ne sont pas encore affichés.** B9 est la couche
+données et moteur ; la table de l'écran 3 a déjà sept colonnes et cinq de
+plus n'y tiennent pas en largeur. Le support d'affichage — dépliant par
+clone, ligne de détail, ou refonte des largeurs — est un arbitrage à part,
+traité au prompt suivant.
+
+**Points de vigilance ouverts par B9** — aucun n'est réglé ici :
+
+- ⚠ **Contrainte VIFA hors du champ de vision.** Le message « ≤ 5 % de
+  l'encépagement / +10 % à l'assemblage / convention INAO-ODG » est déclenché
+  par le sélecteur *matériel végétal*, pas par le cépage. Un utilisateur qui
+  choisit Voltis, Orellis ou Serelis comme variété voit désormais une table de
+  clones **sans voir cette contrainte** — ce n'était pas le cas tant que ces
+  variétés butaient sur le message de cul-de-sac.
+- **`multiplicationHa` vide ≠ inconnu.** PlantGrape écrit « clone peu diffusé »
+  lorsqu'il n'existe pas de vigne-mère : la disponibilité en pépinière est
+  alors **nulle**, ce n'est pas une donnée manquante. C'est le cas de la
+  plupart des lignes récentes, et le champ vide rend les deux situations
+  indiscernables. Relevé et décision d'affichage à part.
+- **Sensibilité Botrytis — 10 lignes sur 61.** La colonne la plus utile du
+  tableau est la plus vide, et PlantGrape ne la publiera pas davantage. Source
+  interne CIVC à explorer.
+- **Datation du relevé PlantGrape.** Toujours absente. Bloquant avant
+  diffusion.
 
 **Affichage — écran 3, prompt B7.** Sept colonnes, dans cet ordre : Clone ·
 Niveau de production · Richesse en sucre · Fertilité · *Typicité en
@@ -3907,8 +3987,8 @@ l'infini.
 | 2 | ~~Registre : **édition des cellules uniquement**, ni ajout ni suppression ni exclusion de lignes à l'écran 1~~ — **révisé au prompt B8** (voir ci-dessous) | 4 colonnes saisissables (surface, année de plantation, taux de manquants, situation) | Écarte un éditeur de registre complet. Le mécanisme d'exclusion de lignes de l'écran 2 reste seul et inchangé — deux mécanismes d'exclusion auraient été indistinguables pour l'utilisateur |
 | 2bis (B8) | **Le registre devient la seule source** : la saisie manuelle disparaît des écrans 1 et 2, et le tableau gagne l'ajout et la suppression de lignes | Toutes les colonnes saisissables, bouton « + Ajouter une ligne » et ✕ par ligne, bandeau bloquant si la surface totale est nulle | Deux sources concurrentes pour les mêmes grandeurs obligeaient à documenter partout laquelle avait gagné. Rendre le registre obligatoire imposait en retour de pouvoir le remplir sans export CSV — d'où l'ajout/suppression, qui contredit délibérément l'arbitrage 2 |
 | 3 | Import : **export du portail CIVC**, 12 colonnes spécifiées | Colonne obligatoire manquante → message qui **la nomme**, table en place non remplacée | Écarte un import « best effort » qui aurait produit des zéros silencieux là où une colonne manque |
-| 4 | Clones : **union** Guide 2025 + PlantGrape, origine marquée par ligne — 42 lignes | Référentiel sourcé dans le moteur, marqueur d'origine par ligne, 3 origines partielles visibles | Écarte le choix d'une source unique, qui aurait perdu soit les clones hors Guide, soit les colonnes agronomiques |
-| 5 | Colonne **Botrytis conservée vide**, avec note explicative | Affichée et vide sur 37 des 42 lignes, renvoi CIVC / plantgrape.fr | Écarte à la fois le retrait de la colonne (on perdrait l'information qu'elle manque) et son remplissage par dire d'expert |
+| 4 | Clones : **union** Guide 2025 + PlantGrape, origine marquée par ligne — 61 lignes depuis B9 | Référentiel sourcé dans le moteur, marqueur d'origine par ligne, 22 origines partielles visibles | Écarte le choix d'une source unique, qui aurait perdu soit les clones hors Guide, soit les colonnes agronomiques |
+| 5 | Colonne **Botrytis conservée vide**, avec note explicative | Affichée et vide sur 51 des 61 lignes, renvoi CIVC / plantgrape.fr | Écarte à la fois le retrait de la colonne (on perdrait l'information qu'elle manque) et son remplissage par dire d'expert |
 | 6 | **Horizon figé à 10 ans**, sélecteur retiré, paramètre conservé dans le moteur | Un réglage de moins ; `inp.horizon = 10` en dur côté UI | Écarte le sélecteur 10/25 ans. **N'écarte pas** la capacité du moteur : les tests de parité couvrent toujours 25 ans |
 | 7 | **Arrosage du plantier** autorisé et affiché, sans mention de provenance dans le code | Sélecteur rétabli sous ce libellé, renvoi au cahier des charges | Écarte le badge « interdite en AOC », qui tranchait une question réglementaire à la place de la source. **Seule dérogation du projet à la règle de sourçage** |
 | 8 | **Test de résistance climatique actif par défaut**, 2 années déficitaires | Bandeau non repliable en tête de l'écran 5, bascule en un clic | Écarte le défaut « moyenne régionale chaque année », qui présentait la transition sous son jour le plus favorable |
@@ -3916,6 +3996,13 @@ l'infini.
 | 10 | **Mobile hors périmètre** | Aucun travail d'adaptation petite largeur | Écarte le responsive mobile pour cette version |
 | 11 | **Chemin court à 11 champs** ; investissement affiché comme « coût de référence Champagne » | Volets « Ajuster » repliés par écran, indicateur « *n* repères sur 11 », libellé qui bascule sur « votre investissement » dès qu'un des 4 postes est édité | Écarte la suppression de champs : les 53 contrôles sont tous encore là. Écarte aussi un total présenté comme « le vôtre » alors qu'il n'est qu'une référence |
 | — | Référentiel clones **hébergé dans `moteur-oad.js`**, comme `ARBRE_PG` | `CLONES_CHAMPAGNE` + `OAD.clonesParCepage()`, JSON de travail commité sous `data/` | Écarte le chargement du JSON à l'exécution — le projet n'a ni build ni dépendance |
+| B9 | Référentiel clones porté à **61 lignes / 11 variétés** — couverture complète du sélecteur | Chaque entrée de `VARIETES` ouvre une table ; le message de cul-de-sac est conservé pour les codes de registre non reconnus | Écarte le maintien à trois cépages, qui laissait huit entrées du sélecteur en impasse |
+| B9 | Schéma clones porté de **13 à 18 champs** | Ajout de `origine`, `selection`, `anneeAgrement`, `poidsGrappes`, `aptitudesOenologiques` — cinq colonnes PlantGrape remplies à plus de 85 % que le mapping d'origine laissait dehors | Écarte le statu quo : ce n'était pas un manque de source mais une perte au mapping |
+| B9 | **Six colonnes PlantGrape écartées**, sous 25 % de remplissage | vigueur 15/61, acidité totale 16/61, taille de baies 13/61, potentiel couleur 4/61, structure tannique 4/61, intensité aromatique 3/61 — non réintroduites | Écarte leur ajout : elles ne produiraient que des vides supplémentaires, alors que le référentiel montre déjà ses trous plutôt que de les combler |
+| B9 | Vocabulaire de `sources` ramené à **trois valeurs** | `Guide 2025`, `PlantGrape`, `PlantGrape (hors réf. Champagne)` — un test le fige | Écarte `ENTAV-INRA`, venu d'un import : il rendait faux l'en-tête « union Guide 2025 / PlantGrape » et faisait échapper les deux Petit Meslier au calcul des origines partielles |
+| B9 | **Vingt trous figés** sur les cinq nouveaux champs | Taux de remplissage verrouillés par test (tableau §15) ; aucune valeur n'est déduite | Écarte toute complétion ultérieure par déduction ou par dire d'expert — PlantGrape ne publie pas ces données pour ces clones |
+| B9 | Métadonnée **extraite de `remarquePlantGrape`** vers les cinq nouveaux champs | Longueur maximale ramenée de 461 à 157 caractères ; un test interdit le retour de `Agrément :` / `Sélection :` / `Poids des grappes :` dans le texte | Écarte le maintien de la concaténation, qui rendait la colonne Remarque illisible et la donnée inexploitable |
+| B9 | **Affichage des cinq nouveaux champs reporté** au prompt suivant | B9 est la couche données et moteur ; l'écran 3 reste à sept colonnes | Écarte l'ajout de cinq colonnes à une table qui n'en a plus la largeur — le support d'affichage est un arbitrage à part |
 | — | `declinSQ` déplacé vers un volet **« hypothèses de comparaison »** à l'écran 5 | Saisi juste au-dessus du tableau « Manque à gagner » qu'il commande | Écarte son maintien à l'écran 2, où il passait pour une caractéristique de la parcelle alors qu'il décrit le contre-factuel |
 | — | Écran 5 : **KPI physiques en tête**, trésorerie en second | Bloc « Ce que le renouvellement produit » au niveau typographique des ex-KPI financiers ; ceux-ci descendent d'un cran sans rien perdre | Écarte une lecture qui commence par une trésorerie cumulée négative dans la quasi-totalité des configurations |
 | — | Année de retour à l'équilibre : **écartée** | Aucun indicateur du moment où la trésorerie s'inverse | Point de vigilance porté en recette (§21) : vérifier que la lecture ne devient pas décourageante au point d'être inutilisable |
@@ -4272,11 +4359,13 @@ sans navigateur — ce sont des dessins, un ordre de tabulation et un focus :
 
 **8. Le matériel végétal en une seule liste (§4bis, §6).** Sans toucher au
 registre, dans le bloc Références du temps 2 :
-   - parcourir les **11 variétés** : les trois cépages principaux ouvrent la
-     table de clones (11 / 19 / 12 lignes) ; les huit autres — pinot blanc,
-     pinot gris, arbane, petit meslier, chardonnay rose, Voltis, Orellis,
-     Serelis — affichent le message « aucune ligne au référentiel retenu », et
-     **jamais** une table vide ou remplie ;
+   - parcourir les **11 variétés** : chacune ouvre désormais une table de
+     clones (11 / 19 / 12 / 5 / 7 / 1 / 2 / 1 / 1 / 1 / 1 lignes, dans l'ordre
+     du sélecteur). Vérifier que les tables courtes — arbane, chardonnay rose,
+     Voltis, Orellis, Serelis — affichent bien leurs cellules **vides** (tiret
+     cadratin) et non des valeurs venues d'un autre cépage ; le message
+     « aucune ligne au référentiel retenu » ne doit plus apparaître pour aucun
+     choix du sélecteur ;
    - retenir une variété VIFA : la ligne sous le sélecteur doit passer à
      « variété résistante (VIFA) — ≤ 5 % de l'encépagement… ». Vérifier qu'il
      n'existe **plus** de second champ « vinifera / Voltis » avec lequel elle

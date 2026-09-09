@@ -1277,7 +1277,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
           <!-- ===================== RÉFÉRENCES =====================
                Tout ce qui est information hors calcul descend ici : matériel
                végétal, fiche du porte-greffe, arbre d'aide au choix, table des
-               42 clones. Trois volets, repliés par défaut, dont l'en-tête
+               61 clones. Trois volets, repliés par défaut, dont l'en-tête
                annonce le contenu.
 
                Le titre nomme le CONTENU du bloc (cépage, porte-greffe, clones)
@@ -1414,7 +1414,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
                         <div class="th">Richesse en sucre</div>
                         <div class="th">Fertilité</div>
                         <div class="th">{{ clonesColCondLabel }}</div>
-                        <div class="th" title="Donnée absente des sources retenues sur 37 des 42 clones. Elle n'est pas comblée : se reporter aux données CIVC ou à plantgrape.fr.">Sensibilité Botrytis ⓘ</div>
+                        <div class="th" title="Donnée absente des sources retenues sur 51 des 61 clones. Elle n'est pas comblée : se reporter aux données CIVC ou à plantgrape.fr.">Sensibilité Botrytis ⓘ</div>
                         <div class="th">Remarque</div>
                         <sc-for list="{{ clonesList }}" as="cl" hint-placeholder-count="8">
                           <div style="padding:6px 4px;border-bottom:1px dotted var(--bordure);font-family:'JetBrains Mono',monospace;font-size:11.5px;display:flex;align-items:baseline;gap:5px">
@@ -1436,7 +1436,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
                     </div>
                     <div style="font-size:11.5px;color:var(--encre-3);margin-top:10px;line-height:1.5">
                       <b>Niveau de production</b> : échelle qualitative PlantGrape — ce n'est pas un rendement en kg/ha et cela n'entre dans aucun calcul.<br>
-                      <b>Sensibilité Botrytis</b> : donnée absente des sources retenues sur 37 des 42 clones ; les cellules vides le restent. Se reporter aux données CIVC ou à plantgrape.fr.<br>
+                      <b>Sensibilité Botrytis</b> : donnée absente des sources retenues sur 51 des 61 clones ; les cellules vides le restent. Se reporter aux données CIVC ou à plantgrape.fr.<br>
                       <b>Origine</b> : <span style="font-family:'JetBrains Mono',monospace">G·P</span> Guide 2025 et PlantGrape · <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">G·P*</span> PlantGrape hors référence Champagne · <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">P</span> PlantGrape seul, absent du Guide.
                     </div>
                     </sc-if>
@@ -2201,9 +2201,11 @@ const ESP_PIQUET_REF = 4.3;   // m
    revérifier à chaque diffusion, c'est le seul entretien que ce tableau
    demande.
 
-   Le référentiel de CLONES, lui, ne couvre que Chardonnay, Pinot noir et
-   Meunier (42 lignes, Guide 2025 + PlantGrape) : pour les huit autres
-   variétés la table est vide, et l'écran le dit plutôt que de la combler. */
+   Le référentiel de CLONES couvre depuis le prompt B9 les ONZE variétés de ce
+   tableau (61 lignes, Guide 2025 + PlantGrape) : chaque entrée du sélecteur a
+   au moins une ligne. La profondeur, elle, reste très inégale — les cépages
+   confidentiels et les VIFA n'ont souvent que leur année d'agrément et une
+   remarque. Les cellules vides ne sont jamais comblées : l'écran les montre. */
 const VARIETES = [
   { cle: 'Chardonnay',      lib: 'Chardonnay',           vifa: false },
   { cle: 'Pinot noir',      lib: 'Pinot noir',           vifa: false },
@@ -4260,10 +4262,11 @@ class Component extends DCLogic {
         alerteTxt: 'mutations réverses'
       };
     });
-    /* Le référentiel de clones ne couvre QUE les trois cépages principaux
-       (Guide 2025 + PlantGrape, 42 lignes). Les huit autres variétés du
-       sélecteur — pinot blanc, pinot gris, arbane, petit meslier, chardonnay
-       rose, et les trois VIFA — n'y ont aucune ligne. La table n'est alors ni
+    /* Depuis le prompt B9 le référentiel couvre les onze variétés du sélecteur
+       (Guide 2025 + PlantGrape, 61 lignes) : cette branche n'est plus atteinte
+       par un choix de l'utilisateur. Elle reste néanmoins vivante — un code de
+       cépage venu du registre et non reconnu par cepageAffichage() n'a toujours
+       aucune ligne — et c'est à ce cas qu'elle répond. La table n'est alors ni
        affichée vide, ni comblée : l'écran dit ce qui manque et où le chercher.
        C'est la même règle que les cellules vides de la table elle-même. */
     const clonesAucun = cl.length === 0;
@@ -4275,17 +4278,19 @@ class Component extends DCLogic {
       ? 'aucune ligne au référentiel retenu'
       : 'Guide 2025 (p. 42-44) et PlantGrape · échelle qualitative';
     out.clonesAucunTxt = `Le référentiel retenu — Guide pratique Viticulture durable `
-      + `en Champagne 2025 (p. 42-44) et PlantGrape — ne documente que le Chardonnay, `
-      + `le Pinot noir et le Meunier. Aucune ligne n'est inventée pour ${varieteLib} : `
-      + `se reporter au catalogue officiel des variétés (FranceAgriMer / IFV), à `
-      + `plantgrape.fr, ou aux données du Comité Champagne.`;
+      + `en Champagne 2025 (p. 42-44) et PlantGrape — ne porte aucune ligne pour `
+      + `${varieteLib}, et aucune n'est inventée : se reporter au catalogue officiel `
+      + `des variétés (FranceAgriMer / IFV), à plantgrape.fr, ou aux données du `
+      + `Comité Champagne.`;
     // La réserve « information seule, hors calcul » est portée UNE fois, par
     // l'en-tête du bloc Références : elle était répétée ici, sous le
     // porte-greffe et dans le résumé du volet des clones. Ce qui reste ici est
     // ce que l'en-tête ne dit pas — la source et sa datation incertaine.
     out.clonesSourceTxt = 'Union du Guide pratique Viticulture durable en Champagne 2025 (p. 42-44) '
-      + 'et de PlantGrape (INRAE / IFV / Institut Agro Montpellier). Relevé PlantGrape non daté, '
-      + 'à confirmer avant diffusion.';
+      + 'et de PlantGrape (INRAE / IFV / Institut Agro Montpellier) — 61 clones agréés sur les onze '
+      + 'variétés du sélecteur. Profondeur très inégale : les cépages confidentiels et les variétés '
+      + 'résistantes n\'ont souvent qu\'une remarque. Le repère G·P* signale une caractérisation '
+      + 'relevée hors du vignoble champenois. Relevé PlantGrape non daté, à confirmer avant diffusion.';
     if (OAD) {
       const r = OAD.preconPorteGreffe(+v.calcaireActif, v.profondeurSol, v.drainageSol);
       if (r.match === 'incomplet') { out.preconPg = '—'; out.preconMsg = 'Renseignez le calcaire actif et la profondeur.'; out.preconBg = 'var(--vegetal-fond)'; }

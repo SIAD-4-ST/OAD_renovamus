@@ -1346,7 +1346,7 @@ test('LIMITE ASSUMÉE — le rendement de 3e feuille dépend de l\'année de ple
 });
 
 // ----------------------------------------------------------------------
-section('16. Référentiel clones (prompt A1) — union Guide 2025 / PlantGrape');
+section('16. Référentiel clones (prompts A1, B9) — union Guide 2025 / PlantGrape, 11 variétés');
 // ----------------------------------------------------------------------
 // Ce référentiel est INFORMATIF : aucun test ne doit vérifier qu'il influe sur
 // un scénario, puisqu'il n'entre dans aucun `inp` (même traitement qu'ARBRE_PG).
@@ -1355,40 +1355,119 @@ section('16. Référentiel clones (prompt A1) — union Guide 2025 / PlantGrape'
 
 const CLONES = OAD.CLONES_CHAMPAGNE;
 
-test('42 lignes au total, réparties 11 Chardonnay / 19 Pinot noir / 12 Meunier', () => {
-  assert.strictEqual(CLONES.length, 42);
+// Prompt B9 — le référentiel passe de 42 à 61 lignes et de 3 à 11 variétés :
+// il couvre désormais TOUT le sélecteur de variétés de l'écran 3. Les valeurs
+// attendues ci-dessous sont écrites à la main d'après le relevé transcrit, pas
+// dérivées du littéral produit — sans quoi ces tests ne vérifieraient plus rien.
+test('61 lignes au total, réparties sur les 11 variétés du sélecteur', () => {
+  assert.strictEqual(CLONES.length, 61);
   assert.strictEqual(OAD.clonesParCepage('Chardonnay').length, 11);
   assert.strictEqual(OAD.clonesParCepage('Pinot noir').length, 19);
   assert.strictEqual(OAD.clonesParCepage('Meunier').length, 12);
+  assert.strictEqual(OAD.clonesParCepage('Pinot blanc').length, 5);
+  assert.strictEqual(OAD.clonesParCepage('Pinot gris').length, 7);
+  assert.strictEqual(OAD.clonesParCepage('Arbane').length, 1);
+  assert.strictEqual(OAD.clonesParCepage('Petit Meslier').length, 2);
+  assert.strictEqual(OAD.clonesParCepage('Chardonnay rose').length, 1);
+  assert.strictEqual(OAD.clonesParCepage('Voltis').length, 1);
+  assert.strictEqual(OAD.clonesParCepage('Orellis').length, 1);
+  assert.strictEqual(OAD.clonesParCepage('Serelis').length, 1);
 });
 
-test('chaque ligne porte les 13 champs attendus, et `sources` n\'est jamais vide', () => {
-  const champs = ['cepage', 'clone', 'sources', 'refAgronomiques', 'production', 'sucre',
-    'fertilite', 'typiciteChampagne', 'precocite', 'botrytis', 'multiplicationHa',
-    'remarqueGuide', 'remarquePlantGrape'];
+test('chaque ligne porte les 18 champs attendus — pas un de plus — et `sources` n\'est jamais vide', () => {
+  const champs = ['cepage', 'clone', 'sources', 'origine', 'selection', 'anneeAgrement',
+    'refAgronomiques', 'production', 'fertilite', 'poidsGrappes', 'sucre',
+    'typiciteChampagne', 'precocite', 'botrytis', 'aptitudesOenologiques',
+    'multiplicationHa', 'remarqueGuide', 'remarquePlantGrape'];
+  assert.strictEqual(champs.length, 18);
   CLONES.forEach(c => {
     champs.forEach(k => assert.ok(k in c, `champ ${k} absent sur ${c.cepage} ${c.clone}`));
+    assert.strictEqual(Object.keys(c).length, 18,
+      `${c.cepage} ${c.clone} : ${Object.keys(c).length} champs au lieu de 18`);
     assert.ok(Array.isArray(c.sources) && c.sources.length >= 1,
       `origine absente sur ${c.cepage} ${c.clone} — aucune ligne ne peut être sans source`);
   });
 });
 
-test('3 lignes exactement portent une origine partielle : Pinot noir 115 et Meunier 925 (PlantGrape hors référence Champagne), Meunier 458 (PlantGrape seul, absent du Guide)', () => {
+test('`anneeAgrement` est le seul champ complet du référentiel : renseigné sur les 61 lignes, au format quatre chiffres', () => {
+  // Un trou ici ne signalerait pas une donnée absente de la source — PlantGrape
+  // publie toujours l'année d'agrément — mais une ligne mal transcrite.
+  CLONES.forEach(c => assert.ok(/^\d{4}$/.test(c.anneeAgrement),
+    `année d'agrément absente ou mal formée sur ${c.cepage} ${c.clone} : ${JSON.stringify(c.anneeAgrement)}`));
+  assert.strictEqual(CLONES.filter(c => c.anneeAgrement !== '').length, 61);
+});
+
+test('les quatre autres champs ajoutés en B9 gardent leurs trous : origine 59/61, selection 60/61, poidsGrappes 52/61, aptitudesOenologiques 53/61', () => {
+  // Ces vingt cellules vides sont figées au journal d'arbitrages (README §15).
+  // Une seule qui se remplit sans passer par la source = une déduction, et ce
+  // référentiel n'en porte aucune.
+  const rempli = ch => CLONES.filter(c => c[ch] !== '').length;
+  assert.strictEqual(rempli('origine'), 59);
+  assert.strictEqual(rempli('selection'), 60);
+  assert.strictEqual(rempli('poidsGrappes'), 52);
+  assert.strictEqual(rempli('aptitudesOenologiques'), 53);
+  assert.deepStrictEqual(
+    CLONES.filter(c => c.origine === '').map(c => c.cepage + ' ' + c.clone),
+    ['Arbane 1178', 'Voltis 1266']);
+  assert.deepStrictEqual(
+    CLONES.filter(c => c.selection === '').map(c => c.cepage + ' ' + c.clone),
+    ['Chardonnay rose 1284']);
+});
+
+test('`sources` n\'emploie que trois valeurs, exactement — aucun autre vocabulaire n\'est admis', () => {
+  // 'ENTAV-INRA' avait été introduit par un import : il rendait faux l'en-tête
+  // « union Guide 2025 / PlantGrape » et faisait échapper deux lignes au calcul
+  // des origines partielles de l'écran 3.
+  const voc = [...new Set(CLONES.flatMap(c => c.sources))].sort();
+  assert.deepStrictEqual(voc,
+    ['Guide 2025', 'PlantGrape', 'PlantGrape (hors réf. Champagne)']);
+});
+
+test('aucune `remarquePlantGrape` ne réenfouit de métadonnée concaténée, et aucune ne dépasse 157 caractères', () => {
+  // Garde-fou : les cinq champs ajoutés en B9 étaient auparavant entassés dans
+  // ce texte (« Origine : … Sélection : … Poids des grappes : … »), jusqu'à 461
+  // caractères. Ils en ont été extraits ; ils ne doivent pas y revenir.
+  CLONES.forEach(c => {
+    assert.ok(!/Agrément\s*:|Sélection\s*:|Poids des grappes\s*:/.test(c.remarquePlantGrape),
+      `métadonnée concaténée dans la remarque de ${c.cepage} ${c.clone}`);
+    assert.ok(c.remarquePlantGrape.length <= 157,
+      `remarque de ${c.cepage} ${c.clone} : ${c.remarquePlantGrape.length} caractères > 157`);
+  });
+});
+
+test('22 lignes portent une origine partielle — les 3 d\'avant B9 et les 19 ajoutées — dont 13 caractérisées hors référence Champagne', () => {
+  // Listes en ORDRE DE RÉFÉRENTIEL (variétés dans l'ordre de VARIETES, clones
+  // par numéro croissant) : un tri lexicographique intercalerait 'Pinot gris
+  // 1237' avant 'Pinot gris 52' et rendrait l'attendu illisible.
   const partielles = CLONES.filter(c =>
     c.sources.length === 1 || c.sources.some(s => s.includes('hors réf.')));
   assert.deepStrictEqual(
-    partielles.map(c => c.cepage + ' ' + c.clone).sort(),
-    ['Meunier 458', 'Meunier 925', 'Pinot noir 115']);
+    partielles.map(c => c.cepage + ' ' + c.clone),
+    ['Pinot noir 115', 'Meunier 458', 'Meunier 925',
+      'Pinot blanc 54', 'Pinot blanc 55', 'Pinot blanc 1294', 'Pinot blanc 1295', 'Pinot blanc 1296',
+      'Pinot gris 52', 'Pinot gris 53', 'Pinot gris 457', 'Pinot gris 1237', 'Pinot gris 1238',
+      'Pinot gris 1329', 'Pinot gris 1344',
+      'Arbane 1178', 'Petit Meslier 1088', 'Petit Meslier 1195', 'Chardonnay rose 1284',
+      'Voltis 1266', 'Orellis 1420', 'Serelis 1421']);
+  const horsRef = CLONES.filter(c => c.sources.some(s => s.includes('hors réf.')));
+  assert.deepStrictEqual(
+    horsRef.map(c => c.cepage + ' ' + c.clone),
+    ['Pinot noir 115', 'Meunier 925',
+      'Pinot blanc 54', 'Pinot blanc 55', 'Pinot blanc 1294', 'Pinot blanc 1295', 'Pinot blanc 1296',
+      'Pinot gris 52', 'Pinot gris 53', 'Pinot gris 457', 'Pinot gris 1329', 'Pinot gris 1344',
+      'Petit Meslier 1195']);
   assert.deepStrictEqual(CLONES.find(c => c.clone === '458').sources, ['PlantGrape']);
   assert.strictEqual(CLONES.find(c => c.clone === '458').remarqueGuide, '');
 });
 
-test('`botrytis` est renseigné sur 5 lignes seulement — les 37 autres restent vides (donnée absente des sources, jamais comblée)', () => {
+test('`botrytis` est renseigné sur 10 lignes seulement — les 51 autres restent vides (donnée absente des sources, jamais comblée)', () => {
   const avec = CLONES.filter(c => c.botrytis !== '');
-  assert.strictEqual(avec.length, 5);
+  assert.strictEqual(avec.length, 10);
   assert.deepStrictEqual(
     avec.map(c => c.cepage + ' ' + c.clone),
-    ['Pinot noir 236', 'Pinot noir 665', 'Meunier 818', 'Meunier 900', 'Meunier 924']);
+    ['Pinot noir 236', 'Pinot noir 665', 'Meunier 818', 'Meunier 900', 'Meunier 924',
+      'Pinot blanc 1294', 'Pinot blanc 1295', 'Pinot blanc 1296',
+      'Pinot gris 1329', 'Pinot gris 1344']);
 });
 
 test('clonesParCepage trie par numéro de clone croissant — tri NUMÉRIQUE, pas lexicographique (75 avant 118)', () => {
@@ -1400,11 +1479,14 @@ test('clonesParCepage trie par numéro de clone croissant — tri NUMÉRIQUE, pa
   });
 });
 
-test('clonesParCepage ne mute pas le référentiel et renvoie [] sur un cépage inconnu (Voltis)', () => {
+test('clonesParCepage ne mute pas le référentiel et renvoie [] sur un cépage inconnu (Gamay)', () => {
+  // La clé était 'Voltis' avant B9 : elle ne teste plus rien depuis que le
+  // référentiel couvre les onze variétés du sélecteur. 'Gamay' est un cépage
+  // réel, absent du référentiel comme de VARIETES — et destiné à le rester.
   const avant = CLONES.map(c => c.clone).join(',');
   OAD.clonesParCepage('Pinot noir').sort((a, b) => Number(b.clone) - Number(a.clone));
   assert.strictEqual(CLONES.map(c => c.clone).join(','), avant);
-  assert.deepStrictEqual(OAD.clonesParCepage('Voltis'), []);
+  assert.deepStrictEqual(OAD.clonesParCepage('Gamay'), []);
 });
 
 test('typiciteChampagne n\'est renseigné que sur le Pinot noir, precocite jamais sur le Pinot noir — les deux colonnes sont exclusives par cépage (colonne conditionnelle de l\'écran 3)', () => {
