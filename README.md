@@ -63,6 +63,7 @@ chiffrée se met à jour en continu dans la colonne de droite.
     - [19ter. Journal d'arbitrages — session du 01/09/2026](#19ter-journal-darbitrages--session-du-01092026)
     - [19quater. Journal d'arbitrages — prompt B9 : assiette de surface (registre vs production)](#19quater-journal-darbitrages--prompt-b9--assiette-de-surface-registre-vs-production)
     - [19quinquies. Journal d'arbitrages — refonte du temps 3 : six thèmes, un axe d'années (08/09/2026)](#19quinquies-journal-darbitrages--refonte-du-temps-3--six-thèmes-un-axe-dannées-08092026)
+    - [19sexies. Journal d'arbitrages — chantier D1 : jeu de registre d'exemple recalé (11/09/2026)](#19sexies-journal-darbitrages--chantier-d1--jeu-de-registre-dexemple-recalé-11092026)
 20. [Pour aller plus loin](#20-pour-aller-plus-loin)
 21. [Recette humaine — contrôles non automatisables](#21-recette-humaine--contrôles-non-automatisables)
 
@@ -1028,9 +1029,32 @@ vignoble » affiché juste sous les deux champs dérivés — voir §18ter.
 
 **Origine des données — jeu d'exemple, pas d'import réel.** `state.registreRows`
 est peuplé au chargement à partir d'une constante `REGISTRE_EXEMPLE_CSV`
-(`index.html`, chaîne CSV `;`-séparée codée en dur, 12 lignes), parsée par
-`parseRegistreCSV()` (résolution des colonnes par en-tête, indépendante de
-l'ordre ; normalisation de `situation` en `'plantee'`/`'arrachee'`).
+(`index.html`, chaîne CSV `;`-séparée codée en dur, **22 lignes, 17 idu,
+2,10 ha**), parsée par `parseRegistreCSV()` (résolution des colonnes par
+en-tête, indépendante de l'ordre ; normalisation de `situation` en
+`'plantee'`/`'arrachee'`).
+
+Le jeu est **calé sur le SGV Champagne, chiffres du vignoble 2023** (édition
+Poket 2024). Les idu sont fabriqués : seul le format est respecté, aucune
+parcelle cadastrale réelle n'est désignée.
+
+| Grandeur | Jeu d'exemple | Référence SGV 2023 |
+|---|---|---|
+| Surface totale de l'exploitation | 2,10 ha | 2,1 ha |
+| Parcelle cadastrale moyenne | 12,35 ares (17 idu) | 12,11 ares |
+| Âge moyen pondéré par la surface | 32,2 ans | ≈ 32 ans |
+| Pyramide des âges (0-9 / 10-19 / 20-29 / 30-39 / 40 ans et +) | 7 / 15 / 14 / 30 / 33 % | 7 / 15 / 14 / 30 / 33 % |
+| Faire-valoir (propriété / fermage / métayage) | 44 / 17 / 39 % | 44 / 17 / 38 % |
+| Part en repos (situation `Arrachée`) | 2,9 % | ≈ 2 % |
+
+Deux points ne sont pas des approximations mais des choix. **La première ligne
+plantée du fichier fixe la parcelle proposée par défaut au temps 2**
+(`parcelleIdu = iduPlanteesInit[0]`) : elle est en **métayage** délibérément —
+ne pas retrier le CSV. Et `510200000Z0157` mêle deux régimes sur un
+quasi-ex-æquo de surface (10 ares FD contre 8 ares MET), pour exercer la règle
+du dominant d'`agregerRegistreParcelle()`. La simplification assumée est le
+**mono-commune** : une exploitation de 2,1 ha est en pratique éclatée sur deux
+ou trois crus.
 ### Import de l'export portail CIVC (prompt B2)
 
 Un bouton **« Importer mon registre »** à l'étape 1 lit un CSV local via
@@ -3524,9 +3548,9 @@ Elle en porte six, une par thème, et la trésorerie n'en fait plus partie.
 | 1 | Phase de la parcelle | `OAD.phasesParcelle(repos, horizon)` ; `OAD.phaseParAnnee(...)` pour la phase d'une année | années | bande de 34 px, segments `flexGrow` proportionnels aux durées réelles ; un segment d'une seule année affiche « an N » et garde son nom en `title` ; le segment qui contient l'année retenue porte un liseré d'accent |
 | 2 | Stock de réserve | `sc.arrachage.kg[t].stockHa`, échelle jusqu'à `inp.plafond` | kg/ha | **inchangée** — aire `#F1E6CC` + courbe `#A97F26` en SVG `viewBox="0 0 1000 80"`, `preserveAspectRatio="none"` ; point du creux et son étiquette conservés |
 | 3 | Déblocage de réserve | `kg[t].sortieArr` ; € = `sortieArr × inp.prixKg`, **identique à** `eur[t].cashRI` ; kg/ha = `sortieArr / inp.surfParc` | kg **et** € | barres pleines `#A97F26` |
-| 4 | Bloqué en réserve | `kg[t].mise` ; part des autres parcelles = `mise × recolteReste / recolte` | kg | barres **creuses** (contour `#A97F26`), la part remplie `#F1E6CC` étant celle des autres parcelles |
+| 4 | Bloqué en réserve | `kg[t].mise` ; part des autres parcelles = `mise × recolteReste / recolte` | kg | barres **creuses** (contour `#A97F26`), la part venue des autres parcelles **hachurée** dans le crème `#F1E6CC` |
 | 5 | Investissements | les mêmes postes que `out.investLignes` — arrachage en année 0, plants / palissage / protection (/ arrosage) en année `repos` ; total = `sc.arrachage.investissement` | € | barres **empilées** par poste |
-| 6 | Entretien | `OAD.heuresManuellesParAnnee('arrachage', sc.arrachage.kg, inp)` → h/ha ; total parcelle = `× inp.surfParc` | heures | barres pleines `#4C7A57` |
+| 6 | Entretien | `OAD.heuresManuellesParAnnee('arrachage', sc.arrachage.kg, inp)` → h/ha ; total parcelle = `× inp.surfParc` | heures | barres pleines `#7D5A4F` (brun d'outil, cf. palette ci-dessous) |
 
 **Unités.** Le total (parcelle) vient en premier, l'unité à l'hectare en second,
 partout où les deux ont un sens — déblocage, entretien. Le stock, lui, reste en
@@ -3614,6 +3638,73 @@ premier maillon. Une seconde légende, en pastilles, nomme les couleurs de séri
 que le lecteur doit pouvoir rattacher à un poste : les phases et les postes
 d'investissement. Les pistes à une seule teinte portent leur nom dans le libellé
 de la piste — une pastille n'y ajouterait rien.
+
+#### Teintes ET textures — la palette relue (09/09/2026)
+
+**Le défaut.** La frise porte une douzaine de séries ; la charte de l'outil tient
+en cinq familles de couleur (rouge argile, vert, ocre, taupe, brun). Les séries
+avaient donc fini par se recouvrir **à l'identique**, et pas seulement par se
+ressembler : la phase « production » et les heures d'entretien portaient le même
+`#4C7A57`, la phase « repos » et le poste « palissage » le même `#CFC6B0`, la
+réserve et l'arrosage le même `#A97F26`. La légende alignait alors neuf pastilles
+dont plusieurs paires strictement jumelles, sans rien qui explique la reprise.
+
+**La règle.** On croise désormais la **teinte** avec une **texture**, et la
+texture porte du sens :
+
+| Remplissage | Ce qu'il dit | Où |
+|---|---|---|
+| aplat | le fait est effectif, complet, et il est d'ici | arrachage, production, déblocage, investissement, entretien |
+| hachures | il est partiel, en attente, ou venu d'ailleurs | repos du sol (45°), plantier (−45°), part « autres parcelles » de la mise en réserve (45°) |
+
+L'**angle** distingue deux séries hachurées voisines : deux hachures de sens
+contraire ne se confondent pas, même sur une bande de 24 px imprimée. Sur une
+bande hachurée, le libellé est posé sur une **pastille de la couleur de fond** —
+les traits passeraient sinon derrière les lettres, et un nom de phase illisible
+annulerait le bénéfice de la texture.
+
+La texture n'est pas un ornement : elle survit à la photocopie, au
+vidéoprojecteur délavé et à la vision dichromate, ce qu'une teinte voisine ne
+fait dans aucun des trois cas.
+
+**Une seule table**, en tête du `<script data-dc-script>` : `FRISE_PHASE`,
+`FRISE_RESERVE`, `FRISE_HEURES`, `FRISE_INVEST`, et la fonction
+`remplissageSerie()` qui en dérive le style CSS (`repeating-linear-gradient`, et
+pas un motif SVG : les pistes sont des `div`, et un motif CSS suit la boîte sans
+qu'on ait à déclarer un motif par piste). Les trois endroits qui déclaraient
+chacun la leur — les bandes de phase, les postes d'investissement, la légende —
+la lisent. Ils avaient déjà divergé : la légende reprenait les phases dans son
+propre objet, si bien qu'une teinte changée dans la frise ne l'était pas dans la
+légende qui la nomme. `graphExploitation()` lit la même table pour « arrachée »
+(= repos) et « plantée » (= production), au lieu de recopier les deux littéraux.
+
+**Les teintes retenues.**
+
+| Série | Remplissage | Pourquoi |
+|---|---|---|
+| Phase arrachage · poste « arrachage et préparation du sol » | `#A5433A` | même événement vu comme une phase et comme une dépense — la seule reprise volontaire de teinte, que les deux groupes nommés de la légende rendent lisible |
+| Phase repos du sol | `#D3C8AC` + hachures `#A0885A` à 45° | rien ne pousse |
+| Phase plantier | `#C0DEC6` + hachures `#4E8560` à −45° | la vigne produit, mais pas à plein |
+| Phase production | `#4C7A57` | — |
+| Réserve (stock, déblocage, blocage) | `#A97F26`, crème `#F1E6CC`, hachures `#C9A44E` | — |
+| Poste matériel végétal | `#6E9B79` | vert de la vigne, éclairci : un poste n'est pas une phase |
+| Poste palissage | `#8F8871` | taupe du matériel inerte |
+| Poste protection du jeune plant | `#C98178` | clair, et jamais empilé avec le rouge d'arrachage (années différentes) |
+| Poste arrosage du plantier | `#5F8296` | seule teinte froide de l'outil, assumée : c'est le seul poste qui parle d'eau, et il fallait une cinquième famille pour que quatre postes empilés se distinguent sans hachures |
+| Entretien | `#7D5A4F` | brun d'outil : ni le vert de la vigne, ni l'ocre de la réserve |
+
+**Les postes d'investissement ne sont pas hachurés** : leurs segments empilés
+font parfois 4 px de haut, une texture y devient du bruit. Ils sont séparés par
+des teintes franchement distinctes et par un **filet clair** entre deux segments
+(ombre intérieure, pas bordure : une bordure ajouterait 1 px à une hauteur
+exprimée en pourcentage, et la somme des segments dépasserait la barre).
+
+**La légende est en deux groupes nommés** (« Phases », « Investissement »)
+plutôt qu'en une file de neuf pastilles : les deux familles ne sont pas de même
+nature, et les nommer rend la reprise de teinte de l'arrachage lisible au lieu
+de la rendre suspecte. La pastille porte le remplissage **exact** de la série,
+hachures comprises, et passe de 11 à 14 px — à 11 px, un motif au pas de 6 px ne
+montrait pas deux traits, donc pas de hachure.
 
 ---
 
@@ -3992,7 +4083,7 @@ l'infini.
 | 6 | **Horizon figé à 10 ans**, sélecteur retiré, paramètre conservé dans le moteur | Un réglage de moins ; `inp.horizon = 10` en dur côté UI | Écarte le sélecteur 10/25 ans. **N'écarte pas** la capacité du moteur : les tests de parité couvrent toujours 25 ans |
 | 7 | **Arrosage du plantier** autorisé et affiché, sans mention de provenance dans le code | Sélecteur rétabli sous ce libellé, renvoi au cahier des charges | Écarte le badge « interdite en AOC », qui tranchait une question réglementaire à la place de la source. **Seule dérogation du projet à la règle de sourçage** |
 | 8 | **Test de résistance climatique actif par défaut**, 2 années déficitaires | Bandeau non repliable en tête de l'écran 5, bascule en un clic | Écarte le défaut « moyenne régionale chaque année », qui présentait la transition sous son jour le plus favorable |
-| 9 | IDU réels du jeu d'exemple : **diffusion validée** | Le jeu d'exemple reste tel quel | Écarte l'anonymisation des identifiants parcellaires |
+| 9 | ~~IDU réels du jeu d'exemple : **diffusion validée**~~ — **sans objet depuis le chantier D1** | Les idu du jeu d'exemple sont **fabriqués** : le format est respecté, aucune parcelle cadastrale réelle n'est désignée. La question de la diffusion d'identifiants réels ne se pose donc pas | N'écarte plus rien : l'arbitrage portait sur des identifiants que le dépôt ne contient pas. Il se reposerait **tel quel** le jour où un jeu issu d'un export CIVC réel serait commité |
 | 10 | **Mobile hors périmètre** | Aucun travail d'adaptation petite largeur | Écarte le responsive mobile pour cette version |
 | 11 | **Chemin court à 11 champs** ; investissement affiché comme « coût de référence Champagne » | Volets « Ajuster » repliés par écran, indicateur « *n* repères sur 11 », libellé qui bascule sur « votre investissement » dès qu'un des 4 postes est édité | Écarte la suppression de champs : les 53 contrôles sont tous encore là. Écarte aussi un total présenté comme « le vôtre » alors qu'il n'est qu'une référence |
 | — | Référentiel clones **hébergé dans `moteur-oad.js`**, comme `ARBRE_PG` | `CLONES_CHAMPAGNE` + `OAD.clonesParCepage()`, JSON de travail commité sous `data/` | Écarte le chargement du JSON à l'exécution — le projet n'a ni build ni dépendance |
@@ -4376,3 +4467,66 @@ registre, dans le bloc Références du temps 2 :
    - retenir le porte-greffe **161-49 C** : l'avertissement de dépérissement
      doit s'afficher sous le sélecteur, en rouge, alors même que l'arbre d'aide
      au choix ne le recommande pas. Sur 41 B ou SO4, aucune ligne ne s'affiche.
+
+### 19sexies. Journal d'arbitrages — chantier D1 : jeu de registre d'exemple recalé (11/09/2026)
+
+**Diagnostic.** Le jeu d'exemple était une caricature statistique : 6 parcelles
+de 25 ares en moyenne — le double de la moyenne champenoise —, un âge moyen
+pondéré de 60 ans contre ≈ 32 ans réels, 31 % de la surface en repos contre
+≈ 2 %, et 100 % en faire-valoir direct. Un vigneron qui ouvrait l'outil ne s'y
+reconnaissait pas. Il est remplacé par une exploitation de 2,10 ha, 17 idu,
+22 lignes, calée sur le SGV Champagne (chiffres du vignoble 2023, édition
+Poket 2024) — tableau de calage en §6bis.
+
+**Décision 1 — le choix « tout en FD » est renversé.** L'uniformité en
+faire-valoir direct était un arbitrage explicite, figé par un test : « un
+fermage inventé sur une ligne changerait en silence le résultat par défaut ».
+Le jeu porte désormais les **trois régimes** (44 % propriété / 17 % fermage /
+39 % métayage), et la parcelle proposée par défaut au temps 2 est **en
+métayage**.
+
+*Raison.* 56 % de la surface champenoise est en faire-valoir indirect. Un outil
+dont le cas par défaut est systématiquement le régime qui ne prélève rien
+présente le renouvellement sous son jour le plus favorable — ce qui contrevient
+au principe « crédibilité plutôt que plaidoyer », le même qui avait fixé le test
+de résistance climatique actif par défaut (arbitrage 8).
+
+*Ce que ça écarte.* Un exemple lisible au prix d'être irréel. Le confort de
+lecture était réel : en propriété, aucune ligne de partage ne vient s'intercaler
+entre le produit brut et le résultat. C'est précisément ce confort qui rendait
+le cas par défaut trompeur.
+
+**Décision 2 — le garde-fou de test est inversé, pas supprimé.** Le test
+`le jeu de registre d'exemple renseigne mode_explo sur toutes ses lignes`
+assertait `normaliserRegimeFv(val) === 'propriete'` ligne à ligne : c'est lui
+qui portait l'arbitrage renversé, il devait donc échouer. Il est remplacé par
+`le jeu de registre d'exemple porte les trois régimes de faire-valoir`, qui
+vérifie que les trois régimes sont représentés et que **la première ligne
+plantée reste en métayage** — un retour silencieux à la propriété redonnerait un
+résultat par défaut neutre. Supprimer le test aurait laissé le nouvel arbitrage
+sans garde-fou ; l'inverser le protège au même titre que l'ancien.
+
+**Périmètre.** Aucune formule n'a bougé : `normaliserRegimeFv`,
+`agregerRegistreExploitation` et `agregerRegistreParcelle` traitaient déjà
+correctement le nouveau jeu. `REGISTRE_TEST` (§8 de `tests/parite.test.js`) et
+ses assertions `ageMoy = 60,24` / `surfTot = 1,50` restent **inchangés** : c'est
+un jeu de test indépendant du jeu d'exemple, l'aligner dessus ferait perdre le
+seul jeu dont les valeurs sont choisies pour la vérification et non pour le
+réalisme.
+
+**Question ouverte D1 — `partCouts: 33 %` et le métayage franc.** Cette valeur
+par défaut (`index.html`, `V_DEFAUTS`) dormait tant que l'exemple était en
+propriété. Avec une parcelle par défaut en métayage, l'outil affirme désormais
+par défaut que **le bailleur prend un tiers de l'investissement de
+replantation**. Or l'usage champenois est le **métayage franc** : partage de la
+récolte brute **sans** partage des dépenses (art. L417-3 al. 4 du Code rural,
+sous réserve d'arrêté préfectoral ; jurisprudence ancienne en sens contraire).
+Si l'usage dominant est bien le métayage franc, la valeur juste est **33/0**, et
+le résultat par défaut de l'outil devient sensiblement moins favorable au
+renouvellement.
+
+La valeur **n'a pas été changée dans ce chantier** : la trancher demande une
+validation externe (service juridique du SGV), au même titre que le **coût de
+jachère à 0 €/ha/an**. Les deux sont des paramètres par défaut dont on sait
+qu'ils orientent le résultat dans un sens connu, et qu'on laisse en l'état tant
+que la source n'a pas parlé — plutôt que de les corriger au jugé.

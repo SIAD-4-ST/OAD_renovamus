@@ -2048,28 +2048,45 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 // Jeu de données d'exemple, en cache mémoire (chantier 1 — registre
-// parcellaire). Ne vient d'aucun import : préchargé pour tester le mode
-// "registre" avant que l'écran d'import de fichier ne soit branché. idu
-// fictifs, format des colonnes réel (commune Cuis, num_civc 1425).
-// `mode_explo` portait un champ vide sur toutes les lignes : la colonne
-// existait au format sans jamais rien dire. Elle porte désormais le
-// faire-valoir de chaque parcelle (prompt « faire-valoir au registre »).
-// Toutes les lignes d'exemple sont en FD (faire-valoir direct) : c'est le
-// régime qui ne prélève rien, donc celui qui laisse l'exemple lisible — un
-// fermage inventé sur une ligne changerait en silence le résultat par défaut.
+// parcellaire). Ne vient d'aucun import : préchargé pour que le mode
+// "registre" soit utilisable avant tout import de fichier.
+// Ordres de grandeur calés sur le SGV Champagne, chiffres du vignoble 2023
+// (édition Poket 2024) : exploitation moyenne 2,1 ha, parcelle cadastrale
+// moyenne 12,11 ares, pyramide des âges 7 / 15 / 14 / 30 / 33 %, faire-valoir
+// 44 % propriété / 17 % fermage / 38 % métayage.
+// Les idu sont fabriqués : seul le format est respecté (commune Cuis,
+// num_civc 1425), aucune parcelle cadastrale réelle n'est désignée.
+// La première ligne plantée fixe la parcelle proposée par défaut au temps 2
+// (parcelleIdu = iduPlanteesInit[0]) : elle est en métayage délibérément,
+// 56 % de la surface champenoise étant en faire-valoir indirect.
+// 510200000Z0157 mêle volontairement deux régimes, pour exercer la règle du
+// dominant en surface d'agregerRegistreParcelle() sur un quasi-ex-æquo
+// (10 ares FD contre 8 ares MET).
+// Simplification assumée : le mono-commune. Une exploitation de 2,1 ha est
+// en pratique éclatée sur deux ou trois crus.
 const REGISTRE_EXEMPLE_CSV = `idu;commune;num_civc;mode_explo;cepage;anneeplant;surface_ss_parcelle;productivite_moyenne;taux_manquant;enroulement;court_noue;situation
-510200000C1237;Cuis;1425;FD;CHARDONNAY B;2019;0,05;12000;5;0;0;Plantée
-510200000C1255;Cuis;1425;FD;CHARDONNAY B;2010;0,12;12000;5;0;0;Plantée
-510200000C1516;Cuis;1425;FD;CHARDONNAY B;2010;0,04;12000;5;0;0;Plantée
-510200000C1517;Cuis;1425;FD;CHARDONNAY B;2010;0,00;12000;5;0;0;Plantée
-510200000Z0068;Cuis;1425;FD;MEUNIER N;1954;0,21;12000;5;0;0;Arrachée
-510200000Z0068;Cuis;1425;FD;CHARDONNAY B;1951;0,14;12000;5;0;0;Plantée
-510200000Z0068;Cuis;1425;FD;CHARDONNAY B;1954;0,24;12000;5;0;0;Plantée
-510200000Z0068;Cuis;1425;FD;CHARDONNAY B;2006;0,02;12000;5;0;0;Plantée
-510200000Z0069;Cuis;1425;FD;MEUNIER N;1951;0,13;12000;5;0;0;Arrachée
-510200000Z0069;Cuis;1425;FD;CHARDONNAY B;1951;0,24;12000;5;0;0;Plantée
-510200000Z0157;Cuis;1425;FD;MEUNIER N;1954;0,13;12000;5;0;0;Arrachée
-510200000Z0157;Cuis;1425;FD;CHARDONNAY B;1954;0,18;12000;5;0;0;Plantée`;
+510200000B0142;Cuis;1425;MET;CHARDONNAY B;1991;0,14;11000;12;0;1;Plantée
+510200000B0176;Cuis;1425;MET;CHARDONNAY B;1989;0,16;11500;10;0;0;Plantée
+510200000B0176;Cuis;1425;MET;CHARDONNAY B;1984;0,12;11000;13;1;0;Plantée
+510200000C1237;Cuis;1425;FD;CHARDONNAY B;2021;0,04;12500;2;0;0;Plantée
+510200000C1255;Cuis;1425;FE;CHARDONNAY B;2010;0,12;13000;4;0;0;Plantée
+510200000C1408;Cuis;1425;FD;CHARDONNAY B;2005;0,08;12500;6;0;0;Plantée
+510200000C1516;Cuis;1425;FD;CHARDONNAY B;2018;0,05;12500;3;0;0;Plantée
+510200000C1517;Cuis;1425;FE;CHARDONNAY B;2016;0,07;13000;3;0;0;Plantée
+510200000C1622;Cuis;1425;FD;CHARDONNAY B;1993;0,09;11500;11;0;0;Plantée
+510200000C1622;Cuis;1425;FD;CHARDONNAY B;2024;0,06;12000;2;0;0;Plantée
+510200000C1693;Cuis;1425;FD;CHARDONNAY B;2000;0,09;12500;7;0;0;Plantée
+510200000Z0068;Cuis;1425;MET;CHARDONNAY B;1980;0,13;10500;16;1;1;Plantée
+510200000Z0068;Cuis;1425;MET;MEUNIER N;1971;0,08;10000;19;1;1;Plantée
+510200000Z0069;Cuis;1425;MET;CHARDONNAY B;1987;0,10;11500;11;0;0;Plantée
+510200000Z0104;Cuis;1425;FD;MEUNIER N;1968;0,06;0;0;0;1;Arrachée
+510200000Z0157;Cuis;1425;FD;CHARDONNAY B;1983;0,10;11000;14;0;0;Plantée
+510200000Z0157;Cuis;1425;MET;MEUNIER N;1975;0,08;10500;17;1;0;Plantée
+510200000Z0203;Cuis;1425;FD;CHARDONNAY B;1998;0,11;12000;7;0;0;Plantée
+510200000Z0244;Cuis;1425;FD;PINOT NOIR N;2007;0,12;12500;5;0;0;Plantée
+510200000Z0311;Cuis;1425;FD;CHARDONNAY B;1995;0,13;11500;10;0;0;Plantée
+510200000Z0348;Cuis;1425;FE;CHARDONNAY B;1985;0,09;11000;13;0;0;Plantée
+510200000Z0348;Cuis;1425;FE;MEUNIER N;1978;0,08;10500;16;1;0;Plantée`;
 
 /* =====================================================================
    Persistance locale — prompt B1.
@@ -2317,7 +2334,7 @@ const V_DEFAUTS = {
   volco: 8800,
   prixKg: 7,
   // chantier A4 : surfArr (ha) remplace la longueur/largeur déclarées
-  // comme grandeur pilote de la géométrie — surfArr=1, nbRangs=100 (voir
+  // comme grandeur pilote de la géométrie — surfArr=1, nbRangs=10 (voir
   // plus bas) reproduisent exactement la surface (1 ha) et le nombre de
   // rangs de l'ancien défaut (longueur 100 m, largeur 100 m, écart rang 1 m).
   surfArr: 1,
@@ -2329,7 +2346,7 @@ const V_DEFAUTS = {
   // eux, restent des saisies : ce sont des MONTANTS, pas un régime, et ils
   // vivent dans le panneau Hypothèses.
   loyerHa: 3000, partRecolte: 33, partCouts: 33,
-  nbRangs: 100, ecartRang: 1, ecartPied: 1.10,
+  nbRangs: 10, ecartRang: 1, ecartPied: 1.10,
   // `materiel` (vinifera / Voltis) a quitté state.v : il est DÉRIVÉ de la
   // variété retenue (VARIETES, ci-dessus). Il n'y a plus rien à persister ni à
   // restaurer sous cette clé — un instantané écrit par une version antérieure
@@ -2352,6 +2369,99 @@ const V_DEFAUTS = {
   // côté UI. La clé reste dans les défauts pour ne pas casser un instantané
   // enregistré avant ce prompt ; le paramètre reste entier dans le moteur.
   horizon: '10'
+};
+
+/* =====================================================================
+   PALETTE DE SÉRIE DE LA FRISE DE TRAJECTOIRE — revue le 09/09/2026.
+
+   UNE seule table, lue par les trois endroits qui déclaraient chacun la
+   leur : les bandes de phase (piste 1), les postes d'investissement
+   (piste 5, et le tableau « coût de l'investissement » du thème 5) et la
+   légende. Trois copies des mêmes teintes finissaient par diverger — et
+   avaient déjà divergé : la légende reprenait les phases dans son propre
+   objet, si bien qu'une teinte changée dans la frise ne l'était pas dans
+   la légende qui la nomme.
+
+   POURQUOI DEUX DIMENSIONS ET PAS UNE. La frise porte une douzaine de
+   séries. La charte de l'outil, elle, tient en cinq familles : le rouge
+   argile de l'arrachage, le vert de la vigne, l'ocre de la réserve, le
+   taupe du matériel, le brun du travail. Douze remplissages tirés de cinq
+   familles donnent forcément des voisins — c'était le défaut relevé : la
+   phase « production » et les heures d'entretien portaient EXACTEMENT le
+   même vert, la phase « repos » et le poste « palissage » exactement le
+   même beige, la réserve et l'arrosage exactement le même ocre. On croise
+   donc la teinte avec une TEXTURE, qui porte elle-même du sens :
+
+     aplat    — le fait est effectif, complet, et il est d'ici ;
+     hachures — il est partiel, en attente, ou venu d'ailleurs.
+
+   D'où le repos hachuré (rien ne pousse), le plantier hachuré (la vigne
+   produit, mais pas à plein), et la part « autres parcelles » de la mise
+   en réserve hachurée (ce kilo n'est pas celui de la parcelle). La texture
+   n'est pas un ornement : elle survit à la photocopie, au vidéoprojecteur
+   délavé et à la vision dichromate, ce qu'une teinte voisine ne fait
+   dans aucun des trois cas.
+
+   L'ANGLE distingue à son tour deux séries hachurées : repos à 45°,
+   plantier à −45°. Deux hachures de sens contraire ne se confondent pas,
+   même sur une bande de 24 px imprimée.
+
+   NE PAS hachurer les postes d'investissement : leurs segments empilés
+   font parfois 4 px de haut, une texture y devient du bruit. Ils sont
+   séparés par des teintes franchement distinctes et par un filet clair
+   entre deux segments.
+
+   Le bleu zinc de l'arrosage est la seule teinte froide de tout l'outil.
+   Elle est assumée : c'est le seul poste qui parle d'eau, et il fallait
+   une cinquième famille pour que quatre postes empilés se distinguent
+   sans hachures. */
+const FRISE_HACHURE = { trait: 2, pas: 6 };   // px — pas fixe, jamais étiré
+
+/* Style de remplissage d'une série : aplat, ou aplat + hachures.
+   `repeating-linear-gradient` plutôt qu'un `pattern` SVG — les pistes sont
+   des div, pas un SVG, et un motif CSS suit la boîte sans qu'on ait à
+   déclarer un motif par piste. Le pas est en PIXELS : des hachures qui
+   s'étireraient avec la barre ne se compareraient plus d'une colonne à
+   l'autre. */
+function remplissageSerie(s) {
+  if (!s.trait) return { background: s.fond };
+  return { backgroundColor: s.fond,
+    backgroundImage: 'repeating-linear-gradient(' + s.angle + 'deg, '
+      + s.trait + ' 0 ' + FRISE_HACHURE.trait + 'px, '
+      + 'transparent ' + FRISE_HACHURE.trait + 'px ' + FRISE_HACHURE.pas + 'px)' };
+}
+
+// Phases de la parcelle — piste 1 et légende. `encre` est la couleur du
+// libellé posé sur la bande ; les fonds hachurés sont éclaircis par rapport
+// à l'aplat d'avant, sans quoi le trait des hachures ne se détacherait pas.
+const FRISE_PHASE = {
+  arrachage:  { fond: '#A5433A', encre: '#FAF9F5' },
+  repos:      { fond: '#D3C8AC', encre: '#42473F', trait: '#A0885A', angle: 45 },
+  plantier:   { fond: '#C0DEC6', encre: '#2F5B3C', trait: '#4E8560', angle: -45 },
+  production: { fond: '#4C7A57', encre: '#FAF9F5' }
+};
+
+// Réserve — pistes 2, 3 et 4. `trait` ne sert qu'à la part venue des autres
+// parcelles, la seule série hachurée de la famille.
+const FRISE_RESERVE = { fond: '#A97F26', clair: '#F1E6CC', trait: '#C9A44E' };
+
+/* Entretien — piste 6. Brun d'outil : ni le vert de la vigne (qu'il
+   portait, à l'identique de la phase « production »), ni l'ocre de la
+   réserve. Les heures ne sont ni un kilo ni un pied de vigne, et c'est la
+   seule piste dont l'unité n'est ni un kilo ni un euro. */
+const FRISE_HEURES = '#7D5A4F';
+
+/* Postes d'investissement — piste 5, tableau du thème 5 et légende.
+   L'ordre est celui du tableau ; les clés sont lues par renderVals(). Le
+   poste d'arrachage garde le rouge de la PHASE d'arrachage : c'est le même
+   événement vu deux fois, pas deux séries qui se ressemblent. */
+const FRISE_INVEST = {
+  arrachage:  '#A5433A',   // rouge argile — le même que la phase
+  plants:     '#6E9B79',   // vert de la vigne, éclairci : la bande « production »
+                           // garde le vert plein, un poste n'est pas une phase
+  palissage:  '#8F8871',   // taupe : le matériel inerte
+  protection: '#C98178',   // rose argile — clair, jamais empilé avec le rouge
+  irrigation: '#5F8296'    // bleu zinc : le seul poste qui parle d'eau
 };
 
 class Component extends DCLogic {
@@ -2967,17 +3077,14 @@ class Component extends DCLogic {
     // Aucune année teintée sur la sortie papier : `-1` ne désigne aucune
     // colonne, ce qui neutralise la sélection dans les six pistes à la fois.
     const sel = compact ? -1 : d.anneeSel;  // année retenue par l'utilisateur
-    const COUL_PHASE = {
-      arrachage:  { fond: '#A5433A', encre: '#FAF9F5' },
-      repos:      { fond: '#CFC6B0', encre: '#42473F' },
-      plantier:   { fond: '#B8D3BC', encre: '#2F5B3C' },
-      production: { fond: '#4C7A57', encre: '#FAF9F5' }
-    };
-    // Teintes de série de la réserve et du travail — les mêmes que les
-    // graphiques de l'écran, pour qu'un kilo se reconnaisse d'une piste à
-    // l'autre.
-    const COUL_RESERVE = '#A97F26', COUL_RESERVE_CLAIRE = '#F1E6CC';
-    const COUL_HEURES = '#4C7A57';
+    /* Teintes ET textures : FRISE_PHASE, FRISE_RESERVE, FRISE_HEURES, en tête
+       de script, avec la règle aplat/hachures. La frise ne déclare plus les
+       siennes — la légende qui les nomme lit exactement la même table, et un
+       kilo se reconnaît d'une piste à l'autre parce que c'est la même entrée,
+       pas parce que deux littéraux se ressemblent. */
+    const COUL_PHASE = FRISE_PHASE;
+    const COUL_RESERVE = FRISE_RESERVE.fond, COUL_RESERVE_CLAIRE = FRISE_RESERVE.clair;
+    const COUL_HEURES = FRISE_HEURES;
     const libelle = (k, principal, secondaire) => e('div', { key: k,
       style: { fontSize: '11.5px', color: 'var(--encre-2)', textAlign: 'right', lineHeight: 1.35 } },
       principal, e('br', { key: 'br' }),
@@ -3021,11 +3128,17 @@ class Component extends DCLogic {
       const titre = seg.lib + (duree > 1 ? ' — années ' + seg.debut + ' à ' + (seg.fin - 1)
                                          : ' — année ' + seg.debut);
       return e('div', { key: 'ph' + i, title: titre,
-        style: { flexGrow: duree, flexBasis: 0, background: c.fond, borderRadius: '4px',
+        style: { flexGrow: duree, flexBasis: 0, ...remplissageSerie(c), borderRadius: '4px',
           display: 'grid', placeItems: 'center', color: c.encre, fontSize: '11.5px',
           overflow: 'hidden', whiteSpace: 'nowrap', padding: '0 4px',
           boxShadow: contientSel ? '0 0 0 2px var(--accent)' : 'none' } },
-        duree >= 2 ? seg.lib : 'an ' + seg.debut);
+        // Sur une bande HACHURÉE, le libellé est posé sur une pastille de la
+        // couleur de fond : les traits passeraient sinon derrière les lettres,
+        // et un nom de phase illisible annule tout le bénéfice de la texture.
+        // Les bandes en aplat gardent leur libellé nu — rien à masquer.
+        e('span', { key: 'lib', style: c.trait
+          ? { background: c.fond, padding: '1px 5px', borderRadius: '3px' } : null },
+          duree >= 2 ? seg.lib : 'an ' + seg.debut));
     });
     const piste1 = e('div', { key: 'p1', role: 'img',
       'aria-label': 'Phase de la parcelle année par année : '
@@ -3101,7 +3214,12 @@ class Component extends DCLogic {
         return e('div', { style: { height: h + 'px', boxSizing: 'border-box',
           border: '1.5px solid ' + COUL_RESERVE, borderRadius: '3px',
           display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' } },
-          e('div', { style: { height: (part * 100) + '%', background: COUL_RESERVE_CLAIRE } }));
+          // Hachures, et pas un aplat : ces kilos-là ne sont pas ceux de la
+          // parcelle renouvelée (règle de texture, voir FRISE_HACHURE). Un
+          // aplat clair dans un contour ocre se lisait comme « la parcelle en
+          // a mis un peu », ce qui est le contresens même que la piste corrige.
+          e('div', { style: { height: (part * 100) + '%',
+            ...remplissageSerie({ fond: COUL_RESERVE_CLAIRE, trait: FRISE_RESERVE.trait, angle: 45 }) } }));
       },
       'Mise en réserve de l\'exploitation, en kilos, année par année ; la part remplie est celle des autres parcelles.');
 
@@ -3123,7 +3241,13 @@ class Component extends DCLogic {
           borderRadius: '3px', overflow: 'hidden' } },
           d.invest.postes.filter(p => p.val[i] > 0).map((p, j) => e('div', { key: 'sg' + j,
             title: p.lib + ' — ' + p.valTxt[i],
-            style: { height: (p.val[i] / tot * 100) + '%', background: p.coul } })));
+            style: { height: (p.val[i] / tot * 100) + '%', background: p.coul,
+              // Filet clair entre deux postes empilés — en ombre INTÉRIEURE,
+              // pas en bordure : une bordure ajouterait 1 px à une hauteur
+              // exprimée en pourcentage, et la somme des segments dépasserait
+              // la barre. Sans lui, deux postes voisins se lisent comme un
+              // seul aplat dès que la barre est courte.
+              boxShadow: j > 0 ? 'inset 0 1px 0 var(--surface-haute)' : 'none' } })));
       },
       'Investissement engagé, en euros, année par année, empilé par poste.');
 
@@ -3210,11 +3334,14 @@ class Component extends DCLogic {
     const e = React.createElement;
     // Rampe ordinale d'une seule teinte (clair -> foncé = jeune -> vieux).
     const RAMPE_AGE = ['#9BBEA7', '#74A084', '#547E64', '#365D46'];
-    const COUL_PLANTEE = '#4C7A57';
-    // Même beige que la phase « repos » de la frise de trajectoire : une
-    // parcelle arrachée EST une surface en repos, elle doit se reconnaître
-    // d'un graphique à l'autre.
-    const COUL_ARRACHEE = '#CFC6B0';
+    // Les deux teintes viennent de la table de la frise de trajectoire, et non
+    // d'un littéral recopié : une parcelle arrachée EST une surface en repos,
+    // une parcelle plantée EST une surface en production, et elles doivent se
+    // reconnaître d'un graphique à l'autre. Recopiés, les deux littéraux
+    // avaient déjà cessé d'être « le même beige » le jour où la frise a changé
+    // le sien — c'est précisément ce qui vient d'être corrigé.
+    const COUL_PLANTEE = FRISE_PHASE.production.fond;
+    const COUL_ARRACHEE = FRISE_PHASE.repos.fond;
     const pct = (x) => (x * 100).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' %';
     const ha = (x) => this.fmtHa(x) + ' ha';
 
@@ -4527,16 +4654,16 @@ class Component extends DCLogic {
        ajoute au tableau. */
     const POSTES_INVEST = [
       { lib: "Arrachage et préparation du sol", t: 0, montant: investArrachagePrepa,
-        coul: '#A5433A', note: 'forfait MHCS tout compris' },
+        coul: FRISE_INVEST.arrachage, note: 'forfait MHCS tout compris' },
       { lib: 'Matériel végétal (plants)', t: inp.repos, montant: investMaterielVegetal,
-        coul: '#4C7A57', note: `${nf(piedsAffiches, 0)} pieds × ${nf(inp.coutPlant, 2)} €` },
+        coul: FRISE_INVEST.plants, note: `${nf(piedsAffiches, 0)} pieds × ${nf(inp.coutPlant, 2)} €` },
       { lib: 'Palissage', t: inp.repos, montant: investPalissageMat,
-        coul: '#CFC6B0', note: out.palisBadge.replace(/^·\s*/, '') },
+        coul: FRISE_INVEST.palissage, note: out.palisBadge.replace(/^·\s*/, '') },
       { lib: 'Protection du jeune plant', t: inp.repos, montant: investProtectionMat,
-        coul: '#B8D3BC', note: out.protectionBadge.replace(/^·\s*/, '') }
+        coul: FRISE_INVEST.protection, note: out.protectionBadge.replace(/^·\s*/, '') }
     ];
     if (inp.irrigation) POSTES_INVEST.push({ lib: 'Arrosage du plantier', t: inp.repos,
-      montant: investIrrigationMat, coul: '#A97F26', note: '' });
+      montant: investIrrigationMat, coul: FRISE_INVEST.irrigation, note: '' });
     out.investLignes = POSTES_INVEST.map(p => ({
       lib: p.lib, val: this.fmtE0(p.montant), quand: 'année ' + p.t, note: p.note }));
     /* chantier C5 — total de la table « coût de l’investissement », qui a
@@ -4935,25 +5062,46 @@ class Component extends DCLogic {
       + 'les ' + anneesDebloc.length + ' années de déblocage, et le retour en production '
       + 'en année ' + nf(retourProd, 0) + '. Cliquez une année de l’axe pour son détail.';
 
-    /* Légende des couleurs de série. Construite ici, en React.createElement,
-       pour la même raison que la frise : le gabarit ne porte aucune couleur
-       littérale. Elle ne nomme que les teintes qu'un lecteur doit pouvoir
-       rattacher à un poste — les phases et les postes d'investissement ; les
-       pistes à une seule teinte (réserve, heures) portent leur nom dans le
-       libellé de la piste, une pastille n'y ajouterait rien. */
-    const pastille = (k, coul, lib) => React.createElement('span', { key: k,
+    /* Légende des remplissages de série. Construite ici, en
+       React.createElement, pour la même raison que la frise : le gabarit ne
+       porte aucune couleur littérale. Elle ne nomme que ce qu'un lecteur doit
+       pouvoir rattacher à un poste — les phases et les postes
+       d'investissement ; les pistes à un seul remplissage (réserve, entretien)
+       portent leur nom dans le libellé de la piste, une pastille n'y
+       ajouterait rien.
+
+       DEUX GROUPES NOMMÉS, et non plus une file de neuf pastilles. Les phases
+       et les postes sont deux familles de sens, et l'arrachage y paraît deux
+       fois : c'est le même événement vu comme une phase et comme une dépense,
+       donc la même teinte des deux côtés. Alignées sans distinction, les
+       pastilles se lisaient comme neuf séries d'un même graphique, dont une
+       paire jumelle inexplicable. Nommer les familles rend la reprise de
+       teinte lisible au lieu de la rendre suspecte.
+
+       La pastille porte le remplissage EXACT de la série, hachures comprises,
+       et passe de 11 à 14 px : à 11 px, un motif au pas de 6 px ne montrait
+       pas deux traits, donc pas de hachure. Le liseré var(--bordure) sert aux
+       teintes claires, qui sans lui flottent sur la surface. */
+    const pastille = (k, style, lib) => React.createElement('span', { key: k,
       style: { display: 'inline-flex', alignItems: 'center', gap: '6px',
         fontSize: '11.5px', color: 'var(--encre-2)' } }, [
-      React.createElement('span', { key: 'c', style: { width: '11px', height: '11px',
-        borderRadius: '3px', background: coul, flex: 'none' } }),
+      React.createElement('span', { key: 'c', style: { width: '14px', height: '14px',
+        borderRadius: '3px', border: '1px solid var(--bordure)', boxSizing: 'border-box',
+        flex: 'none', ...style } }),
       React.createElement('span', { key: 'l' }, lib)
     ]);
-    const COUL_PHASE_FRISE = { arrachage: '#A5433A', repos: '#CFC6B0',
-      plantier: '#B8D3BC', production: '#4C7A57' };
+    const groupeLegende = (k, titre, pastilles) => React.createElement('div', { key: k,
+      style: { display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' } },
+      [React.createElement('span', { key: 't',
+        style: { fontSize: '11.5px', color: 'var(--encre-3)', flex: 'none',
+          textTransform: 'uppercase', letterSpacing: '0.06em' } }, titre)].concat(pastilles));
     out.friseLegendeSeries = React.createElement('div', {
-      style: { display: 'flex', gap: '16px', flexWrap: 'wrap' } },
-      segmentsFrise.map((sg, i) => pastille('ph' + i, COUL_PHASE_FRISE[sg.id], sg.lib))
-        .concat(investPostes.map((p, i) => pastille('iv' + i, p.coul, p.lib))));
+      style: { display: 'flex', flexDirection: 'column', gap: '6px' } }, [
+      groupeLegende('gph', 'Phases', segmentsFrise.map((sg, i) => pastille('ph' + i,
+        remplissageSerie(FRISE_PHASE[sg.id] || FRISE_PHASE.production), sg.lib))),
+      groupeLegende('giv', 'Investissement', investPostes.map((p, i) =>
+        pastille('iv' + i, { background: p.coul }, p.lib)))
+    ]);
 
     /* ---- Panneau « Année N » ------------------------------------------
        Les six chiffres de l'année retenue, un par thème, dans l'ordre des

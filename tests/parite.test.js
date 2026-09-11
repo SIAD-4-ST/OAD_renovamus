@@ -2015,17 +2015,24 @@ test('le faire-valoir est branché au registre dans le gabarit, et nulle part ai
     'le moteur doit recevoir le régime dérivé du registre, jamais une saisie globale');
 });
 
-test('le jeu de registre d’exemple renseigne mode_explo sur toutes ses lignes', () => {
+test('le jeu de registre d’exemple porte les trois régimes de faire-valoir', () => {
   const csv = INDEX_HTML.match(/const REGISTRE_EXEMPLE_CSV = `([^`]*)`/)[1];
   const lignes = csv.trim().split('\n');
-  const iMode = lignes[0].split(';').indexOf('mode_explo');
+  const entete = lignes[0].split(';');
+  const iMode = entete.indexOf('mode_explo'), iSit = entete.indexOf('situation');
   assert.ok(iMode >= 0, 'la colonne mode_explo doit rester au format');
+  const regimes = new Set();
   lignes.slice(1).forEach((l, i) => {
     const val = l.split(';')[iMode].trim();
-    assert.ok(val.length > 0, `ligne ${i + 1} : mode_explo ne doit plus être vide`);
-    assert.strictEqual(OAD.normaliserRegimeFv(val), 'propriete',
-      `ligne ${i + 1} : l'exemple reste en faire-valoir direct — un fermage inventé changerait le résultat par défaut`);
+    assert.ok(val.length > 0, `ligne ${i + 1} : mode_explo ne doit jamais être vide`);
+    regimes.add(OAD.normaliserRegimeFv(val));
   });
+  assert.strictEqual(regimes.size, 3,
+    'les trois régimes doivent être représentés : l’exemple documente une réalité où 56 % de la surface champenoise est en faire-valoir indirect');
+  const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const plantees = lignes.slice(1).map(l => l.split(';')).filter(c => norm(c[iSit]) === 'plantee');
+  assert.strictEqual(OAD.normaliserRegimeFv(plantees[0][iMode]), 'metayage',
+    'la parcelle proposée par défaut (premier idu planté du fichier, index.html : parcelleIdu = iduPlanteesInit[0]) doit rester en métayage : un retour silencieux à la propriété redonnerait un résultat par défaut neutre');
 });
 
 test("la campagne de référence n'est plus une saisie : toujours l'année en cours", () => {
